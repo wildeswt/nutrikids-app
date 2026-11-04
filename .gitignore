@@ -6,6 +6,7 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
+**/src/generated/
 
 # Environment variables
 .env

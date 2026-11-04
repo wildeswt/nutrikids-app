@@ -5,4 +5,6 @@ coverage/
 .expo/
 pnpm-lock.yaml
 *.tsbuildinfo
+**/generated/
+**/prisma/migrations/
 

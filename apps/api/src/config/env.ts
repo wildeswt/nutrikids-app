@@ -12,7 +12,10 @@ dotenv.config({ path: path.resolve(__dirname, '../../../../.env'), quiet: true }
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
-  DATABASE_URL: z.string().min(1).optional(),
+  DATABASE_URL: z
+    .string()
+    .min(1)
+    .default('postgresql://nutrikids:nutrikids@localhost:5433/nutrikids?schema=public'),
   CORS_ORIGIN: z.string().default('*'),
 });
 

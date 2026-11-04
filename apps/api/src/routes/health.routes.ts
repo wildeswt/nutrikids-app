@@ -1,16 +1,26 @@
 import { HealthResponseSchema, type HealthResponse } from '@nutrikids/shared';
 import { Router } from 'express';
+import { prisma } from '../lib/prisma.js';
 
 export const healthRouter: Router = Router();
 
-healthRouter.get('/', (_req, res) => {
+healthRouter.get('/', async (_req, res) => {
+  let dbStatus: 'ok' | 'disconnected' = 'ok';
+
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch {
+    dbStatus = 'disconnected';
+  }
+
+  const isHealthy = dbStatus === 'ok';
   const payload: HealthResponse = HealthResponseSchema.parse({
-    status: 'ok',
+    status: isHealthy ? 'ok' : 'degraded',
     service: 'nutrikids-api',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    db: 'not_configured',
+    db: dbStatus,
   });
 
-  res.status(200).json(payload);
+  res.status(isHealthy ? 200 : 503).json(payload);
 });
