@@ -1,0 +1,26 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import dotenv from 'dotenv';
+import { z } from 'zod';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Carga .env local de apps/api si existe, o el .env de la raíz del monorepo
+dotenv.config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env'), quiet: true });
+
+const EnvSchema = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  PORT: z.coerce.number().int().positive().default(3000),
+  DATABASE_URL: z.string().min(1).optional(),
+  CORS_ORIGIN: z.string().default('*'),
+});
+
+const parsed = EnvSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  console.error('❌ Invalid environment variables:', z.treeifyError(parsed.error));
+  process.exit(1);
+}
+
+export const env = parsed.data;
