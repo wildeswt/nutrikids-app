@@ -36,5 +36,11 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['**/*.cjs', '**/metro.config.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
   eslintConfigPrettier,
 );
