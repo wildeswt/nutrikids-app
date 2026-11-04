@@ -1,0 +1,19 @@
+{
+  "name": "nutrikids-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NutriKids monorepo (React Native Expo + Express API + PostgreSQL)",
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "clean": "pnpm -r --if-present clean"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}
