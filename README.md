@@ -8,12 +8,15 @@ Monorepo para **NutriKids**, construido con **React Native (Expo) + TypeScript**
 - **API (`apps/api`):** Node.js · Express 5 · TypeScript · Prisma 7 (`@prisma/adapter-pg`) · Vitest + Supertest
 - **Shared (`packages/shared`):** `@nutrikids/shared` — esquemas Zod y tipos compartidos entre mobile y backend
 - **Base de datos:** PostgreSQL 16 (`docker-compose.yml`, puerto host `5433` por defecto)
-- **Tooling:** pnpm workspaces · ESLint (Flat Config) · Prettier · Husky + lint-staged
+- **Tooling:** pnpm workspaces · ESLint (Flat Config) · Prettier · Husky + lint-staged · GitHub Actions (CI)
 
 ## Estructura del monorepo
 
 ```text
 nutrikids-app/
+├── .github/
+│   └── workflows/
+│       └── ci.yml           # Pipeline de CI (lint, format, types, tests con Postgres)
 ├── apps/
 │   ├── api/                 # Servidor Express + Prisma + tests
 │   └── mobile/              # App React Native (Expo + Expo Router)
@@ -102,5 +105,68 @@ Al abrir la app verás **`API OK ✅`** junto con **`Base de datos: ok`** consum
 | `pnpm db:up` / `pnpm db:down`       | Levanta o detiene el contenedor de PostgreSQL                            |
 | `pnpm db:logs`                      | Muestra logs en vivo de PostgreSQL                                       |
 | `pnpm db:migrate`                   | Crea/aplica migraciones de Prisma en desarrollo                          |
+| `pnpm db:migrate:deploy`            | Aplica migraciones pendientes de forma desatendida (CI / producción)     |
 | `pnpm db:generate`                  | Regenera el cliente tipado de Prisma                                     |
 | `pnpm db:studio`                    | Abre Prisma Studio para explorar la base de datos en el navegador        |
+
+## Integración Continua (CI con GitHub Actions)
+
+Cada Pull Request hacia la rama `main` ejecuta automáticamente el pipeline de validación en [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+
+1. **Instalación:** `pnpm install --frozen-lockfile` (asegura integridad del `pnpm-lock.yaml`).
+2. **Formato:** `pnpm format:check` (Prettier).
+3. **Linting:** `pnpm lint` (ESLint en todos los paquetes).
+4. **Tipos:** `pnpm typecheck` (`tsc --noEmit` en `shared`, `api` y `mobile`).
+5. **Servicio PostgreSQL:** Levanta un contenedor de servicio `postgres:16-alpine` y verifica disponibilidad con `pg_isready`.
+6. **Migraciones:** `pnpm db:migrate:deploy` aplica las migraciones de Prisma en la base de datos de CI.
+7. **Pruebas:** `pnpm test` ejecuta los tests con Vitest y Supertest.
+
+## Convención de Ramas
+
+Toda nueva contribución debe realizarse a través de una rama temática derivada de `main`:
+
+| Prefijo             | Propósito                                                | Ejemplo                      |
+| ------------------- | -------------------------------------------------------- | ---------------------------- |
+| `feature/<nombre>`  | Nuevas funcionalidades o pantallas                       | `feature/user-auth`          |
+| `fix/<nombre>`      | Corrección de errores o bugs                             | `fix/api-connection-timeout` |
+| `chore/<nombre>`    | Tareas de mantenimiento, dependencias o configuración    | `chore/upgrade-deps`         |
+| `docs/<nombre>`     | Cambios exclusivamente en documentación                  | `docs/update-readme`         |
+| `refactor/<nombre>` | Refactorizaciones de código sin cambio funcional visible | `refactor/api-routes`        |
+| `test/<nombre>`     | Incorporación o ajuste de pruebas automatizadas          | `test/child-endpoints`       |
+
+## Convención de Commits (Conventional Commits)
+
+Los commits deben seguir la especificación [Conventional Commits](https://www.conventionalcommits.org/):
+
+```text
+<tipo>(<alcance opcional>): <descripción concisa en imperativo y minúscula>
+```
+
+- **Tipos principales:**
+  - `feat`: Nueva característica (`feat(api): add auth endpoint`).
+  - `fix`: Corrección de bug (`fix(mobile): resolve shared import in metro`).
+  - `chore`: Tareas de build, dependencias o configuración (`chore(db): add migration deploy script`).
+  - `docs`: Documentación (`docs: update setup instructions`).
+  - `test`: Pruebas unitarias o de integración (`test(api): add vitest for health endpoint`).
+  - `refactor`: Cambios en código que no corrigen bugs ni agregan features (`refactor(shared): split health schema`).
+  - `ci`: Cambios en flujos de integración continua (`ci: add postgres service to pr workflow`).
+
+## Protección de la Rama `main` en GitHub
+
+Para garantizar que ningún cambio roto ingrese a `main`, se debe configurar una regla de protección en GitHub:
+
+1. Ve a tu repositorio en GitHub y abre **Settings** > **Branches**.
+2. En la sección **Branch protection rules**, haz clic en **Add rule** (o **Add branch ruleset**).
+3. En **Branch name pattern**, escribe `main`.
+4. Activa las siguientes opciones:
+   - **Require a pull request before merging:**
+     - _(Opcional)_ Requerir al menos 1 aprobación de revisión de código.
+   - **Require status checks to pass before merging:**
+     - Marca **Require branches to be up to date before merging**.
+     - En el buscador de checks, selecciona:
+       `Validate PR (Install, Lint, Format, Types, Tests)`
+   - **Do not allow bypassing the above settings:**
+     - Evita que administradores o propietarios fusionen PRs con checks en rojo.
+5. Haz clic en **Create** (o **Save changes**).
+
+> Con esta configuración, el botón **Merge pull request** permanecerá bloqueado hasta que el flujo de CI complete todas las validaciones con éxito (verde).
