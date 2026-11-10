@@ -88,7 +88,7 @@ Ajusta `EXPO_PUBLIC_API_URL` (en `.env` o `apps/mobile/.env`) según dónde abra
 | Android Emulator          | `http://10.0.2.2:3000` _(también se adapta automáticamente desde `localhost`)_        |
 | Teléfono físico (Expo Go) | `http://<TU_IP_LOCAL>:3000` _(ej. `http://192.168.1.50:3000`, en la misma red Wi-Fi)_ |
 
-Al abrir la app verás **`API OK ✅`** junto con **`Base de datos: ok`** consumiendo `GET /health`.
+Al abrir la app verás **`API OK`** junto con **`Base de datos: ok`** consumiendo `GET /health`.
 
 ## Scripts disponibles en la raíz
 
@@ -306,3 +306,45 @@ const checkups = await withUser(req.user.id, async (tx) => {
 | `users`, `refresh_tokens`, `push_devices`                         | **Excluido**             | El flujo de autenticación e inicio de sesión ocurre antes de determinar la identidad del usuario en sesión; RLS bloquearía el login.                                           |
 | `lms_references`, `educational_contents`                          | **Excluido**             | Catálogos y tablas de referencia pública accesibles por todos los usuarios del sistema.                                                                                        |
 | `audit_logs`                                                      | **Excluido (por ahora)** | Protegida por trigger inmutable y `REVOKE` en `nutrikids_app`. Las consultas `INSERT ... RETURNING` de Prisma requerirían una política de `SELECT` que será definida en NK-42. |
+
+## Sesión y Navegación por Rol (Mobile)
+
+### 1. Almacenamiento Seguro de Sesión
+
+Las credenciales y tokens se almacenan cifrados mediante `expo-secure-store` (`apps/mobile/src/lib/session-storage.ts`):
+
+- Los tokens de acceso y renovación nunca se guardan en almacenamiento no seguro (`AsyncStorage` / `localStorage`).
+- En dispositivos iOS y Android se utiliza la opción `keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY`.
+- Los datos se validan en lectura y escritura mediante el esquema Zod `StoredSessionSchema`. Si los datos están corruptos, se purgan de forma automática (fail-safe).
+- Los nombres de roles y rutas están centralizados en constantes (`USER_ROLES` de `@nutrikids/shared` y `APP_ROUTES` en `apps/mobile/src/constants/routes.ts`) para evitar strings hardcodeados.
+
+### 2. Renovación Automática y Single-Flight Mutex
+
+Dado que la API (`NK-13`) implementa rotación estricta de refresh tokens y revoca sesiones ante reutilizaciones concurrentes, el cliente HTTP (`apps/mobile/src/lib/api.ts`) cuenta con:
+
+- **Renovación preventiva:** Si el token de acceso vence en menos de 30 segundos, se renueva antes de disparar la petición.
+- **Single-Flight Mutex:** Una única promesa en curso (`refreshInFlight`) compartida entre solicitudes concurrentes para evitar enviar múltiples peticiones de renovación simultáneas con el mismo refresh token.
+- **Reintento transparente:** Respuestas `401 Unauthorized` detonan la renovación y reintentan la petición original con el nuevo token.
+- **Cierre de sesión automático:** Si la renovación falla (token expirado o revocado), se purga el almacenamiento seguro y se redirige automáticamente al flujo de login.
+
+### 3. Navegación Protegida por Rol (Expo Router)
+
+El guard de navegación en `apps/mobile/src/app/_layout.tsx` inspecciona reactivamente el estado de autenticación y el rol activo (`activeRole`):
+
+- **Cuidador (`CAREGIVER`):** Carga la barra inferior de 5 accesos (`apps/mobile/src/app/(caregiver)/_layout.tsx`):
+  1. `index`: Inicio («Mis niños», base para NK-21).
+  2. `evolution`: Evolución (curvas OMS e historial antropométrico).
+  3. `add-checkup`: Botón central circular destacado para registrar controles antropométricos.
+  4. `messages`: Mensajes y recordatorios.
+  5. `profile`: Mi perfil (datos del usuario, cambio de rol si aplica y cierre de sesión).
+- **Profesional (`PROFESSIONAL`):** Carga el menú lateral (`Drawer`) con la bandeja de alertas como pantalla inicial (`apps/mobile/src/app/(professional)/_layout.tsx`):
+  1. `index`: Bandeja de alertas nutricionales (base para NK-32).
+  2. `children`: Niños clasificados por riesgo.
+  3. `messages`: Mensajes y seguimientos asistenciales.
+  4. `profile`: Mi perfil profesional.
+- **Cuentas con Doble Rol:** Si el usuario tiene ambos perfiles (`roles.includes(USER_ROLES.CAREGIVER)` y `roles.includes(USER_ROLES.PROFESSIONAL)`), la pantalla de perfil y el menú lateral ofrecen una acción para alternar instantáneamente entre la vista de cuidador y la de profesional, persistiendo la selección en el almacenamiento seguro.
+
+### 4. Resoluciones de Alcance de la Issue
+
+- **Tema visual común:** Desacoplado en su propia issue independiente; se utilizaron estilos locales limpios con la paleta institucional (`#16A34A` / `#059669` / `#F0FDF4`) para no bloquear el desarrollo de las pantallas.
+- **Pantalla de Perfil:** En esta issue se construyó el contenedor funcional de sesión, datos básicos y cambio de rol. La gestión completa de datos personales y derechos del representante se absorberá en **NK-41**, y la acción de revocación de consentimientos por niño se incorporará en **NK-20**.
