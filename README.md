@@ -243,3 +243,66 @@ datasource: {
 2. **Neon (Integración y Staging):** Utiliza una rama dedicada de Neon (ej. `dev`) y aplica migraciones de forma desatendida mediante `pnpm db:migrate:deploy`.
 3. **Migrate dev contra Neon:** Requiere permisos para crear una shadow database. Si Neon limita la creación de bases secundarias, configura `shadowDatabaseUrl` en la configuración apuntando a otra base o rama auxiliar.
 4. **Reseteo en ramas remotas:** Si una migración previa obsoleta ya fue aplicada en una rama de Neon, utiliza `pnpm --filter api exec prisma migrate reset` confirmándolo previamente con el equipo de desarrollo.
+
+## Inmutabilidad y Seguridad por Filas (RLS)
+
+### 1. Inmutabilidad en Base de Datos
+
+Las tablas de hechos clínicos y auditoría son inmutables a nivel de base de datos para garantizar la integridad histórica (RF-09 y RF-21):
+
+- `checkups`: No admite `UPDATE` ni `DELETE`. Correcciones clínicas se registran como nuevos controles vinculados mediante `corrected_checkup_id`.
+- `alert_history`: No admite `UPDATE` ni `DELETE`. Solo admite inserciones secuenciales de transiciones de estado.
+- `audit_logs`: No admite `UPDATE` ni `DELETE`. Bitácora de solo adición.
+
+Cualquier intento de modificación o eliminación es rechazado por el trigger `forbid_mutation()` con código SQLSTATE `integrity_constraint_violation` (incluso para el owner de la base de datos).
+
+### 2. Rol de la Aplicación (`nutrikids_app`) y Separación de Cadenas
+
+Se implementa el principio de mínimo privilegio separando dos roles y cadenas de conexión:
+
+- **`DIRECT_URL` (Owner de la BD):** Conexión con privilegios DDL completos, utilizada por el CLI de Prisma (`prisma migrate`), fixtures, seeds y pipelines de CI.
+- **`DATABASE_URL` (Rol `nutrikids_app`):** Conexión restringida utilizada por la API Express en runtime:
+  - Solo tiene permisos `SELECT`, `INSERT`, `UPDATE`, `DELETE` en tablas de negocio.
+  - Tiene `REVOKED` explícitamente `UPDATE` y `DELETE` en las tablas inmutables (`checkups`, `alert_history`, `audit_logs`).
+  - No tiene acceso a `_prisma_migrations`.
+  - Está sujeta a las políticas de Row Level Security (RLS).
+
+#### Fijar contraseña del rol `nutrikids_app` en local
+
+Tras levantar el contenedor de Docker por primera vez y aplicar las migraciones, fija la contraseña del rol con:
+
+```bash
+docker exec nutrikids-postgres psql -U nutrikids -c "ALTER ROLE nutrikids_app PASSWORD 'nutrikids_app'"
+```
+
+### 3. Contexto de Usuario por Solicitud (`withUser`)
+
+Para que las políticas de RLS identifiquen al usuario autenticado sin romper la compatibilidad con poolers de conexiones como PgBouncer, se utiliza el helper `withUser` (`apps/api/src/lib/prisma.ts`):
+
+```ts
+import { withUser } from './lib/prisma.js';
+
+// En controladores o servicios:
+const checkups = await withUser(req.user.id, async (tx) => {
+  return tx.checkup.findMany({ where: { childId } });
+});
+```
+
+`withUser` ejecuta una transacción aislada invocando `set_config('app.user_id', <id>, true)`. El tercer parámetro (`true`) delimita la variable localmente a la transacción actual (`SET LOCAL`). Si la consulta se ejecuta fuera de `withUser` o sin `app.user_id`, las políticas de RLS fallan en modo cerrado devolviendo cero filas.
+
+### 4. Tablas con RLS y Exclusiones Justificadas
+
+| Tabla                                                             | Estado RLS               | Política / Justificación                                                                                                                                                       |
+| ----------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `children`                                                        | **Activado**             | Acceso permitido solo a cuidadores o profesionales con asignación vigente.                                                                                                     |
+| `consents`, `checkups`, `feeding_logs`, `follow_ups`, `reminders` | **Activado**             | Valida acceso al niño asociado mediante `app_has_child_access(child_id)`.                                                                                                      |
+| `caregiver_children`                                              | **Activado**             | Visible si el usuario es el cuidador vinculado o tiene acceso al niño.                                                                                                         |
+| `professional_children`                                           | **Activado**             | Visible si el usuario es el profesional asignado o tiene acceso al niño.                                                                                                       |
+| `notifications`                                                   | **Activado**             | Filtro estricto por `user_id = app_user_id()`.                                                                                                                                 |
+| `messages`                                                        | **Activado**             | Filtro estricto: `sender_id = app_user_id() OR recipient_id = app_user_id()`.                                                                                                  |
+| `indicator_results`                                               | **Activado**             | Acceso encadenado vía `checkups` (`EXISTS`).                                                                                                                                   |
+| `alerts`                                                          | **Activado**             | Acceso encadenado vía `indicator_results` (`EXISTS`).                                                                                                                          |
+| `alert_history`                                                   | **Activado**             | Acceso encadenado vía `alerts` (`EXISTS`).                                                                                                                                     |
+| `users`, `refresh_tokens`, `push_devices`                         | **Excluido**             | El flujo de autenticación e inicio de sesión ocurre antes de determinar la identidad del usuario en sesión; RLS bloquearía el login.                                           |
+| `lms_references`, `educational_contents`                          | **Excluido**             | Catálogos y tablas de referencia pública accesibles por todos los usuarios del sistema.                                                                                        |
+| `audit_logs`                                                      | **Excluido (por ahora)** | Protegida por trigger inmutable y `REVOKE` en `nutrikids_app`. Las consultas `INSERT ... RETURNING` de Prisma requerirían una política de `SELECT` que será definida en NK-42. |
