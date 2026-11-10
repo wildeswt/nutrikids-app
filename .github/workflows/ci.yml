@@ -69,5 +69,8 @@ jobs:
       - name: Set app role password
         run: PGPASSWORD=nutrikids psql -h localhost -U nutrikids -d nutrikids -c "ALTER ROLE nutrikids_app PASSWORD 'nutrikids_app'"
 
+      - name: Seed LMS references
+        run: pnpm db:seed
+
       - name: Run test suite
         run: pnpm test
