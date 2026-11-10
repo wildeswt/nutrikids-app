@@ -1,3 +1,4 @@
+import { USER_ROLES } from '@nutrikids/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('expo-constants', () => ({
@@ -45,10 +46,10 @@ describe('api-auth and token renewal', () => {
       email: 'user@example.com',
       firstName: 'Ana',
       lastName: 'Gomez',
-      roles: ['CAREGIVER'],
+      roles: [USER_ROLES.CAREGIVER],
       specialty: null,
     },
-    activeRole: 'CAREGIVER',
+    activeRole: USER_ROLES.CAREGIVER,
   };
 
   beforeEach(async () => {

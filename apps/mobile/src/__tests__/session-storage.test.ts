@@ -1,3 +1,4 @@
+import { USER_ROLES } from '@nutrikids/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockStore = new Map<string, string>();
@@ -33,10 +34,10 @@ describe('session-storage', () => {
       email: 'user@example.com',
       firstName: 'Ana',
       lastName: 'Gomez',
-      roles: ['CAREGIVER', 'PROFESSIONAL'],
+      roles: [USER_ROLES.CAREGIVER, USER_ROLES.PROFESSIONAL],
       specialty: 'pediatrics',
     },
-    activeRole: 'CAREGIVER',
+    activeRole: USER_ROLES.CAREGIVER,
   };
 
   beforeEach(async () => {
@@ -86,11 +87,11 @@ describe('session-storage', () => {
   it('updates active role when allowed by user roles', async () => {
     await saveStoredSession(sampleSession);
 
-    const updated = await updateStoredActiveRole('PROFESSIONAL');
-    expect(updated?.activeRole).toBe('PROFESSIONAL');
+    const updated = await updateStoredActiveRole(USER_ROLES.PROFESSIONAL);
+    expect(updated?.activeRole).toBe(USER_ROLES.PROFESSIONAL);
 
     const retrieved = await getStoredSession();
-    expect(retrieved?.activeRole).toBe('PROFESSIONAL');
+    expect(retrieved?.activeRole).toBe(USER_ROLES.PROFESSIONAL);
   });
 
   it('throws an error when trying to activate an unassigned role', async () => {
@@ -98,15 +99,15 @@ describe('session-storage', () => {
       ...sampleSession,
       user: {
         ...sampleSession.user,
-        roles: ['CAREGIVER'],
+        roles: [USER_ROLES.CAREGIVER],
         specialty: null,
       },
-      activeRole: 'CAREGIVER',
+      activeRole: USER_ROLES.CAREGIVER,
     };
 
     await saveStoredSession(caregiverOnlySession);
 
-    await expect(updateStoredActiveRole('PROFESSIONAL')).rejects.toThrow(
+    await expect(updateStoredActiveRole(USER_ROLES.PROFESSIONAL)).rejects.toThrow(
       'User does not have role: PROFESSIONAL',
     );
   });
