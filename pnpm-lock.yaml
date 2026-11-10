@@ -44,6 +44,9 @@ importers:
       '@nutrikids/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@nutrikids/who-growth':
+        specifier: workspace:*
+        version: link:../../packages/who-growth
       '@prisma/adapter-pg':
         specifier: 7.10.1
         version: 7.10.1
