@@ -13,6 +13,7 @@ import { HttpError } from '../lib/http-error.js';
 
 export const TOKEN_ISSUER = 'nutrikids-api';
 export const TOKEN_AUDIENCE = 'nutrikids-app';
+export const PASSWORD_RESET_AUDIENCE = 'nutrikids-password-reset';
 
 const AccessTokenClaimsSchema = z.object({
   sub: UuidSchema,
@@ -20,7 +21,13 @@ const AccessTokenClaimsSchema = z.object({
   specialty: SpecialtySchema.nullable(),
 });
 
+const PasswordResetClaimsSchema = z.object({
+  sub: UuidSchema,
+  pwdFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+});
+
 export type AccessTokenClaims = z.infer<typeof AccessTokenClaimsSchema>;
+export type PasswordResetClaims = z.infer<typeof PasswordResetClaimsSchema>;
 
 export interface TokenConfigOverrides {
   secret?: string;
@@ -88,6 +95,69 @@ export async function verifyAccessToken(
       throw err;
     }
     throw HttpError.unauthorized('Token de acceso inválido o expirado');
+  }
+}
+
+/**
+ * Calcula una huella SHA-256 del hash de contraseña actual para ligar un token de
+ * restablecimiento a la contraseña vigente (garantiza que sea de un solo uso sin tabla adicional).
+ */
+export function computePasswordHashFingerprint(passwordHash: string): string {
+  return createHash('sha256').update(passwordHash, 'utf8').digest('hex');
+}
+
+/**
+ * Firma un token de recuperación de contraseña de corta duración (15 min) ligado a la
+ * huella del `passwordHash` actual. En cuanto la contraseña cambia, el token queda invalidado.
+ */
+export async function signPasswordResetToken(
+  userId: string,
+  passwordHash: string,
+  overrides?: TokenConfigOverrides,
+): Promise<string> {
+  const ttlSeconds = overrides?.ttlSeconds ?? 900;
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const pwdFingerprint = computePasswordHashFingerprint(passwordHash);
+
+  return new SignJWT({ pwdFingerprint })
+    .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+    .setSubject(userId)
+    .setIssuer(TOKEN_ISSUER)
+    .setAudience(PASSWORD_RESET_AUDIENCE)
+    .setIssuedAt(nowSeconds)
+    .setExpirationTime(nowSeconds + ttlSeconds)
+    .sign(getSecretKey(overrides?.secret));
+}
+
+/**
+ * Verifica un token de recuperación de contraseña y devuelve `{ sub, pwdFingerprint }`.
+ */
+export async function verifyPasswordResetToken(
+  token: string,
+  overrides?: Pick<TokenConfigOverrides, 'secret'>,
+): Promise<PasswordResetClaims> {
+  try {
+    const { payload } = await jwtVerify(token, getSecretKey(overrides?.secret), {
+      issuer: TOKEN_ISSUER,
+      audience: PASSWORD_RESET_AUDIENCE,
+      algorithms: ['HS256'],
+    });
+
+    const parsed = PasswordResetClaimsSchema.safeParse({
+      sub: payload.sub,
+      pwdFingerprint: payload.pwdFingerprint,
+    });
+
+    if (!parsed.success) {
+      throw HttpError.unauthorized('Token de recuperación inválido');
+    }
+
+    return parsed.data;
+  } catch (err) {
+    if (err instanceof HttpError) {
+      throw err;
+    }
+    throw HttpError.unauthorized('Token de recuperación inválido o expirado');
   }
 }
 

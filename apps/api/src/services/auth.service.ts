@@ -1,11 +1,15 @@
 import {
   AuthResponseSchema,
+  ForgotPasswordResponseSchema,
   SpecialtySchema,
   type AuthResponse,
+  type ForgotPasswordInput,
+  type ForgotPasswordResponse,
   type LoginInput,
   type LogoutInput,
   type RefreshInput,
   type RegisterInput,
+  type ResetPasswordInput,
   type Specialty,
   type UserRole,
 } from '@nutrikids/shared';
@@ -13,10 +17,13 @@ import { HttpError } from '../lib/http-error.js';
 import { hashPassword, verifyDummyPassword, verifyPassword } from '../lib/password.js';
 import { prisma } from '../lib/prisma.js';
 import {
+  computePasswordHashFingerprint,
   generateRefreshToken,
   hashRefreshToken,
   isValidProfessionalInviteCode,
   signAccessToken,
+  signPasswordResetToken,
+  verifyPasswordResetToken,
 } from './token.service.js';
 
 function isUniqueConstraintError(err: unknown): boolean {
@@ -60,6 +67,17 @@ function resolveUserRoles(user: {
     throw HttpError.forbidden('La cuenta no tiene un perfil asignado');
   }
   return roles;
+}
+
+export type PasswordResetNotifier = (email: string, resetToken: string) => void | Promise<void>;
+
+let passwordResetNotifier: PasswordResetNotifier = () => {};
+
+/**
+ * Configura el canal de entrega del token de recuperación (para pruebas o proveedor de correo).
+ */
+export function setPasswordResetNotifier(notifier: PasswordResetNotifier): void {
+  passwordResetNotifier = notifier;
 }
 
 /**
@@ -375,5 +393,78 @@ export async function logoutUser(input: LogoutInput): Promise<void> {
   await prisma.refreshToken.updateMany({
     where: { tokenHash, revokedAt: null },
     data: { revokedAt: new Date() },
+  });
+}
+
+/**
+ * Solicita un restablecimiento de contraseña (`POST /auth/forgot-password`).
+ * Siempre responde con el mismo mensaje sin revelar si el correo existe.
+ */
+export async function requestPasswordReset(
+  input: ForgotPasswordInput,
+): Promise<ForgotPasswordResponse> {
+  const user = await prisma.user.findUnique({
+    where: { email: input.email },
+    select: {
+      id: true,
+      email: true,
+      passwordHash: true,
+      status: true,
+    },
+  });
+
+  if (user && user.status === 'active') {
+    const resetToken = await signPasswordResetToken(user.id, user.passwordHash);
+    await passwordResetNotifier(user.email, resetToken);
+  }
+
+  return ForgotPasswordResponseSchema.parse({
+    message: 'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña',
+  });
+}
+
+/**
+ * Restablece la contraseña usando un token de recuperación de un solo uso (`POST /auth/reset-password`).
+ * Al cambiar el `passwordHash`, el token queda automáticamente invalidado y se revocan
+ * todos los refresh tokens activos del usuario.
+ */
+export async function resetPassword(input: ResetPasswordInput): Promise<void> {
+  const claims = await verifyPasswordResetToken(input.token);
+
+  const user = await prisma.user.findUnique({
+    where: { id: claims.sub },
+    select: {
+      id: true,
+      passwordHash: true,
+      status: true,
+    },
+  });
+
+  if (!user || user.status !== 'active') {
+    throw HttpError.unauthorized('Token de recuperación inválido o ya utilizado');
+  }
+
+  const currentFingerprint = computePasswordHashFingerprint(user.passwordHash);
+  if (currentFingerprint !== claims.pwdFingerprint) {
+    throw HttpError.unauthorized('Token de recuperación inválido o ya utilizado');
+  }
+
+  const newPasswordHash = await hashPassword(input.newPassword);
+  const now = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.user.updateMany({
+      where: { id: user.id, passwordHash: user.passwordHash },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    if (updated.count === 0) {
+      throw HttpError.unauthorized('Token de recuperación inválido o ya utilizado');
+    }
+
+    await tx.refreshToken.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data: { revokedAt: now },
+    });
   });
 }

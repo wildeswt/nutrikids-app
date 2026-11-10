@@ -121,6 +121,17 @@ export const RefreshInputSchema = z.strictObject({ refreshToken: RefreshTokenSch
 
 export const LogoutInputSchema = z.strictObject({ refreshToken: RefreshTokenSchema });
 
+/** Solicitud de recuperación de contraseña (`POST /auth/forgot-password`). */
+export const ForgotPasswordInputSchema = z.strictObject({
+  email: EmailSchema,
+});
+
+/** Restablecimiento de contraseña con token de un solo uso (`POST /auth/reset-password`). */
+export const ResetPasswordInputSchema = z.strictObject({
+  token: z.string().min(1, { error: 'Falta el token de recuperación' }),
+  newPassword: NewPasswordSchema,
+});
+
 // ---------- Salida ----------
 
 /** Usuario autenticado. Nunca incluye hash de contraseña ni datos del segundo factor. */
@@ -149,9 +160,16 @@ export const AuthResponseSchema = z.discriminatedUnion('requiresTwoFactor', [
   }),
 ]);
 
+export const ForgotPasswordResponseSchema = z.object({
+  message: z.string(),
+});
+
 export type RegisterInput = z.infer<typeof RegisterInputSchema>;
 export type LoginInput = z.infer<typeof LoginInputSchema>;
 export type RefreshInput = z.infer<typeof RefreshInputSchema>;
 export type LogoutInput = z.infer<typeof LogoutInputSchema>;
+export type ForgotPasswordInput = z.infer<typeof ForgotPasswordInputSchema>;
+export type ResetPasswordInput = z.infer<typeof ResetPasswordInputSchema>;
 export type AuthUser = z.infer<typeof AuthUserSchema>;
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
+export type ForgotPasswordResponse = z.infer<typeof ForgotPasswordResponseSchema>;
