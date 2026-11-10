@@ -1,4 +1,9 @@
-import { HealthResponseSchema, type HealthResponse } from '@nutrikids/shared';
+import {
+  ErrorResponseSchema,
+  HealthResponseSchema,
+  type ErrorResponse,
+  type HealthResponse,
+} from '@nutrikids/shared';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
@@ -33,6 +38,28 @@ function resolveDefaultApiUrl(): string {
 export const API_BASE_URL = resolveDefaultApiUrl();
 
 const REQUEST_TIMEOUT_MS = 8000;
+
+/**
+ * Interpreta una respuesta de error de la API con `ErrorResponseSchema` de `@nutrikids/shared`.
+ * Si incluye detalles de validación (`issues`), devuelve el primer mensaje en español.
+ */
+export function parseApiError(
+  payload: unknown,
+  fallbackMessage = 'Error al procesar la solicitud',
+): ErrorResponse {
+  const parsed = ErrorResponseSchema.safeParse(payload);
+  if (parsed.success) {
+    const firstIssue = parsed.data.issues?.[0];
+    return {
+      ...parsed.data,
+      message: firstIssue ? firstIssue.message : parsed.data.message,
+    };
+  }
+  return {
+    error: 'Request Error',
+    message: fallbackMessage,
+  };
+}
 
 export async function fetchHealth(): Promise<HealthResponse> {
   const controller = new AbortController();

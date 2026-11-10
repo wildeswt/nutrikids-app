@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Carga .env local de apps/api si existe, o el .env de la raíz del monorepo
+// Loads .env from apps/api if present, or monorepo root .env
 dotenv.config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env'), quiet: true });
 
@@ -16,6 +16,7 @@ const EnvSchema = z.object({
     .string()
     .min(1)
     .default('postgresql://nutrikids:nutrikids@localhost:5433/nutrikids?schema=public'),
+  DIRECT_URL: z.string().optional(),
   CORS_ORIGIN: z.string().default('*'),
 });
 
