@@ -3,7 +3,7 @@ import { EmailSchema, UuidSchema, requiredText } from './common.js';
 import { SpecialtySchema, UserRoleSchema } from './enums.js';
 
 /**
- * Autenticación. Los esquemas de entrada son estrictos: cualquier
+ * Autenticación (RF-01, RT-06). Los esquemas de entrada son estrictos: cualquier
  * campo desconocido se rechaza. Los de salida son una lista blanca de campos públicos.
  */
 
@@ -18,7 +18,9 @@ const PhoneSchema = z
 const NewPasswordSchema = z
   .string()
   .min(PASSWORD_MIN, { error: `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres` })
-  .max(PASSWORD_MAX, { error: `La contraseña debe tener como máximo ${PASSWORD_MAX} caracteres` });
+  .max(PASSWORD_MAX, {
+    error: `La contraseña debe tener como máximo ${PASSWORD_MAX} caracteres`,
+  });
 
 // ---------- Entrada ----------
 
@@ -38,6 +40,7 @@ export const RegisterInputSchema = z
     phone: PhoneSchema.optional(),
     specialty: SpecialtySchema.optional(),
     licenseNumber: requiredText(50).optional(),
+    invitationCode: requiredText(64).optional(),
   })
   .superRefine((value, ctx) => {
     const isProfessional = value.roles.includes('PROFESSIONAL');
@@ -56,6 +59,13 @@ export const RegisterInputSchema = z
           message: 'El número de licencia es obligatorio para profesionales',
         });
       }
+      if (!value.invitationCode) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['invitationCode'],
+          message: 'El código de invitación es obligatorio para profesionales',
+        });
+      }
     } else {
       if (value.specialty) {
         ctx.addIssue({
@@ -69,6 +79,13 @@ export const RegisterInputSchema = z
           code: 'custom',
           path: ['licenseNumber'],
           message: 'Solo los profesionales tienen número de licencia',
+        });
+      }
+      if (value.invitationCode) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['invitationCode'],
+          message: 'Solo los profesionales usan código de invitación',
         });
       }
     }
