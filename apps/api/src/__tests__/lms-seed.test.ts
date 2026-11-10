@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import { env } from '../config/env.js';
-import { type Indicator, type Sex } from '../generated/prisma/client.js';
-import { prisma } from '../lib/prisma.js';
+import { PrismaClient, type Indicator, type Sex } from '../generated/prisma/client.js';
 import { LMS_SEED_GROUPS, seedLmsReferences } from '../lib/seedLms.js';
 
 const connectionString = env.DIRECT_URL ?? env.DATABASE_URL;
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
 /**
  * 5 valores puntuales de referencia tomados directamente de las tablas oficiales OMS 2006
@@ -60,28 +61,6 @@ const CASOS_OFICIALES_OMS = [
 ] as const;
 
 describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () => {
-  let client: pg.Client;
-  let dbAvailable = false;
-
-  beforeAll(async () => {
-    try {
-      client = new pg.Client({ connectionString });
-      await client.connect();
-      dbAvailable = true;
-      // Aseguramos que el seed esté aplicado antes de los tests
-      await seedLmsReferences();
-    } catch {
-      dbAvailable = false;
-    }
-  });
-
-  afterAll(async () => {
-    if (dbAvailable) {
-      await client.end();
-      await prisma.$disconnect();
-    }
-  });
-
   describe('Verificación de los datos del seed (LMS_SEED_GROUPS) contra la tabla oficial OMS', () => {
     for (const caso of CASOS_OFICIALES_OMS) {
       it(`Seed [${caso.indicador}] [${caso.sexo}] x=${caso.x} coincide con ${caso.fuente}`, () => {
@@ -100,9 +79,98 @@ describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () =
     }
   });
 
-  describe('Verificación de 5 valores en base de datos contra la tabla oficial de la OMS', () => {
-    for (const caso of CASOS_OFICIALES_OMS) {
-      it(`[${caso.indicador}] [${caso.sexo}] x=${caso.x} coincide con ${caso.fuente}`, async ({
+  describe('Persistencia e idempotencia en base de datos (lms_references)', () => {
+    let client: pg.Client;
+    let dbAvailable = false;
+
+    beforeAll(async () => {
+      try {
+        client = new pg.Client({ connectionString, connectionTimeoutMillis: 3000 });
+        await client.connect();
+        dbAvailable = true;
+        // Aseguramos que el seed esté aplicado antes de los tests
+        await seedLmsReferences(prisma);
+      } catch {
+        dbAvailable = false;
+        await client?.end().catch(() => undefined);
+      }
+    }, 30000);
+
+    afterAll(async () => {
+      if (dbAvailable) {
+        await client.end();
+      }
+      await prisma.$disconnect();
+    });
+
+    describe('Verificación de 5 valores en base de datos contra la tabla oficial de la OMS', () => {
+      for (const caso of CASOS_OFICIALES_OMS) {
+        it(`[${caso.indicador}] [${caso.sexo}] x=${caso.x} coincide con ${caso.fuente}`, async ({
+          skip,
+        }) => {
+          if (!dbAvailable) {
+            skip();
+            return;
+          }
+
+          const row = await prisma.lmsReference.findUnique({
+            where: {
+              indicator_sex_x: {
+                indicator: caso.indicador as Indicator,
+                sex: caso.sexo as Sex,
+                x: caso.x,
+              },
+            },
+          });
+
+          expect(row).not.toBeNull();
+          expect(Number(row!.x)).toBeCloseTo(caso.x, 2);
+          expect(Number(row!.l)).toBeCloseTo(caso.l, 4);
+          expect(Number(row!.m)).toBeCloseTo(caso.m, 4);
+          expect(Number(row!.s)).toBeCloseTo(caso.s, 4);
+        });
+      }
+    });
+
+    describe('Cobertura de rangos en base de datos', () => {
+      it('cubre rango de 12 a 60 meses para WEIGHT_FOR_AGE', async ({ skip }) => {
+        if (!dbAvailable) {
+          skip();
+          return;
+        }
+
+        const count = await prisma.lmsReference.count({
+          where: { indicator: 'WEIGHT_FOR_AGE' },
+        });
+        // 49 meses * 2 sexos = 98 registros
+        expect(count).toBe(98);
+      });
+
+      it('cubre rango de 12 a 60 meses para LENGTH_HEIGHT_FOR_AGE', async ({ skip }) => {
+        if (!dbAvailable) {
+          skip();
+          return;
+        }
+
+        const count = await prisma.lmsReference.count({
+          where: { indicator: 'LENGTH_HEIGHT_FOR_AGE' },
+        });
+        expect(count).toBe(98);
+      });
+
+      it('cubre rango de 12 a 60 meses para BMI_FOR_AGE', async ({ skip }) => {
+        if (!dbAvailable) {
+          skip();
+          return;
+        }
+
+        const count = await prisma.lmsReference.count({
+          where: { indicator: 'BMI_FOR_AGE' },
+        });
+        expect(count).toBe(98);
+      });
+
+      it('cubre longitud y talla para WEIGHT_FOR_LENGTH_HEIGHT de 45 a 120 cm', async ({
         skip,
       }) => {
         if (!dbAvailable) {
@@ -110,90 +178,28 @@ describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () =
           return;
         }
 
-        const row = await prisma.lmsReference.findUnique({
-          where: {
-            indicator_sex_x: {
-              indicator: caso.indicador as Indicator,
-              sex: caso.sexo as Sex,
-              x: caso.x,
-            },
-          },
+        const count = await prisma.lmsReference.count({
+          where: { indicator: 'WEIGHT_FOR_LENGTH_HEIGHT' },
         });
-
-        expect(row).not.toBeNull();
-        expect(Number(row!.x)).toBeCloseTo(caso.x, 2);
-        expect(Number(row!.l)).toBeCloseTo(caso.l, 4);
-        expect(Number(row!.m)).toBeCloseTo(caso.m, 4);
-        expect(Number(row!.s)).toBeCloseTo(caso.s, 4);
+        // 151 medidas * 2 sexos = 302 registros
+        expect(count).toBe(302);
       });
-    }
-  });
-
-  describe('Cobertura de rangos en base de datos', () => {
-    it('cubre rango de 12 a 60 meses para WEIGHT_FOR_AGE', async ({ skip }) => {
-      if (!dbAvailable) {
-        skip();
-        return;
-      }
-
-      const count = await prisma.lmsReference.count({
-        where: { indicator: 'WEIGHT_FOR_AGE' },
-      });
-      // 49 meses * 2 sexos = 98 registros
-      expect(count).toBe(98);
     });
 
-    it('cubre rango de 12 a 60 meses para LENGTH_HEIGHT_FOR_AGE', async ({ skip }) => {
-      if (!dbAvailable) {
-        skip();
-        return;
-      }
+    describe('Idempotencia del seed', () => {
+      it('ejecutar seedLmsReferences nuevamente no arroja errores ni duplica datos', async ({
+        skip,
+      }) => {
+        if (!dbAvailable) {
+          skip();
+          return;
+        }
 
-      const count = await prisma.lmsReference.count({
-        where: { indicator: 'LENGTH_HEIGHT_FOR_AGE' },
+        const countBefore = await prisma.lmsReference.count();
+        await expect(seedLmsReferences(prisma)).resolves.not.toThrow();
+        const countAfter = await prisma.lmsReference.count();
+        expect(countAfter).toBe(countBefore);
       });
-      expect(count).toBe(98);
-    });
-
-    it('cubre rango de 12 a 60 meses para BMI_FOR_AGE', async ({ skip }) => {
-      if (!dbAvailable) {
-        skip();
-        return;
-      }
-
-      const count = await prisma.lmsReference.count({
-        where: { indicator: 'BMI_FOR_AGE' },
-      });
-      expect(count).toBe(98);
-    });
-
-    it('cubre longitud y talla para WEIGHT_FOR_LENGTH_HEIGHT de 45 a 120 cm', async ({ skip }) => {
-      if (!dbAvailable) {
-        skip();
-        return;
-      }
-
-      const count = await prisma.lmsReference.count({
-        where: { indicator: 'WEIGHT_FOR_LENGTH_HEIGHT' },
-      });
-      // 151 medidas * 2 sexos = 302 registros
-      expect(count).toBe(302);
-    });
-  });
-
-  describe('Idempotencia del seed', () => {
-    it('ejecutar seedLmsReferences nuevamente no arroja errores ni duplica datos', async ({
-      skip,
-    }) => {
-      if (!dbAvailable) {
-        skip();
-        return;
-      }
-
-      const countBefore = await prisma.lmsReference.count();
-      await expect(seedLmsReferences()).resolves.not.toThrow();
-      const countAfter = await prisma.lmsReference.count();
-      expect(countAfter).toBe(countBefore);
     });
   });
 });
