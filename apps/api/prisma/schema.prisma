@@ -45,7 +45,7 @@ enum AlertStatus {
 }
 
 // ------------------------------------------------------
-// 1. Identidad y Acceso
+// 1. Identity and Access
 // ------------------------------------------------------
 
 model User {
@@ -99,7 +99,7 @@ model Professional {
 }
 
 // ------------------------------------------------------
-// 2. Niño y Vínculos
+// 2. Child and Relations
 // ------------------------------------------------------
 
 model Child {
@@ -166,7 +166,7 @@ model Consent {
 }
 
 // ------------------------------------------------------
-// 3. Crecimiento
+// 3. Growth and Anthropometry
 // ------------------------------------------------------
 
 model Checkup {
@@ -235,7 +235,7 @@ model FeedingLog {
 }
 
 // ------------------------------------------------------
-// 4. Alertas y Seguimiento
+// 4. Alerts and Follow-ups
 // ------------------------------------------------------
 
 model Alert {
@@ -305,7 +305,7 @@ model Message {
 }
 
 // ------------------------------------------------------
-// 5. Avisos
+// 5. Notifications and Reminders
 // ------------------------------------------------------
 
 model Reminder {
@@ -337,7 +337,7 @@ model Notification {
 }
 
 // ------------------------------------------------------
-// 6. Contenido y Auditoría
+// 6. Educational Content and Audit
 // ------------------------------------------------------
 
 model EducationalContent {
@@ -367,7 +367,7 @@ model AuditLog {
 }
 
 // ------------------------------------------------------
-// 7. Infraestructura (NK-13, NK-14, NK-36)
+// 7. Infrastructure (NK-13, NK-14, NK-36)
 // ------------------------------------------------------
 
 model RefreshToken {
