@@ -33,7 +33,8 @@ jobs:
     env:
       NODE_ENV: test
       PORT: 3000
-      DATABASE_URL: postgresql://nutrikids:nutrikids@localhost:5432/nutrikids?schema=public
+      DIRECT_URL: postgresql://nutrikids:nutrikids@localhost:5432/nutrikids?schema=public
+      DATABASE_URL: postgresql://nutrikids_app:nutrikids_app@localhost:5432/nutrikids?schema=public
 
     steps:
       - name: Checkout repository
@@ -64,6 +65,9 @@ jobs:
 
       - name: Run database migrations
         run: pnpm db:migrate:deploy
+
+      - name: Set app role password
+        run: PGPASSWORD=nutrikids psql -h localhost -U nutrikids -d nutrikids -c "ALTER ROLE nutrikids_app PASSWORD 'nutrikids_app'"
 
       - name: Run test suite
         run: pnpm test
