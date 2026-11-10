@@ -22,6 +22,7 @@ const professional = {
   roles: ['PROFESSIONAL'],
   specialty: 'pediatrics',
   licenseNumber: 'MSP-12345',
+  invitationCode: 'NK-PROF-2026',
 };
 
 function firstMessage(result: { success: boolean; error?: { issues: { message: string }[] } }) {
@@ -35,7 +36,7 @@ describe('RegisterInputSchema', () => {
     expect(result.data?.email).toBe('ana@correo.com');
   });
 
-  it('acepta un profesional con especialidad y licencia', () => {
+  it('acepta un profesional con especialidad, licencia y código de invitación', () => {
     expect(RegisterInputSchema.safeParse(professional).success).toBe(true);
   });
 
@@ -46,17 +47,24 @@ describe('RegisterInputSchema', () => {
     ).toBe(true);
   });
 
-  it('exige especialidad y licencia a los profesionales', () => {
+  it('exige especialidad, licencia y código de invitación a los profesionales', () => {
     const result = RegisterInputSchema.safeParse({ ...caregiver, roles: ['PROFESSIONAL'] });
     expect(result.success).toBe(false);
     const paths = result.error?.issues.map((i) => i.path.join('.'));
-    expect(paths).toEqual(expect.arrayContaining(['specialty', 'licenseNumber']));
+    expect(paths).toEqual(expect.arrayContaining(['specialty', 'licenseNumber', 'invitationCode']));
   });
 
-  it('rechaza especialidad o licencia en un cuidador', () => {
+  it('rechaza especialidad, licencia o código de invitación en un cuidador', () => {
     const result = RegisterInputSchema.safeParse({ ...caregiver, specialty: 'nursing' });
     expect(result.success).toBe(false);
     expect(firstMessage(result)).toBe('Solo los profesionales tienen especialidad');
+
+    const withCode = RegisterInputSchema.safeParse({
+      ...caregiver,
+      invitationCode: 'NK-PROF-2026',
+    });
+    expect(withCode.success).toBe(false);
+    expect(firstMessage(withCode)).toBe('Solo los profesionales usan código de invitación');
   });
 
   it('rechaza perfiles vacíos o repetidos', () => {

@@ -3,7 +3,7 @@ import { EmailSchema, UuidSchema, requiredText } from './common.js';
 import { SpecialtySchema, UserRoleSchema } from './enums.js';
 
 /**
- * Autenticación. Los esquemas de entrada son estrictos: cualquier
+ * Autenticación (RF-01, RT-06). Los esquemas de entrada son estrictos: cualquier
  * campo desconocido se rechaza. Los de salida son una lista blanca de campos públicos.
  */
 
@@ -18,7 +18,9 @@ const PhoneSchema = z
 const NewPasswordSchema = z
   .string()
   .min(PASSWORD_MIN, { error: `La contraseña debe tener al menos ${PASSWORD_MIN} caracteres` })
-  .max(PASSWORD_MAX, { error: `La contraseña debe tener como máximo ${PASSWORD_MAX} caracteres` });
+  .max(PASSWORD_MAX, {
+    error: `La contraseña debe tener como máximo ${PASSWORD_MAX} caracteres`,
+  });
 
 // ---------- Entrada ----------
 
@@ -38,6 +40,7 @@ export const RegisterInputSchema = z
     phone: PhoneSchema.optional(),
     specialty: SpecialtySchema.optional(),
     licenseNumber: requiredText(50).optional(),
+    invitationCode: requiredText(64).optional(),
   })
   .superRefine((value, ctx) => {
     const isProfessional = value.roles.includes('PROFESSIONAL');
@@ -56,6 +59,13 @@ export const RegisterInputSchema = z
           message: 'El número de licencia es obligatorio para profesionales',
         });
       }
+      if (!value.invitationCode) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['invitationCode'],
+          message: 'El código de invitación es obligatorio para profesionales',
+        });
+      }
     } else {
       if (value.specialty) {
         ctx.addIssue({
@@ -69,6 +79,13 @@ export const RegisterInputSchema = z
           code: 'custom',
           path: ['licenseNumber'],
           message: 'Solo los profesionales tienen número de licencia',
+        });
+      }
+      if (value.invitationCode) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['invitationCode'],
+          message: 'Solo los profesionales usan código de invitación',
         });
       }
     }
@@ -104,6 +121,17 @@ export const RefreshInputSchema = z.strictObject({ refreshToken: RefreshTokenSch
 
 export const LogoutInputSchema = z.strictObject({ refreshToken: RefreshTokenSchema });
 
+/** Solicitud de recuperación de contraseña (`POST /auth/forgot-password`). */
+export const ForgotPasswordInputSchema = z.strictObject({
+  email: EmailSchema,
+});
+
+/** Restablecimiento de contraseña con token de un solo uso (`POST /auth/reset-password`). */
+export const ResetPasswordInputSchema = z.strictObject({
+  token: z.string().min(1, { error: 'Falta el token de recuperación' }),
+  newPassword: NewPasswordSchema,
+});
+
 // ---------- Salida ----------
 
 /** Usuario autenticado. Nunca incluye hash de contraseña ni datos del segundo factor. */
@@ -132,9 +160,16 @@ export const AuthResponseSchema = z.discriminatedUnion('requiresTwoFactor', [
   }),
 ]);
 
+export const ForgotPasswordResponseSchema = z.object({
+  message: z.string(),
+});
+
 export type RegisterInput = z.infer<typeof RegisterInputSchema>;
 export type LoginInput = z.infer<typeof LoginInputSchema>;
 export type RefreshInput = z.infer<typeof RefreshInputSchema>;
 export type LogoutInput = z.infer<typeof LogoutInputSchema>;
+export type ForgotPasswordInput = z.infer<typeof ForgotPasswordInputSchema>;
+export type ResetPasswordInput = z.infer<typeof ResetPasswordInputSchema>;
 export type AuthUser = z.infer<typeof AuthUserSchema>;
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
+export type ForgotPasswordResponse = z.infer<typeof ForgotPasswordResponseSchema>;
