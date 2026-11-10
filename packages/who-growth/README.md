@@ -13,6 +13,8 @@ Biblioteca TypeScript pura (sin Node ni React Native) con el cálculo de z-score
 | `edadEnMeses(nacimiento, control)`               | Meses cumplidos (`YYYY-MM-DD` o `Date`, en UTC)                 |
 | `ajustarLongitudTalla(valor, medidoEn, tablaEn)` | Corrección de 0,7 cm entre longitud (acostado) y talla (de pie) |
 | `clasificar(zs, puntosCorte?)`                   | Categorías de `riesgo_t`, la principal y si hay alerta          |
+| `obtenerLMS(indicador, sexo, x, posicion?)`      | Parámetros LMS de referencia OMS 2006 (sin conexión)            |
+| `WHO_REFERENCE_VERSION`                          | Versión de referencia (`'WHO 2006'`)                            |
 
 `calcularZ` devuelve el z de Cole sin el ajuste de la OMS para |z| > 3.
 

@@ -114,6 +114,7 @@ export const WFH_FEMALE: FilaLMS[] = [
   { x: 119.5, l: -0.3833, m: 22.6012, s: 0.09808 },
   { x: 120.0, l: -0.3833, m: 22.8173, s: 0.09828 },
 ];
+
 /** Peso para la talla (P/T, de pie 65 a 120 cm) — Niños — OMS 2006 */
 export const WFH_MALE: FilaLMS[] = [
   { x: 65.0, l: -0.3521, m: 7.4327, s: 0.08217 },

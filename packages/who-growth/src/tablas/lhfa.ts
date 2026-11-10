@@ -52,6 +52,7 @@ export const LHFA_FEMALE: FilaLMS[] = [
   { x: 59.0, l: 1.0, m: 108.8948, s: 0.04334 },
   { x: 60.0, l: 1.0, m: 109.4233, s: 0.04347 },
 ];
+
 /** Longitud/Talla para la edad (T/E) — Niños (12 a 60 meses) — OMS 2006 */
 export const LHFA_MALE: FilaLMS[] = [
   { x: 12.0, l: 1.0, m: 75.7488, s: 0.03137 },

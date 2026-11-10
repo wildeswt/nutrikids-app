@@ -52,6 +52,7 @@ export const BFA_FEMALE: FilaLMS[] = [
   { x: 59.0, l: -0.5684, m: 15.2698, s: 0.0975 },
   { x: 60.0, l: -0.5684, m: 15.2747, s: 0.09789 },
 ];
+
 /** IMC para la edad (IMC/E) — Niños (12 a 60 meses) — OMS 2006 */
 export const BFA_MALE: FilaLMS[] = [
   { x: 12.0, l: -0.4115, m: 16.7981, s: 0.08009 },

@@ -34,7 +34,12 @@ export const AlertStatusSchema = z.enum([
 ]);
 
 /** Perfil de la cuenta (una cuenta puede tener ambos). No es un enum de la BD. */
-export const UserRoleSchema = z.enum(['CAREGIVER', 'PROFESSIONAL']);
+export const USER_ROLES = {
+  CAREGIVER: 'CAREGIVER',
+  PROFESSIONAL: 'PROFESSIONAL',
+} as const;
+
+export const UserRoleSchema = z.enum([USER_ROLES.CAREGIVER, USER_ROLES.PROFESSIONAL]);
 
 /** Especialidad del profesional (valor canónico en inglés; la BD también admite español). */
 export const SpecialtySchema = z.enum(['nursing', 'nutrition', 'pediatrics']);

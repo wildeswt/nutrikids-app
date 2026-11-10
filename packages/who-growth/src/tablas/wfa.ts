@@ -52,6 +52,7 @@ export const WFA_FEMALE: FilaLMS[] = [
   { x: 59.0, l: -0.3505, m: 18.0445, s: 0.14748 },
   { x: 60.0, l: -0.3518, m: 18.2193, s: 0.14821 },
 ];
+
 /** Peso para la edad (P/E) — Niños (12 a 60 meses) — OMS 2006 */
 export const WFA_MALE: FilaLMS[] = [
   { x: 12.0, l: 0.0644, m: 9.6479, s: 0.10925 },

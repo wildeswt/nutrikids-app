@@ -154,6 +154,7 @@ export const WFLH_FEMALE: FilaLMS[] = [
   { x: 119.5, l: -0.3833, m: 22.6012, s: 0.09808 },
   { x: 120.0, l: -0.3833, m: 22.8173, s: 0.09828 },
 ];
+
 /** Peso para la longitud/talla combinado (45 a 120 cm) — Niños — OMS 2006 */
 export const WFLH_MALE: FilaLMS[] = [
   { x: 45.0, l: -0.3521, m: 2.441, s: 0.09182 },

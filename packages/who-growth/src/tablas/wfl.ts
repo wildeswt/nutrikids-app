@@ -134,6 +134,7 @@ export const WFL_FEMALE: FilaLMS[] = [
   { x: 109.5, l: -0.3833, m: 18.1412, s: 0.09382 },
   { x: 110.0, l: -0.3833, m: 18.3324, s: 0.09401 },
 ];
+
 /** Peso para la longitud (P/L, decúbito supino 45 a 110 cm) — Niños — OMS 2006 */
 export const WFL_MALE: FilaLMS[] = [
   { x: 45.0, l: -0.3521, m: 2.441, s: 0.09182 },

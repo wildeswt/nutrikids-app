@@ -1,20 +1,12 @@
 import type { FilaLMS } from './tablas/types.js';
-import { type PosicionMedicion } from './longitud.js';
-import {
-  WFA_FEMALE,
-  WFA_MALE,
-  LHFA_FEMALE,
-  LHFA_MALE,
-  BFA_FEMALE,
-  BFA_MALE,
-  WFL_FEMALE,
-  WFL_MALE,
-  WFH_FEMALE,
-  WFH_MALE,
-} from './tablas/index.js';
+import { WFA_FEMALE, WFA_MALE } from './tablas/wfa.js';
+import { LHFA_FEMALE, LHFA_MALE } from './tablas/lhfa.js';
+import { BFA_FEMALE, BFA_MALE } from './tablas/bfa.js';
+import { WFL_FEMALE, WFL_MALE } from './tablas/wfl.js';
+import { WFH_FEMALE, WFH_MALE } from './tablas/wfh.js';
+import type { PosicionMedicion } from './longitud.js';
 
 export * from './tablas/index.js';
-export type { PosicionMedicion };
 
 /** Versión oficial de los patrones de crecimiento infantil de la OMS. */
 export const WHO_REFERENCE_VERSION = 'WHO 2006' as const;
@@ -24,6 +16,7 @@ export type IndicadorOMS =
   'WEIGHT_FOR_AGE' | 'LENGTH_HEIGHT_FOR_AGE' | 'WEIGHT_FOR_LENGTH_HEIGHT' | 'BMI_FOR_AGE';
 
 export type SexoOMS = 'FEMALE' | 'MALE';
+export type { PosicionMedicion };
 
 function buscarEnArreglo(filas: FilaLMS[], x: number): FilaLMS | undefined {
   const xRedondeado = Math.round(x * 100) / 100;
@@ -48,53 +41,59 @@ export function obtenerLMS(
   x: number,
   posicion?: PosicionMedicion,
 ): FilaLMS {
-  let filas: FilaLMS[];
+  let filas: FilaLMS[] | undefined;
 
   switch (indicador) {
     case 'WEIGHT_FOR_AGE':
       filas = sexo === 'FEMALE' ? WFA_FEMALE : WFA_MALE;
       break;
+
     case 'LENGTH_HEIGHT_FOR_AGE':
       filas = sexo === 'FEMALE' ? LHFA_FEMALE : LHFA_MALE;
       break;
+
     case 'BMI_FOR_AGE':
       filas = sexo === 'FEMALE' ? BFA_FEMALE : BFA_MALE;
       break;
+
     case 'WEIGHT_FOR_LENGTH_HEIGHT':
       if (posicion === 'acostado') {
         filas = sexo === 'FEMALE' ? WFL_FEMALE : WFL_MALE;
       } else if (posicion === 'de_pie') {
         filas = sexo === 'FEMALE' ? WFH_FEMALE : WFH_MALE;
       } else {
-        filas =
-          x < 87
-            ? sexo === 'FEMALE'
-              ? WFL_FEMALE
-              : WFL_MALE
-            : sexo === 'FEMALE'
-              ? WFH_FEMALE
-              : WFH_MALE;
+        if (x < 87) {
+          filas = sexo === 'FEMALE' ? WFL_FEMALE : WFL_MALE;
+        } else {
+          filas = sexo === 'FEMALE' ? WFH_FEMALE : WFH_MALE;
+        }
       }
       break;
+
     default:
       throw new RangeError(`Indicador desconocido: ${indicador}`);
   }
 
   const resultado = buscarEnArreglo(filas, x);
-  if (resultado) return resultado;
+  if (resultado) {
+    return resultado;
+  }
 
-  // Fallback para WEIGHT_FOR_LENGTH_HEIGHT: si no se encontró, buscar en la otra tabla
+  // Fallback para WEIGHT_FOR_LENGTH_HEIGHT: si no se encontró en WFL/WFH inicial, buscar en la otra tabla
   if (indicador === 'WEIGHT_FOR_LENGTH_HEIGHT') {
-    const isWfl = filas === (sexo === 'FEMALE' ? WFL_FEMALE : WFL_MALE);
-    const fallbackFilas = isWfl
-      ? sexo === 'FEMALE'
-        ? WFH_FEMALE
-        : WFH_MALE
-      : sexo === 'FEMALE'
-        ? WFL_FEMALE
-        : WFL_MALE;
+    const fallbackFilas =
+      filas === (sexo === 'FEMALE' ? WFL_FEMALE : WFL_MALE)
+        ? sexo === 'FEMALE'
+          ? WFH_FEMALE
+          : WFH_MALE
+        : sexo === 'FEMALE'
+          ? WFL_FEMALE
+          : WFL_MALE;
+
     const fallbackResultado = buscarEnArreglo(fallbackFilas, x);
-    if (fallbackResultado) return fallbackResultado;
+    if (fallbackResultado) {
+      return fallbackResultado;
+    }
   }
 
   throw new RangeError(
