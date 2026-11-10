@@ -3,6 +3,8 @@ import {
   SpecialtySchema,
   type AuthResponse,
   type LoginInput,
+  type LogoutInput,
+  type RefreshInput,
   type RegisterInput,
   type Specialty,
   type UserRole,
@@ -12,6 +14,7 @@ import { hashPassword, verifyDummyPassword, verifyPassword } from '../lib/passwo
 import { prisma } from '../lib/prisma.js';
 import {
   generateRefreshToken,
+  hashRefreshToken,
   isValidProfessionalInviteCode,
   signAccessToken,
 } from './token.service.js';
@@ -40,6 +43,23 @@ function normalizeSpecialty(raw: string | null | undefined): Specialty | null {
   if (mapped) return mapped;
   const parsed = SpecialtySchema.safeParse(raw);
   return parsed.success ? parsed.data : null;
+}
+
+function resolveUserRoles(user: {
+  caregiver: { userId: string } | null;
+  professional: { userId: string; specialty: string } | null;
+}): UserRole[] {
+  const roles: UserRole[] = [];
+  if (user.caregiver) {
+    roles.push('CAREGIVER');
+  }
+  if (user.professional) {
+    roles.push('PROFESSIONAL');
+  }
+  if (roles.length === 0) {
+    throw HttpError.forbidden('La cuenta no tiene un perfil asignado');
+  }
+  return roles;
 }
 
 /**
@@ -203,17 +223,7 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
     throw HttpError.forbidden('La cuenta está suspendida');
   }
 
-  const roles: UserRole[] = [];
-  if (user.caregiver) {
-    roles.push('CAREGIVER');
-  }
-  if (user.professional) {
-    roles.push('PROFESSIONAL');
-  }
-  if (roles.length === 0) {
-    throw HttpError.forbidden('La cuenta no tiene un perfil asignado');
-  }
-
+  const roles = resolveUserRoles(user);
   const specialty = normalizeSpecialty(user.professional?.specialty);
   const { refreshToken, tokenHash, expiresAt } = generateRefreshToken();
 
@@ -244,5 +254,126 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
       roles,
       specialty,
     },
+  });
+}
+
+/**
+ * Renueva la sesión con rotación de refresh token:
+ * - Si el token no existe o venció, responde 401.
+ * - Si el token ya estaba revocado (reutilización), revoca todas las sesiones activas
+ *   del usuario por seguridad y responde 401.
+ * - En caso válido, revoca el token actual de forma atómica y emite un par nuevo.
+ */
+export async function refreshUserSession(input: RefreshInput): Promise<AuthResponse> {
+  const incomingHash = hashRefreshToken(input.refreshToken);
+
+  const stored = await prisma.refreshToken.findUnique({
+    where: { tokenHash: incomingHash },
+    select: {
+      id: true,
+      userId: true,
+      expiresAt: true,
+      revokedAt: true,
+      user: {
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          status: true,
+          caregiver: { select: { userId: true } },
+          professional: { select: { userId: true, specialty: true } },
+        },
+      },
+    },
+  });
+
+  if (!stored) {
+    throw HttpError.unauthorized('Token de renovación inválido');
+  }
+
+  const now = new Date();
+
+  if (stored.revokedAt !== null) {
+    await prisma.refreshToken.updateMany({
+      where: { userId: stored.userId, revokedAt: null },
+      data: { revokedAt: now },
+    });
+    throw HttpError.unauthorized(
+      'Token de renovación reutilizado; se revocaron las sesiones activas',
+    );
+  }
+
+  if (stored.expiresAt.getTime() <= now.getTime()) {
+    throw HttpError.unauthorized('Token de renovación expirado');
+  }
+
+  if (stored.user.status !== 'active') {
+    throw HttpError.forbidden('La cuenta está suspendida');
+  }
+
+  const roles = resolveUserRoles(stored.user);
+  const specialty = normalizeSpecialty(stored.user.professional?.specialty);
+  const {
+    refreshToken: newRefreshToken,
+    tokenHash: newTokenHash,
+    expiresAt: newExpiresAt,
+  } = generateRefreshToken();
+
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.refreshToken.updateMany({
+      where: { id: stored.id, revokedAt: null },
+      data: { revokedAt: now },
+    });
+
+    if (updated.count === 0) {
+      await tx.refreshToken.updateMany({
+        where: { userId: stored.userId, revokedAt: null },
+        data: { revokedAt: now },
+      });
+      throw HttpError.unauthorized(
+        'Token de renovación reutilizado; se revocaron las sesiones activas',
+      );
+    }
+
+    await tx.refreshToken.create({
+      data: {
+        userId: stored.user.id,
+        tokenHash: newTokenHash,
+        expiresAt: newExpiresAt,
+      },
+    });
+  });
+
+  const { accessToken, expiresIn } = await signAccessToken({
+    sub: stored.user.id,
+    roles,
+    specialty,
+  });
+
+  return AuthResponseSchema.parse({
+    requiresTwoFactor: false,
+    accessToken,
+    refreshToken: newRefreshToken,
+    expiresIn,
+    user: {
+      id: stored.user.id,
+      email: stored.user.email,
+      firstName: stored.user.firstName,
+      lastName: stored.user.lastName,
+      roles,
+      specialty,
+    },
+  });
+}
+
+/**
+ * Cierra la sesión revocando el refresh token indicado (operación idempotente).
+ */
+export async function logoutUser(input: LogoutInput): Promise<void> {
+  const tokenHash = hashRefreshToken(input.refreshToken);
+  await prisma.refreshToken.updateMany({
+    where: { tokenHash, revokedAt: null },
+    data: { revokedAt: new Date() },
   });
 }
