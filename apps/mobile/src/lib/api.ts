@@ -1,18 +1,32 @@
 import {
   AuthResponseSchema,
   ErrorResponseSchema,
+  ForgotPasswordInputSchema,
+  ForgotPasswordResponseSchema,
   HealthResponseSchema,
+  LoginInputSchema,
+  RegisterInputSchema,
+  ResetPasswordInputSchema,
+  type AuthResponse,
   type ErrorResponse,
+  type ForgotPasswordInput,
+  type ForgotPasswordResponse,
   type HealthResponse,
+  type LoginInput,
+  type RegisterInput,
+  type ResetPasswordInput,
 } from '@nutrikids/shared';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { AuthApiError, resolveHttpAuthError } from './auth-errors.js';
 import {
   clearStoredSession,
   getStoredSession,
   updateStoredTokens,
   type StoredSession,
 } from './session-storage.js';
+
+export { AuthApiError } from './auth-errors.js';
 
 const DEFAULT_API_PORT = '3000';
 
@@ -195,6 +209,182 @@ export async function logoutSessionRequest(refreshToken: string): Promise<void> 
     });
   } catch {
     // Best effort: do not block local sign out if network is down.
+  }
+}
+
+/**
+ * Dispatches a POST /auth/login request.
+ * Returns AuthResponse: either requiresTwoFactor: true (with no tokens) or requiresTwoFactor: false (with tokens and user).
+ */
+export async function loginRequest(input: LoginInput): Promise<AuthResponse> {
+  const validated = LoginInputSchema.parse(input);
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(validated),
+    });
+
+    const data: unknown = await response.json();
+    if (!response.ok) {
+      const message = resolveHttpAuthError(
+        response.status,
+        data as {
+          message?: string;
+          issues?: Array<{ path?: Array<string | number>; message: string }>;
+        },
+      );
+      throw new AuthApiError(message, { status: response.status });
+    }
+
+    return AuthResponseSchema.parse(data);
+  } catch (err) {
+    if (err instanceof AuthApiError) throw err;
+    if (err instanceof Error) {
+      const isNetwork = err.name === 'AbortError' || err.message.toLowerCase().includes('network');
+      throw new AuthApiError(
+        isNetwork
+          ? 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
+          : err.message,
+        { cause: err },
+      );
+    }
+    throw new AuthApiError('Error inesperado al iniciar sesión.');
+  }
+}
+
+/**
+ * Dispatches a POST /auth/register request.
+ * Creates the user account and returns the initial AuthResponse.
+ */
+export async function registerRequest(input: RegisterInput): Promise<AuthResponse> {
+  const validated = RegisterInputSchema.parse(input);
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(validated),
+    });
+
+    const data: unknown = await response.json();
+    if (!response.ok) {
+      const message = resolveHttpAuthError(
+        response.status,
+        data as {
+          message?: string;
+          issues?: Array<{ path?: Array<string | number>; message: string }>;
+        },
+      );
+      throw new AuthApiError(message, { status: response.status });
+    }
+
+    return AuthResponseSchema.parse(data);
+  } catch (err) {
+    if (err instanceof AuthApiError) throw err;
+    if (err instanceof Error) {
+      const isNetwork = err.name === 'AbortError' || err.message.toLowerCase().includes('network');
+      throw new AuthApiError(
+        isNetwork
+          ? 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
+          : err.message,
+        { cause: err },
+      );
+    }
+    throw new AuthApiError('Error inesperado al registrar la cuenta.');
+  }
+}
+
+/**
+ * Dispatches a POST /auth/forgot-password request.
+ * Always returns 202 with an acknowledgment message.
+ */
+export async function forgotPasswordRequest(
+  input: ForgotPasswordInput,
+): Promise<ForgotPasswordResponse> {
+  const validated = ForgotPasswordInputSchema.parse(input);
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(validated),
+    });
+
+    const data: unknown = await response.json();
+    if (!response.ok) {
+      const message = resolveHttpAuthError(
+        response.status,
+        data as {
+          message?: string;
+          issues?: Array<{ path?: Array<string | number>; message: string }>;
+        },
+      );
+      throw new AuthApiError(message, { status: response.status });
+    }
+
+    return ForgotPasswordResponseSchema.parse(data);
+  } catch (err) {
+    if (err instanceof AuthApiError) throw err;
+    if (err instanceof Error) {
+      const isNetwork = err.name === 'AbortError' || err.message.toLowerCase().includes('network');
+      throw new AuthApiError(
+        isNetwork
+          ? 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
+          : err.message,
+        { cause: err },
+      );
+    }
+    throw new AuthApiError('Error inesperado al solicitar restablecimiento de contraseña.');
+  }
+}
+
+/**
+ * Dispatches a POST /auth/reset-password request.
+ * Resets user password using single-use token and invalidates active refresh tokens.
+ */
+export async function resetPasswordRequest(input: ResetPasswordInput): Promise<void> {
+  const validated = ResetPasswordInputSchema.parse(input);
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(validated),
+    });
+
+    if (!response.ok) {
+      const data: unknown = await response.json().catch(() => ({}));
+      const message = resolveHttpAuthError(
+        response.status,
+        data as {
+          message?: string;
+          issues?: Array<{ path?: Array<string | number>; message: string }>;
+        },
+      );
+      throw new AuthApiError(message, { status: response.status });
+    }
+  } catch (err) {
+    if (err instanceof AuthApiError) throw err;
+    if (err instanceof Error) {
+      const isNetwork = err.name === 'AbortError' || err.message.toLowerCase().includes('network');
+      throw new AuthApiError(
+        isNetwork
+          ? 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
+          : err.message,
+        { cause: err },
+      );
+    }
+    throw new AuthApiError('Error inesperado al restablecer la contraseña.');
   }
 }
 

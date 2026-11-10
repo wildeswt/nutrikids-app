@@ -6,6 +6,9 @@ export const APP_ROUTES = {
   AUTH: {
     GROUP: '(auth)',
     LOGIN: '/(auth)/login' as const,
+    REGISTER: '/(auth)/register' as const,
+    FORGOT_PASSWORD: '/(auth)/forgot-password' as const,
+    RESET_PASSWORD: '/(auth)/reset-password' as const,
   },
   CAREGIVER: {
     GROUP: '(caregiver)',

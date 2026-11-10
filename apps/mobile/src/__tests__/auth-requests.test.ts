@@ -1,0 +1,192 @@
+import { USER_ROLES } from '@nutrikids/shared';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('expo-secure-store', () => ({
+  isAvailableAsync: vi.fn(async () => true),
+  getItemAsync: vi.fn(async () => null),
+  setItemAsync: vi.fn(async () => {}),
+  deleteItemAsync: vi.fn(async () => {}),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 1,
+}));
+
+vi.mock('expo-constants', () => ({
+  default: {
+    expoConfig: {},
+  },
+}));
+
+import {
+  AuthApiError,
+  forgotPasswordRequest,
+  loginRequest,
+  registerRequest,
+  resetPasswordRequest,
+} from '../lib/api.js';
+
+describe('auth request helpers in lib/api.ts', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('loginRequest', () => {
+    it('successfully logs in and returns tokens with user payload', async () => {
+      const mockResponse = {
+        requiresTwoFactor: false,
+        accessToken: 'access-jwt',
+        refreshToken: 'refresh-jwt',
+        expiresIn: 3600,
+        user: {
+          id: '11111111-1111-4111-8111-111111111111',
+          email: 'user@example.com',
+          firstName: 'Ana',
+          lastName: 'Gomez',
+          roles: [USER_ROLES.CAREGIVER],
+          specialty: null,
+        },
+      };
+
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(mockResponse), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      vi.stubGlobal('fetch', mockFetch);
+
+      const result = await loginRequest({
+        email: 'user@example.com',
+        password: 'Password123!',
+      });
+
+      expect(result.requiresTwoFactor).toBe(false);
+      if (!result.requiresTwoFactor) {
+        expect(result.accessToken).toBe('access-jwt');
+        expect(result.user.email).toBe('user@example.com');
+      }
+    });
+
+    it('returns requiresTwoFactor: true without tokens for two-factor challenge', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ requiresTwoFactor: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      vi.stubGlobal('fetch', mockFetch);
+
+      const result = await loginRequest({
+        email: 'dr.pediatra@example.com',
+        password: 'Password123!',
+      });
+
+      expect(result.requiresTwoFactor).toBe(true);
+    });
+
+    it('throws AuthApiError with clear message on 401', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ message: 'Credenciales inválidas' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      vi.stubGlobal('fetch', mockFetch);
+
+      await expect(
+        loginRequest({
+          email: 'wrong@example.com',
+          password: 'WrongPassword!',
+        }),
+      ).rejects.toThrow(AuthApiError);
+    });
+  });
+
+  describe('registerRequest', () => {
+    it('successfully registers caregiver account', async () => {
+      const mockResponse = {
+        requiresTwoFactor: false,
+        accessToken: 'access-jwt',
+        refreshToken: 'refresh-jwt',
+        expiresIn: 3600,
+        user: {
+          id: '11111111-1111-4111-8111-111111111111',
+          email: 'newuser@example.com',
+          firstName: 'Carlos',
+          lastName: 'Mendez',
+          roles: [USER_ROLES.CAREGIVER],
+          specialty: null,
+        },
+      };
+
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(mockResponse), {
+          status: 201,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      vi.stubGlobal('fetch', mockFetch);
+
+      const result = await registerRequest({
+        email: 'newuser@example.com',
+        password: 'Password123!',
+        firstName: 'Carlos',
+        lastName: 'Mendez',
+        roles: [USER_ROLES.CAREGIVER],
+      });
+
+      expect(result.requiresTwoFactor).toBe(false);
+      if (!result.requiresTwoFactor) {
+        expect(result.user.email).toBe('newuser@example.com');
+      }
+    });
+
+    it('throws AuthApiError with conflict message on 409', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ message: 'El correo electrónico ya está registrado' }), {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      vi.stubGlobal('fetch', mockFetch);
+
+      await expect(
+        registerRequest({
+          email: 'existing@example.com',
+          password: 'Password123!',
+          firstName: 'Ana',
+          lastName: 'Perez',
+          roles: [USER_ROLES.CAREGIVER],
+        }),
+      ).rejects.toThrow('El correo electrónico ya está registrado');
+    });
+  });
+
+  describe('forgotPasswordRequest and resetPasswordRequest', () => {
+    it('dispatches forgot-password request successfully', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            message:
+              'Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña',
+          }),
+          { status: 202, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+      vi.stubGlobal('fetch', mockFetch);
+
+      const result = await forgotPasswordRequest({ email: 'user@example.com' });
+      expect(result.message).toContain('instrucciones');
+    });
+
+    it('dispatches reset-password request successfully', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+      vi.stubGlobal('fetch', mockFetch);
+
+      await expect(
+        resetPasswordRequest({
+          token: 'valid-reset-token-12345',
+          newPassword: 'NewPassword123!',
+        }),
+      ).resolves.toBeUndefined();
+    });
+  });
+});
