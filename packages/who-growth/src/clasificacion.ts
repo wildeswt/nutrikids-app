@@ -91,10 +91,7 @@ function definido(z: number | null | undefined): z is number {
   return typeof z === 'number' && Number.isFinite(z);
 }
 
-export function clasificar(
-  zs: ZScores,
-  puntosCorte: Partial<PuntosCorte> = {},
-): Clasificacion {
+export function clasificar(zs: ZScores, puntosCorte: Partial<PuntosCorte> = {}): Clasificacion {
   const pc: PuntosCorte = { ...PUNTOS_CORTE_POR_DEFECTO, ...puntosCorte };
   const { zPE, zTE, zPT, zIMCE } = zs;
   const encontradas = new Set<RiesgoT>();
@@ -112,8 +109,7 @@ export function clasificar(
     else if (zTE < pc.retrasoTE) encontradas.add('retraso_crecimiento');
   }
 
-  const sobrepesoPorPT =
-    pc.criterioSobrepeso !== 'IMCE' && definido(zPT) && zPT > pc.sobrepesoPT;
+  const sobrepesoPorPT = pc.criterioSobrepeso !== 'IMCE' && definido(zPT) && zPT > pc.sobrepesoPT;
   const sobrepesoPorIMCE =
     pc.criterioSobrepeso !== 'PT' && definido(zIMCE) && zIMCE > pc.sobrepesoIMCE;
   if (sobrepesoPorPT || sobrepesoPorIMCE) encontradas.add('sobrepeso');

@@ -21,7 +21,9 @@ export function ajustarLongitudTalla(
   }
   if (medidoEn === tablaEn) return valorCm;
   const ajustado =
-    medidoEn === 'de_pie' ? valorCm + CORRECCION_LONGITUD_TALLA_CM : valorCm - CORRECCION_LONGITUD_TALLA_CM;
+    medidoEn === 'de_pie'
+      ? valorCm + CORRECCION_LONGITUD_TALLA_CM
+      : valorCm - CORRECCION_LONGITUD_TALLA_CM;
   // Redondeo a 1 decimal evita ruido binario (97.0 + 0.7 = 97.7).
   return Math.round(ajustado * 10) / 10;
 }

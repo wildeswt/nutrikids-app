@@ -15,7 +15,7 @@ describe('edadEnMeses', () => {
   });
 
   it('cruza años', () => {
-    expect(edadEnMeses('2021-11-20', '2024-02-25')).toBe(26);
+    expect(edadEnMeses('2021-11-20', '2024-02-25')).toBe(27);
   });
 
   it('nacido a fin de mes', () => {
