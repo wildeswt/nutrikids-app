@@ -15,6 +15,7 @@ export default defineConfig({
   },
   datasource: {
     url:
+      process.env.DIRECT_URL ??
       process.env.DATABASE_URL ??
       'postgresql://nutrikids:nutrikids@localhost:5433/nutrikids?schema=public',
   },
