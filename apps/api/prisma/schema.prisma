@@ -7,31 +7,392 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Sex {
+  FEMALE
+  MALE
+}
+
+enum Indicator {
+  WEIGHT_FOR_AGE
+  LENGTH_HEIGHT_FOR_AGE
+  WEIGHT_FOR_LENGTH_HEIGHT
+  BMI_FOR_AGE
+}
+
+enum Position {
+  RECUMBENT
+  STANDING
+}
+
+enum Origin {
+  CAREGIVER
+  PROFESSIONAL
+}
+
+enum Risk {
+  UNDERWEIGHT
+  STUNTING
+  WASTING
+  OVERWEIGHT
+  OBESITY
+}
+
+enum AlertStatus {
+  GENERATED
+  PENDING_REVIEW
+  REVIEWED
+  FOLLOW_UP_ESTABLISHED
+}
+
+// ------------------------------------------------------
+// 1. Identidad y Acceso
+// ------------------------------------------------------
+
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique
-  name         String
-  passwordHash String   @map("password_hash")
-  children     Child[]
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id                   String              @id @default(uuid()) @db.Uuid
+  email                String              @unique
+  passwordHash         String              @map("password_hash")
+  firstName            String              @map("first_name")
+  lastName             String              @map("last_name")
+  status               String              @default("active")
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  caregiver            Caregiver?
+  professional         Professional?
+  recordedCheckups     Checkup[]           @relation("RecordedByUser")
+  alertStatusChanges   AlertHistory[]      @relation("StatusChangedByUser")
+  sentMessages         Message[]           @relation("SentMessages")
+  receivedMessages     Message[]           @relation("ReceivedMessages")
+  notifications        Notification[]
+  auditLogs            AuditLog[]
+  refreshTokens        RefreshToken[]
+  pushDevices          PushDevice[]
 
   @@map("users")
 }
 
-model Child {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String
-  birthDate DateTime @map("birth_date") @db.Date
-  weightKg  Float?   @map("weight_kg")
-  heightCm  Float?   @map("height_cm")
-  allergies String[] @default([])
-  parentId  String   @map("parent_id") @db.Uuid
-  parent    User     @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+model Caregiver {
+  userId               String              @id @map("user_id") @db.Uuid
+  phone                String?             @map("phone")
 
-  @@index([parentId])
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caregiverChildren    CaregiverChild[]
+  consents             Consent[]
+
+  @@map("caregivers")
+}
+
+model Professional {
+  userId               String              @id @map("user_id") @db.Uuid
+  specialty            String              @map("specialty")
+  licenseNumber        String              @unique @map("license_number")
+  totpSecretEnc        String?             @map("totp_secret_enc")
+  totpEnabledAt        DateTime?           @map("totp_enabled_at") @db.Timestamptz(3)
+  recoveryCodeHashes   String[]            @default([]) @map("recovery_code_hashes")
+
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  professionalChildren ProfessionalChild[]
+  followUps            FollowUp[]
+
+  @@map("professionals")
+}
+
+// ------------------------------------------------------
+// 2. Niño y Vínculos
+// ------------------------------------------------------
+
+model Child {
+  id                   String              @id @default(uuid()) @db.Uuid
+  firstName            String              @map("first_name")
+  lastName             String              @map("last_name")
+  birthDate            DateTime            @map("birth_date") @db.Date
+  sex                  Sex
+
+  caregiverChildren    CaregiverChild[]
+  professionalChildren ProfessionalChild[]
+  consents             Consent[]
+  checkups             Checkup[]
+  feedingLogs          FeedingLog[]
+  followUps            FollowUp[]
+  reminders            Reminder[]
+
   @@map("children")
 }
 
+model CaregiverChild {
+  caregiverId           String             @map("caregiver_id") @db.Uuid
+  childId               String             @map("child_id") @db.Uuid
+  relationship          String             @map("relationship")
+  isLegalRepresentative Boolean            @default(false) @map("is_legal_representative")
+
+  caregiver             Caregiver          @relation(fields: [caregiverId], references: [userId], onDelete: Cascade)
+  child                 Child              @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@id([caregiverId, childId])
+  @@index([childId])
+  @@map("caregiver_children")
+}
+
+model ProfessionalChild {
+  id                   String              @id @default(uuid()) @db.Uuid
+  childId              String              @map("child_id") @db.Uuid
+  professionalId       String              @map("professional_id") @db.Uuid
+  startDate            DateTime            @default(now()) @map("start_date") @db.Date
+  endDate              DateTime?           @map("end_date") @db.Date
+
+  child                Child               @relation(fields: [childId], references: [id], onDelete: Cascade)
+  professional         Professional        @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
+
+  @@index([childId])
+  @@index([professionalId])
+  @@map("professional_children")
+}
+
+model Consent {
+  id                   String              @id @default(uuid()) @db.Uuid
+  childId              String              @map("child_id") @db.Uuid
+  caregiverId          String              @map("caregiver_id") @db.Uuid
+  textVersion          String              @map("text_version")
+  grantedAt            DateTime            @default(now()) @map("granted_at") @db.Timestamptz(3)
+  revokedAt            DateTime?           @map("revoked_at") @db.Timestamptz(3)
+
+  child                Child               @relation(fields: [childId], references: [id], onDelete: Restrict)
+  caregiver            Caregiver           @relation(fields: [caregiverId], references: [userId], onDelete: Restrict)
+
+  @@index([childId])
+  @@index([caregiverId])
+  @@map("consents")
+}
+
+// ------------------------------------------------------
+// 3. Crecimiento
+// ------------------------------------------------------
+
+model Checkup {
+  id                   String              @id @db.Uuid
+  childId              String              @map("child_id") @db.Uuid
+  measuredAt           DateTime            @map("measured_at") @db.Timestamptz(3)
+  weightKg             Decimal             @map("weight_kg") @db.Decimal(5, 2)
+  lengthHeightCm       Decimal             @map("length_height_cm") @db.Decimal(4, 1)
+  position             Position
+  origin               Origin
+  recordedById         String              @map("recorded_by_id") @db.Uuid
+  correctedCheckupId   String?             @map("corrected_checkup_id") @db.Uuid
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  child                Child               @relation(fields: [childId], references: [id], onDelete: Cascade)
+  recordedBy           User                @relation("RecordedByUser", fields: [recordedById], references: [id], onDelete: Restrict)
+  correctedCheckup     Checkup?            @relation("CheckupCorrections", fields: [correctedCheckupId], references: [id], onDelete: Restrict)
+  corrections          Checkup[]           @relation("CheckupCorrections")
+  results              IndicatorResult[]
+
+  @@index([childId, measuredAt])
+  @@index([recordedById])
+  @@index([correctedCheckupId])
+  @@map("checkups")
+}
+
+model LmsReference {
+  indicator            Indicator
+  sex                  Sex
+  x                    Decimal             @db.Decimal(6, 2)
+  l                    Decimal             @db.Decimal(8, 4)
+  m                    Decimal             @db.Decimal(8, 4)
+  s                    Decimal             @db.Decimal(8, 5)
+
+  @@id([indicator, sex, x])
+  @@map("lms_references")
+}
+
+model IndicatorResult {
+  id                   String              @id @db.Uuid
+  checkupId            String              @map("checkup_id") @db.Uuid
+  indicator            Indicator
+  zScore               Decimal             @map("z_score") @db.Decimal(5, 2)
+  percentile           Decimal             @db.Decimal(5, 2)
+  classification       String              @map("classification")
+  referenceVersion     String              @map("reference_version")
+
+  checkup              Checkup             @relation(fields: [checkupId], references: [id], onDelete: Cascade)
+  alerts               Alert[]
+
+  @@unique([checkupId, indicator])
+  @@map("indicator_results")
+}
+
+model FeedingLog {
+  id                   String              @id @default(uuid()) @db.Uuid
+  childId              String              @map("child_id") @db.Uuid
+  logDate              DateTime            @map("log_date") @db.Date
+  mealsPerDay          Int?                @map("meals_per_day") @db.SmallInt
+  details              String?             @map("details")
+
+  child                Child               @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId])
+  @@map("feeding_logs")
+}
+
+// ------------------------------------------------------
+// 4. Alertas y Seguimiento
+// ------------------------------------------------------
+
+model Alert {
+  id                   String              @id @db.Uuid
+  indicatorResultId    String              @map("indicator_result_id") @db.Uuid
+  riskType             Risk                @map("risk_type")
+  isSevere             Boolean             @default(false) @map("is_severe")
+  status               AlertStatus         @default(GENERATED)
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  indicatorResult      IndicatorResult     @relation(fields: [indicatorResultId], references: [id], onDelete: Cascade)
+  history              AlertHistory[]
+  followUps            FollowUp[]
+
+  @@index([indicatorResultId])
+  @@index([createdAt])
+  @@map("alerts")
+}
+
+model AlertHistory {
+  id                   String              @id @default(uuid()) @db.Uuid
+  alertId              String              @map("alert_id") @db.Uuid
+  status               AlertStatus
+  changedById          String              @map("changed_by_id") @db.Uuid
+  changedAt            DateTime            @default(now()) @map("changed_at") @db.Timestamptz(3)
+
+  alert                Alert               @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  changedBy            User                @relation("StatusChangedByUser", fields: [changedById], references: [id], onDelete: Restrict)
+
+  @@index([alertId])
+  @@index([changedById])
+  @@map("alert_history")
+}
+
+model FollowUp {
+  id                   String              @id @db.Uuid
+  childId              String              @map("child_id") @db.Uuid
+  alertId              String?             @map("alert_id") @db.Uuid
+  professionalId       String              @map("professional_id") @db.Uuid
+  type                 String              @map("type")
+  details              String              @map("details")
+  nextCheckupDate      DateTime?           @map("next_checkup_date") @db.Date
+
+  child                Child               @relation(fields: [childId], references: [id], onDelete: Cascade)
+  alert                Alert?              @relation(fields: [alertId], references: [id], onDelete: SetNull)
+  professional         Professional        @relation(fields: [professionalId], references: [userId], onDelete: Restrict)
+
+  @@index([childId])
+  @@index([alertId])
+  @@index([professionalId])
+  @@map("follow_ups")
+}
+
+model Message {
+  id                   String              @id @default(uuid()) @db.Uuid
+  senderId             String              @map("sender_id") @db.Uuid
+  recipientId          String              @map("recipient_id") @db.Uuid
+  body                 String              @map("body")
+  sentAt               DateTime            @default(now()) @map("sent_at") @db.Timestamptz(3)
+
+  sender               User                @relation("SentMessages", fields: [senderId], references: [id], onDelete: Restrict)
+  recipient            User                @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Restrict)
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@map("messages")
+}
+
+// ------------------------------------------------------
+// 5. Avisos
+// ------------------------------------------------------
+
+model Reminder {
+  id                   String              @id @default(uuid()) @db.Uuid
+  childId              String              @map("child_id") @db.Uuid
+  type                 String              @map("type")
+  scheduledFor         DateTime            @map("scheduled_for") @db.Timestamptz(3)
+  status               String              @default("pending") @map("status")
+
+  child                Child               @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId])
+  @@map("reminders")
+}
+
+model Notification {
+  id                   String              @id @default(uuid()) @db.Uuid
+  userId               String              @map("user_id") @db.Uuid
+  type                 String              @map("type")
+  entityType           String              @map("entity_type")
+  entityId             String              @map("entity_id") @db.Uuid
+  sentAt               DateTime            @default(now()) @map("sent_at") @db.Timestamptz(3)
+  readAt               DateTime?           @map("read_at") @db.Timestamptz(3)
+
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+// ------------------------------------------------------
+// 6. Contenido y Auditoría
+// ------------------------------------------------------
+
+model EducationalContent {
+  id                   String              @id @default(uuid()) @db.Uuid
+  title                String              @map("title")
+  body                 String              @map("body")
+  minAgeMonths         Int                 @map("min_age_months") @db.SmallInt
+  maxAgeMonths         Int                 @map("max_age_months") @db.SmallInt
+  language             String              @default("es") @map("language")
+
+  @@map("educational_contents")
+}
+
+model AuditLog {
+  id                   String              @id @default(uuid()) @db.Uuid
+  userId               String              @map("user_id") @db.Uuid
+  action               String              @map("action")
+  entityType           String              @map("entity_type")
+  entityId             String?             @map("entity_id") @db.Uuid
+  occurredAt           DateTime            @default(now()) @map("occurred_at") @db.Timestamptz(3)
+
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([entityType, entityId, occurredAt])
+  @@map("audit_logs")
+}
+
+// ------------------------------------------------------
+// 7. Infraestructura (NK-13, NK-14, NK-36)
+// ------------------------------------------------------
+
+model RefreshToken {
+  id                   String              @id @default(uuid()) @db.Uuid
+  userId               String              @map("user_id") @db.Uuid
+  tokenHash            String              @unique @map("token_hash")
+  expiresAt            DateTime            @map("expires_at") @db.Timestamptz(3)
+  revokedAt            DateTime?           @map("revoked_at") @db.Timestamptz(3)
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model PushDevice {
+  id                   String              @id @default(uuid()) @db.Uuid
+  userId               String              @map("user_id") @db.Uuid
+  token                String              @unique @map("token")
+  platform             String              @map("platform")
+  lastSeenAt           DateTime            @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_devices")
+}
