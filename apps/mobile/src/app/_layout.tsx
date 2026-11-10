@@ -1,40 +1,26 @@
-import { USER_ROLES } from '@nutrikids/shared';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Redirect, Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { APP_ROUTES, AUTH_STATUS } from '../constants/routes.js';
+import { AUTH_STATUS } from '../constants/routes.js';
 import { AuthProvider, useAuth } from '../context/auth-context.js';
+import { resolveGuardRedirect } from '../lib/navigation-guard.js';
 
-function NavigationGuard() {
+export function NavigationGuard() {
   const { status, activeRole } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
+  const currentGroup = segments[0];
+  const redirectTarget = resolveGuardRedirect({ status, activeRole, currentGroup });
+
   useEffect(() => {
-    if (status === AUTH_STATUS.LOADING) {
-      return;
+    if (redirectTarget) {
+      router.replace(redirectTarget as never);
     }
-
-    const currentGroup = segments[0];
-    const inAuthGroup = currentGroup === APP_ROUTES.AUTH.GROUP;
-    const inCaregiverGroup = currentGroup === APP_ROUTES.CAREGIVER.GROUP;
-    const inProfessionalGroup = currentGroup === APP_ROUTES.PROFESSIONAL.GROUP;
-
-    if (status === AUTH_STATUS.UNAUTHENTICATED) {
-      if (!inAuthGroup) {
-        router.replace(APP_ROUTES.AUTH.LOGIN);
-      }
-    } else if (status === AUTH_STATUS.AUTHENTICATED) {
-      if (activeRole === USER_ROLES.CAREGIVER && !inCaregiverGroup) {
-        router.replace(APP_ROUTES.CAREGIVER.ROOT);
-      } else if (activeRole === USER_ROLES.PROFESSIONAL && !inProfessionalGroup) {
-        router.replace(APP_ROUTES.PROFESSIONAL.ROOT);
-      }
-    }
-  }, [status, activeRole, segments, router]);
+  }, [redirectTarget, router]);
 
   if (status === AUTH_STATUS.LOADING) {
     return (
@@ -42,6 +28,11 @@ function NavigationGuard() {
         <ActivityIndicator size="large" color="#16A34A" />
       </View>
     );
+  }
+
+  // Prevent flash of wrong screen by rendering Redirect synchronously before mounting
+  if (redirectTarget) {
+    return <Redirect href={redirectTarget as never} />;
   }
 
   return (

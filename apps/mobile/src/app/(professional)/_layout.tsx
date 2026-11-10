@@ -10,7 +10,7 @@ type DrawerContentProps = Parameters<
   NonNullable<React.ComponentProps<typeof Drawer>['drawerContent']>
 >[0];
 
-function CustomDrawerContent(props: DrawerContentProps) {
+export function CustomDrawerContent(props: DrawerContentProps) {
   const { user, switchRole, signOut } = useAuth();
   const hasDualRole =
     user?.roles.includes(USER_ROLES.CAREGIVER) && user?.roles.includes(USER_ROLES.PROFESSIONAL);
