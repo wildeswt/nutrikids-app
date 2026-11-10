@@ -22,6 +22,15 @@ vi.mock('expo-constants', () => ({
   },
 }));
 
+const mockLogoutSessionRequest = vi.fn().mockResolvedValue(undefined);
+
+vi.mock('../lib/api.js', () => ({
+  logoutSessionRequest: (...args: unknown[]) => mockLogoutSessionRequest(...args),
+  onSessionExpired: () => () => {},
+  onSessionUpdated: () => () => {},
+  onSessionRefreshError: () => () => {},
+}));
+
 import { AuthProvider, useAuth, type AuthContextValue } from '../context/auth-context.js';
 import {
   clearStoredSession,
@@ -111,8 +120,15 @@ describe('auth-context', () => {
     expect(updated?.user.roles).toContain(USER_ROLES.PROFESSIONAL);
   });
 
-  it('clears active session on sign out', async () => {
+  it('clears active session on sign out and revokes the latest rotated token', async () => {
     await saveStoredSession(sampleCaregiverSession);
+
+    // Simulate token rotation occurring in background storage
+    await saveStoredSession({
+      ...sampleCaregiverSession,
+      refreshToken: 'newly-rotated-refresh-token',
+    });
+
     await clearStoredSession();
 
     const { getStoredSession } = await import('../lib/session-storage.js');

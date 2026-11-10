@@ -1,7 +1,12 @@
 import { USER_ROLES, type AuthResponse, type AuthUser, type UserRole } from '@nutrikids/shared';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AUTH_STATUS, type AuthStatus } from '../constants/routes.js';
-import { logoutSessionRequest, onSessionExpired, onSessionUpdated } from '../lib/api.js';
+import {
+  logoutSessionRequest,
+  onSessionExpired,
+  onSessionRefreshError,
+  onSessionUpdated,
+} from '../lib/api.js';
 import {
   clearStoredSession,
   getStoredSession,
@@ -17,6 +22,8 @@ export interface AuthContextValue {
   session: StoredSession | null;
   user: AuthUser | null;
   activeRole: UserRole | null;
+  refreshError: string | null;
+  clearRefreshError: () => void;
   signIn: (response: AuthenticatedAuthResponse, preferredRole?: UserRole) => Promise<void>;
   signOut: () => Promise<void>;
   switchRole: (role: UserRole) => Promise<void>;
@@ -31,6 +38,7 @@ export interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [status, setStatus] = useState<AuthStatus>(AUTH_STATUS.LOADING);
   const [session, setSession] = useState<StoredSession | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   // Load session from secure storage on startup.
   useEffect(() => {
@@ -62,7 +70,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
-  // Listen to api client session expiration and renewal events.
+  // Listen to api client session expiration, renewal, and refresh error events.
   useEffect(() => {
     const unsubExpired = onSessionExpired(() => {
       setSession(null);
@@ -71,13 +79,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const unsubUpdated = onSessionUpdated((updatedSession) => {
       setSession(updatedSession);
+      setRefreshError(null);
       setStatus(AUTH_STATUS.AUTHENTICATED);
+    });
+
+    const unsubRefreshError = onSessionRefreshError((err) => {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Error de red al renovar la sesión. Verifica tu conexión.';
+      setRefreshError(message);
     });
 
     return () => {
       unsubExpired();
       unsubUpdated();
+      unsubRefreshError();
     };
+  }, []);
+
+  const clearRefreshError = useCallback(() => {
+    setRefreshError(null);
   }, []);
 
   const signIn = useCallback(
@@ -103,20 +125,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       await saveStoredSession(newSession);
       setSession(newSession);
+      setRefreshError(null);
       setStatus(AUTH_STATUS.AUTHENTICATED);
     },
     [],
   );
 
   const signOut = useCallback(async (): Promise<void> => {
-    const currentRefreshToken = session?.refreshToken;
     try {
-      if (currentRefreshToken) {
-        await logoutSessionRequest(currentRefreshToken);
+      // Read latest persisted session directly to guarantee using the most recent rotated token.
+      const latestSession = await getStoredSession();
+      const tokenToRevoke = latestSession?.refreshToken ?? session?.refreshToken;
+      if (tokenToRevoke) {
+        await logoutSessionRequest(tokenToRevoke);
       }
     } finally {
       await clearStoredSession();
       setSession(null);
+      setRefreshError(null);
       setStatus(AUTH_STATUS.UNAUTHENTICATED);
     }
   }, [session?.refreshToken]);
@@ -140,11 +166,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       session,
       user: session?.user ?? null,
       activeRole: session?.activeRole ?? null,
+      refreshError,
+      clearRefreshError,
       signIn,
       signOut,
       switchRole,
     }),
-    [status, session, signIn, signOut, switchRole],
+    [status, session, refreshError, clearRefreshError, signIn, signOut, switchRole],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

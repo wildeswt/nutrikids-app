@@ -26,6 +26,7 @@ import {
   authFetch,
   logoutSessionRequest,
   onSessionExpired,
+  onSessionRefreshError,
   onSessionUpdated,
   refreshActiveSession,
 } from '../lib/api.js';
@@ -213,6 +214,33 @@ describe('api-auth and token renewal', () => {
     const stored = await getStoredSession();
     expect(stored).toBeNull();
     unsubscribe();
+  });
+
+  it('triggers onSessionRefreshError and retains session on network failure during refresh', async () => {
+    await saveStoredSession(sampleSession);
+
+    const mockFetch = vi.fn().mockImplementation(async (url: string) => {
+      if (url.includes('/auth/refresh')) {
+        throw new Error('Network request failed');
+      }
+      return new Response(null, { status: 401 });
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const refreshErrorListener = vi.fn();
+    const unsub = onSessionRefreshError(refreshErrorListener);
+
+    const response = await authFetch('/protected-data');
+    expect(response.status).toBe(401);
+    expect(refreshErrorListener).toHaveBeenCalledTimes(1);
+    expect(refreshErrorListener).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Network request failed' }),
+    );
+
+    // Unlike 401/403/revoked response, network failure does NOT erase the session
+    const stored = await getStoredSession();
+    expect(stored).not.toBeNull();
+    unsub();
   });
 
   it('dispatches logout request with refresh token', async () => {

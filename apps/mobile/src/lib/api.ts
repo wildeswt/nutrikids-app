@@ -48,9 +48,11 @@ const REQUEST_TIMEOUT_MS = 8000;
 
 export type SessionExpiredListener = () => void;
 export type SessionUpdatedListener = (session: StoredSession) => void;
+export type SessionRefreshErrorListener = (error: unknown) => void;
 
 const expiredListeners = new Set<SessionExpiredListener>();
 const updatedListeners = new Set<SessionUpdatedListener>();
+const refreshErrorListeners = new Set<SessionRefreshErrorListener>();
 
 /**
  * Register a listener invoked whenever the session has expired or refresh failed.
@@ -72,6 +74,16 @@ export function onSessionUpdated(listener: SessionUpdatedListener): () => void {
   };
 }
 
+/**
+ * Register a listener invoked when a network or unexpected error occurs during token refresh.
+ */
+export function onSessionRefreshError(listener: SessionRefreshErrorListener): () => void {
+  refreshErrorListeners.add(listener);
+  return () => {
+    refreshErrorListeners.delete(listener);
+  };
+}
+
 function notifySessionExpired(): void {
   for (const listener of expiredListeners) {
     try {
@@ -86,6 +98,16 @@ function notifySessionUpdated(session: StoredSession): void {
   for (const listener of updatedListeners) {
     try {
       listener(session);
+    } catch {
+      // Ignore listener errors
+    }
+  }
+}
+
+function notifySessionRefreshError(error: unknown): void {
+  for (const listener of refreshErrorListeners) {
+    try {
+      listener(error);
     } catch {
       // Ignore listener errors
     }
@@ -147,7 +169,8 @@ export async function refreshActiveSession(): Promise<StoredSession | null> {
         notifySessionUpdated(updated);
       }
       return updated;
-    } catch {
+    } catch (err) {
+      notifySessionRefreshError(err);
       return null;
     } finally {
       refreshInFlight = null;
