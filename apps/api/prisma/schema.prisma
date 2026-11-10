@@ -181,13 +181,13 @@ model Checkup {
   correctedCheckupId   String?             @map("corrected_checkup_id") @db.Uuid
   createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  child                Child               @relation(fields: [childId], references: [id], onDelete: Cascade)
+  child                Child               @relation(fields: [childId], references: [id], onDelete: Restrict)
   recordedBy           User                @relation("RecordedByUser", fields: [recordedById], references: [id], onDelete: Restrict)
   correctedCheckup     Checkup?            @relation("CheckupCorrections", fields: [correctedCheckupId], references: [id], onDelete: Restrict)
   corrections          Checkup[]           @relation("CheckupCorrections")
   results              IndicatorResult[]
 
-  @@index([childId, measuredAt])
+  @@index([childId, measuredAt(sort: Desc)])
   @@index([recordedById])
   @@index([correctedCheckupId])
   @@map("checkups")
@@ -262,7 +262,7 @@ model AlertHistory {
   changedById          String              @map("changed_by_id") @db.Uuid
   changedAt            DateTime            @default(now()) @map("changed_at") @db.Timestamptz(3)
 
-  alert                Alert               @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  alert                Alert               @relation(fields: [alertId], references: [id], onDelete: Restrict)
   changedBy            User                @relation("StatusChangedByUser", fields: [changedById], references: [id], onDelete: Restrict)
 
   @@index([alertId])
