@@ -8,7 +8,7 @@ Monorepo para **NutriKids**, construido con **React Native (Expo) + TypeScript**
 - **API (`apps/api`):** Node.js · Express 5 · TypeScript · Prisma 7 (`@prisma/adapter-pg`) · Vitest + Supertest
 - **Shared (`packages/shared`):** `@nutrikids/shared` — esquemas Zod y tipos compartidos entre mobile y backend
 - **Base de datos:** PostgreSQL 16 (`docker-compose.yml`, puerto host `5433` por defecto)
-- **Tooling:** pnpm workspaces · ESLint (Flat Config) · Prettier · Husky + lint-staged · GitHub Actions (CI)
+- **Tooling:** pnpm workspaces · ESLint (Flat Config) · Prettier · Husky + lint-staged · GitHub Act ions (CI)
 
 ## Estructura del monorepo
 
