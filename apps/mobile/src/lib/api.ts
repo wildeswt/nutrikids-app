@@ -1,4 +1,5 @@
 import {
+  AuthResponseSchema,
   ErrorResponseSchema,
   HealthResponseSchema,
   type ErrorResponse,
@@ -6,6 +7,12 @@ import {
 } from '@nutrikids/shared';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import {
+  clearStoredSession,
+  getStoredSession,
+  updateStoredTokens,
+  type StoredSession,
+} from './session-storage.js';
 
 const DEFAULT_API_PORT = '3000';
 
@@ -16,12 +23,12 @@ function isLocalhost(url: string): boolean {
 function resolveDefaultApiUrl(): string {
   const configured = process.env.EXPO_PUBLIC_API_URL?.trim();
 
-  // 1. URL explícita que no sea localhost (ej. IP de la PC): se respeta tal cual.
+  // 1. Explicit non-localhost URL (e.g. PC local network IP).
   if (configured && !isLocalhost(configured)) {
     return configured;
   }
 
-  // 2. En dispositivo físico / Expo Go: usar la misma IP del PC que sirve Metro.
+  // 2. Physical device / Expo Go: reuse the host serving Metro.
   const hostUri = Constants.expoConfig?.hostUri;
   if (Platform.OS !== 'web' && hostUri) {
     const host = hostUri.split(':')[0];
@@ -30,7 +37,7 @@ function resolveDefaultApiUrl(): string {
     }
   }
 
-  // 3. Fallbacks para emulador / web.
+  // 3. Fallbacks for emulator / web.
   const fallback = configured ?? `http://localhost:${DEFAULT_API_PORT}`;
   return Platform.OS === 'android' ? fallback.replace('localhost', '10.0.2.2') : fallback;
 }
@@ -39,9 +46,137 @@ export const API_BASE_URL = resolveDefaultApiUrl();
 
 const REQUEST_TIMEOUT_MS = 8000;
 
+export type SessionExpiredListener = () => void;
+export type SessionUpdatedListener = (session: StoredSession) => void;
+
+const expiredListeners = new Set<SessionExpiredListener>();
+const updatedListeners = new Set<SessionUpdatedListener>();
+
 /**
- * Interpreta una respuesta de error de la API con `ErrorResponseSchema` de `@nutrikids/shared`.
- * Si incluye detalles de validación (`issues`), devuelve el primer mensaje en español.
+ * Register a listener invoked whenever the session has expired or refresh failed.
+ */
+export function onSessionExpired(listener: SessionExpiredListener): () => void {
+  expiredListeners.add(listener);
+  return () => {
+    expiredListeners.delete(listener);
+  };
+}
+
+/**
+ * Register a listener invoked whenever tokens are renewed.
+ */
+export function onSessionUpdated(listener: SessionUpdatedListener): () => void {
+  updatedListeners.add(listener);
+  return () => {
+    updatedListeners.delete(listener);
+  };
+}
+
+function notifySessionExpired(): void {
+  for (const listener of expiredListeners) {
+    try {
+      listener();
+    } catch {
+      // Ignore listener errors
+    }
+  }
+}
+
+function notifySessionUpdated(session: StoredSession): void {
+  for (const listener of updatedListeners) {
+    try {
+      listener(session);
+    } catch {
+      // Ignore listener errors
+    }
+  }
+}
+
+/** Single-flight mutex for token refresh to avoid concurrent reuse revocations. */
+let refreshInFlight: Promise<StoredSession | null> | null = null;
+
+/**
+ * Renews the access/refresh token pair against POST /auth/refresh.
+ * If refresh fails (expired or reuse detected), clears stored session and notifies listeners.
+ */
+export async function refreshActiveSession(): Promise<StoredSession | null> {
+  if (refreshInFlight) {
+    return refreshInFlight;
+  }
+
+  refreshInFlight = (async () => {
+    try {
+      const current = await getStoredSession();
+      if (!current?.refreshToken) {
+        await clearStoredSession();
+        notifySessionExpired();
+        return null;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: current.refreshToken }),
+      });
+
+      if (!response.ok) {
+        await clearStoredSession();
+        notifySessionExpired();
+        return null;
+      }
+
+      const rawJson: unknown = await response.json();
+      const parsed = AuthResponseSchema.safeParse(rawJson);
+
+      if (!parsed.success || parsed.data.requiresTwoFactor) {
+        await clearStoredSession();
+        notifySessionExpired();
+        return null;
+      }
+
+      const updated = await updateStoredTokens({
+        accessToken: parsed.data.accessToken,
+        refreshToken: parsed.data.refreshToken,
+        expiresIn: parsed.data.expiresIn,
+      });
+
+      if (updated) {
+        notifySessionUpdated(updated);
+      }
+      return updated;
+    } catch {
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
+}
+
+/**
+ * Dispatches a best-effort logout request to revoke the current refresh token.
+ */
+export async function logoutSessionRequest(refreshToken: string): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    // Best effort: do not block local sign out if network is down.
+  }
+}
+
+/**
+ * Parses API error payload with ErrorResponseSchema from @nutrikids/shared.
  */
 export function parseApiError(
   payload: unknown,
@@ -61,6 +196,9 @@ export function parseApiError(
   };
 }
 
+/**
+ * Fetches the backend /health status.
+ */
 export async function fetchHealth(): Promise<HealthResponse> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -81,4 +219,59 @@ export async function fetchHealth(): Promise<HealthResponse> {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/**
+ * Authenticated HTTP client with:
+ * 1. Automatic Bearer token header injection.
+ * 2. Preemptive renewal if access token expires within 30 seconds.
+ * 3. 401 response interception with single-flight mutex retry.
+ * 4. Automatic session cleanup and redirect notification on refresh failure.
+ */
+export async function authFetch(endpointOrUrl: string, init: RequestInit = {}): Promise<Response> {
+  const targetUrl = endpointOrUrl.startsWith('http')
+    ? endpointOrUrl
+    : `${API_BASE_URL}${endpointOrUrl.startsWith('/') ? '' : '/'}${endpointOrUrl}`;
+
+  let session = await getStoredSession();
+
+  // If token is about to expire in <= 30 seconds, renew proactively.
+  if (session && session.expiresAt - Date.now() <= 30_000) {
+    const renewed = await refreshActiveSession();
+    if (renewed) {
+      session = renewed;
+    }
+  }
+
+  const headers = new Headers(init.headers);
+  if (session?.accessToken && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${session.accessToken}`);
+  }
+  if (!headers.has('Accept')) {
+    headers.set('Accept', 'application/json');
+  }
+
+  const response = await fetch(targetUrl, {
+    ...init,
+    headers,
+  });
+
+  // If request receives 401 Unauthorized, try renewing tokens and retry once.
+  if (response.status === 401 && session?.refreshToken) {
+    const renewed = await refreshActiveSession();
+    if (renewed) {
+      const retryHeaders = new Headers(init.headers);
+      retryHeaders.set('Authorization', `Bearer ${renewed.accessToken}`);
+      if (!retryHeaders.has('Accept')) {
+        retryHeaders.set('Accept', 'application/json');
+      }
+
+      return fetch(targetUrl, {
+        ...init,
+        headers: retryHeaders,
+      });
+    }
+  }
+
+  return response;
 }
