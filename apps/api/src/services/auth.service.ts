@@ -1,12 +1,14 @@
 import {
   AuthResponseSchema,
+  SpecialtySchema,
   type AuthResponse,
+  type LoginInput,
   type RegisterInput,
   type Specialty,
   type UserRole,
 } from '@nutrikids/shared';
 import { HttpError } from '../lib/http-error.js';
-import { hashPassword } from '../lib/password.js';
+import { hashPassword, verifyDummyPassword, verifyPassword } from '../lib/password.js';
 import { prisma } from '../lib/prisma.js';
 import {
   generateRefreshToken,
@@ -21,6 +23,23 @@ function isUniqueConstraintError(err: unknown): boolean {
     'code' in err &&
     (err as { code: unknown }).code === 'P2002'
   );
+}
+
+const SPECIALTY_MAP: Record<string, Specialty> = {
+  nursing: 'nursing',
+  enfermeria: 'nursing',
+  nutrition: 'nutrition',
+  nutricion: 'nutrition',
+  pediatrics: 'pediatrics',
+  pediatria: 'pediatrics',
+};
+
+function normalizeSpecialty(raw: string | null | undefined): Specialty | null {
+  if (!raw) return null;
+  const mapped = SPECIALTY_MAP[raw.trim().toLowerCase()];
+  if (mapped) return mapped;
+  const parsed = SpecialtySchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
 }
 
 /**
@@ -145,5 +164,85 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
     refreshToken,
     expiresIn,
     user: createdUser,
+  });
+}
+
+/**
+ * Inicia sesión verificando correo y contraseña con Argon2id:
+ * - Si el correo no existe, ejecuta `verifyDummyPassword` para igualar tiempos.
+ * - Rechaza cuentas suspendidas (`status !== 'active'`).
+ * - Determina los roles (`CAREGIVER`, `PROFESSIONAL` o ambos) y la especialidad.
+ * - Emite un JWT de acceso de corta duración y guarda el hash SHA-256 del refresh token.
+ */
+export async function loginUser(input: LoginInput): Promise<AuthResponse> {
+  const user = await prisma.user.findUnique({
+    where: { email: input.email },
+    select: {
+      id: true,
+      email: true,
+      passwordHash: true,
+      firstName: true,
+      lastName: true,
+      status: true,
+      caregiver: { select: { userId: true } },
+      professional: { select: { userId: true, specialty: true } },
+    },
+  });
+
+  if (!user) {
+    await verifyDummyPassword(input.password);
+    throw HttpError.unauthorized('Credenciales inválidas');
+  }
+
+  const isPasswordValid = await verifyPassword(user.passwordHash, input.password);
+  if (!isPasswordValid) {
+    throw HttpError.unauthorized('Credenciales inválidas');
+  }
+
+  if (user.status !== 'active') {
+    throw HttpError.forbidden('La cuenta está suspendida');
+  }
+
+  const roles: UserRole[] = [];
+  if (user.caregiver) {
+    roles.push('CAREGIVER');
+  }
+  if (user.professional) {
+    roles.push('PROFESSIONAL');
+  }
+  if (roles.length === 0) {
+    throw HttpError.forbidden('La cuenta no tiene un perfil asignado');
+  }
+
+  const specialty = normalizeSpecialty(user.professional?.specialty);
+  const { refreshToken, tokenHash, expiresAt } = generateRefreshToken();
+
+  await prisma.refreshToken.create({
+    data: {
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+    },
+  });
+
+  const { accessToken, expiresIn } = await signAccessToken({
+    sub: user.id,
+    roles,
+    specialty,
+  });
+
+  return AuthResponseSchema.parse({
+    requiresTwoFactor: false,
+    accessToken,
+    refreshToken,
+    expiresIn,
+    user: {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      roles,
+      specialty,
+    },
   });
 }
