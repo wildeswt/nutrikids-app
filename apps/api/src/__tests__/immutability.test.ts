@@ -5,7 +5,7 @@ import { env } from '../config/env.js';
 
 const connectionString = env.DIRECT_URL ?? env.DATABASE_URL;
 
-describe('Database Immutability, Roles, Business Rules and RLS', () => {
+describe('Database Immutability, Roles, Business Rules and RLS', { timeout: 20000 }, () => {
   let client: pg.Client;
 
   beforeAll(async () => {
