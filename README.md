@@ -92,22 +92,34 @@ Al abrir la app verás **`API OK`** junto con **`Base de datos: ok`** consumiend
 
 ## Scripts disponibles en la raíz
 
-| Comando                             | Descripción                                                              |
-| ----------------------------------- | ------------------------------------------------------------------------ |
-| `pnpm dev`                          | Ejecuta `api` y `mobile` en paralelo                                     |
-| `pnpm dev:api`                      | Inicia solo el servidor Express en modo watch (`tsx`)                    |
-| `pnpm dev:mobile`                   | Inicia el servidor de desarrollo de Expo (con QR e interfaz interactiva) |
-| `pnpm build`                        | Compila todos los paquetes del monorepo                                  |
-| `pnpm typecheck`                    | Verifica tipos TypeScript en `shared`, `api` y `mobile`                  |
-| `pnpm test`                         | Ejecuta la suite de tests (Vitest + Supertest)                           |
-| `pnpm lint` / `pnpm lint:fix`       | Ejecuta ESLint en todo el repositorio                                    |
-| `pnpm format` / `pnpm format:check` | Formatea o verifica formato con Prettier                                 |
-| `pnpm db:up` / `pnpm db:down`       | Levanta o detiene el contenedor de PostgreSQL                            |
-| `pnpm db:logs`                      | Muestra logs en vivo de PostgreSQL                                       |
-| `pnpm db:migrate`                   | Crea/aplica migraciones de Prisma en desarrollo                          |
-| `pnpm db:migrate:deploy`            | Aplica migraciones pendientes de forma desatendida (CI / producción)     |
-| `pnpm db:generate`                  | Regenera el cliente tipado de Prisma                                     |
-| `pnpm db:studio`                    | Abre Prisma Studio para explorar la base de datos en el navegador        |
+| Comando                             | Descripción                                                               |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| `pnpm dev`                          | Ejecuta `api` y `mobile` en paralelo                                      |
+| `pnpm dev:api`                      | Inicia solo el servidor Express en modo watch (`tsx`)                     |
+| `pnpm dev:mobile`                   | Inicia el servidor de desarrollo de Expo (con QR e interfaz interactiva)  |
+| `pnpm build`                        | Compila todos los paquetes del monorepo                                   |
+| `pnpm typecheck`                    | Verifica tipos TypeScript en `shared`, `api` y `mobile`                   |
+| `pnpm test`                         | Ejecuta la suite de tests (Vitest + Supertest)                            |
+| `pnpm lint` / `pnpm lint:fix`       | Ejecuta ESLint en todo el repositorio                                     |
+| `pnpm format` / `pnpm format:check` | Formatea o verifica formato con Prettier                                  |
+| `pnpm db:up` / `pnpm db:down`       | Levanta o detiene el contenedor de PostgreSQL                             |
+| `pnpm db:logs`                      | Muestra logs en vivo de PostgreSQL                                        |
+| `pnpm db:migrate`                   | Crea/aplica migraciones de Prisma en desarrollo                           |
+| `pnpm db:migrate:deploy`            | Aplica migraciones pendientes de forma desatendida (CI / producción)      |
+| `pnpm db:seed`                      | Carga referencias LMS y datos sintéticos de desarrollo (no en producción) |
+| `pnpm db:generate`                  | Regenera el cliente tipado de Prisma                                      |
+| `pnpm db:studio`                    | Abre Prisma Studio para explorar la base de datos en el navegador         |
+
+## Seed de desarrollo (datos sintéticos)
+
+`pnpm db:seed` (requiere la BD levantada y migrada) es idempotente y crea datos **inventados**, nunca datos reales de niños:
+
+- Referencias LMS de la OMS (`lms_references`).
+- Niño de ejemplo del informe: Mateo José Rodríguez (12 de mayo de 2023), con sus 4 controles de 2026 y sus 16 resultados calculados con `@nutrikids/who-growth`.
+- Control del 18 de octubre (12,2 kg, 97,0 cm): z P/T ≈ −2,24, alerta de emaciación en `PENDING_REVIEW` con su historial (`GENERATED` → `PENDING_REVIEW`). Se inserta directamente, sin pasar por la API de alertas.
+- Cuentas (contraseña de desarrollo `NutriKids-Dev-2026`): `ana.rodriguez@example.test` (cuidadora), `enfermera.dev@example.test` y `pediatra.dev@example.test`.
+
+Usa `DIRECT_URL` (rol dueño de la BD) y **se niega a correr con `NODE_ENV=production`**.
 
 ## Integración Continua (CI con GitHub Actions)
 
