@@ -7,7 +7,7 @@ Implementación de **RT-05**: los permisos se aplican en el servidor, no solo en
 1. **`authenticate`**: exige `Authorization: Bearer <jwt>`; deja `req.auth = { userId, roles, specialty }`. Falla con `401`.
 2. **`requireRole(...roles)`**: el usuario debe tener alguno de los roles (`CAREGIVER`, `PROFESSIONAL`). Falla con `403`.
 3. **`requireSpecialty(...)` / `requirePermission(permiso)`**: dentro del rol profesional distingue `nursing` (enfermería), `nutrition` (nutrición) y `pediatrics` (pediatría). Falla con `403`.
-4. **`requireVinculo(source = 'ninoId')`**: comprueba el vínculo con el niño concreto. Falla con `403` (o `400` si el id no es un UUID).
+4. **`requireVinculo(source = 'childId')`**: comprueba el vínculo con el niño concreto. Falla con `403` (o `400` si el id no es un UUID).
 
 Primero rol, luego vínculo: tener el rol correcto nunca basta para ver un niño ajeno.
 
@@ -40,11 +40,11 @@ Esta matriz es la fuente única en `PERMISSIONS_BY_ACTOR`; para cambiarla se edi
 
 ```ts
 router.post(
-  '/ninos/:ninoId/seguimientos',
+  '/children/:childId/follow-ups',
   authenticate,
   requireRole('PROFESSIONAL'),
   requirePermission('followup:create'),
-  requireVinculo(), // lee req.params.ninoId; o requireVinculo((req) => req.body.childId)
+  requireVinculo(), // lee req.params.childId; o requireVinculo((req) => req.body.childId)
   handler,
 );
 ```
