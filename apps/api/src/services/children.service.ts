@@ -1,11 +1,14 @@
 import crypto from 'node:crypto';
 import {
   isAgeInOmsRange,
+  type AssignCaregiverInput,
   type AssignProfessionalInput,
+  type CaregiverAssignmentResponse,
   type ChildResponse,
   type CreateChildInput,
   type EndProfessionalAssignmentInput,
   type ProfessionalAssignmentResponse,
+  type UpdateCaregiverLinkInput,
 } from '@nutrikids/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { HttpError } from '../lib/http-error.js';
@@ -64,8 +67,55 @@ function formatProfessionalAssignmentResponse(assignment: {
   };
 }
 
+function formatCaregiverAssignmentResponse(assignment: {
+  caregiverId: string;
+  childId: string;
+  relationship: string;
+  isLegalRepresentative: boolean;
+  caregiver: {
+    user: {
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+  };
+}): CaregiverAssignmentResponse {
+  return {
+    caregiverId: assignment.caregiverId,
+    childId: assignment.childId,
+    firstName: assignment.caregiver.user.firstName,
+    lastName: assignment.caregiver.user.lastName,
+    email: assignment.caregiver.user.email,
+    relationship: assignment.relationship,
+    isLegalRepresentative: assignment.isLegalRepresentative,
+  };
+}
+
 /**
- * Verifica que el usuario autenticado pueda crear o finalizar vínculos `atiende` sobre el niño:
+ * Verifica que el usuario autenticado sea representante legal del niño (`isLegalRepresentative = true`).
+ */
+async function assertIsChildLegalRepresentative(
+  tx: Prisma.TransactionClient,
+  auth: AuthContext,
+  childId: string,
+): Promise<void> {
+  if (auth.roles.includes('CAREGIVER')) {
+    const caregiverLink = await tx.caregiverChild.findUnique({
+      where: { caregiverId_childId: { caregiverId: auth.userId, childId } },
+      select: { isLegalRepresentative: true },
+    });
+    if (caregiverLink?.isLegalRepresentative) {
+      return;
+    }
+  }
+
+  throw HttpError.forbidden(
+    'Solo el representante legal del niño puede gestionar los vínculos de cuidadores',
+  );
+}
+
+/**
+ * Verifica que el usuario autenticado pueda crear vínculos `atiende` sobre el niño:
  * debe ser su representante legal (`isLegalRepresentative = true`) o un profesional con vínculo vigente.
  */
 async function assertCanManageProfessionalLinks(
@@ -101,6 +151,48 @@ async function assertCanManageProfessionalLinks(
 
   throw HttpError.forbidden(
     'Solo el representante legal o un profesional con vínculo vigente puede gestionar vínculos de atención',
+  );
+}
+
+/**
+ * Verifica que el usuario autenticado pueda finalizar un vínculo `atiende` sobre el niño:
+ * debe ser su representante legal (`isLegalRepresentative = true`) o el propio profesional
+ * titular del vínculo que se desea finalizar (`auth.userId === targetProfessionalId`) con vínculo vigente.
+ */
+async function assertCanEndProfessionalLink(
+  tx: Prisma.TransactionClient,
+  auth: AuthContext,
+  childId: string,
+  targetProfessionalId: string,
+): Promise<void> {
+  if (auth.roles.includes('CAREGIVER')) {
+    const caregiverLink = await tx.caregiverChild.findUnique({
+      where: { caregiverId_childId: { caregiverId: auth.userId, childId } },
+      select: { isLegalRepresentative: true },
+    });
+    if (caregiverLink?.isLegalRepresentative) {
+      return;
+    }
+  }
+
+  if (auth.roles.includes('PROFESSIONAL') && auth.userId === targetProfessionalId) {
+    const today = utcTodayDate();
+    const activeProfLink = await tx.professionalChild.findFirst({
+      where: {
+        childId,
+        professionalId: auth.userId,
+        startDate: { lte: today },
+        OR: [{ endDate: null }, { endDate: { gte: today } }],
+      },
+      select: { id: true },
+    });
+    if (activeProfLink) {
+      return;
+    }
+  }
+
+  throw HttpError.forbidden(
+    'Solo el representante legal o el propio profesional asignado pueden finalizar este vínculo de atención',
   );
 }
 
@@ -331,7 +423,7 @@ export async function assignProfessional(
 
 /**
  * Finaliza la asignación vigente de un profesional con un niño estableciendo `endDate`.
- * Solo permitido al representante legal del niño o a un profesional con vínculo vigente.
+ * Solo permitido al representante legal del niño o al propio profesional titular del vínculo.
  */
 export async function endProfessionalAssignment(
   auth: AuthContext,
@@ -343,7 +435,7 @@ export async function endProfessionalAssignment(
   const today = utcTodayDate();
 
   return withUser(auth.userId, async (tx) => {
-    await assertCanManageProfessionalLinks(tx, auth, childId);
+    await assertCanEndProfessionalLink(tx, auth, childId, professionalId);
 
     const assignment = await tx.professionalChild.findFirst({
       where: {
@@ -378,5 +470,214 @@ export async function endProfessionalAssignment(
     });
 
     return formatProfessionalAssignmentResponse(updated);
+  });
+}
+
+/**
+ * Lista los cuidadores vinculados (`cuida`) a un niño.
+ */
+export async function listChildCaregivers(
+  auth: AuthContext,
+  childId: string,
+): Promise<CaregiverAssignmentResponse[]> {
+  return withUser(auth.userId, async (tx) => {
+    const links = await tx.caregiverChild.findMany({
+      where: { childId },
+      orderBy: [{ isLegalRepresentative: 'desc' }],
+      include: {
+        caregiver: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return links.map(formatCaregiverAssignmentResponse);
+  });
+}
+
+/**
+ * Vincula un cuidador adicional a un niño (`cuida`).
+ * Solo permitido al representante legal del niño.
+ */
+export async function assignCaregiver(
+  auth: AuthContext,
+  childId: string,
+  input: AssignCaregiverInput,
+): Promise<CaregiverAssignmentResponse> {
+  return withUser(auth.userId, async (tx) => {
+    await assertIsChildLegalRepresentative(tx, auth, childId);
+
+    const targetCaregiver = await tx.caregiver.findFirst({
+      where: {
+        ...(input.caregiverId ? { userId: input.caregiverId } : {}),
+        ...(input.email ? { user: { email: input.email } } : {}),
+      },
+      select: {
+        userId: true,
+        user: { select: { status: true } },
+      },
+    });
+
+    if (!targetCaregiver || targetCaregiver.user.status !== 'active') {
+      throw HttpError.notFound('Cuidador no encontrado o inactivo');
+    }
+
+    const existingLink = await tx.caregiverChild.findUnique({
+      where: {
+        caregiverId_childId: {
+          caregiverId: targetCaregiver.userId,
+          childId,
+        },
+      },
+      select: { caregiverId: true },
+    });
+
+    if (existingLink) {
+      throw HttpError.conflict('El cuidador ya está vinculado a este niño');
+    }
+
+    const created = await tx.caregiverChild.create({
+      data: {
+        caregiverId: targetCaregiver.userId,
+        childId,
+        relationship: input.relationship,
+        isLegalRepresentative: input.isLegalRepresentative,
+      },
+      include: {
+        caregiver: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return formatCaregiverAssignmentResponse(created);
+  });
+}
+
+/**
+ * Actualiza el parentesco o condición de representante legal de un cuidador vinculado (`cuida`).
+ * Solo permitido al representante legal del niño, garantizando que siempre quede al menos un representante legal.
+ */
+export async function updateCaregiverLink(
+  auth: AuthContext,
+  childId: string,
+  caregiverId: string,
+  input: UpdateCaregiverLinkInput,
+): Promise<CaregiverAssignmentResponse> {
+  return withUser(auth.userId, async (tx) => {
+    await assertIsChildLegalRepresentative(tx, auth, childId);
+
+    const existing = await tx.caregiverChild.findUnique({
+      where: {
+        caregiverId_childId: {
+          caregiverId,
+          childId,
+        },
+      },
+    });
+
+    if (!existing) {
+      throw HttpError.notFound('No existe un vínculo con ese cuidador para este niño');
+    }
+
+    if (existing.isLegalRepresentative && input.isLegalRepresentative === false) {
+      const legalRepCount = await tx.caregiverChild.count({
+        where: { childId, isLegalRepresentative: true },
+      });
+      if (legalRepCount <= 1) {
+        throw HttpError.conflict('El niño debe contar con al menos un representante legal');
+      }
+    }
+
+    const updated = await tx.caregiverChild.update({
+      where: {
+        caregiverId_childId: {
+          caregiverId,
+          childId,
+        },
+      },
+      data: {
+        ...(input.relationship !== undefined ? { relationship: input.relationship } : {}),
+        ...(input.isLegalRepresentative !== undefined
+          ? { isLegalRepresentative: input.isLegalRepresentative }
+          : {}),
+      },
+      include: {
+        caregiver: {
+          select: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return formatCaregiverAssignmentResponse(updated);
+  });
+}
+
+/**
+ * Desvincula a un cuidador de un niño (`cuida`).
+ * Solo permitido al representante legal del niño, impidiendo eliminar al único representante legal.
+ */
+export async function removeCaregiverLink(
+  auth: AuthContext,
+  childId: string,
+  caregiverId: string,
+): Promise<void> {
+  return withUser(auth.userId, async (tx) => {
+    await assertIsChildLegalRepresentative(tx, auth, childId);
+
+    const existing = await tx.caregiverChild.findUnique({
+      where: {
+        caregiverId_childId: {
+          caregiverId,
+          childId,
+        },
+      },
+    });
+
+    if (!existing) {
+      throw HttpError.notFound('No existe un vínculo con ese cuidador para este niño');
+    }
+
+    if (existing.isLegalRepresentative) {
+      const legalRepCount = await tx.caregiverChild.count({
+        where: { childId, isLegalRepresentative: true },
+      });
+      if (legalRepCount <= 1) {
+        throw HttpError.conflict('No se puede desvincular al único representante legal del niño');
+      }
+    }
+
+    await tx.caregiverChild.delete({
+      where: {
+        caregiverId_childId: {
+          caregiverId,
+          childId,
+        },
+      },
+    });
   });
 }
