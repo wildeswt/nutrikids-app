@@ -5,8 +5,10 @@ import {
   type AssignProfessionalInput,
   type CaregiverAssignmentResponse,
   type ChildResponse,
+  type ConsentResponse,
   type CreateChildInput,
   type EndProfessionalAssignmentInput,
+  type GrantConsentInput,
   type ProfessionalAssignmentResponse,
   type UpdateCaregiverLinkInput,
 } from '@nutrikids/shared';
@@ -38,6 +40,24 @@ function formatChildResponse(child: {
     lastName: child.lastName,
     birthDate: child.birthDate.toISOString().slice(0, 10),
     sex: child.sex,
+  };
+}
+
+function formatConsentResponse(consent: {
+  id: string;
+  childId: string;
+  caregiverId: string;
+  textVersion: string;
+  grantedAt: Date;
+  revokedAt: Date | null;
+}): ConsentResponse {
+  return {
+    id: consent.id,
+    childId: consent.childId,
+    grantedById: consent.caregiverId,
+    textVersion: consent.textVersion,
+    grantedAt: consent.grantedAt.toISOString(),
+    revokedAt: consent.revokedAt ? consent.revokedAt.toISOString() : null,
   };
 }
 
@@ -680,4 +700,115 @@ export async function removeCaregiverLink(
       },
     });
   });
+}
+
+/**
+ * Obtiene el consentimiento del niño:
+ * Devuelve el consentimiento vigente (`revokedAt: null`), o en su defecto,
+ * el más reciente registrado para trazabilidad.
+ */
+export async function getChildConsent(
+  auth: AuthContext,
+  childId: string,
+): Promise<ConsentResponse> {
+  return withUser(auth.userId, async (tx) => {
+    const consent = await tx.consent.findFirst({
+      where: { childId },
+      orderBy: [{ revokedAt: 'asc' }, { grantedAt: 'desc' }],
+    });
+
+    if (!consent) {
+      throw HttpError.notFound('No existe registro de consentimiento informado para este niño');
+    }
+
+    return formatConsentResponse(consent);
+  });
+}
+
+/**
+ * Otorga consentimiento informado para un niño (restringido al representante legal).
+ * Si ya existe uno vigente con diferente versión de texto, cierra el anterior (revocándolo)
+ * y registra el nuevo en la misma transacción atómica.
+ */
+export async function grantConsent(
+  auth: AuthContext,
+  childId: string,
+  input: GrantConsentInput,
+): Promise<ConsentResponse> {
+  return withUser(auth.userId, async (tx) => {
+    await assertIsChildLegalRepresentative(tx, auth, childId);
+
+    const activeConsent = await tx.consent.findFirst({
+      where: { childId, revokedAt: null },
+    });
+
+    if (activeConsent) {
+      if (activeConsent.textVersion === input.textVersion) {
+        throw HttpError.conflict(
+          'Ya existe un consentimiento informado vigente con esta versión del texto',
+        );
+      }
+      // Revocar el consentimiento vigente anterior antes de crear la nueva versión
+      await tx.consent.update({
+        where: { id: activeConsent.id },
+        data: { revokedAt: new Date() },
+      });
+    }
+
+    const newConsent = await tx.consent.create({
+      data: {
+        id: crypto.randomUUID(),
+        childId,
+        caregiverId: auth.userId,
+        textVersion: input.textVersion,
+      },
+    });
+
+    return formatConsentResponse(newConsent);
+  });
+}
+
+/**
+ * Revoca el consentimiento informado vigente del niño (restringido al representante legal).
+ * Realiza una revocación lógica (revokedAt = now()), preservando la fila para auditoría.
+ */
+export async function revokeConsent(auth: AuthContext, childId: string): Promise<ConsentResponse> {
+  return withUser(auth.userId, async (tx) => {
+    await assertIsChildLegalRepresentative(tx, auth, childId);
+
+    const activeConsent = await tx.consent.findFirst({
+      where: { childId, revokedAt: null },
+    });
+
+    if (!activeConsent) {
+      throw HttpError.conflict('No existe un consentimiento informado vigente para revocar');
+    }
+
+    const updated = await tx.consent.update({
+      where: { id: activeConsent.id },
+      data: { revokedAt: new Date() },
+    });
+
+    return formatConsentResponse(updated);
+  });
+}
+
+/**
+ * Helper de servicio para validar que el niño tenga un consentimiento activo
+ * antes de registrar mediciones o controles clínicos.
+ */
+export async function assertActiveConsent(
+  tx: Prisma.TransactionClient,
+  childId: string,
+): Promise<void> {
+  const active = await tx.consent.findFirst({
+    where: { childId, revokedAt: null },
+    select: { id: true },
+  });
+
+  if (!active) {
+    throw HttpError.forbidden(
+      'El niño no cuenta con un consentimiento informado vigente para registrar datos',
+    );
+  }
 }
