@@ -59,7 +59,7 @@ router.post(
 
 ---
 
-## 6. Reglas de alta de niños, vínculos `atiende` y límite de edad OMS (RF-03)
+## 6. Reglas de alta de niños, vínculos `cuida`/`atiende` y límite de edad OMS (RF-03)
 
 Implementado en `src/routes/children.routes.ts` y `src/services/children.service.ts`.
 
@@ -67,18 +67,31 @@ Implementado en `src/routes/children.routes.ts` y `src/services/children.service
 
 En PostgreSQL, la política RLS de `professional_children` permite `professional_id = app_user_id() OR app_has_child_access(child_id)`. Sin una regla en la API, cualquier profesional registrado podría auto-asignarse a cualquier niño si conociera su UUID.
 
-Por ello, `POST /children/:childId/professionals` y `PATCH /children/:childId/professionals/:professionalId/end` exigen primero `requireVinculo('childId')` y verifican en `assertCanManageProfessionalLinks` que el solicitante sea:
+Por ello, `POST /children/:childId/professionals` y `PATCH /children/:childId/professionals/:professionalId/end` exigen primero `requireVinculo('childId')` y aplican reglas diferenciadas:
 
-1. El **representante legal** del niño (`caregiver_children.is_legal_representative = true`), **o**
-2. Un **profesional con vínculo `atiende` vigente** sobre ese niño (`startDate <= hoy` y `endDate` nulo o `>= hoy`), habilitando derivaciones/interconsultas (RF-19) o el cierre de su propia atención.
+1. **Crear un vínculo (`POST /children/:childId/professionals` — `assertCanManageProfessionalLinks`):**
+   - El **representante legal** del niño (`caregiver_children.is_legal_representative = true`), **o**
+   - Un **profesional con vínculo `atiende` vigente** sobre ese niño (`startDate <= hoy` y `endDate` nulo o `>= hoy`), habilitando derivaciones/interconsultas (RF-19).
+2. **Finalizar un vínculo (`PATCH /children/:childId/professionals/:professionalId/end` — `assertCanEndProfessionalLink`):**
+   - El **representante legal** del niño (puede finalizar el vínculo de cualquier profesional asignado al niño), **o**
+   - El **propio profesional titular de ese vínculo** (`auth.userId === professionalId` con vínculo vigente), impidiendo que un profesional dé de baja a otro colega (`403 Forbidden`).
 
-Cualquier otro actor (profesional sin vínculo previo o cuidador secundario con `isLegalRepresentative = false`) recibe `403 Forbidden`. Además:
+Cualquier otro actor (profesional sin vínculo previo, profesional distinto al titular en la baja, o cuidador secundario con `isLegalRepresentative = false`) recibe `403 Forbidden`. Además:
 
 - El profesional destino debe existir y estar activo (`404 Not Found` en caso contrario).
-- No puede existir otro vínculo vigente o solapado con el mismo niño (`409 Conflict`).
+- No puede existir otro vínculo vigente o solapado con el mismo niño (`409 Conflict`, reforzado en BD con el índice único parcial `professional_children_active_unique_idx` donde `end_date IS NULL`).
 - `endDate` debe ser mayor o igual a `startDate` (`400 Bad Request`).
 
-### 6.2 Orden del consentimiento informado en el alta (`POST /children`)
+### 6.2 Gestión de vínculos con cuidadores (`cuida` — `caregiver_children`)
+
+Los endpoints bajo `/children/:childId/caregivers` permiten consultar y gestionar los cuidadores vinculados al niño:
+
+- **`GET /children/:childId/caregivers`:** accesible para cualquier usuario con vínculo vigente sobre el niño (`requirePermission('child:read')` + `requireVinculo('childId')`).
+- **`POST /children/:childId/caregivers`:** permite vincular a un cuidador adicional (por `caregiverId` o `email`, indicando `relationship` e `isLegalRepresentative`). Restringido **exclusivamente al representante legal** del niño (`assertIsChildLegalRepresentative`, `403 Forbidden` en caso contrario). Responde `404` si el cuidador no existe o está inactivo, y `409 Conflict` si ya está vinculado.
+- **`PATCH /children/:childId/caregivers/:caregiverId`:** permite actualizar `relationship` y/o `isLegalRepresentative`. Restringido al representante legal. Si intenta pasar `isLegalRepresentative: false` al único representante legal activo del niño, responde `409 Conflict`.
+- **`DELETE /children/:childId/caregivers/:caregiverId`:** desvincula a un cuidador del niño (`204 No Content`). Restringido al representante legal e impide desvincular al único representante legal activo (`409 Conflict`).
+
+### 6.3 Orden del consentimiento informado en el alta (`POST /children`)
 
 Para evitar registrar nombres, apellidos o fecha de nacimiento de un menor sin consentimiento vigente (RF-02 + RF-03):
 
@@ -90,8 +103,8 @@ Para evitar registrar nombres, apellidos o fecha de nacimiento de un menor sin c
 
 La renovación de versión o revocación posterior se gestiona mediante los endpoints dedicados de consentimiento (NK-16).
 
-### 6.3 Límite de edad OMS (`12–60` meses) y controles futuros
+### 6.4 Límite de edad OMS (`12–60` meses) y controles futuros
 
 - **Al dar de alta (`POST /children`):** el niño debe tener entre `12` y `60` meses cumplidos (`400 Bad Request` fuera de ese rango).
-- **Lecturas históricas (`GET /children`, `GET /children/:childId`, `GET /children/:childId/professionals` y futuras consultas clínicas):** permanecen accesibles incluso cuando el niño supere los `60` meses, garantizando la preservación de su historial.
+- **Lecturas históricas (`GET /children`, `GET /children/:childId`, `GET /children/:childId/professionals`, `GET /children/:childId/caregivers` y futuras consultas clínicas):** permanecen accesibles incluso cuando el niño supere los `60` meses, garantizando la preservación de su historial.
 - **Registro de nuevos controles (`POST /children/:childId/checkups`):** las tablas `lms_references` de la OMS cubren exclusivamente de `12` a `60` meses cumplidos. Todo nuevo control valida la edad del niño **a la fecha de medición (`measuredAt`)** mediante `assertChildAgeInOmsRange`; si en esa fecha supera los `60` meses (o tiene menos de `12`), la API rechaza la operación con `400 Bad Request`.
