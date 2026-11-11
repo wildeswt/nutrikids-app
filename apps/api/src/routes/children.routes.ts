@@ -1,9 +1,30 @@
-import { CreateChildInputSchema, type CreateChildInput } from '@nutrikids/shared';
+import {
+  AssignProfessionalInputSchema,
+  CreateChildInputSchema,
+  EndProfessionalAssignmentInputSchema,
+  UuidSchema,
+  type AssignProfessionalInput,
+  type CreateChildInput,
+  type EndProfessionalAssignmentInput,
+} from '@nutrikids/shared';
 import { Router } from 'express';
+import { z } from 'zod';
 import { requirePermission, requireRole, requireVinculo } from '../middlewares/access.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import { validateRequest } from '../middlewares/validate.js';
-import { createChild, getChildById, listChildren } from '../services/children.service.js';
+import {
+  assignProfessional,
+  createChild,
+  endProfessionalAssignment,
+  getChildById,
+  listChildProfessionals,
+  listChildren,
+} from '../services/children.service.js';
+
+const ChildProfessionalParamsSchema = z.object({
+  childId: UuidSchema,
+  professionalId: UuidSchema,
+});
 
 export function createChildrenRouter(): Router {
   const router = Router();
@@ -49,6 +70,65 @@ export function createChildrenRouter(): Router {
     async (req, res) => {
       const child = await getChildById(req.auth!, req.params.childId as string);
       res.status(200).json(child);
+    },
+  );
+
+  /**
+   * GET /children/:childId/professionals
+   * Lista los vínculos `atiende` del niño para consultar asignaciones vigentes o pasadas.
+   */
+  router.get(
+    '/:childId/professionals',
+    requirePermission('child:read'),
+    requireVinculo('childId'),
+    async (req, res) => {
+      const assignments = await listChildProfessionals(req.auth!, req.params.childId as string);
+      res.status(200).json(assignments);
+    },
+  );
+
+  /**
+   * POST /children/:childId/professionals
+   * Asigna un profesional a un niño (`atiende` con vigencia).
+   * Autorizado solo para el representante legal o un profesional con vínculo vigente.
+   */
+  router.post(
+    '/:childId/professionals',
+    requireVinculo('childId'),
+    validateRequest({ body: AssignProfessionalInputSchema }),
+    async (req, res) => {
+      const assignment = await assignProfessional(
+        req.auth!,
+        req.params.childId as string,
+        req.body as AssignProfessionalInput,
+      );
+      res.status(201).json(assignment);
+    },
+  );
+
+  /**
+   * PATCH /children/:childId/professionals/:professionalId/end
+   * Finaliza el vínculo vigente de un profesional con el niño estableciendo `endDate`.
+   * Autorizado solo para el representante legal o un profesional con vínculo vigente.
+   */
+  router.patch(
+    '/:childId/professionals/:professionalId/end',
+    requireVinculo('childId'),
+    validateRequest({
+      params: ChildProfessionalParamsSchema,
+      body: EndProfessionalAssignmentInputSchema,
+    }),
+    async (req, res) => {
+      const { childId, professionalId } = req.params as z.infer<
+        typeof ChildProfessionalParamsSchema
+      >;
+      const assignment = await endProfessionalAssignment(
+        req.auth!,
+        childId,
+        professionalId,
+        req.body as EndProfessionalAssignmentInput,
+      );
+      res.status(200).json(assignment);
     },
   );
 
