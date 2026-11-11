@@ -9,6 +9,7 @@ import {
   type Permission,
 } from '../lib/permissions.js';
 import {
+  requireActiveConsent,
   requirePermission,
   requireRole,
   requireSpecialty,
@@ -25,6 +26,12 @@ const db = vi.hoisted(() => ({
     childId: string;
     startDate: Date;
     endDate: Date | null;
+  }[],
+  consents: [] as {
+    id: string;
+    childId: string;
+    caregiverId: string;
+    revokedAt: Date | null;
   }[],
 }));
 
@@ -60,6 +67,14 @@ vi.mock('../lib/prisma.js', () => ({
               l.professionalId === where.professionalId &&
               l.startDate <= where.startDate.lte &&
               (l.endDate === null || l.endDate >= where.startDate.lte),
+          ) ?? null,
+      },
+      consent: {
+        findFirst: async ({ where }: { where: { childId: string; revokedAt: null | Date } }) =>
+          db.consents.find(
+            (c) =>
+              c.childId === where.childId &&
+              (where.revokedAt === null ? c.revokedAt === null : true),
           ) ?? null,
       },
     }),
@@ -126,6 +141,15 @@ function createTestApp() {
       res.status(201).json({ ok: true });
     },
   );
+  app.post(
+    '/children/:childId/checkups',
+    authenticate,
+    requireVinculo(),
+    requireActiveConsent(),
+    (_req, res) => {
+      res.status(201).json({ ok: true });
+    },
+  );
   app.use(errorHandler);
   return app;
 }
@@ -138,6 +162,14 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
       { caregiverId: CUIDADOR_A, childId: NINO_A },
       { caregiverId: CUIDADOR_B, childId: NINO_B },
       { caregiverId: MIXTO, childId: NINO_B },
+    ];
+    db.consents = [
+      {
+        id: '00000000-0000-4000-8000-000000000001',
+        childId: NINO_A,
+        caregiverId: CUIDADOR_A,
+        revokedAt: null,
+      },
     ];
     db.professionalLinks = [
       { professionalId: PROF_NUTRI, childId: NINO_A, startDate: daysFromToday(-30), endDate: null },
@@ -297,6 +329,41 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
       expect([cuida.status, atiende.status, ajeno.status]).toEqual([200, 200, 403]);
       expect(cuida.body.vinculo).toBe('CAREGIVER');
       expect(atiende.body.vinculo).toBe('PROFESSIONAL');
+    });
+  });
+
+  describe('requireActiveConsent (RF-02)', () => {
+    it('permite registrar control cuando el niño tiene consentimiento activo', async () => {
+      const token = await tokenFor(CUIDADOR_A, ['CAREGIVER']);
+      const res = await request(app)
+        .post(`/children/${NINO_A}/checkups`)
+        .set('Authorization', token);
+      expect(res.status).toBe(201);
+      expect(res.body.ok).toBe(true);
+    });
+
+    it('rechaza con 403 cuando el niño no tiene ningún consentimiento', async () => {
+      const token = await tokenFor(CUIDADOR_B, ['CAREGIVER']);
+      const res = await request(app)
+        .post(`/children/${NINO_B}/checkups`)
+        .set('Authorization', token);
+      expect(res.status).toBe(403);
+      expect(res.body.message).toMatch(/consentimiento informado vigente/i);
+    });
+
+    it('rechaza con 403 cuando el consentimiento del niño fue revocado', async () => {
+      db.consents.push({
+        id: '00000000-0000-4000-8000-000000000002',
+        childId: NINO_B,
+        caregiverId: CUIDADOR_B,
+        revokedAt: new Date(),
+      });
+      const token = await tokenFor(CUIDADOR_B, ['CAREGIVER']);
+      const res = await request(app)
+        .post(`/children/${NINO_B}/checkups`)
+        .set('Authorization', token);
+      expect(res.status).toBe(403);
+      expect(res.body.message).toMatch(/consentimiento informado vigente/i);
     });
   });
 });
