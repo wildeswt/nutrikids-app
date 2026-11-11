@@ -3,8 +3,8 @@ import { assertNotProduction, seedDevData } from '../src/lib/seedDev.js';
 
 async function main() {
   try {
-    assertNotProduction();
     await seedLmsReferences();
+    assertNotProduction();
     await seedDevData();
   } catch (error) {
     console.error('❌ Error durante la ejecución del seed:', error);
