@@ -19,12 +19,23 @@ export function todayIsoDate(): string {
  * Meses cumplidos entre dos fechas `YYYY-MM-DD` ya validadas.
  * Misma regla que `edadEnMeses` de `@nutrikids/who-growth` (meses completos).
  */
-function completedMonths(from: string, to: string): number {
+export function completedMonths(from: string, to: string): number {
   const [fy, fm, fd] = from.split('-').map(Number) as [number, number, number];
   const [ty, tm, td] = to.split('-').map(Number) as [number, number, number];
   let months = (ty - fy) * 12 + (tm - fm);
   if (td < fd) months -= 1;
   return months;
+}
+
+/**
+ * Valida si la edad en meses cumplidos está en el rango de los patrones de referencia de la OMS (12 a 60 meses).
+ */
+export function isAgeInOmsRange(
+  birthDateIso: string,
+  referenceDateIso: string = todayIsoDate(),
+): boolean {
+  const months = completedMonths(birthDateIso, referenceDateIso);
+  return months >= MIN_CHILD_AGE_MONTHS && months <= MAX_CHILD_AGE_MONTHS;
 }
 
 /**
@@ -40,6 +51,8 @@ export function createChildInputSchema(today: () => string = todayIsoDate) {
       sex: SexSchema,
       relationship: requiredText(50),
       isLegalRepresentative: z.boolean(),
+      /** Versión del texto del consentimiento aceptado en el alta (por defecto 'v1'). */
+      consentTextVersion: requiredText(50).default('v1'),
     })
     .superRefine((value, ctx) => {
       const ref = today();
@@ -57,6 +70,13 @@ export function createChildInputSchema(today: () => string = todayIsoDate) {
           code: 'custom',
           path: ['birthDate'],
           message: `El niño debe tener entre ${MIN_CHILD_AGE_MONTHS} y ${MAX_CHILD_AGE_MONTHS} meses`,
+        });
+      }
+      if (!value.isLegalRepresentative) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['isLegalRepresentative'],
+          message: 'El alta del niño debe ser realizada por su representante legal',
         });
       }
     });
@@ -101,9 +121,22 @@ export const ChildResponseSchema = z.object({
   sex: SexSchema,
 });
 
+/** Vínculo activo de profesional asignado. */
+export const ProfessionalAssignmentResponseSchema = z.object({
+  id: UuidSchema,
+  childId: UuidSchema,
+  professionalId: UuidSchema,
+  specialty: z.string().nullable().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  startDate: IsoDateSchema,
+  endDate: IsoDateSchema.nullable(),
+});
+
 export type CreateChildInput = z.infer<typeof CreateChildInputSchema>;
 export type AssignProfessionalInput = z.infer<typeof AssignProfessionalInputSchema>;
 export type EndProfessionalAssignmentInput = z.infer<typeof EndProfessionalAssignmentInputSchema>;
 export type GrantConsentInput = z.infer<typeof GrantConsentInputSchema>;
 export type ConsentResponse = z.infer<typeof ConsentResponseSchema>;
 export type ChildResponse = z.infer<typeof ChildResponseSchema>;
+export type ProfessionalAssignmentResponse = z.infer<typeof ProfessionalAssignmentResponseSchema>;
