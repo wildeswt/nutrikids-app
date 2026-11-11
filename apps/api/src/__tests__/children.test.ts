@@ -931,6 +931,16 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
       expect(renewRes.body.textVersion).toBe('v2');
       expect(renewRes.body.revokedAt).toBeNull();
 
+      // GET /consent devuelve la nueva versión activa 'v2' (revokedAt: null) antes que la 'v1' revocada
+      const getAfterRenew = await request(app)
+        .get(`/children/${childId}/consent`)
+        .set('Authorization', legalRep.token);
+      expect(getAfterRenew.status).toBe(200);
+      expect(getAfterRenew.body).toMatchObject({
+        textVersion: 'v2',
+        revokedAt: null,
+      });
+
       // Verificar en BD que v1 ahora tiene revoked_at not null y v2 tiene null
       const consentsInDb = await adminClient.query(
         `SELECT text_version, revoked_at FROM consents WHERE child_id = $1 ORDER BY granted_at ASC`,

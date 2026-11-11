@@ -714,7 +714,7 @@ export async function getChildConsent(
   return withUser(auth.userId, async (tx) => {
     const consent = await tx.consent.findFirst({
       where: { childId },
-      orderBy: [{ revokedAt: 'asc' }, { grantedAt: 'desc' }],
+      orderBy: [{ revokedAt: { sort: 'asc', nulls: 'first' } }, { grantedAt: 'desc' }],
     });
 
     if (!consent) {
