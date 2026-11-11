@@ -28,8 +28,11 @@ export async function withUser<T>(
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
 ): Promise<T> {
   const id = z.string().uuid().parse(userId);
-  return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT set_config('app.user_id', ${id}, true)`;
-    return fn(tx);
-  });
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$queryRaw`SELECT set_config('app.user_id', ${id}, true)`;
+      return fn(tx);
+    },
+    { maxWait: 10000, timeout: 15000 },
+  );
 }
