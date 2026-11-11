@@ -170,25 +170,30 @@ describe('ReferenceCurvesQuerySchema y ReferenceCurvesResponseSchema', () => {
       ReferenceCurvesQuerySchema.safeParse({
         indicator: 'WEIGHT_FOR_LENGTH_HEIGHT',
         sex: 'MALE',
+        position: 'STANDING',
+      }).success,
+    ).toBe(true);
+    expect(
+      ReferenceCurvesQuerySchema.safeParse({
+        indicator: 'WEIGHT_FOR_LENGTH_HEIGHT',
+        sex: 'MALE',
         extra: 'no',
       }).success,
     ).toBe(false);
 
     expect(
       ReferenceCurvesResponseSchema.safeParse({
+        version: 'WHO 2006',
         indicator: 'WEIGHT_FOR_LENGTH_HEIGHT',
         sex: 'MALE',
-        referenceVersion: 'WHO-2006',
-        points: [
-          {
-            x: 97,
-            zNeg3: 11.4,
-            zNeg2: 12.4,
-            z0: 14.6,
-            zPos2: 17.3,
-            zPos3: 18.9,
-          },
-        ],
+        xAxis: 'height_cm',
+        curves: {
+          '-3': [{ x: 97, y: 11.4 }],
+          '-2': [{ x: 97, y: 12.4 }],
+          '0': [{ x: 97, y: 14.6 }],
+          '+2': [{ x: 97, y: 17.3 }],
+          '+3': [{ x: 97, y: 18.9 }],
+        },
       }).success,
     ).toBe(true);
   });

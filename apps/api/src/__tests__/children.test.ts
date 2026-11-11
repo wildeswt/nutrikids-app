@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import {
+  CaregiverAssignmentResponseSchema,
   ChildResponseSchema,
   ProfessionalAssignmentResponseSchema,
   completedMonths,
@@ -104,7 +105,7 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
     status?: 'active' | 'suspended';
     firstName?: string;
     lastName?: string;
-  }): Promise<{ userId: string; token: string }> {
+  }): Promise<{ userId: string; email: string; token: string }> {
     const userId = crypto.randomUUID();
     const email = `test-${userId}@nutrikids.local`;
     const firstName = options.firstName ?? 'Test';
@@ -139,7 +140,7 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
         : null,
     });
 
-    return { userId, token: `Bearer ${accessToken}` };
+    return { userId, email, token: `Bearer ${accessToken}` };
   }
 
   async function seedChildDirect(options: {
@@ -573,6 +574,13 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
         .send({ professionalId: nutritionist.userId });
       expect(referralRes.status).toBe(201);
 
+      // Enfermera NO puede finalizar el vínculo del nutricionista (solo el suyo propio) -> 403 Forbidden
+      const endOtherProfRes = await request(app)
+        .patch(`/children/${childId}/professionals/${nutritionist.userId}/end`)
+        .set('Authorization', nurse.token)
+        .send({ endDate: todayUtcIso() });
+      expect(endOtherProfRes.status).toBe(403);
+
       // Enfermera finaliza su propio vínculo (hasta ayer) y pierde acceso
       const selfEndRes = await request(app)
         .patch(`/children/${childId}/professionals/${nurse.userId}/end`)
@@ -670,6 +678,222 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
     });
   });
 
+  // ─── Gestión de vínculos cuida (cuidadores) ──────────────────────────────
+
+  describe('Gestión de vínculos con cuidadores (/children/:childId/caregivers)', () => {
+    it('el representante legal vincula a un segundo cuidador (por email), actualiza su parentesco, lista y lo desvincula', async () => {
+      const legalRep = await createTestUser({
+        roles: ['CAREGIVER'],
+        firstName: 'María',
+        lastName: 'Pérez',
+      });
+      const secondCaregiver = await createTestUser({
+        roles: ['CAREGIVER'],
+        firstName: 'Carlos',
+        lastName: 'Pérez',
+      });
+      const childId = await seedChildDirect({ caregiverId: legalRep.userId });
+
+      // 1. Antes de vincular, el segundo cuidador no tiene acceso al niño (403)
+      expect(
+        (await request(app).get(`/children/${childId}`).set('Authorization', secondCaregiver.token))
+          .status,
+      ).toBe(403);
+
+      // 2. Representante legal vincula al segundo cuidador por email (isLegalRepresentative = false por defecto)
+      const assignRes = await request(app)
+        .post(`/children/${childId}/caregivers`)
+        .set('Authorization', legalRep.token)
+        .send({
+          email: secondCaregiver.email.toUpperCase(),
+          relationship: 'Padre',
+        });
+
+      expect(assignRes.status).toBe(201);
+      expect(CaregiverAssignmentResponseSchema.safeParse(assignRes.body).success).toBe(true);
+      expect(assignRes.body).toEqual({
+        caregiverId: secondCaregiver.userId,
+        childId,
+        firstName: 'Carlos',
+        lastName: 'Pérez',
+        email: secondCaregiver.email,
+        relationship: 'Padre',
+        isLegalRepresentative: false,
+      });
+
+      // 3. Intentar vincular de nuevo al mismo cuidador -> 409 Conflict
+      const dupRes = await request(app)
+        .post(`/children/${childId}/caregivers`)
+        .set('Authorization', legalRep.token)
+        .send({
+          caregiverId: secondCaregiver.userId,
+          relationship: 'Padre',
+        });
+      expect(dupRes.status).toBe(409);
+
+      // 4. El segundo cuidador ahora puede ver al niño y listar los cuidadores (200)
+      const listRes = await request(app)
+        .get(`/children/${childId}/caregivers`)
+        .set('Authorization', secondCaregiver.token);
+      expect(listRes.status).toBe(200);
+      expect(listRes.body).toHaveLength(2);
+
+      // 5. Representante legal actualiza el parentesco del segundo cuidador (200)
+      const patchRes = await request(app)
+        .patch(`/children/${childId}/caregivers/${secondCaregiver.userId}`)
+        .set('Authorization', legalRep.token)
+        .send({ relationship: 'Abuelo paterno' });
+      expect(patchRes.status).toBe(200);
+      expect(patchRes.body.relationship).toBe('Abuelo paterno');
+
+      // 6. Representante legal desvincula al segundo cuidador (204) y este pierde acceso (403)
+      const delRes = await request(app)
+        .delete(`/children/${childId}/caregivers/${secondCaregiver.userId}`)
+        .set('Authorization', legalRep.token);
+      expect(delRes.status).toBe(204);
+
+      expect(
+        (await request(app).get(`/children/${childId}`).set('Authorization', secondCaregiver.token))
+          .status,
+      ).toBe(403);
+    });
+
+    it('impide que un cuidador secundario o un profesional gestionen vínculos de cuidadores (403) y protege al único representante legal (409)', async () => {
+      const legalRep = await createTestUser({ roles: ['CAREGIVER'] });
+      const secondaryCaregiver = await createTestUser({ roles: ['CAREGIVER'] });
+      const thirdCaregiver = await createTestUser({ roles: ['CAREGIVER'] });
+      const linkedProf = await createTestUser({ roles: ['PROFESSIONAL'], specialty: 'pediatrics' });
+      const childId = await seedChildDirect({ caregiverId: legalRep.userId });
+
+      await adminClient.query(
+        `INSERT INTO caregiver_children (caregiver_id, child_id, relationship, is_legal_representative)
+         VALUES ($1, $2, 'Tía', false)`,
+        [secondaryCaregiver.userId, childId],
+      );
+      await adminClient.query(
+        `INSERT INTO professional_children (id, child_id, professional_id, start_date)
+         VALUES ($1, $2, $3, CURRENT_DATE - 1)`,
+        [crypto.randomUUID(), childId, linkedProf.userId],
+      );
+
+      // Cuidador secundario intenta agregar, editar o eliminar -> 403 Forbidden
+      expect(
+        (
+          await request(app)
+            .post(`/children/${childId}/caregivers`)
+            .set('Authorization', secondaryCaregiver.token)
+            .send({ caregiverId: thirdCaregiver.userId, relationship: 'Abuelo' })
+        ).status,
+      ).toBe(403);
+
+      expect(
+        (
+          await request(app)
+            .patch(`/children/${childId}/caregivers/${secondaryCaregiver.userId}`)
+            .set('Authorization', secondaryCaregiver.token)
+            .send({ isLegalRepresentative: true })
+        ).status,
+      ).toBe(403);
+
+      expect(
+        (
+          await request(app)
+            .delete(`/children/${childId}/caregivers/${secondaryCaregiver.userId}`)
+            .set('Authorization', secondaryCaregiver.token)
+        ).status,
+      ).toBe(403);
+
+      // Profesional con vínculo vigente puede listar cuidadores (200), pero NO agregar/eliminar (403)
+      expect(
+        (
+          await request(app)
+            .get(`/children/${childId}/caregivers`)
+            .set('Authorization', linkedProf.token)
+        ).status,
+      ).toBe(200);
+
+      expect(
+        (
+          await request(app)
+            .post(`/children/${childId}/caregivers`)
+            .set('Authorization', linkedProf.token)
+            .send({ caregiverId: thirdCaregiver.userId, relationship: 'Abuelo' })
+        ).status,
+      ).toBe(403);
+
+      // Representante legal único intenta quitarse isLegalRepresentative o eliminarse -> 409 Conflict
+      const demoteLastRep = await request(app)
+        .patch(`/children/${childId}/caregivers/${legalRep.userId}`)
+        .set('Authorization', legalRep.token)
+        .send({ isLegalRepresentative: false });
+      expect(demoteLastRep.status).toBe(409);
+
+      const deleteLastRep = await request(app)
+        .delete(`/children/${childId}/caregivers/${legalRep.userId}`)
+        .set('Authorization', legalRep.token);
+      expect(deleteLastRep.status).toBe(409);
+
+      // Si primero promueve al cuidador secundario a representante legal, ahora sí puede quitarse a sí mismo
+      const promoteSec = await request(app)
+        .patch(`/children/${childId}/caregivers/${secondaryCaregiver.userId}`)
+        .set('Authorization', legalRep.token)
+        .send({ isLegalRepresentative: true });
+      expect(promoteSec.status).toBe(200);
+
+      const demoteFirst = await request(app)
+        .patch(`/children/${childId}/caregivers/${legalRep.userId}`)
+        .set('Authorization', secondaryCaregiver.token)
+        .send({ isLegalRepresentative: false });
+      expect(demoteFirst.status).toBe(200);
+      expect(demoteFirst.body.isLegalRepresentative).toBe(false);
+    });
+
+    it('devuelve 404 cuando el cuidador destino no existe, está suspendido o no tiene vínculo con el niño', async () => {
+      const legalRep = await createTestUser({ roles: ['CAREGIVER'] });
+      const suspendedCaregiver = await createTestUser({
+        roles: ['CAREGIVER'],
+        status: 'suspended',
+      });
+      const childId = await seedChildDirect({ caregiverId: legalRep.userId });
+      const unknownId = crypto.randomUUID();
+
+      expect(
+        (
+          await request(app)
+            .post(`/children/${childId}/caregivers`)
+            .set('Authorization', legalRep.token)
+            .send({ caregiverId: unknownId, relationship: 'Tío' })
+        ).status,
+      ).toBe(404);
+
+      expect(
+        (
+          await request(app)
+            .post(`/children/${childId}/caregivers`)
+            .set('Authorization', legalRep.token)
+            .send({ caregiverId: suspendedCaregiver.userId, relationship: 'Tío' })
+        ).status,
+      ).toBe(404);
+
+      expect(
+        (
+          await request(app)
+            .patch(`/children/${childId}/caregivers/${unknownId}`)
+            .set('Authorization', legalRep.token)
+            .send({ relationship: 'Tío' })
+        ).status,
+      ).toBe(404);
+
+      expect(
+        (
+          await request(app)
+            .delete(`/children/${childId}/caregivers/${unknownId}`)
+            .set('Authorization', legalRep.token)
+        ).status,
+      ).toBe(404);
+    });
+  });
+
   // ─── Helper assertChildAgeInOmsRange (>60m policy) ───────────────────────
 
   describe('assertChildAgeInOmsRange (política > 60 meses para futuros controles)', () => {
@@ -699,6 +923,7 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
       }) as never);
 
       const legalRep = await createTestUser({ roles: ['CAREGIVER'] });
+      const secondCaregiver = await createTestUser({ roles: ['CAREGIVER'] });
       const prof = await createTestUser({ roles: ['PROFESSIONAL'], specialty: 'pediatrics' });
 
       // Alta atómica bajo RLS estricto + FK diferida
@@ -715,6 +940,18 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
         });
       expect(createRes.status).toBe(201);
       const childId = createRes.body.id as string;
+
+      // Gestión de cuidadores bajo RLS estricto
+      const addCaregiverRes = await request(app)
+        .post(`/children/${childId}/caregivers`)
+        .set('Authorization', legalRep.token)
+        .send({ caregiverId: secondCaregiver.userId, relationship: 'Padre' });
+      expect(addCaregiverRes.status).toBe(201);
+
+      const delCaregiverRes = await request(app)
+        .delete(`/children/${childId}/caregivers/${secondCaregiver.userId}`)
+        .set('Authorization', legalRep.token);
+      expect(delCaregiverRes.status).toBe(204);
 
       // Lectura y asignación bajo RLS estricto
       const assignRes = await request(app)

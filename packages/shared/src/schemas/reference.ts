@@ -5,7 +5,7 @@ import { IndicatorSchema, SexSchema, PositionSchema } from './enums.js';
 z.config(z.locales.es());
 
 /** Query params for GET /reference/curves. */
-export const OmsReferenceCurvesQuerySchema = z.object({
+export const OmsReferenceCurvesQuerySchema = z.strictObject({
   indicator: IndicatorSchema,
   sex: SexSchema,
   /**
@@ -48,3 +48,11 @@ export const OmsReferenceCurvesResponseSchema = z.object({
 });
 
 export type OmsReferenceCurvesResponse = z.infer<typeof OmsReferenceCurvesResponseSchema>;
+
+export const ReferenceCurvesQuerySchema = OmsReferenceCurvesQuerySchema;
+export const CurvePointSchema = OmsCurvePointSchema;
+export const ReferenceCurvesResponseSchema = OmsReferenceCurvesResponseSchema;
+
+export type ReferenceCurvesQuery = OmsReferenceCurvesQuery;
+export type CurvePoint = OmsCurvePoint;
+export type ReferenceCurvesResponse = OmsReferenceCurvesResponse;
