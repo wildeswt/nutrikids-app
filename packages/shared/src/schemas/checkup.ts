@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { IsoDateTimeSchema, UuidSchema, requiredText } from './common.js';
-import { IndicatorSchema, OriginSchema, PositionSchema, SexSchema } from './enums.js';
+import { IndicatorSchema, OriginSchema, PositionSchema } from './enums.js';
 
 /**
- * Controles antropométricos, resultados de indicadores OMS y curvas de referencia.
+ * Controles antropométricos y resultados de indicadores OMS.
  */
 
 /** Límites físicos duros (coinciden con los CHECK de la tabla `checkups`). */
@@ -96,12 +96,6 @@ export const CorrectCheckupInputSchema = BaseCheckupInputObject.superRefine(
   validateOutlierConfirmation,
 );
 
-/** Consulta de curvas OMS (`GET /reference/curves?indicator=&sex=`). */
-export const ReferenceCurvesQuerySchema = z.strictObject({
-  indicator: IndicatorSchema,
-  sex: SexSchema,
-});
-
 // ---------- Salida ----------
 
 /** Resultado de un indicador antropométrico (vista profesional). */
@@ -146,29 +140,8 @@ export const CheckupResponseSchema = z.object({
  */
 export const CaregiverCheckupResponseSchema = z.object(BaseCheckupResponseShape);
 
-/** Punto de las 5 curvas OMS (−3, −2, 0, +2 y +3) para una edad o longitud/talla `x`. */
-export const CurvePointSchema = z.object({
-  x: z.number(),
-  zNeg3: z.number(),
-  zNeg2: z.number(),
-  z0: z.number(),
-  zPos2: z.number(),
-  zPos3: z.number(),
-});
-
-/** Respuesta con las 5 series de referencia OMS listas para graficar. */
-export const ReferenceCurvesResponseSchema = z.object({
-  indicator: IndicatorSchema,
-  sex: SexSchema,
-  referenceVersion: requiredText(50),
-  points: z.array(CurvePointSchema),
-});
-
 export type CreateCheckupInput = z.infer<typeof CreateCheckupInputSchema>;
 export type CorrectCheckupInput = z.infer<typeof CorrectCheckupInputSchema>;
 export type IndicatorResult = z.infer<typeof IndicatorResultSchema>;
 export type CheckupResponse = z.infer<typeof CheckupResponseSchema>;
 export type CaregiverCheckupResponse = z.infer<typeof CaregiverCheckupResponseSchema>;
-export type ReferenceCurvesQuery = z.infer<typeof ReferenceCurvesQuerySchema>;
-export type CurvePoint = z.infer<typeof CurvePointSchema>;
-export type ReferenceCurvesResponse = z.infer<typeof ReferenceCurvesResponseSchema>;

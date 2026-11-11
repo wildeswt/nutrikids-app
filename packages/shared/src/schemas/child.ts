@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { IsoDateSchema, IsoDateTimeSchema, UuidSchema, requiredText } from './common.js';
+import {
+  EmailSchema,
+  IsoDateSchema,
+  IsoDateTimeSchema,
+  UuidSchema,
+  requiredText,
+} from './common.js';
 import { SexSchema } from './enums.js';
 
 /**
@@ -100,6 +106,33 @@ export const AssignProfessionalInputSchema = z
 /** Finalizar la asignación de un profesional. */
 export const EndProfessionalAssignmentInputSchema = z.strictObject({ endDate: IsoDateSchema });
 
+/** Vincular un cuidador adicional a un niño (`cuida`). Requiere `caregiverId` o `email`. */
+export const AssignCaregiverInputSchema = z
+  .strictObject({
+    caregiverId: UuidSchema.optional(),
+    email: EmailSchema.optional(),
+    relationship: requiredText(50),
+    isLegalRepresentative: z.boolean().default(false),
+  })
+  .refine((value) => Boolean(value.caregiverId || value.email), {
+    path: ['caregiverId'],
+    error: 'Debes indicar el identificador o el correo del cuidador',
+  });
+
+/** Actualizar el parentesco o condición de representante legal de un cuidador vinculado (`cuida`). */
+export const UpdateCaregiverLinkInputSchema = z
+  .strictObject({
+    relationship: requiredText(50).optional(),
+    isLegalRepresentative: z.boolean().optional(),
+  })
+  .refine(
+    (value) => value.relationship !== undefined || value.isLegalRepresentative !== undefined,
+    {
+      path: ['relationship'],
+      error: 'Debes indicar al menos un campo para actualizar',
+    },
+  );
+
 /** Otorgar consentimiento; el niño viene en la ruta y el cuidador en la sesión. */
 export const GrantConsentInputSchema = z.strictObject({ textVersion: requiredText(50) });
 
@@ -121,6 +154,17 @@ export const ChildResponseSchema = z.object({
   sex: SexSchema,
 });
 
+/** Vínculo de cuidador asignado a un niño (`cuida`). */
+export const CaregiverAssignmentResponseSchema = z.object({
+  caregiverId: UuidSchema,
+  childId: UuidSchema,
+  firstName: z.string(),
+  lastName: z.string(),
+  email: EmailSchema,
+  relationship: z.string(),
+  isLegalRepresentative: z.boolean(),
+});
+
 /** Vínculo activo de profesional asignado. */
 export const ProfessionalAssignmentResponseSchema = z.object({
   id: UuidSchema,
@@ -136,7 +180,10 @@ export const ProfessionalAssignmentResponseSchema = z.object({
 export type CreateChildInput = z.infer<typeof CreateChildInputSchema>;
 export type AssignProfessionalInput = z.infer<typeof AssignProfessionalInputSchema>;
 export type EndProfessionalAssignmentInput = z.infer<typeof EndProfessionalAssignmentInputSchema>;
+export type AssignCaregiverInput = z.infer<typeof AssignCaregiverInputSchema>;
+export type UpdateCaregiverLinkInput = z.infer<typeof UpdateCaregiverLinkInputSchema>;
 export type GrantConsentInput = z.infer<typeof GrantConsentInputSchema>;
 export type ConsentResponse = z.infer<typeof ConsentResponseSchema>;
 export type ChildResponse = z.infer<typeof ChildResponseSchema>;
+export type CaregiverAssignmentResponse = z.infer<typeof CaregiverAssignmentResponseSchema>;
 export type ProfessionalAssignmentResponse = z.infer<typeof ProfessionalAssignmentResponseSchema>;
