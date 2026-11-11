@@ -91,17 +91,27 @@ Los endpoints bajo `/children/:childId/caregivers` permiten consultar y gestiona
 - **`PATCH /children/:childId/caregivers/:caregiverId`:** permite actualizar `relationship` y/o `isLegalRepresentative`. Restringido al representante legal. Si intenta pasar `isLegalRepresentative: false` al único representante legal activo del niño, responde `409 Conflict`.
 - **`DELETE /children/:childId/caregivers/:caregiverId`:** desvincula a un cuidador del niño (`204 No Content`). Restringido al representante legal e impide desvincular al único representante legal activo (`409 Conflict`).
 
-### 6.3 Orden del consentimiento informado en el alta (`POST /children`)
+### 6.3 Ciclo de vida y orden del consentimiento informado (RF-02, NK-16, NK-17, NK-20)
 
-Para evitar registrar nombres, apellidos o fecha de nacimiento de un menor sin consentimiento vigente (RF-02 + RF-03):
+Para garantizar que ningún dato clínico ni de filiación del menor exista o se registre sin consentimiento informado vigente:
 
-1. Solo usuarios con rol `CAREGIVER` y declarados como representante legal (`isLegalRepresentative: true`) pueden dar de alta al niño (`403 Forbidden` en caso contrario).
-2. En **una única transacción** bajo RLS (`withUser`), aprovechando la clave foránea diferible `caregiver_children_child_id_fkey`, el servidor inserta atómicamente:
-   - El vínculo inicial en `caregiver_children` (`is_legal_representative = true`).
-   - El registro en `children` únicamente con los 4 datos mínimos (`firstName`, `lastName`, `birthDate`, `sex`).
-   - El consentimiento inicial en `consents` (`textVersion`, por defecto `'v1'`, `grantedAt = now()`, `revokedAt = null`).
+1. **Alta inicial del niño (`POST /children` — NK-17 y NK-20):**
+   - La app muestra la pantalla de consentimiento al representante legal **antes** de confirmar el alta (NK-20).
+   - En el servidor, `POST /children` ejecuta una **única transacción bajo RLS** (`withUser`), donde mediante la clave foránea diferible `caregiver_children_child_id_fkey` inserta de forma indivisible:
+     1. El vínculo inicial en `caregiver_children` (`is_legal_representative = true`).
+     2. El registro en `children` con los datos mínimos (`firstName`, `lastName`, `birthDate`, `sex`).
+     3. El consentimiento inicial en `consents` (`granted_at = now()`, `revoked_at = null`, `text_version = 'v1'`).
+   - Esto resuelve la aparente discrepancia técnica: la UI pide el consentimiento previo al registro y la base de datos lo asocia al `childId` creado atómicamente, sin dejar jamás un niño en estado no consentido.
 
-La renovación de versión o revocación posterior se gestiona mediante los endpoints dedicados de consentimiento (NK-16).
+2. **Endpoints de consentimiento (`/children/:childId/consent` — NK-16):**
+   - **`GET /children/:childId/consent`:** Devuelve el consentimiento vigente (`revokedAt: null`) o el último registrado para trazabilidad y auditoría. Accesible con `child:read` y vínculo vigente sobre el niño.
+   - **`POST /children/:childId/consent`:** Otorga o renueva el consentimiento. Restringido **exclusivamente al representante legal** (`isLegalRepresentative = true`). Si ya existe uno vigente con distinta `textVersion`, marca `revokedAt = now()` en el anterior y crea el nuevo en la misma transacción (`201 Created`). Si se envía la misma versión vigente, responde `409 Conflict`.
+   - **`DELETE /children/:childId/consent`:** Revoca el consentimiento activo mediante revocación lógica (`revokedAt = now()`, responde `200 OK` con `ConsentResponse`). Restringido **exclusivamente al representante legal**. Si ya está revocado, responde `409 Conflict`.
+   - **Índice único de integridad:** El índice único parcial `consents_child_active_unique_idx` (`WHERE revoked_at IS NULL`) previene condiciones de carrera garantizando como máximo un consentimiento activo por niño.
+
+3. **Bloqueo de registros clínicos sin consentimiento activo:**
+   - Todo endpoint de registro de controles (p. ej. `POST /children/:childId/checkups`) aplica el middleware `requireActiveConsent('childId')` y la validación en servicio `assertActiveConsent`. Si el niño no cuenta con un consentimiento con `revoked_at IS NULL`, la solicitud se rechaza con `403 Forbidden`.
+   - Como defensa en profundidad, el trigger de PostgreSQL `checkups_active_consent` (`BEFORE INSERT ON checkups`) aborta cualquier inserción de control si no existe consentimiento activo para ese `child_id`.
 
 ### 6.4 Límite de edad OMS (`12–60` meses) y controles futuros
 

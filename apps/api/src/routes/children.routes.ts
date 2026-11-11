@@ -3,12 +3,14 @@ import {
   AssignProfessionalInputSchema,
   CreateChildInputSchema,
   EndProfessionalAssignmentInputSchema,
+  GrantConsentInputSchema,
   UpdateCaregiverLinkInputSchema,
   UuidSchema,
   type AssignCaregiverInput,
   type AssignProfessionalInput,
   type CreateChildInput,
   type EndProfessionalAssignmentInput,
+  type GrantConsentInput,
   type UpdateCaregiverLinkInput,
 } from '@nutrikids/shared';
 import { Router } from 'express';
@@ -22,10 +24,13 @@ import {
   createChild,
   endProfessionalAssignment,
   getChildById,
+  getChildConsent,
+  grantConsent,
   listChildCaregivers,
   listChildProfessionals,
   listChildren,
   removeCaregiverLink,
+  revokeConsent,
   updateCaregiverLink,
 } from '../services/children.service.js';
 
@@ -215,6 +220,56 @@ export function createChildrenRouter(): Router {
       const { childId, caregiverId } = req.params as z.infer<typeof ChildCaregiverParamsSchema>;
       await removeCaregiverLink(req.auth!, childId, caregiverId);
       res.status(204).send();
+    },
+  );
+
+  /**
+   * GET /children/:childId/consent
+   * Consulta el consentimiento informado del niño (vigente o el más reciente).
+   * Requiere permiso child:read y vínculo vigente sobre el niño.
+   */
+  router.get(
+    '/:childId/consent',
+    requirePermission('child:read'),
+    requireVinculo('childId'),
+    async (req, res) => {
+      const consent = await getChildConsent(req.auth!, req.params.childId as string);
+      res.status(200).json(consent);
+    },
+  );
+
+  /**
+   * POST /children/:childId/consent
+   * Otorga o renueva el consentimiento informado con una versión de texto (RF-02).
+   * Autorizado exclusivamente para el representante legal del niño.
+   */
+  router.post(
+    '/:childId/consent',
+    requireRole('CAREGIVER'),
+    requireVinculo('childId'),
+    validateRequest({ body: GrantConsentInputSchema }),
+    async (req, res) => {
+      const consent = await grantConsent(
+        req.auth!,
+        req.params.childId as string,
+        req.body as GrantConsentInput,
+      );
+      res.status(201).json(consent);
+    },
+  );
+
+  /**
+   * DELETE /children/:childId/consent
+   * Revoca el consentimiento informado vigente del niño (revocación lógica con revokedAt = now()).
+   * Autorizado exclusivamente para el representante legal del niño.
+   */
+  router.delete(
+    '/:childId/consent',
+    requireRole('CAREGIVER'),
+    requireVinculo('childId'),
+    async (req, res) => {
+      const consent = await revokeConsent(req.auth!, req.params.childId as string);
+      res.status(200).json(consent);
     },
   );
 

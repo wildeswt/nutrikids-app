@@ -111,3 +111,42 @@ export function requireVinculo(source: ChildIdSource = 'childId'): RequestHandle
     }
   };
 }
+
+/**
+ * Exige consentimiento informado activo (revokedAt es null) para el niño (RF-02).
+ * Sin consentimiento vigente, no se pueden registrar datos clínicos del niño (controles, etc.).
+ * `source` es el parámetro de ruta (por defecto `childId`) o extractor personalizado.
+ */
+export function requireActiveConsent(source: ChildIdSource = 'childId'): RequestHandler {
+  return async (req, _res, next) => {
+    try {
+      const auth = getAuth(req);
+      const raw = typeof source === 'function' ? source(req) : req.params[source];
+      const parsed = UuidSchema.safeParse(raw);
+      if (!parsed.success) {
+        throw HttpError.badRequest('Identificador de niño inválido');
+      }
+      const childId = parsed.data;
+
+      const activeConsent = await withUser(auth.userId, async (tx) => {
+        return tx.consent.findFirst({
+          where: {
+            childId,
+            revokedAt: null,
+          },
+          select: { id: true },
+        });
+      });
+
+      if (!activeConsent) {
+        throw HttpError.forbidden(
+          'El niño no cuenta con un consentimiento informado vigente para registrar datos',
+        );
+      }
+
+      next();
+    } catch (err) {
+      next(err);
+    }
+  };
+}

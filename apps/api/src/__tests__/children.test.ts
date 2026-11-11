@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import {
   CaregiverAssignmentResponseSchema,
   ChildResponseSchema,
+  ConsentResponseSchema,
   ProfessionalAssignmentResponseSchema,
   completedMonths,
 } from '@nutrikids/shared';
@@ -894,6 +895,180 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
     });
   });
 
+  // ─── Gestión de consentimiento informado (/children/:childId/consent) ──
+
+  describe('Consentimiento informado (/children/:childId/consent) - RF-02', () => {
+    it('obtiene consentimiento inicial, renueva con nueva versión, revoca lógicamente y bloquea duplicados', async () => {
+      const legalRep = await createTestUser({ roles: ['CAREGIVER'] });
+      const childId = await seedChildDirect({ caregiverId: legalRep.userId });
+
+      // 1. Consultar consentimiento creado en el alta (200 OK)
+      const getRes = await request(app)
+        .get(`/children/${childId}/consent`)
+        .set('Authorization', legalRep.token);
+      expect(getRes.status).toBe(200);
+      expect(ConsentResponseSchema.safeParse(getRes.body).success).toBe(true);
+      expect(getRes.body).toMatchObject({
+        childId,
+        grantedById: legalRep.userId,
+        textVersion: 'v1',
+        revokedAt: null,
+      });
+
+      // 2. Intentar otorgar la misma versión vigente -> 409 Conflict
+      const dupRes = await request(app)
+        .post(`/children/${childId}/consent`)
+        .set('Authorization', legalRep.token)
+        .send({ textVersion: 'v1' });
+      expect(dupRes.status).toBe(409);
+
+      // 3. Renovar con nueva versión 'v2' -> 201 Created y revoca la anterior
+      const renewRes = await request(app)
+        .post(`/children/${childId}/consent`)
+        .set('Authorization', legalRep.token)
+        .send({ textVersion: 'v2' });
+      expect(renewRes.status).toBe(201);
+      expect(renewRes.body.textVersion).toBe('v2');
+      expect(renewRes.body.revokedAt).toBeNull();
+
+      // GET /consent devuelve la nueva versión activa 'v2' (revokedAt: null) antes que la 'v1' revocada
+      const getAfterRenew = await request(app)
+        .get(`/children/${childId}/consent`)
+        .set('Authorization', legalRep.token);
+      expect(getAfterRenew.status).toBe(200);
+      expect(getAfterRenew.body).toMatchObject({
+        textVersion: 'v2',
+        revokedAt: null,
+      });
+
+      // Verificar en BD que v1 ahora tiene revoked_at not null y v2 tiene null
+      const consentsInDb = await adminClient.query(
+        `SELECT text_version, revoked_at FROM consents WHERE child_id = $1 ORDER BY granted_at ASC`,
+        [childId],
+      );
+      expect(consentsInDb.rows).toHaveLength(2);
+      expect(consentsInDb.rows[0].text_version).toBe('v1');
+      expect(consentsInDb.rows[0].revoked_at).not.toBeNull();
+      expect(consentsInDb.rows[1].text_version).toBe('v2');
+      expect(consentsInDb.rows[1].revoked_at).toBeNull();
+
+      // 4. Revocar el consentimiento vigente -> 200 OK
+      const revokeRes = await request(app)
+        .delete(`/children/${childId}/consent`)
+        .set('Authorization', legalRep.token);
+      expect(revokeRes.status).toBe(200);
+      expect(revokeRes.body.revokedAt).not.toBeNull();
+
+      // 5. Intentar revocar nuevamente cuando ya está revocado -> 409 Conflict
+      const reRevokeRes = await request(app)
+        .delete(`/children/${childId}/consent`)
+        .set('Authorization', legalRep.token);
+      expect(reRevokeRes.status).toBe(409);
+
+      // 6. Al consultar tras revocación, devuelve el último con revokedAt
+      const getRevokedRes = await request(app)
+        .get(`/children/${childId}/consent`)
+        .set('Authorization', legalRep.token);
+      expect(getRevokedRes.status).toBe(200);
+      expect(getRevokedRes.body.revokedAt).not.toBeNull();
+
+      // 7. Volver a otorgar tras revocación -> 201 Created
+      const reGrantRes = await request(app)
+        .post(`/children/${childId}/consent`)
+        .set('Authorization', legalRep.token)
+        .send({ textVersion: 'v3' });
+      expect(reGrantRes.status).toBe(201);
+      expect(reGrantRes.body.textVersion).toBe('v3');
+      expect(reGrantRes.body.revokedAt).toBeNull();
+    });
+
+    it('impide a un cuidador secundario o profesional otorgar o revocar consentimiento (403)', async () => {
+      const legalRep = await createTestUser({ roles: ['CAREGIVER'] });
+      const secondaryCaregiver = await createTestUser({ roles: ['CAREGIVER'] });
+      const linkedProf = await createTestUser({ roles: ['PROFESSIONAL'], specialty: 'pediatrics' });
+      const childId = await seedChildDirect({ caregiverId: legalRep.userId });
+
+      await adminClient.query(
+        `INSERT INTO caregiver_children (caregiver_id, child_id, relationship, is_legal_representative)
+         VALUES ($1, $2, 'Tío', false)`,
+        [secondaryCaregiver.userId, childId],
+      );
+      await adminClient.query(
+        `INSERT INTO professional_children (id, child_id, professional_id, start_date)
+         VALUES ($1, $2, $3, CURRENT_DATE - 1)`,
+        [crypto.randomUUID(), childId, linkedProf.userId],
+      );
+
+      // Profesional y cuidador secundario pueden leer el consentimiento con permiso child:read
+      expect(
+        (
+          await request(app)
+            .get(`/children/${childId}/consent`)
+            .set('Authorization', secondaryCaregiver.token)
+        ).status,
+      ).toBe(200);
+      expect(
+        (
+          await request(app)
+            .get(`/children/${childId}/consent`)
+            .set('Authorization', linkedProf.token)
+        ).status,
+      ).toBe(200);
+
+      // Cuidador secundario no puede otorgar ni revocar (403)
+      expect(
+        (
+          await request(app)
+            .post(`/children/${childId}/consent`)
+            .set('Authorization', secondaryCaregiver.token)
+            .send({ textVersion: 'v2' })
+        ).status,
+      ).toBe(403);
+      expect(
+        (
+          await request(app)
+            .delete(`/children/${childId}/consent`)
+            .set('Authorization', secondaryCaregiver.token)
+        ).status,
+      ).toBe(403);
+
+      // Profesional no puede otorgar ni revocar (403)
+      expect(
+        (
+          await request(app)
+            .post(`/children/${childId}/consent`)
+            .set('Authorization', linkedProf.token)
+            .send({ textVersion: 'v2' })
+        ).status,
+      ).toBe(403);
+      expect(
+        (
+          await request(app)
+            .delete(`/children/${childId}/consent`)
+            .set('Authorization', linkedProf.token)
+        ).status,
+      ).toBe(403);
+    });
+
+    it('el trigger de BD en checkups aborta inserción sin consentimiento activo', async () => {
+      const legalRep = await createTestUser({ roles: ['CAREGIVER'] });
+      const childId = await seedChildDirect({ caregiverId: legalRep.userId });
+
+      // Revocar el consentimiento en BD
+      await adminClient.query(`UPDATE consents SET revoked_at = now() WHERE child_id = $1`, [
+        childId,
+      ]);
+
+      const insertCheckup = adminClient.query(
+        `INSERT INTO checkups (id, child_id, measured_at, weight_kg, length_height_cm, position, origin, recorded_by_id)
+         VALUES ($1, $2, now(), 12.0, 85.0, 'STANDING', 'CAREGIVER', $3)`,
+        [crypto.randomUUID(), childId, legalRep.userId],
+      );
+
+      await expect(insertCheckup).rejects.toThrow(/active consent/i);
+    });
+  });
+
   // ─── Helper assertChildAgeInOmsRange (>60m policy) ───────────────────────
 
   describe('assertChildAgeInOmsRange (política > 60 meses para futuros controles)', () => {
@@ -971,6 +1146,18 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
         .set('Authorization', legalRep.token)
         .send({ endDate: todayUtcIso() });
       expect(endRes.status).toBe(200);
+
+      // Gestión de consentimiento bajo RLS estricto
+      const getConsentRes = await request(app)
+        .get(`/children/${childId}/consent`)
+        .set('Authorization', legalRep.token);
+      expect(getConsentRes.status).toBe(200);
+
+      const revokeConsentRes = await request(app)
+        .delete(`/children/${childId}/consent`)
+        .set('Authorization', legalRep.token);
+      expect(revokeConsentRes.status).toBe(200);
+      expect(revokeConsentRes.body.revokedAt).not.toBeNull();
     });
   });
 });
