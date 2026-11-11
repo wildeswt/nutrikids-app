@@ -59,15 +59,15 @@ export function requirePermission(permission: Permission): RequestHandler {
   };
 }
 
-export type NinoIdSource = string | ((req: Request) => unknown);
+export type ChildIdSource = string | ((req: Request) => unknown);
 
 /**
  * Exige vínculo con el niño: el cuidador solo accede a niños de `cuida` y el profesional solo a
  * niños de `atiende` con vínculo vigente (hoy entre `startDate` y `endDate`). Sin vínculo, o si el
  * niño no existe, responde 403 sin revelar la diferencia. `source` es el nombre del parámetro de
- * ruta (por defecto `ninoId`) o una función que extrae el id.
+ * ruta (por defecto `childId`) o una función que extrae el id.
  */
-export function requireVinculo(source: NinoIdSource = 'ninoId'): RequestHandler {
+export function requireVinculo(source: ChildIdSource = 'childId'): RequestHandler {
   return async (req, _res, next) => {
     try {
       const auth = getAuth(req);

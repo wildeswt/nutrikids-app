@@ -94,7 +94,7 @@ function daysFromToday(days: number): Date {
 function createTestApp() {
   const app = express();
   app.use(express.json());
-  app.get('/ninos/:ninoId', authenticate, requireVinculo(), (req, res) => {
+  app.get('/children/:childId', authenticate, requireVinculo(), (req, res) => {
     res.json({ ok: true, vinculo: req.vinculo });
   });
   app.get(
@@ -105,11 +105,11 @@ function createTestApp() {
       res.json({ ok: true });
     },
   );
-  app.get('/solo-profesional', authenticate, requireRole('PROFESSIONAL'), (_req, res) => {
+  app.get('/only-professional', authenticate, requireRole('PROFESSIONAL'), (_req, res) => {
     res.json({ ok: true });
   });
   app.get(
-    '/solo-nutricion',
+    '/only-nutrition',
     authenticate,
     requireSpecialty('nutrition', 'pediatrics'),
     (_req, res) => {
@@ -117,7 +117,7 @@ function createTestApp() {
     },
   );
   app.post(
-    '/ninos/:ninoId/seguimientos',
+    '/children/:childId/follow-ups',
     authenticate,
     requireRole('PROFESSIONAL'),
     requirePermission('followup:create'),
@@ -159,12 +159,14 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
 
   describe('autenticación', () => {
     it('responde 401 sin token', async () => {
-      const res = await request(app).get(`/ninos/${NINO_A}`);
+      const res = await request(app).get(`/children/${NINO_A}`);
       expect(res.status).toBe(401);
     });
 
     it('responde 401 con token inválido', async () => {
-      const res = await request(app).get(`/ninos/${NINO_A}`).set('Authorization', 'Bearer basura');
+      const res = await request(app)
+        .get(`/children/${NINO_A}`)
+        .set('Authorization', 'Bearer basura');
       expect(res.status).toBe(401);
     });
   });
@@ -172,27 +174,27 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
   describe('requireRole / requireSpecialty / requirePermission', () => {
     it('un cuidador recibe 403 en una ruta de profesional', async () => {
       const res = await request(app)
-        .get('/solo-profesional')
+        .get('/only-professional')
         .set('Authorization', await tokenFor(CUIDADOR_A, ['CAREGIVER']));
       expect(res.status).toBe(403);
     });
 
     it('un profesional pasa requireRole("PROFESSIONAL")', async () => {
       const res = await request(app)
-        .get('/solo-profesional')
+        .get('/only-professional')
         .set('Authorization', await tokenFor(PROF_ENF, ['PROFESSIONAL'], 'nursing'));
       expect(res.status).toBe(200);
     });
 
     it('distingue especialidades: enfermería 403; nutrición y pediatría 200', async () => {
       const enf = await request(app)
-        .get('/solo-nutricion')
+        .get('/only-nutrition')
         .set('Authorization', await tokenFor(PROF_ENF, ['PROFESSIONAL'], 'nursing'));
       const nutri = await request(app)
-        .get('/solo-nutricion')
+        .get('/only-nutrition')
         .set('Authorization', await tokenFor(PROF_NUTRI, ['PROFESSIONAL'], 'nutrition'));
       const pedi = await request(app)
-        .get('/solo-nutricion')
+        .get('/only-nutrition')
         .set('Authorization', await tokenFor(PROF_PEDI, ['PROFESSIONAL'], 'pediatrics'));
       expect([enf.status, nutri.status, pedi.status]).toEqual([403, 200, 200]);
     });
@@ -205,10 +207,10 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
         endDate: null,
       });
       const enf = await request(app)
-        .post(`/ninos/${NINO_A}/seguimientos`)
+        .post(`/children/${NINO_A}/follow-ups`)
         .set('Authorization', await tokenFor(PROF_ENF, ['PROFESSIONAL'], 'nursing'));
       const nutri = await request(app)
-        .post(`/ninos/${NINO_A}/seguimientos`)
+        .post(`/children/${NINO_A}/follow-ups`)
         .set('Authorization', await tokenFor(PROF_NUTRI, ['PROFESSIONAL'], 'nutrition'));
       expect(enf.status).toBe(403);
       expect(nutri.status).toBe(201);
@@ -218,7 +220,7 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
   describe('requireVinculo — cuidador', () => {
     it('el cuidador A lee a su propio niño', async () => {
       const res = await request(app)
-        .get(`/ninos/${NINO_A}`)
+        .get(`/children/${NINO_A}`)
         .set('Authorization', await tokenFor(CUIDADOR_A, ['CAREGIVER']));
       expect(res.status).toBe(200);
       expect(res.body.vinculo).toBe('CAREGIVER');
@@ -226,21 +228,21 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
 
     it('el cuidador B NO puede leer al niño del cuidador A (403)', async () => {
       const res = await request(app)
-        .get(`/ninos/${NINO_A}`)
+        .get(`/children/${NINO_A}`)
         .set('Authorization', await tokenFor(CUIDADOR_B, ['CAREGIVER']));
       expect(res.status).toBe(403);
     });
 
     it('un niño inexistente responde 403, igual que uno ajeno', async () => {
       const res = await request(app)
-        .get(`/ninos/${NINO_INEXISTENTE}`)
+        .get(`/children/${NINO_INEXISTENTE}`)
         .set('Authorization', await tokenFor(CUIDADOR_A, ['CAREGIVER']));
       expect(res.status).toBe(403);
     });
 
     it('un identificador que no es UUID responde 400', async () => {
       const res = await request(app)
-        .get('/ninos/no-es-uuid')
+        .get('/children/no-es-uuid')
         .set('Authorization', await tokenFor(CUIDADOR_A, ['CAREGIVER']));
       expect(res.status).toBe(400);
     });
@@ -256,7 +258,7 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
   describe('requireVinculo — profesional', () => {
     it('con vínculo vigente (sin fecha de fin) accede', async () => {
       const res = await request(app)
-        .get(`/ninos/${NINO_A}`)
+        .get(`/children/${NINO_A}`)
         .set('Authorization', await tokenFor(PROF_NUTRI, ['PROFESSIONAL'], 'nutrition'));
       expect(res.status).toBe(200);
       expect(res.body.vinculo).toBe('PROFESSIONAL');
@@ -264,21 +266,21 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
 
     it('sin vínculo con ese niño recibe 403', async () => {
       const res = await request(app)
-        .get(`/ninos/${NINO_B}`)
+        .get(`/children/${NINO_B}`)
         .set('Authorization', await tokenFor(PROF_NUTRI, ['PROFESSIONAL'], 'nutrition'));
       expect(res.status).toBe(403);
     });
 
     it('con vínculo terminado (endDate pasada) recibe 403', async () => {
       const res = await request(app)
-        .get(`/ninos/${NINO_A}`)
+        .get(`/children/${NINO_A}`)
         .set('Authorization', await tokenFor(PROF_ENF, ['PROFESSIONAL'], 'nursing'));
       expect(res.status).toBe(403);
     });
 
     it('con vínculo que aún no comienza (startDate futura) recibe 403', async () => {
       const res = await request(app)
-        .get(`/ninos/${NINO_A}`)
+        .get(`/children/${NINO_A}`)
         .set('Authorization', await tokenFor(PROF_PEDI, ['PROFESSIONAL'], 'pediatrics'));
       expect(res.status).toBe(403);
     });
@@ -287,10 +289,10 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
   describe('requireVinculo — usuario con ambos roles', () => {
     it('accede al niño que cuida y al que atiende, pero no a uno ajeno', async () => {
       const token = await tokenFor(MIXTO, ['CAREGIVER', 'PROFESSIONAL'], 'pediatrics');
-      const cuida = await request(app).get(`/ninos/${NINO_B}`).set('Authorization', token);
-      const atiende = await request(app).get(`/ninos/${NINO_A}`).set('Authorization', token);
+      const cuida = await request(app).get(`/children/${NINO_B}`).set('Authorization', token);
+      const atiende = await request(app).get(`/children/${NINO_A}`).set('Authorization', token);
       const ajeno = await request(app)
-        .get(`/ninos/${NINO_INEXISTENTE}`)
+        .get(`/children/${NINO_INEXISTENTE}`)
         .set('Authorization', token);
       expect([cuida.status, atiende.status, ajeno.status]).toEqual([200, 200, 403]);
       expect(cuida.body.vinculo).toBe('CAREGIVER');

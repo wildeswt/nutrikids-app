@@ -81,7 +81,7 @@ const BaseCheckupInputObject = z.strictObject({
 });
 
 /**
- * Creación de un control (`POST /ninos/:id/controles`).
+ * Creación de un control (`POST /children/:childId/checkups`).
  * `origin` y `recordedById` los asigna el servidor a partir de la sesión autenticada.
  */
 export const CreateCheckupInputSchema = BaseCheckupInputObject.superRefine(
@@ -89,14 +89,14 @@ export const CreateCheckupInputSchema = BaseCheckupInputObject.superRefine(
 );
 
 /**
- * Corrección de un control (`POST /controles/:id/correccion`).
+ * Corrección de un control (`POST /checkups/:checkupId/correction`).
  * Un control nunca se edita: crea un control nuevo que referencia al original.
  */
 export const CorrectCheckupInputSchema = BaseCheckupInputObject.superRefine(
   validateOutlierConfirmation,
 );
 
-/** Consulta de curvas OMS (`GET /referencia/curvas?indicador=&sexo=`). */
+/** Consulta de curvas OMS (`GET /reference/curves?indicator=&sex=`). */
 export const ReferenceCurvesQuerySchema = z.strictObject({
   indicator: IndicatorSchema,
   sex: SexSchema,

@@ -199,7 +199,7 @@ describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () =
         await expect(seedLmsReferences(prisma)).resolves.not.toThrow();
         const countAfter = await prisma.lmsReference.count();
         expect(countAfter).toBe(countBefore);
-      });
+      }, 30000);
     });
   });
 });

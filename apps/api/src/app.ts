@@ -4,8 +4,9 @@ import helmet from 'helmet';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { createAuthRouter } from './routes/auth.routes.js';
+import { createChildrenRouter } from './routes/children.routes.js';
 import { healthRouter } from './routes/health.routes.js';
-import { referenciaRouter } from './routes/referencia.routes.js';
+import { referenceRouter } from './routes/reference.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -20,7 +21,8 @@ export function createApp(): Express {
 
   app.use('/health', healthRouter);
   app.use('/auth', createAuthRouter());
-  app.use('/referencia', referenciaRouter);
+  app.use('/children', createChildrenRouter());
+  app.use('/reference', referenceRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
