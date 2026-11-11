@@ -90,6 +90,13 @@ describe('Database Immutability, Roles, Business Rules and RLS', { timeout: 2000
       [crypto.randomUUID(), childId, professionalUserId],
     );
 
+    // 5b. Active informed consent (required by checkups_active_consent trigger - RF-02)
+    await client.query(
+      `INSERT INTO consents (id, child_id, caregiver_id, text_version)
+       VALUES ($1, $2, $3, 'v1')`,
+      [crypto.randomUUID(), childId, caregiverUserId],
+    );
+
     // 6. Checkup
     await client.query(
       `INSERT INTO checkups (id, child_id, measured_at, weight_kg, length_height_cm, position, origin, recorded_by_id)
