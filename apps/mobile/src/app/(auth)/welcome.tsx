@@ -27,12 +27,6 @@ export default function WelcomeScreen() {
 
           {/* Sección de acciones */}
           <View style={styles.actionsContainer}>
-            <Text style={styles.welcomeTitle}>Bienvenido</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Monitorea el desarrollo nutricional infantil de forma confiable, fácil y basada en
-              estándares de la OMS.
-            </Text>
-
             <View style={styles.buttonGroup}>
               {/* Botón Principal: Iniciar Sesión */}
               <Pressable
@@ -111,26 +105,11 @@ const styles = StyleSheet.create({
   actionsContainer: {
     width: '100%',
     alignItems: 'center',
-    marginVertical: 20,
-  },
-  welcomeTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: PALETTE.text.title,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  welcomeSubtitle: {
-    fontSize: 14,
-    color: PALETTE.text.body,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 32,
-    paddingHorizontal: 12,
+    marginVertical: 24,
   },
   buttonGroup: {
     width: '100%',
-    gap: 14,
+    gap: 16,
   },
   primaryButton: {
     backgroundColor: PALETTE.primary,

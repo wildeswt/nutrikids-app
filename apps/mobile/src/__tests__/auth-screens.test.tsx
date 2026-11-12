@@ -67,7 +67,6 @@ describe('Auth Screens Rendering', () => {
       const html = renderToString(React.createElement(WelcomeScreen));
 
       expect(html).toContain('Cuidar su crecimiento, juntos.');
-      expect(html).toContain('Bienvenido');
       expect(html).toContain('Iniciar Sesión');
       expect(html).toContain('Registrarse');
     });
