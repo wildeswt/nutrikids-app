@@ -31,6 +31,7 @@ Primero rol, luego vínculo: tener el rol correcto nunca basta para ver un niño
 | Registrar control antropométrico (`checkup:create`)                                               |            Sí             |     Sí     |    Sí     |    Sí     |
 | Revisar alertas (`alert:review`)                                                                  |            No             |     Sí     |    Sí     |    Sí     |
 | Crear seguimientos (`followup:create`)                                                            |            No             |     No     |    Sí     |    Sí     |
+| Consultar registro de auditoría (`audit:read`)                                                    |            No             |     Sí     |    Sí     |    Sí     |
 
 Todos los permisos de la tabla aplican **solo sobre niños con vínculo** (paso 4). El `origin` de un control (`CAREGIVER`/`PROFESSIONAL`) lo deriva el servidor del rol, nunca del cliente.
 
