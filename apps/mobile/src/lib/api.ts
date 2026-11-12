@@ -1,18 +1,32 @@
 import {
   AuthResponseSchema,
   ErrorResponseSchema,
+  ForgotPasswordInputSchema,
+  ForgotPasswordResponseSchema,
   HealthResponseSchema,
+  LoginInputSchema,
+  RegisterInputSchema,
+  ResetPasswordInputSchema,
+  type AuthResponse,
   type ErrorResponse,
+  type ForgotPasswordInput,
+  type ForgotPasswordResponse,
   type HealthResponse,
+  type LoginInput,
+  type RegisterInput,
+  type ResetPasswordInput,
 } from '@nutrikids/shared';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { AuthApiError, resolveHttpAuthError } from './auth-errors.js';
 import {
   clearStoredSession,
   getStoredSession,
   updateStoredTokens,
   type StoredSession,
 } from './session-storage.js';
+
+export { AuthApiError } from './auth-errors.js';
 
 const DEFAULT_API_PORT = '3000';
 
@@ -196,6 +210,128 @@ export async function logoutSessionRequest(refreshToken: string): Promise<void> 
   } catch {
     // Best effort: do not block local sign out if network is down.
   }
+}
+
+/**
+ * Generic helper for dispatching JSON POST requests to auth endpoints.
+ * Consolidates fetch execution, network error mapping, HTTP error resolution,
+ * and validates response payloads with Zod returning human-friendly Spanish errors on schema mismatch.
+ */
+async function postAuth<T>(
+  path: string,
+  body: unknown,
+  schema?: { safeParse: (data: unknown) => { success: true; data: T } | { success: false } },
+  defaultErrorMessage = 'Error al procesar la solicitud.',
+): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    if (err instanceof Error) {
+      const isNetwork = err.name === 'AbortError' || err.message.toLowerCase().includes('network');
+      throw new AuthApiError(
+        isNetwork
+          ? 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
+          : err.message,
+        { cause: err },
+      );
+    }
+    throw new AuthApiError(defaultErrorMessage);
+  }
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
+
+  if (!response.ok) {
+    const message = resolveHttpAuthError(
+      response.status,
+      data as {
+        message?: string;
+        issues?: Array<{ path?: Array<string | number>; message: string }>;
+      },
+    );
+    throw new AuthApiError(message, { status: response.status });
+  }
+
+  if (!schema) {
+    return data as T;
+  }
+
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) {
+    throw new AuthApiError('La respuesta del servidor no tiene el formato esperado.');
+  }
+
+  return parsed.data;
+}
+
+/**
+ * Dispatches a POST /auth/login request.
+ * Returns AuthResponse: either requiresTwoFactor: true (with no tokens) or requiresTwoFactor: false (with tokens and user).
+ */
+export async function loginRequest(input: LoginInput): Promise<AuthResponse> {
+  const validated = LoginInputSchema.parse(input);
+  return postAuth(
+    '/auth/login',
+    validated,
+    AuthResponseSchema,
+    'Error inesperado al iniciar sesión.',
+  );
+}
+
+/**
+ * Dispatches a POST /auth/register request.
+ * Creates the user account and returns the initial AuthResponse.
+ */
+export async function registerRequest(input: RegisterInput): Promise<AuthResponse> {
+  const validated = RegisterInputSchema.parse(input);
+  return postAuth(
+    '/auth/register',
+    validated,
+    AuthResponseSchema,
+    'Error inesperado al registrar la cuenta.',
+  );
+}
+
+/**
+ * Dispatches a POST /auth/forgot-password request.
+ * Always returns 202 with an acknowledgment message.
+ */
+export async function forgotPasswordRequest(
+  input: ForgotPasswordInput,
+): Promise<ForgotPasswordResponse> {
+  const validated = ForgotPasswordInputSchema.parse(input);
+  return postAuth(
+    '/auth/forgot-password',
+    validated,
+    ForgotPasswordResponseSchema,
+    'Error inesperado al solicitar restablecimiento de contraseña.',
+  );
+}
+
+/**
+ * Dispatches a POST /auth/reset-password request.
+ * Resets user password using single-use token and invalidates active refresh tokens.
+ */
+export async function resetPasswordRequest(input: ResetPasswordInput): Promise<void> {
+  const validated = ResetPasswordInputSchema.parse(input);
+  await postAuth(
+    '/auth/reset-password',
+    validated,
+    undefined,
+    'Error inesperado al restablecer la contraseña.',
+  );
 }
 
 /**

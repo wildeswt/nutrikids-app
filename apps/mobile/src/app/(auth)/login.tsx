@@ -1,154 +1,297 @@
-import { USER_ROLES, type HealthResponse } from '@nutrikids/shared';
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LoginInputSchema } from '@nutrikids/shared';
+import { Link } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
-import { API_BASE_URL, fetchHealth } from '../../lib/api.js';
+import { loginRequest } from '../../lib/api.js';
+import {
+  AuthApiError,
+  extractZodFieldErrors,
+  formatAuthErrorMessage,
+} from '../../lib/auth-errors.js';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loadingHealth, setLoadingHealth] = useState<boolean>(true);
 
-  const checkHealth = useCallback(async () => {
-    setLoadingHealth(true);
-    setError(null);
-    try {
-      const result = await fetchHealth();
-      setHealth(result);
-    } catch (err) {
-      setHealth(null);
-      setError(err instanceof Error ? err.message : 'No se pudo conectar con la API');
-    } finally {
-      setLoadingHealth(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Two-factor state for professionals (NK-14 integration)
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
+  const [isUsingRecoveryCode, setIsUsingRecoveryCode] = useState(false);
+  const [totpCode, setTotpCode] = useState('');
+  const [recoveryCode, setRecoveryCode] = useState('');
+
+  const [loading, setLoading] = useState(false);
+  const [generalError, setGeneralError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const handleLoginSubmit = async () => {
+    setGeneralError(null);
+    setFieldErrors({});
+
+    const payload = {
+      email: email.trim(),
+      password,
+      ...(requiresTwoFactor && !isUsingRecoveryCode ? { totpCode: totpCode.trim() } : {}),
+      ...(requiresTwoFactor && isUsingRecoveryCode ? { recoveryCode: recoveryCode.trim() } : {}),
+    };
+
+    const validation = LoginInputSchema.safeParse(payload);
+    if (!validation.success) {
+      setFieldErrors(extractZodFieldErrors(validation.error));
+      return;
     }
-  }, []);
 
-  useEffect(() => {
-    void checkHealth();
-  }, [checkHealth]);
+    setLoading(true);
+    try {
+      const response = await loginRequest(validation.data);
 
-  // Demo sign-in helpers to easily test role-based routing until NK-19 login form is built.
-  const handleDemoCaregiverLogin = async () => {
-    await signIn({
-      requiresTwoFactor: false,
-      accessToken: 'demo-caregiver-access-token',
-      refreshToken: 'demo-caregiver-refresh-token',
-      expiresIn: 3600,
-      user: {
-        id: '11111111-1111-4111-8111-111111111111',
-        email: 'caregiver@example.com',
-        firstName: 'María',
-        lastName: 'Pérez',
-        roles: [USER_ROLES.CAREGIVER],
-        specialty: null,
-      },
-    });
+      if (response.requiresTwoFactor) {
+        setRequiresTwoFactor(true);
+      } else {
+        await signIn(response);
+      }
+    } catch (err) {
+      if (requiresTwoFactor && err instanceof AuthApiError && err.status === 401) {
+        setGeneralError('Código incorrecto o vencido. Inténtalo nuevamente.');
+      } else {
+        setGeneralError(formatAuthErrorMessage(err));
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDemoProfessionalLogin = async () => {
-    await signIn({
-      requiresTwoFactor: false,
-      accessToken: 'demo-prof-access-token',
-      refreshToken: 'demo-prof-refresh-token',
-      expiresIn: 3600,
-      user: {
-        id: '22222222-2222-4222-8222-222222222222',
-        email: 'dr.sanchez@example.com',
-        firstName: 'Carlos',
-        lastName: 'Sánchez',
-        roles: [USER_ROLES.PROFESSIONAL],
-        specialty: 'pediatrics',
-      },
-    });
-  };
-
-  const handleDemoDualRoleLogin = async () => {
-    await signIn({
-      requiresTwoFactor: false,
-      accessToken: 'demo-dual-access-token',
-      refreshToken: 'demo-dual-refresh-token',
-      expiresIn: 3600,
-      user: {
-        id: '33333333-3333-4333-8333-333333333333',
-        email: 'dual.user@example.com',
-        firstName: 'Elena',
-        lastName: 'Ríos',
-        roles: [USER_ROLES.CAREGIVER, USER_ROLES.PROFESSIONAL],
-        specialty: 'nutrition',
-      },
-    });
+  const handleResetToCredentials = () => {
+    setRequiresTwoFactor(false);
+    setIsUsingRecoveryCode(false);
+    setTotpCode('');
+    setRecoveryCode('');
+    setGeneralError(null);
+    setFieldErrors({});
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.title}>NutriKids</Text>
-          <Text style={styles.subtitle}>Iniciar sesión / Navegación por rol</Text>
-        </View>
-
-        {/* Demo Fast Login Box */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Acceso Rápido por Rol (NK-18)</Text>
-          <Text style={styles.cardDescription}>
-            Prueba la navegación protegida según el perfil del usuario. Los formularios completos de
-            registro, login y 2FA se integran en NK-19.
+          <Text style={styles.brandTitle}>NutriKids</Text>
+          <Text style={styles.brandSubtitle}>
+            {requiresTwoFactor ? 'Verificación en Dos Pasos' : 'Iniciar Sesión'}
           </Text>
-
-          <Pressable
-            style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
-            onPress={() => void handleDemoCaregiverLogin()}
-          >
-            <Text style={styles.primaryButtonText}>Entrar como Cuidador (Barra 5 accesos)</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
-            onPress={() => void handleDemoProfessionalLogin()}
-          >
-            <Text style={styles.secondaryButtonText}>Entrar como Profesional (Menú Lateral)</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.outlineButton, pressed && styles.buttonPressed]}
-            onPress={() => void handleDemoDualRoleLogin()}
-          >
-            <Text style={styles.outlineButtonText}>Entrar con Rol Doble (Ambos perfiles)</Text>
-          </Pressable>
         </View>
 
-        {/* Backend Connectivity Status Box */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Estado de conexión con la API</Text>
-          <View style={styles.statusBox}>
-            {loadingHealth ? (
-              <ActivityIndicator size="small" color="#16A34A" />
-            ) : health?.status === 'ok' ? (
-              <>
-                <Text style={styles.statusOk}>API OK</Text>
-                <Text style={styles.meta}>Servicio: {health.service}</Text>
-                <Text style={styles.meta}>Base de datos: {health.db ?? 'n/a'}</Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.statusError}>API no disponible</Text>
-                <Text style={styles.errorDetail}>{error ?? 'Estado degradado'}</Text>
-              </>
-            )}
-          </View>
-          <Text style={styles.endpoint}>Endpoint: {API_BASE_URL}/health</Text>
+          {generalError && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorBoxText}>{generalError}</Text>
+            </View>
+          )}
 
-          <Pressable
-            style={({ pressed }) => [styles.outlineButton, pressed && styles.buttonPressed]}
-            onPress={() => void checkHealth()}
-            disabled={loadingHealth}
-          >
-            <Text style={styles.outlineButtonText}>
-              {loadingHealth ? 'Verificando...' : 'Reintentar conexión'}
-            </Text>
-          </Pressable>
+          {!requiresTwoFactor ? (
+            <>
+              {/* Email Field */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Correo electrónico</Text>
+                <TextInput
+                  style={[styles.input, fieldErrors['email'] ? styles.inputError : undefined]}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (fieldErrors['email']) {
+                      setFieldErrors((prev) => ({ ...prev, email: '' }));
+                    }
+                  }}
+                  placeholder="ejemplo@correo.com"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!loading}
+                />
+                {fieldErrors['email'] ? (
+                  <Text style={styles.errorText}>{fieldErrors['email']}</Text>
+                ) : null}
+              </View>
+
+              {/* Password Field */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Contraseña</Text>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={[
+                      styles.passwordInput,
+                      fieldErrors['password'] ? styles.inputError : undefined,
+                    ]}
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      if (fieldErrors['password']) {
+                        setFieldErrors((prev) => ({ ...prev, password: '' }));
+                      }
+                    }}
+                    placeholder="Tu contraseña"
+                    placeholderTextColor="#9CA3AF"
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!loading}
+                  />
+                  <Pressable
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    hitSlop={8}
+                    accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color="#4B5563"
+                    />
+                  </Pressable>
+                </View>
+                {fieldErrors['password'] ? (
+                  <Text style={styles.errorText}>{fieldErrors['password']}</Text>
+                ) : null}
+              </View>
+
+              {/* Forgot Password Link */}
+              <View style={styles.forgotPasswordContainer}>
+                <Link href={APP_ROUTES.AUTH.FORGOT_PASSWORD} asChild>
+                  <Pressable hitSlop={6}>
+                    <Text style={styles.forgotPasswordText}>Olvidé mi contraseña</Text>
+                  </Pressable>
+                </Link>
+              </View>
+
+              {/* Submit Button */}
+              <Pressable
+                style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
+                onPress={() => void handleLoginSubmit()}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.submitButtonText}>Entrar</Text>
+                )}
+              </Pressable>
+            </>
+          ) : (
+            <>
+              {/* Step 2: Two-Factor Code (TOTP / Recovery) */}
+              <Text style={styles.stepDescription}>
+                Tu cuenta profesional requiere verificación en dos pasos. Ingresa el código de 6
+                dígitos de tu aplicación autenticadora.
+              </Text>
+
+              {!isUsingRecoveryCode ? (
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Código de autenticación (6 dígitos)</Text>
+                  <TextInput
+                    style={[styles.input, fieldErrors['totpCode'] ? styles.inputError : undefined]}
+                    value={totpCode}
+                    onChangeText={(text) => {
+                      setTotpCode(text.replace(/\D/g, '').slice(0, 6));
+                      if (fieldErrors['totpCode']) {
+                        setFieldErrors((prev) => ({ ...prev, totpCode: '' }));
+                      }
+                    }}
+                    placeholder="123456"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    editable={!loading}
+                  />
+                  {fieldErrors['totpCode'] ? (
+                    <Text style={styles.errorText}>{fieldErrors['totpCode']}</Text>
+                  ) : null}
+                </View>
+              ) : (
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Código de recuperación</Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      fieldErrors['recoveryCode'] ? styles.inputError : undefined,
+                    ]}
+                    value={recoveryCode}
+                    onChangeText={(text) => {
+                      setRecoveryCode(text);
+                      if (fieldErrors['recoveryCode']) {
+                        setFieldErrors((prev) => ({ ...prev, recoveryCode: '' }));
+                      }
+                    }}
+                    placeholder="Ingresa tu código de respaldo"
+                    placeholderTextColor="#9CA3AF"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!loading}
+                  />
+                  {fieldErrors['recoveryCode'] ? (
+                    <Text style={styles.errorText}>{fieldErrors['recoveryCode']}</Text>
+                  ) : null}
+                </View>
+              )}
+
+              {/* Alternate between TOTP and Recovery Code */}
+              <Pressable
+                onPress={() => {
+                  setIsUsingRecoveryCode((prev) => !prev);
+                  setGeneralError(null);
+                  setFieldErrors({});
+                }}
+                style={styles.switchModeButton}
+              >
+                <Text style={styles.switchModeText}>
+                  {isUsingRecoveryCode
+                    ? 'Usar código de la aplicación autenticadora'
+                    : 'No tengo acceso a mi app, usar código de recuperación'}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
+                onPress={() => void handleLoginSubmit()}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.submitButtonText}>Verificar e Iniciar Sesión</Text>
+                )}
+              </Pressable>
+
+              <Pressable onPress={handleResetToCredentials} style={styles.cancelTwoFactorButton}>
+                <Text style={styles.cancelTwoFactorText}>Volver al inicio de sesión</Text>
+              </Pressable>
+            </>
+          )}
+
+          {/* Registration Link */}
+          {!requiresTwoFactor && (
+            <View style={styles.registerContainer}>
+              <Text style={styles.registerPrompt}>No tienes cuenta?</Text>
+              <Link href={APP_ROUTES.AUTH.REGISTER} asChild>
+                <Pressable hitSlop={6}>
+                  <Text style={styles.registerLink}>Crear cuenta</Text>
+                </Pressable>
+              </Link>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -161,123 +304,159 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0FDF4',
   },
   scrollContent: {
-    padding: 20,
-    gap: 16,
+    padding: 24,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '100%',
   },
   header: {
-    marginTop: 20,
-    marginBottom: 8,
+    marginBottom: 24,
     alignItems: 'center',
   },
-  title: {
-    fontSize: 28,
+  brandTitle: {
+    fontSize: 32,
     fontWeight: '800',
     color: '#14532D',
   },
-  subtitle: {
-    fontSize: 15,
+  brandSubtitle: {
+    fontSize: 16,
     color: '#4B5563',
     marginTop: 4,
+    fontWeight: '600',
   },
   card: {
     width: '100%',
     maxWidth: 420,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 20,
-    gap: 12,
+    padding: 24,
+    gap: 16,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#14532D',
+  errorBox: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
   },
-  cardDescription: {
+  errorBoxText: {
+    color: '#DC2626',
     fontSize: 13,
-    color: '#6B7280',
     lineHeight: 18,
   },
-  primaryButton: {
-    backgroundColor: '#16A34A',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 4,
+  inputGroup: {
+    gap: 6,
   },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    backgroundColor: '#059669',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  outlineButton: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 11,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  outlineButtonText: {
-    color: '#374151',
+  label: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#374151',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    fontSize: 15,
+    color: '#111827',
+    backgroundColor: '#FFFFFF',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    fontSize: 15,
+    color: '#111827',
+  },
+  eyeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+  },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 12,
+  },
+  forgotPasswordContainer: {
+    alignItems: 'flex-end',
+    marginTop: -4,
+  },
+  forgotPasswordText: {
+    fontSize: 13,
+    color: '#16A34A',
+    fontWeight: '600',
+  },
+  submitButton: {
+    backgroundColor: '#16A34A',
+    paddingVertical: 13,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
   },
   buttonPressed: {
     opacity: 0.85,
   },
-  statusBox: {
-    minHeight: 80,
-    borderRadius: 10,
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  statusOk: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#15803D',
-  },
-  statusError: {
+  submitButtonText: {
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
-    color: '#DC2626',
   },
-  meta: {
+  stepDescription: {
     fontSize: 13,
-    color: '#374151',
+    color: '#4B5563',
+    lineHeight: 19,
   },
-  errorDetail: {
+  switchModeButton: {
+    marginTop: -4,
+  },
+  switchModeText: {
     fontSize: 12,
-    color: '#991B1B',
-    textAlign: 'center',
+    color: '#059669',
+    fontWeight: '600',
   },
-  endpoint: {
-    fontSize: 11,
+  cancelTwoFactorButton: {
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  cancelTwoFactorText: {
+    fontSize: 13,
     color: '#6B7280',
-    textAlign: 'center',
+    fontWeight: '600',
+  },
+  registerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingTop: 16,
+  },
+  registerPrompt: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  registerLink: {
+    fontSize: 14,
+    color: '#16A34A',
+    fontWeight: '700',
   },
 });

@@ -360,3 +360,34 @@ El guard de navegación en `apps/mobile/src/app/_layout.tsx` inspecciona reactiv
 
 - **Tema visual común:** Desacoplado en su propia issue independiente; se utilizaron estilos locales limpios con la paleta institucional (`#16A34A` / `#059669` / `#F0FDF4`) para no bloquear el desarrollo de las pantallas.
 - **Pantalla de Perfil:** En esta issue se construyó el contenedor funcional de sesión, datos básicos y cambio de rol. La gestión completa de datos personales y derechos del representante se absorberá en **NK-41**, y la acción de revocación de consentimientos por niño se incorporará en **NK-20**.
+
+## Registro e Inicio de Sesión (Mobile NK-19)
+
+### 1. Pantallas de Autenticación
+
+El módulo de autenticación implementa las interfaces descritas en la Figura 5 del informe del proyecto:
+
+- **Inicio de sesión (`apps/mobile/src/app/(auth)/login.tsx`):**
+  - Campos de correo electrónico y contraseña con botón para alternar visibilidad (mostrar/ocultar).
+  - Enlace directo a recuperación de contraseña y a creación de cuenta.
+  - Soporte para segundo factor (2FA): si las credenciales corresponden a un profesional con 2FA habilitado (`requiresTwoFactor: true`), la interfaz pasa al segundo paso solicitando el código TOTP de 6 dígitos o un código de recuperación.
+- **Creación de cuenta (`apps/mobile/src/app/(auth)/register.tsx`):**
+  - Selector de perfil mediante chips (`Cuidador` y `Profesional de Salud`, permitiendo perfiles individuales o combinados).
+  - Datos personales: nombre, apellido, correo electrónico, teléfono opcional.
+  - Campos condicionales para profesionales: especialidad (`pediatrics`, `nutrition`, `nursing`), número de licencia / matrícula y código de invitación.
+  - Contraseña con confirmación validada en el cliente y visibilidad alternable.
+- **Recuperación de contraseña (`apps/mobile/src/app/(auth)/forgot-password.tsx` y `reset-password.tsx`):**
+  - Formulario de solicitud ingresando el correo electrónico (`POST /auth/forgot-password`).
+  - Formulario de restablecimiento con token único y nueva contraseña (`POST /auth/reset-password`).
+
+### 2. Validación y Manejo de Errores
+
+- **Validación con Zod:** Se utilizan los esquemas estrictos de `@nutrikids/shared` (`LoginInputSchema`, `RegisterInputSchema`, `ForgotPasswordInputSchema`, `ResetPasswordInputSchema`).
+- **Mensajes de error en español:** Errores de campo se mapean e inlinean automáticamente bajo cada input (`extractZodFieldErrors`). Errores de servidor (401 credenciales incorrectas, 403 cuenta inactiva, 409 correo duplicado, 429 límite de intentos excedido, errores de red) se traducen a mensajes amigables y precisos (`apps/mobile/src/lib/auth-errors.ts`).
+- **Ausencia de strings mágicos:** Todas las rutas de autenticación se gestionan mediante la constante centralizada `APP_ROUTES.AUTH`.
+
+### 3. Resoluciones de Criterios de Aceptación (NK-19)
+
+1. **Segundo paso con código:** Se clarifica que el segundo paso del login corresponde al token TOTP o código de recuperación de 2FA (vinculado a **NK-14**). El código de invitación profesional (`invitationCode`) es exclusivo del registro de cuentas profesionales.
+2. **Recuperación de contraseña:** Las pantallas de solicitud y restablecimiento quedan operativas contra los endpoints de la API (`NK-13`). El envío de correos electrónicos transaccionales y el manejo de enlaces universales (deep links) dependerán de la infraestructura de correo del backend.
+3. **Activación de 2FA con código QR:** Dado que **NK-14** se centra en la lógica de backend, la pantalla móvil para enrolar y escanear el código QR se desarrollará en una issue de interfaz dedicada tras completar NK-14.
