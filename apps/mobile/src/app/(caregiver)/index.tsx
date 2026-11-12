@@ -1,58 +1,401 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { APP_ASSETS } from '../../constants/assets.js';
+import { PALETTE } from '../../constants/colors.js';
+import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
 
 export default function CaregiverHomeScreen() {
+  const router = useRouter();
   const { user } = useAuth();
 
+  const caregiverName = user?.firstName || 'Andrea';
+
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>¡Hola, {user?.firstName ?? 'Cuidador'}!</Text>
-        <Text style={styles.subtitle}>Inicio del Cuidador — Mis Niños</Text>
-        <Text style={styles.description}>
-          Aquí se listarán los niños asociados para consultar su estado nutricional. La gestión de
-          niños y consentimientos se implementa en NK-21.
-        </Text>
-      </View>
-    </View>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Header superior: Logo a la izquierda y Campana de notificaciones a la derecha */}
+        <View style={styles.topHeader}>
+          <Image
+            source={APP_ASSETS.LOGO}
+            style={styles.logo}
+            resizeMode="contain"
+            accessibilityLabel="NutriKids Logo"
+          />
+          <Pressable
+            style={({ pressed }) => [styles.notificationButton, pressed && styles.buttonPressed]}
+            onPress={() => router.push(APP_ROUTES.CAREGIVER.MESSAGES)}
+            accessibilityRole="button"
+            accessibilityLabel="Notificaciones"
+          >
+            <Ionicons name="notifications" size={22} color={PALETTE.secondary} />
+          </Pressable>
+        </View>
+
+        {/* Saludo personalizado */}
+        <Text style={styles.greetingTitle}>¡Hola, {caregiverName}!</Text>
+
+        {/* Tarjeta Naranja Principal: Niño activo */}
+        <View style={styles.childCard}>
+          <View style={styles.childIconWrapper}>
+            <Ionicons name="body" size={54} color="#FFFFFF" />
+          </View>
+
+          <View style={styles.childInfoWrapper}>
+            <Text style={styles.childNameTitle}>Mateo - 3 años y 5 meses</Text>
+            <Text style={styles.childSubtitle}>Tu pequeño está en crecimiento</Text>
+
+            <View style={styles.statusPill}>
+              <Ionicons name="checkmark" size={14} color={PALETTE.primary} />
+              <Text style={styles.statusPillText}>Todo en orden</Text>
+            </View>
+
+            <Pressable
+              style={({ pressed }) => [styles.seeMoreRow, pressed && styles.buttonPressed]}
+              onPress={() => router.push(APP_ROUTES.CAREGIVER.EVOLUTION)}
+            >
+              <Text style={styles.seeMoreText}>Ver más información</Text>
+              <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Sección: Para ti */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Para ti</Text>
+          <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.MESSAGES)}>
+            <Text style={styles.sectionLink}>Ver todo</Text>
+          </Pressable>
+        </View>
+
+        <Pressable
+          style={({ pressed }) => [styles.whiteCard, pressed && styles.buttonPressed]}
+          onPress={() => router.push(APP_ROUTES.CAREGIVER.MESSAGES)}
+        >
+          <View style={styles.messageCardRow}>
+            <Ionicons
+              name="chatbubble-ellipses"
+              size={36}
+              color={PALETTE.secondary}
+              style={styles.messageIcon}
+            />
+            <View style={styles.messageContent}>
+              <Text style={styles.messageTitle}>Mensaje de equipo de salud</Text>
+              <Text style={styles.messageQuote}>
+                &ldquo;Sigamos ofreciendo agua durante el día&rdquo;
+              </Text>
+              <Text style={styles.messageMeta}>Hace 2 días - Dra. Carolina Díaz</Text>
+            </View>
+          </View>
+        </Pressable>
+
+        {/* Sección: Próximo control */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Próximo control</Text>
+          <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.ADD_CHECKUP)}>
+            <Text style={styles.sectionLink}>Agendar</Text>
+          </Pressable>
+        </View>
+
+        <Pressable
+          style={({ pressed }) => [styles.controlCard, pressed && styles.buttonPressed]}
+          onPress={() => router.push(APP_ROUTES.CAREGIVER.EVOLUTION)}
+        >
+          <View style={styles.controlCardRow}>
+            <Ionicons name="calendar-outline" size={40} color="#FFFFFF" />
+            <View style={styles.controlContent}>
+              <Text style={styles.controlTitle}>Control de crecimiento</Text>
+              <Text style={styles.controlLocation}>Centro de Salud La Esperanza - 09:30am</Text>
+              <View style={styles.controlSeeMore}>
+                <Text style={styles.controlSeeMoreText}>Ver más detalles</Text>
+                <Ionicons name="arrow-forward" size={13} color="#FFFFFF" />
+              </View>
+            </View>
+          </View>
+        </Pressable>
+
+        {/* Sección: Aprende en casa */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Aprende en casa</Text>
+          <Pressable>
+            <Text style={styles.sectionLink}>Ver todo</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.cardsRow}>
+          {/* Card 1: Ideas de meriendas nutritivas */}
+          <View style={styles.articleCard}>
+            <Text style={styles.articleTitle}>
+              Ideas de{'\n'}meriendas{'\n'}nutritivas
+            </Text>
+            <View style={styles.articleFooter}>
+              <Text style={styles.articleMeta}>Lectura de 3{'\n'}minutos</Text>
+              <Ionicons name="nutrition" size={38} color="#DC2626" style={styles.articleIcon} />
+            </View>
+          </View>
+
+          {/* Card 2: Alimentación a los 3 años */}
+          <View style={styles.articleCard}>
+            <Text style={styles.articleTitle}>Alimentación{'\n'}a los 3 años</Text>
+            <View style={styles.articleFooter}>
+              <Text style={styles.articleMeta}>Guía práctica</Text>
+              <Ionicons
+                name="restaurant"
+                size={34}
+                color={PALETTE.text.title}
+                style={styles.articleIcon}
+              />
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0FDF4',
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: PALETTE.background,
   },
-  card: {
-    width: '100%',
-    maxWidth: 420,
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 28,
+  },
+  topHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logo: {
+    width: 170,
+    height: 48,
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: PALETTE.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: PALETTE.border.default,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  greetingTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: PALETTE.text.title,
+    marginBottom: 16,
+  },
+  childCard: {
+    backgroundColor: PALETTE.secondary,
+    borderRadius: 24,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: PALETTE.secondary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  childIconWrapper: {
+    marginRight: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  childInfoWrapper: {
+    flex: 1,
+  },
+  childNameTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  childSubtitle: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    opacity: 0.9,
+    marginTop: 2,
+    marginBottom: 8,
+  },
+  statusPill: {
+    alignSelf: 'flex-start',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    gap: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
+    marginBottom: 8,
+  },
+  statusPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: PALETTE.primary,
+  },
+  seeMoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    gap: 4,
+    marginTop: 2,
+  },
+  seeMoreText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: PALETTE.text.title,
+  },
+  sectionLink: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: PALETTE.primary,
+  },
+  whiteCard: {
+    backgroundColor: PALETTE.surface,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: PALETTE.border.default,
+    marginBottom: 24,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  messageCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  messageIcon: {
+    marginLeft: 4,
+  },
+  messageContent: {
+    flex: 1,
+    gap: 4,
+  },
+  messageTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: PALETTE.text.title,
+  },
+  messageQuote: {
+    fontSize: 13,
+    color: PALETTE.text.body,
+    fontStyle: 'italic',
+  },
+  messageMeta: {
+    fontSize: 11,
+    color: PALETTE.text.muted,
+    marginTop: 2,
+  },
+  controlCard: {
+    backgroundColor: PALETTE.secondary,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 24,
+    shadowColor: PALETTE.secondary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
     elevation: 3,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#14532D',
+  controlCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
-  subtitle: {
+  controlContent: {
+    flex: 1,
+    gap: 3,
+  },
+  controlTitle: {
+    color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '600',
-    color: '#15803D',
+    fontWeight: '800',
   },
-  description: {
-    fontSize: 14,
-    color: '#4B5563',
+  controlLocation: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    opacity: 0.9,
+  },
+  controlSeeMore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  controlSeeMoreText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  cardsRow: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  articleCard: {
+    flex: 1,
+    backgroundColor: PALETTE.surface,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: PALETTE.border.default,
+    minHeight: 140,
+    justifyContent: 'space-between',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  articleTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: PALETTE.text.title,
     lineHeight: 20,
+  },
+  articleFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginTop: 8,
+  },
+  articleMeta: {
+    fontSize: 11,
+    color: PALETTE.text.muted,
+    lineHeight: 15,
+  },
+  articleIcon: {
+    marginBottom: -2,
+  },
+  buttonPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
   },
 });

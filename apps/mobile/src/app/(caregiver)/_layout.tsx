@@ -2,18 +2,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { PALETTE } from '../../constants/colors.js';
 
 export default function CaregiverTabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: '#16A34A' },
-        headerTintColor: '#FFFFFF',
-        headerTitleStyle: { fontWeight: '700' },
-        tabBarActiveTintColor: '#16A34A',
-        tabBarInactiveTintColor: '#6B7280',
+        headerShown: false,
+        tabBarActiveTintColor: PALETTE.primary,
+        tabBarInactiveTintColor: PALETTE.text.title,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
+        tabBarShowLabel: false,
       }}
     >
       <Tabs.Screen
@@ -24,7 +24,7 @@ export default function CaregiverTabsLayout() {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'home' : 'home-outline'}
-              size={size}
+              size={size + 2}
               color={color as string}
             />
           ),
@@ -38,7 +38,7 @@ export default function CaregiverTabsLayout() {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'trending-up' : 'trending-up-outline'}
-              size={size}
+              size={size + 2}
               color={color as string}
             />
           ),
@@ -66,8 +66,8 @@ export default function CaregiverTabsLayout() {
           headerTitle: 'Mensajes y Recordatorios',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? 'chatbubbles' : 'chatbubbles-outline'}
-              size={size}
+              name={focused ? 'chatbox-ellipses' : 'chatbox-ellipses-outline'}
+              size={size + 2}
               color={color as string}
             />
           ),
@@ -80,8 +80,8 @@ export default function CaregiverTabsLayout() {
           headerTitle: 'Mi Perfil',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? 'person' : 'person-outline'}
-              size={size}
+              name={focused ? 'person-circle' : 'person-circle-outline'}
+              size={size + 4}
               color={color as string}
             />
           ),
@@ -93,30 +93,35 @@ export default function CaregiverTabsLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 64,
+    height: 70,
     paddingBottom: 8,
-    paddingTop: 6,
-    backgroundColor: '#FFFFFF',
-    borderTopColor: '#E5E7EB',
+    paddingTop: 8,
+    backgroundColor: PALETTE.surface,
+    borderTopColor: PALETTE.border.default,
     borderTopWidth: 1,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 8,
   },
   tabBarLabel: {
     fontSize: 11,
     fontWeight: '600',
   },
   centerButtonContainer: {
-    top: -14,
+    top: -16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   centerButton: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: '#16A34A',
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: PALETTE.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#16A34A',
+    shadowColor: PALETTE.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 6,
