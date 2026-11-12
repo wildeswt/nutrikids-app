@@ -1,12 +1,12 @@
 /**
- * Router de referencia OMS.
+ * WHO reference router.
  *
  * GET /reference/curves?indicator=&sex=[&position=]
- *   Devuelve las 5 series de z-scores (−3, −2, 0, +2, +3) calculadas
- *   con la relación inversa `medidaDesdeZ`, listas para graficar (RF-10).
+ *   Returns the 5 z-score series (-3, -2, 0, +2, +3) computed
+ *   with the inverse relation `measurementFromZScore`, ready for plotting (RF-10).
  *
- *   La respuesta lleva Cache-Control público de 24 h y el campo `version`
- *   para cumplir con RT-08 (cacheable y versionada).
+ *   Response includes public 24h Cache-Control and `version` field
+ *   to satisfy RT-08 (cacheable and versioned).
  */
 
 import { OmsReferenceCurvesQuerySchema, type OmsReferenceCurvesQuery } from '@nutrikids/shared';
@@ -23,7 +23,7 @@ referenceRouter.get(
     const query = req.query as unknown as OmsReferenceCurvesQuery;
     const payload = calculateReferenceCurves(query);
 
-    // RT-08: respuesta cacheable (tablas OMS 2006 son inmutables)
+    // RT-08: cacheable response (WHO 2006 tables are immutable)
     res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=3600');
     res.setHeader('Vary', 'Accept-Encoding');
 

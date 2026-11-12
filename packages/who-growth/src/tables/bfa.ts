@@ -1,7 +1,7 @@
-import type { FilaLMS } from './types.js';
+import type { LmsRow } from './types.js';
 
 /** IMC para la edad (IMC/E) — Niñas (12 a 60 meses) — OMS 2006 */
-export const BFA_FEMALE: FilaLMS[] = [
+export const BFA_FEMALE: LmsRow[] = [
   { x: 12.0, l: -0.3667, m: 16.3568, s: 0.08797 },
   { x: 13.0, l: -0.3932, m: 16.2311, s: 0.08768 },
   { x: 14.0, l: -0.4177, m: 16.1128, s: 0.08741 },
@@ -54,7 +54,7 @@ export const BFA_FEMALE: FilaLMS[] = [
 ];
 
 /** IMC para la edad (IMC/E) — Niños (12 a 60 meses) — OMS 2006 */
-export const BFA_MALE: FilaLMS[] = [
+export const BFA_MALE: LmsRow[] = [
   { x: 12.0, l: -0.4115, m: 16.7981, s: 0.08009 },
   { x: 13.0, l: -0.4382, m: 16.6743, s: 0.07982 },
   { x: 14.0, l: -0.463, m: 16.5548, s: 0.07958 },

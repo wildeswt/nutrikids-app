@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   WHO_REFERENCE_VERSION,
-  obtenerLMS,
+  getLmsParameters,
   WFA_FEMALE,
   WFA_MALE,
   LHFA_FEMALE,
@@ -12,15 +12,15 @@ import {
   WFL_MALE,
   WFH_FEMALE,
   WFH_MALE,
-} from './referencia.js';
+} from './reference.js';
 
-describe('Referencia OMS 2006 — Módulo de datos para cálculo sin conexión', () => {
-  it('exporta la versión oficial WHO 2006', () => {
+describe('WHO 2006 Reference Data Module', () => {
+  it('exports official release version identifier WHO 2006', () => {
     expect(WHO_REFERENCE_VERSION).toBe('WHO 2006');
   });
 
-  describe('Cobertura de rangos requeridos (RT-08)', () => {
-    it('P/E cubre meses 12 a 60 para niñas y niños (49 meses continuos)', () => {
+  describe('Range coverage requirements', () => {
+    it('WFA covers months 12 to 60 for girls and boys (49 continuous months)', () => {
       expect(WFA_FEMALE).toHaveLength(49);
       expect(WFA_MALE).toHaveLength(49);
       expect(WFA_FEMALE[0].x).toBe(12);
@@ -29,7 +29,7 @@ describe('Referencia OMS 2006 — Módulo de datos para cálculo sin conexión',
       expect(WFA_MALE[WFA_MALE.length - 1].x).toBe(60);
     });
 
-    it('T/E cubre meses 12 a 60 para niñas y niños (49 meses continuos)', () => {
+    it('LHFA covers months 12 to 60 for girls and boys (49 continuous months)', () => {
       expect(LHFA_FEMALE).toHaveLength(49);
       expect(LHFA_MALE).toHaveLength(49);
       expect(LHFA_FEMALE[0].x).toBe(12);
@@ -38,7 +38,7 @@ describe('Referencia OMS 2006 — Módulo de datos para cálculo sin conexión',
       expect(LHFA_MALE[LHFA_MALE.length - 1].x).toBe(60);
     });
 
-    it('IMC/E cubre meses 12 a 60 para niñas y niños (49 meses continuos)', () => {
+    it('BFA covers months 12 to 60 for girls and boys (49 continuous months)', () => {
       expect(BFA_FEMALE).toHaveLength(49);
       expect(BFA_MALE).toHaveLength(49);
       expect(BFA_FEMALE[0].x).toBe(12);
@@ -47,14 +47,14 @@ describe('Referencia OMS 2006 — Módulo de datos para cálculo sin conexión',
       expect(BFA_MALE[BFA_MALE.length - 1].x).toBe(60);
     });
 
-    it('P/T cubre longitud (45 a 110 cm) y talla (65 a 120 cm) cada 0.5 cm', () => {
-      // Longitud (WFL, acostado): 45.0 a 110.0 cm -> 131 filas
+    it('WFLH covers recumbent length (45 to 110 cm) and standing height (65 to 120 cm) in 0.5 cm steps', () => {
+      // Recumbent length (WFL): 45.0 to 110.0 cm -> 131 rows
       expect(WFL_FEMALE).toHaveLength(131);
       expect(WFL_MALE).toHaveLength(131);
       expect(WFL_FEMALE[0].x).toBe(45);
       expect(WFL_FEMALE[WFL_FEMALE.length - 1].x).toBe(110);
 
-      // Talla (WFH, de pie): 65.0 a 120.0 cm -> 111 filas
+      // Standing height (WFH): 65.0 to 120.0 cm -> 111 rows
       expect(WFH_FEMALE).toHaveLength(111);
       expect(WFH_MALE).toHaveLength(111);
       expect(WFH_FEMALE[0].x).toBe(65);
@@ -62,57 +62,54 @@ describe('Referencia OMS 2006 — Módulo de datos para cálculo sin conexión',
     });
   });
 
-  describe('Verificación contra tablas oficiales OMS 2006 (5 casos clave)', () => {
-    it('Caso 1: P/E — Niñas — Mes 24 (tabla oficial tab_wfa_girls_p_0_5.xlsx)', () => {
-      const lms = obtenerLMS('WEIGHT_FOR_AGE', 'FEMALE', 24);
+  describe('Verification against official WHO 2006 tables (5 reference cases)', () => {
+    it('Case 1: WFA - Girls - Month 24 (official table tab_wfa_girls_p_0_5.xlsx)', () => {
+      const lms = getLmsParameters('WEIGHT_FOR_AGE', 'FEMALE', 24);
       expect(lms.x).toBe(24);
       expect(lms.l).toBeCloseTo(-0.2941, 4);
       expect(lms.m).toBeCloseTo(11.4775, 4);
       expect(lms.s).toBeCloseTo(0.1239, 4);
     });
 
-    it('Caso 2: T/E — Niños — Mes 36 (tabla oficial tab_lhfa_boys_p_2_5.xlsx)', () => {
-      const lms = obtenerLMS('LENGTH_HEIGHT_FOR_AGE', 'MALE', 36);
+    it('Case 2: LHFA - Boys - Month 36 (official table tab_lhfa_boys_p_2_5.xlsx)', () => {
+      const lms = getLmsParameters('LENGTH_HEIGHT_FOR_AGE', 'MALE', 36);
       expect(lms.x).toBe(36);
       expect(lms.l).toBe(1);
       expect(lms.m).toBeCloseTo(96.0835, 4);
       expect(lms.s).toBeCloseTo(0.03858, 5);
     });
 
-    it('Caso 3: IMC/E — Niñas — Mes 60 (tabla oficial tab_bmi_girls_p_2_5.xlsx)', () => {
-      const lms = obtenerLMS('BMI_FOR_AGE', 'FEMALE', 60);
+    it('Case 3: BFA - Girls - Month 60 (official table tab_bmi_girls_p_2_5.xlsx)', () => {
+      const lms = getLmsParameters('BMI_FOR_AGE', 'FEMALE', 60);
       expect(lms.x).toBe(60);
       expect(lms.l).toBeCloseTo(-0.5684, 4);
       expect(lms.m).toBeCloseTo(15.2747, 4);
       expect(lms.s).toBeCloseTo(0.09789, 5);
     });
 
-    it('Caso 4: P/T — Niños — Talla 80.0 cm de pie (tabla oficial tab_wfh_boys_p_2_5.xlsx)', () => {
-      const lms = obtenerLMS('WEIGHT_FOR_LENGTH_HEIGHT', 'MALE', 80.0, 'de_pie');
+    it('Case 4: WFLH - Boys - Height 80.0 cm standing (official table tab_wfh_boys_p_2_5.xlsx)', () => {
+      const lms = getLmsParameters('WEIGHT_FOR_LENGTH_HEIGHT', 'MALE', 80.0, 'standing');
       expect(lms.x).toBe(80.0);
       expect(lms.l).toBeCloseTo(-0.3521, 4);
       expect(lms.m).toBeCloseTo(10.5781, 4);
       expect(lms.s).toBeCloseTo(0.08298, 5);
     });
 
-    it('Caso 5: P/T — Niñas — Longitud 55.0 cm acostado (tabla oficial tab_wfl_girls_p_0_2.xlsx)', () => {
-      const lms = obtenerLMS('WEIGHT_FOR_LENGTH_HEIGHT', 'FEMALE', 55.0, 'acostado');
+    it('Case 5: WFLH - Girls - Length 55.0 cm recumbent (official table tab_wfl_girls_p_0_2.xlsx)', () => {
+      const lms = getLmsParameters('WEIGHT_FOR_LENGTH_HEIGHT', 'FEMALE', 55.0, 'recumbent');
       expect(lms.x).toBe(55.0);
       expect(lms.l).toBeCloseTo(-0.3833, 4);
       expect(lms.m).toBeCloseTo(4.5498, 4);
       expect(lms.s).toBeCloseTo(0.0911, 4);
     });
-  });
 
-  describe('Manejo de errores fuera de rango', () => {
-    it('lanza RangeError si la edad es menor a 12 o mayor a 60 meses', () => {
-      expect(() => obtenerLMS('WEIGHT_FOR_AGE', 'FEMALE', 11)).toThrow(RangeError);
-      expect(() => obtenerLMS('WEIGHT_FOR_AGE', 'FEMALE', 61)).toThrow(RangeError);
-    });
-
-    it('lanza RangeError si la medida P/T está fuera de límites', () => {
-      expect(() => obtenerLMS('WEIGHT_FOR_LENGTH_HEIGHT', 'MALE', 40.0)).toThrow(RangeError);
-      expect(() => obtenerLMS('WEIGHT_FOR_LENGTH_HEIGHT', 'MALE', 125.0)).toThrow(RangeError);
+    it('throws RangeError when measurement falls outside domain', () => {
+      expect(() => getLmsParameters('WEIGHT_FOR_AGE', 'MALE', 11)).toThrow(RangeError);
+      expect(() => getLmsParameters('WEIGHT_FOR_AGE', 'MALE', 61)).toThrow(RangeError);
+      expect(() => getLmsParameters('WEIGHT_FOR_LENGTH_HEIGHT', 'MALE', 40.0)).toThrow(RangeError);
+      expect(() => getLmsParameters('WEIGHT_FOR_LENGTH_HEIGHT', 'FEMALE', 125.0)).toThrow(
+        RangeError,
+      );
     });
   });
 });

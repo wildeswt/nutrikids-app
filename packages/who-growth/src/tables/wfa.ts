@@ -1,7 +1,7 @@
-import type { FilaLMS } from './types.js';
+import type { LmsRow } from './types.js';
 
 /** Peso para la edad (P/E) — Niñas (12 a 60 meses) — OMS 2006 */
-export const WFA_FEMALE: FilaLMS[] = [
+export const WFA_FEMALE: LmsRow[] = [
   { x: 12.0, l: -0.2024, m: 8.9481, s: 0.12268 },
   { x: 13.0, l: -0.2158, m: 9.1699, s: 0.12283 },
   { x: 14.0, l: -0.2278, m: 9.387, s: 0.12294 },
@@ -54,7 +54,7 @@ export const WFA_FEMALE: FilaLMS[] = [
 ];
 
 /** Peso para la edad (P/E) — Niños (12 a 60 meses) — OMS 2006 */
-export const WFA_MALE: FilaLMS[] = [
+export const WFA_MALE: LmsRow[] = [
   { x: 12.0, l: 0.0644, m: 9.6479, s: 0.10925 },
   { x: 13.0, l: 0.0563, m: 9.8749, s: 0.10949 },
   { x: 14.0, l: 0.0487, m: 10.0953, s: 0.10976 },

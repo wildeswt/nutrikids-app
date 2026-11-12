@@ -3,13 +3,13 @@ import { assertNotProduction, buildMateoCheckups } from '../lib/seedDev.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
-describe('seed de desarrollo (sin BD)', () => {
+describe('Development seed (in-memory, no DB)', () => {
   const checkups = buildMateoCheckups();
   const oct = checkups.find((c) => c.n === 4)!;
   const pt = (c: (typeof checkups)[number]) =>
     c.results.find((r) => r.indicator === 'WEIGHT_FOR_LENGTH_HEIGHT')!;
 
-  it('genera 4 controles con 4 resultados cada uno e ids UUID únicos', () => {
+  it('generates 4 checkups with 4 results each and unique UUIDs', () => {
     expect(checkups).toHaveLength(4);
     for (const c of checkups) expect(c.results).toHaveLength(4);
     const ids = checkups.flatMap((c) => [c.id, ...c.results.map((r) => r.id)]);
@@ -17,25 +17,25 @@ describe('seed de desarrollo (sin BD)', () => {
     for (const id of ids) expect(id).toMatch(UUID);
   });
 
-  it('el control del 18 oct (12,2 kg, 97,0 cm) da z P/T ≈ −2,2 y emaciación', () => {
+  it('oct 18 checkup (12.2 kg, 97.0 cm) yields W/LH z-score approx -2.2 and WASTING', () => {
     expect(oct.weightKg).toBe(12.2);
     expect(oct.lengthHeightCm).toBe(97.0);
     expect(oct.ageMonths).toBe(41);
     expect(pt(oct).zScore).toBeLessThan(-2);
     expect(Math.abs(pt(oct).zScore - -2.2)).toBeLessThanOrEqual(0.15);
-    expect(pt(oct).classification).toBe('emaciacion');
+    expect(pt(oct).classification).toBe('WASTING');
   });
 
-  it('los 3 controles previos no generan alerta en P/T y están en orden cronológico', () => {
+  it('the 3 prior checkups generate no alert in W/LH and are chronological', () => {
     for (const c of checkups.filter((x) => x.n < 4)) {
-      expect(pt(c).classification).toBe('normal');
+      expect(pt(c).classification).toBe('NORMAL');
       expect(Math.abs(pt(c).zScore)).toBeLessThan(0.3);
     }
     const times = checkups.map((c) => c.measuredAt.getTime());
     expect([...times].sort((a, b) => a - b)).toEqual(times);
   });
 
-  it('se niega a correr en producción', () => {
+  it('refuses to run with NODE_ENV=production', () => {
     expect(() => assertNotProduction('production')).toThrow(/production/);
     expect(() => assertNotProduction('development')).not.toThrow();
     expect(() => assertNotProduction(undefined)).not.toThrow();

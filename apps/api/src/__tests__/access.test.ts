@@ -13,7 +13,7 @@ import {
   requirePermission,
   requireRole,
   requireSpecialty,
-  requireVinculo,
+  requireLink,
 } from '../middlewares/access.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import { errorHandler } from '../middlewares/errorHandler.js';
@@ -109,13 +109,13 @@ function daysFromToday(days: number): Date {
 function createTestApp() {
   const app = express();
   app.use(express.json());
-  app.get('/children/:childId', authenticate, requireVinculo(), (req, res) => {
-    res.json({ ok: true, vinculo: req.vinculo });
+  app.get('/children/:childId', authenticate, requireLink(), (req, res) => {
+    res.json({ ok: true, link: req.link });
   });
   app.get(
     '/q/:id',
     authenticate,
-    requireVinculo((req) => req.params['id']),
+    requireLink((req) => req.params['id']),
     (_req, res) => {
       res.json({ ok: true });
     },
@@ -136,7 +136,7 @@ function createTestApp() {
     authenticate,
     requireRole('PROFESSIONAL'),
     requirePermission('followup:create'),
-    requireVinculo(),
+    requireLink(),
     (_req, res) => {
       res.status(201).json({ ok: true });
     },
@@ -144,7 +144,7 @@ function createTestApp() {
   app.post(
     '/children/:childId/checkups',
     authenticate,
-    requireVinculo(),
+    requireLink(),
     requireActiveConsent(),
     (_req, res) => {
       res.status(201).json({ ok: true });
@@ -249,37 +249,37 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
     });
   });
 
-  describe('requireVinculo — cuidador', () => {
-    it('el cuidador A lee a su propio niño', async () => {
+  describe('requireLink - caregiver', () => {
+    it('caregiver A reads their own child', async () => {
       const res = await request(app)
         .get(`/children/${NINO_A}`)
         .set('Authorization', await tokenFor(CUIDADOR_A, ['CAREGIVER']));
       expect(res.status).toBe(200);
-      expect(res.body.vinculo).toBe('CAREGIVER');
+      expect(res.body.link).toBe('CAREGIVER');
     });
 
-    it('el cuidador B NO puede leer al niño del cuidador A (403)', async () => {
+    it('caregiver B cannot read child of caregiver A (403)', async () => {
       const res = await request(app)
         .get(`/children/${NINO_A}`)
         .set('Authorization', await tokenFor(CUIDADOR_B, ['CAREGIVER']));
       expect(res.status).toBe(403);
     });
 
-    it('un niño inexistente responde 403, igual que uno ajeno', async () => {
+    it('non-existent child responds 403, identical to unlinked child', async () => {
       const res = await request(app)
         .get(`/children/${NINO_INEXISTENTE}`)
         .set('Authorization', await tokenFor(CUIDADOR_A, ['CAREGIVER']));
       expect(res.status).toBe(403);
     });
 
-    it('un identificador que no es UUID responde 400', async () => {
+    it('non-UUID identifier responds 400', async () => {
       const res = await request(app)
         .get('/children/no-es-uuid')
         .set('Authorization', await tokenFor(CUIDADOR_A, ['CAREGIVER']));
       expect(res.status).toBe(400);
     });
 
-    it('acepta un extractor de id personalizado', async () => {
+    it('accepts custom childId extractor function', async () => {
       const res = await request(app)
         .get(`/q/${NINO_A}`)
         .set('Authorization', await tokenFor(CUIDADOR_A, ['CAREGIVER']));
@@ -287,30 +287,30 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
     });
   });
 
-  describe('requireVinculo — profesional', () => {
-    it('con vínculo vigente (sin fecha de fin) accede', async () => {
+  describe('requireLink - professional', () => {
+    it('accesses with active link (no end date)', async () => {
       const res = await request(app)
         .get(`/children/${NINO_A}`)
         .set('Authorization', await tokenFor(PROF_NUTRI, ['PROFESSIONAL'], 'nutrition'));
       expect(res.status).toBe(200);
-      expect(res.body.vinculo).toBe('PROFESSIONAL');
+      expect(res.body.link).toBe('PROFESSIONAL');
     });
 
-    it('sin vínculo con ese niño recibe 403', async () => {
+    it('receives 403 without link to that child', async () => {
       const res = await request(app)
         .get(`/children/${NINO_B}`)
         .set('Authorization', await tokenFor(PROF_NUTRI, ['PROFESSIONAL'], 'nutrition'));
       expect(res.status).toBe(403);
     });
 
-    it('con vínculo terminado (endDate pasada) recibe 403', async () => {
+    it('receives 403 with expired link (past endDate)', async () => {
       const res = await request(app)
         .get(`/children/${NINO_A}`)
         .set('Authorization', await tokenFor(PROF_ENF, ['PROFESSIONAL'], 'nursing'));
       expect(res.status).toBe(403);
     });
 
-    it('con vínculo que aún no comienza (startDate futura) recibe 403', async () => {
+    it('receives 403 with future link (startDate not yet reached)', async () => {
       const res = await request(app)
         .get(`/children/${NINO_A}`)
         .set('Authorization', await tokenFor(PROF_PEDI, ['PROFESSIONAL'], 'pediatrics'));
@@ -318,8 +318,8 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
     });
   });
 
-  describe('requireVinculo — usuario con ambos roles', () => {
-    it('accede al niño que cuida y al que atiende, pero no a uno ajeno', async () => {
+  describe('requireLink - dual-role user', () => {
+    it('accesses cared child and attended child, but not unlinked child', async () => {
       const token = await tokenFor(MIXTO, ['CAREGIVER', 'PROFESSIONAL'], 'pediatrics');
       const cuida = await request(app).get(`/children/${NINO_B}`).set('Authorization', token);
       const atiende = await request(app).get(`/children/${NINO_A}`).set('Authorization', token);
@@ -327,8 +327,8 @@ describe('middlewares de rol y vínculo (RT-05)', () => {
         .get(`/children/${NINO_INEXISTENTE}`)
         .set('Authorization', token);
       expect([cuida.status, atiende.status, ajeno.status]).toEqual([200, 200, 403]);
-      expect(cuida.body.vinculo).toBe('CAREGIVER');
-      expect(atiende.body.vinculo).toBe('PROFESSIONAL');
+      expect(cuida.body.link).toBe('CAREGIVER');
+      expect(atiende.body.link).toBe('PROFESSIONAL');
     });
   });
 

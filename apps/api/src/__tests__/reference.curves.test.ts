@@ -13,73 +13,71 @@ describe('GET /reference/curves', () => {
 
   // ─── CA 1: Ruta existe y responde 200 ────────────────────────────────────
 
-  it('devuelve 200 para WEIGHT_FOR_AGE FEMALE', async () => {
+  it('returns 200 for WEIGHT_FOR_AGE FEMALE', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=FEMALE');
     expect(res.status).toBe(200);
   });
 
-  it('devuelve 200 para WEIGHT_FOR_AGE MALE', async () => {
+  it('returns 200 for WEIGHT_FOR_AGE MALE', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=MALE');
     expect(res.status).toBe(200);
   });
 
-  it('devuelve 200 para LENGTH_HEIGHT_FOR_AGE FEMALE', async () => {
+  it('returns 200 for LENGTH_HEIGHT_FOR_AGE FEMALE', async () => {
     const res = await request(app).get(
       '/reference/curves?indicator=LENGTH_HEIGHT_FOR_AGE&sex=FEMALE',
     );
     expect(res.status).toBe(200);
   });
 
-  it('devuelve 200 para BMI_FOR_AGE MALE', async () => {
+  it('returns 200 for BMI_FOR_AGE MALE', async () => {
     const res = await request(app).get('/reference/curves?indicator=BMI_FOR_AGE&sex=MALE');
     expect(res.status).toBe(200);
   });
 
-  it('devuelve 200 para WEIGHT_FOR_LENGTH_HEIGHT FEMALE (posición automática)', async () => {
+  it('returns 200 for WEIGHT_FOR_LENGTH_HEIGHT FEMALE (automatic position)', async () => {
     const res = await request(app).get(
       '/reference/curves?indicator=WEIGHT_FOR_LENGTH_HEIGHT&sex=FEMALE',
     );
     expect(res.status).toBe(200);
   });
 
-  it('devuelve 200 para WEIGHT_FOR_LENGTH_HEIGHT MALE position=RECUMBENT', async () => {
+  it('returns 200 for WEIGHT_FOR_LENGTH_HEIGHT MALE position=RECUMBENT', async () => {
     const res = await request(app).get(
       '/reference/curves?indicator=WEIGHT_FOR_LENGTH_HEIGHT&sex=MALE&position=RECUMBENT',
     );
     expect(res.status).toBe(200);
   });
 
-  it('devuelve 200 para WEIGHT_FOR_LENGTH_HEIGHT MALE position=STANDING', async () => {
+  it('returns 200 for WEIGHT_FOR_LENGTH_HEIGHT MALE position=STANDING', async () => {
     const res = await request(app).get(
       '/reference/curves?indicator=WEIGHT_FOR_LENGTH_HEIGHT&sex=MALE&position=STANDING',
     );
     expect(res.status).toBe(200);
   });
 
-  // ─── CA 2: Las 5 series y sus puntos ─────────────────────────────────────
+  // --- AC 2: The 5 series and data points ---
 
-  it('respuesta válida según OmsReferenceCurvesResponseSchema para P/E', async () => {
+  it('valid response according to OmsReferenceCurvesResponseSchema for WFA', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=FEMALE');
     const parsed = OmsReferenceCurvesResponseSchema.safeParse(res.body);
     expect(parsed.success, JSON.stringify((parsed as { error?: unknown }).error)).toBe(true);
   });
 
-  it('devuelve exactamente 5 curvas: -3, -2, 0, +2, +3', async () => {
+  it('returns exactly 5 curves: -3, -2, 0, +2, +3', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=FEMALE');
     expect(Object.keys(res.body.curves).sort()).toEqual(['-3', '-2', '0', '+2', '+3'].sort());
   });
 
-  it('P/E: las 5 series tienen la misma longitud (49 puntos, meses 12–60)', async () => {
+  it('WFA: all 5 series have the same length (49 points, months 12-60)', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=FEMALE');
     const { curves } = res.body;
     const lengths = Object.values(curves).map((s: unknown) => (s as unknown[]).length);
-    // Todas iguales
     expect(new Set(lengths).size).toBe(1);
-    // 49 puntos: meses 12, 13, … 60
     expect(lengths[0]).toBe(49);
   });
 
-  it('P/E: primer punto tiene x=12 y los valores y son positivos', async () => {
+  it('WFA: first point has x=12 and y values are positive', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=FEMALE');
     const { curves } = res.body;
     for (const key of ['-3', '-2', '0', '+2', '+3']) {
@@ -89,7 +87,7 @@ describe('GET /reference/curves', () => {
     }
   });
 
-  it('P/E: las curvas están ordenadas: z=-3 < z=-2 < z=0 < z=+2 < z=+3 en cada punto', async () => {
+  it('WFA: curves are monotonically ordered: z=-3 < z=-2 < z=0 < z=+2 < z=+3 at every point', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=FEMALE');
     const { curves } = res.body;
     const len = (curves['-3'] as unknown[]).length;
@@ -103,84 +101,84 @@ describe('GET /reference/curves', () => {
     }
   });
 
-  it('P/T sin posición: xAxis es length_cm', async () => {
+  it('WFLH without position: xAxis is length_cm', async () => {
     const res = await request(app).get(
       '/reference/curves?indicator=WEIGHT_FOR_LENGTH_HEIGHT&sex=FEMALE',
     );
     expect(res.body.xAxis).toBe('length_cm');
   });
 
-  it('P/T position=STANDING: xAxis es height_cm', async () => {
+  it('WFLH position=STANDING: xAxis is height_cm', async () => {
     const res = await request(app).get(
       '/reference/curves?indicator=WEIGHT_FOR_LENGTH_HEIGHT&sex=MALE&position=STANDING',
     );
     expect(res.body.xAxis).toBe('height_cm');
   });
 
-  it('P/T position=RECUMBENT: xAxis es length_cm', async () => {
+  it('WFLH position=RECUMBENT: xAxis is length_cm', async () => {
     const res = await request(app).get(
       '/reference/curves?indicator=WEIGHT_FOR_LENGTH_HEIGHT&sex=MALE&position=RECUMBENT',
     );
     expect(res.body.xAxis).toBe('length_cm');
   });
 
-  it('P/E: xAxis es age_months', async () => {
+  it('WFA: xAxis is age_months', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=MALE');
     expect(res.body.xAxis).toBe('age_months');
   });
 
-  it('T/E: xAxis es age_months', async () => {
+  it('LHFA: xAxis is age_months', async () => {
     const res = await request(app).get(
       '/reference/curves?indicator=LENGTH_HEIGHT_FOR_AGE&sex=FEMALE',
     );
     expect(res.body.xAxis).toBe('age_months');
   });
 
-  // ─── CA 3: Respuesta cacheable y versionada (RT-08) ──────────────────────
+  // --- AC 3: Cacheable and versioned response (RT-08) ---
 
-  it('incluye Cache-Control: public, max-age=86400', async () => {
+  it('includes Cache-Control: public, max-age=86400', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=FEMALE');
     expect(res.headers['cache-control']).toContain('public');
     expect(res.headers['cache-control']).toContain('max-age=86400');
   });
 
-  it('incluye stale-while-revalidate en Cache-Control', async () => {
+  it('includes stale-while-revalidate in Cache-Control', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=FEMALE');
     expect(res.headers['cache-control']).toContain('stale-while-revalidate=3600');
   });
 
-  it('versión de referencia es "WHO 2006" (RT-08)', async () => {
+  it('reference version is WHO 2006 (RT-08)', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=FEMALE');
     expect(res.body.version).toBe('WHO 2006');
   });
 
-  // ─── Validación de parámetros obligatorios ────────────────────────────────
+  // --- Required parameters validation ---
 
-  it('sin sex → 400 con issues Zod', async () => {
+  it('missing sex -> 400 with Zod issues', async () => {
     const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE');
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Validation Error');
   });
 
-  it('sin indicator → 400 con issues Zod', async () => {
+  it('missing indicator -> 400 with Zod issues', async () => {
     const res = await request(app).get('/reference/curves?sex=FEMALE');
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Validation Error');
   });
 
-  it('indicator inválido → 400', async () => {
+  it('invalid indicator -> 400', async () => {
     const res = await request(app).get('/reference/curves?indicator=INVALID_INDICATOR&sex=FEMALE');
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Validation Error');
   });
 
-  it('sex inválido → 400', async () => {
-    const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=OTRO');
+  it('invalid sex -> 400', async () => {
+    const res = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=OTHER');
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Validation Error');
   });
 
-  it('position inválida → 400', async () => {
+  it('invalid position -> 400', async () => {
     const res = await request(app).get(
       '/reference/curves?indicator=WEIGHT_FOR_LENGTH_HEIGHT&sex=MALE&position=LYING',
     );
@@ -188,14 +186,14 @@ describe('GET /reference/curves', () => {
     expect(res.body.error).toBe('Validation Error');
   });
 
-  it('sin parámetros → 400', async () => {
+  it('no parameters -> 400', async () => {
     const res = await request(app).get('/reference/curves');
     expect(res.status).toBe(400);
   });
 
-  // ─── Consistencia entre sexos ─────────────────────────────────────────────
+  // --- Consistency across sexes ---
 
-  it('P/E FEMALE y MALE devuelven puntos diferentes (tablas distintas)', async () => {
+  it('WFA FEMALE and MALE return different points (different tables)', async () => {
     const female = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=FEMALE');
     const male = await request(app).get('/reference/curves?indicator=WEIGHT_FOR_AGE&sex=MALE');
     const y0Female = ((female.body.curves['0'] as { y: number }[])[0] as { y: number }).y;
@@ -203,7 +201,7 @@ describe('GET /reference/curves', () => {
     expect(y0Female).not.toBe(y0Male);
   });
 
-  it('indicator y sex reflejados en la respuesta', async () => {
+  it('indicator and sex reflected in response', async () => {
     const res = await request(app).get('/reference/curves?indicator=BMI_FOR_AGE&sex=MALE');
     expect(res.body.indicator).toBe('BMI_FOR_AGE');
     expect(res.body.sex).toBe('MALE');

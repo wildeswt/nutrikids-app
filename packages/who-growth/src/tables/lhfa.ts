@@ -1,7 +1,7 @@
-import type { FilaLMS } from './types.js';
+import type { LmsRow } from './types.js';
 
 /** Longitud/Talla para la edad (T/E) — Niñas (12 a 60 meses) — OMS 2006 */
-export const LHFA_FEMALE: FilaLMS[] = [
+export const LHFA_FEMALE: LmsRow[] = [
   { x: 12.0, l: 1.0, m: 74.015, s: 0.03479 },
   { x: 13.0, l: 1.0, m: 75.2176, s: 0.03496 },
   { x: 14.0, l: 1.0, m: 76.3817, s: 0.03514 },
@@ -54,7 +54,7 @@ export const LHFA_FEMALE: FilaLMS[] = [
 ];
 
 /** Longitud/Talla para la edad (T/E) — Niños (12 a 60 meses) — OMS 2006 */
-export const LHFA_MALE: FilaLMS[] = [
+export const LHFA_MALE: LmsRow[] = [
   { x: 12.0, l: 1.0, m: 75.7488, s: 0.03137 },
   { x: 13.0, l: 1.0, m: 76.9186, s: 0.03154 },
   { x: 14.0, l: 1.0, m: 78.0497, s: 0.03174 },

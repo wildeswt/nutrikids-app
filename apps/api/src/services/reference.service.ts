@@ -1,16 +1,14 @@
 /**
- * Servicio que genera las 5 curvas de z-score (−3, −2, 0, +2, +3) de la
- * referencia OMS 2006 usando la relación inversa `medidaDesdeZ` (RF-10, RT-08).
+ * Service that generates the 5 z-score reference curves (-3, -2, 0, +2, +3) from
+ * WHO 2006 reference tables using the inverse relationship `measurementFromZScore` (RF-10, RT-08).
  *
- * Para cada indicador y sexo se recorren todos los valores x de la tabla
- * correspondiente, se obtienen los parámetros LMS y se calcula la medida
- * antropométrica que corresponde a cada nivel de z.
+ * For each indicator and sex, iterates over all x values of the corresponding table,
+ * retrieves LMS parameters and computes the anthropometric measurement for each z level.
  */
 
 import {
   BFA_FEMALE,
   BFA_MALE,
-  CURVAS_Z,
   LHFA_FEMALE,
   LHFA_MALE,
   WFA_FEMALE,
@@ -20,8 +18,12 @@ import {
   WFL_FEMALE,
   WFL_MALE,
   WHO_REFERENCE_VERSION,
-  curvasZ,
-  obtenerLMS,
+  Z_CURVES,
+  getLmsParameters,
+  zScoreCurves,
+  type MeasurementPosition,
+  type WhoIndicator,
+  type WhoSex,
 } from '@nutrikids/who-growth';
 import type {
   OmsCurvePoint,
@@ -29,33 +31,34 @@ import type {
   OmsReferenceCurvesResponse,
 } from '@nutrikids/shared';
 
-/** Mapa de clave de curva (string) al valor z numérico. */
+/** Curve key map (string) to numeric z value. */
 const CURVE_KEYS = ['-3', '-2', '0', '+2', '+3'] as const;
 type CurveKey = (typeof CURVE_KEYS)[number];
 
-/** Convierte los query params de la API a los tipos del paquete who-growth. */
-function mapPosition(position?: string): 'acostado' | 'de_pie' | undefined {
-  if (position === 'RECUMBENT') return 'acostado';
-  if (position === 'STANDING') return 'de_pie';
+/** Maps API query position to who-growth MeasurementPosition. */
+function mapPosition(position?: string): MeasurementPosition | undefined {
+  if (position === 'RECUMBENT') return 'recumbent';
+  if (position === 'STANDING') return 'standing';
   return undefined;
 }
 
 /**
- * Devuelve todos los valores x (eje de la gráfica) de la tabla OMS que
- * corresponde al indicador, sexo y posición dados.
- *
- * Para WEIGHT_FOR_LENGTH_HEIGHT sin posición explícita se combinan WFL y WFH
- * en un único eje x ordenado (45–120 cm).
+ * Returns all x values (chart axis) from the WHO table corresponding to indicator, sex, and position.
+ * For WEIGHT_FOR_LENGTH_HEIGHT without explicit position, merges WFL and WFH in a single sorted x-axis (45-120 cm).
  */
-function getXValues(indicator: string, sex: string, omsPosition?: 'acostado' | 'de_pie'): number[] {
+function getXValues(
+  indicator: string,
+  sex: string,
+  measurementPosition?: MeasurementPosition,
+): number[] {
   if (indicator === 'WEIGHT_FOR_LENGTH_HEIGHT') {
-    if (omsPosition === 'acostado') {
+    if (measurementPosition === 'recumbent') {
       return (sex === 'FEMALE' ? WFL_FEMALE : WFL_MALE).map((f) => f.x);
     }
-    if (omsPosition === 'de_pie') {
+    if (measurementPosition === 'standing') {
       return (sex === 'FEMALE' ? WFH_FEMALE : WFH_MALE).map((f) => f.x);
     }
-    // Sin posición: unión de WFL y WFH, ordenada
+    // Without explicit position: sorted union of WFL and WFH
     const xWfl = (sex === 'FEMALE' ? WFL_FEMALE : WFL_MALE).map((f) => f.x);
     const xWfh = (sex === 'FEMALE' ? WFH_FEMALE : WFH_MALE).map((f) => f.x);
     return [...new Set([...xWfl, ...xWfh])].sort((a, b) => a - b);
@@ -72,34 +75,34 @@ function getXValues(indicator: string, sex: string, omsPosition?: 'acostado' | '
 }
 
 /**
- * Determina la etiqueta del eje X para incluirla en la respuesta.
- * Permite que el cliente sepa si el eje es edad (meses) o talla/longitud (cm).
+ * Determines X-axis label to include in the response.
+ * Allows client to know whether the axis is age (months) or height/length (cm).
  */
 function determineXAxis(
   indicator: string,
-  omsPosition?: 'acostado' | 'de_pie',
+  measurementPosition?: MeasurementPosition,
 ): OmsReferenceCurvesResponse['xAxis'] {
   if (indicator !== 'WEIGHT_FOR_LENGTH_HEIGHT') return 'age_months';
-  return omsPosition === 'de_pie' ? 'height_cm' : 'length_cm';
+  return measurementPosition === 'standing' ? 'height_cm' : 'length_cm';
 }
 
 /**
- * Calcula las 5 series de curvas de referencia OMS para un indicador y sexo.
+ * Calculates the 5 WHO reference curve series for an indicator and sex.
  *
- * Implementación de RF-10 / RT-08:
- * - Usa `obtenerLMS` para obtener los parámetros L, M, S de cada fila.
- * - Usa `curvasZ` (que internamente llama `medidaDesdeZ`) para calcular la
- *   medida antropométrica que corresponde a cada z-score.
- * - La respuesta incluye el campo `version` para cumplir con RT-08.
+ * RF-10 / RT-08 implementation:
+ * - Uses `getLmsParameters` to obtain L, M, S parameters for each row.
+ * - Uses `zScoreCurves` (internally calling `measurementFromZScore`) to calculate
+ *   the anthropometric measurement corresponding to each z-score.
+ * - Response includes `version` to satisfy RT-08.
  */
 export function calculateReferenceCurves(
   query: OmsReferenceCurvesQuery,
 ): OmsReferenceCurvesResponse {
   const { indicator, sex, position } = query;
-  const omsPosition = mapPosition(position);
+  const measurementPosition = mapPosition(position);
 
-  const xValues = getXValues(indicator, sex, omsPosition);
-  const xAxis = determineXAxis(indicator, omsPosition);
+  const xValues = getXValues(indicator, sex, measurementPosition);
+  const xAxis = determineXAxis(indicator, measurementPosition);
 
   const series: Record<CurveKey, OmsCurvePoint[]> = {
     '-3': [],
@@ -111,22 +114,22 @@ export function calculateReferenceCurves(
 
   for (const x of xValues) {
     try {
-      const { l, m, s } = obtenerLMS(
-        indicator as Parameters<typeof obtenerLMS>[0],
-        sex as Parameters<typeof obtenerLMS>[1],
+      const { l, m, s } = getLmsParameters(
+        indicator as WhoIndicator,
+        sex as WhoSex,
         x,
-        omsPosition,
+        measurementPosition,
       );
 
-      const vals = curvasZ(l, m, s);
+      const vals = zScoreCurves(l, m, s);
 
-      // CURVAS_Z = [-3, -2, 0, 2, 3]; CURVE_KEYS = ['-3', '-2', '0', '+2', '+3']
-      CURVAS_Z.forEach((z, i) => {
+      // Z_CURVES = [-3, -2, 0, 2, 3]; CURVE_KEYS = ['-3', '-2', '0', '+2', '+3']
+      Z_CURVES.forEach((z, i) => {
         const key = CURVE_KEYS[i]!;
         series[key].push({ x, y: Math.round(vals[z] * 1000) / 1000 });
       });
     } catch {
-      // Punto fuera de rango — se omite (puede ocurrir en la zona de solapamiento WFL/WFH)
+      // Point out of range - omitted (can occur in WFL/WFH overlapping range)
     }
   }
 
