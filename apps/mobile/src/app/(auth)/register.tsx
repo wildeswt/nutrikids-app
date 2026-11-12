@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { RegisterInputSchema, USER_ROLES, type Specialty, type UserRole } from '@nutrikids/shared';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -24,6 +24,7 @@ const SPECIALTIES: Array<{ value: Specialty; label: string }> = [
 ];
 
 export default function RegisterScreen() {
+  const router = useRouter();
   const { signIn } = useAuth();
 
   const [roles, setRoles] = useState<UserRole[]>([USER_ROLES.CAREGIVER]);
@@ -96,6 +97,9 @@ export default function RegisterScreen() {
       const response = await registerRequest(validation.data);
       if (!response.requiresTwoFactor) {
         await signIn(response);
+      } else {
+        // If two-factor authentication is required, direct user to login flow
+        router.replace(APP_ROUTES.AUTH.LOGIN as never);
       }
     } catch (err) {
       setGeneralError(formatAuthErrorMessage(err));

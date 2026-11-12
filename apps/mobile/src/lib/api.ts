@@ -213,36 +213,27 @@ export async function logoutSessionRequest(refreshToken: string): Promise<void> 
 }
 
 /**
- * Dispatches a POST /auth/login request.
- * Returns AuthResponse: either requiresTwoFactor: true (with no tokens) or requiresTwoFactor: false (with tokens and user).
+ * Generic helper for dispatching JSON POST requests to auth endpoints.
+ * Consolidates fetch execution, network error mapping, HTTP error resolution,
+ * and validates response payloads with Zod returning human-friendly Spanish errors on schema mismatch.
  */
-export async function loginRequest(input: LoginInput): Promise<AuthResponse> {
-  const validated = LoginInputSchema.parse(input);
+async function postAuth<T>(
+  path: string,
+  body: unknown,
+  schema?: { safeParse: (data: unknown) => { success: true; data: T } | { success: false } },
+  defaultErrorMessage = 'Error al procesar la solicitud.',
+): Promise<T> {
+  let response: Response;
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    response = await fetch(`${API_BASE_URL}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify(validated),
+      body: JSON.stringify(body),
     });
-
-    const data: unknown = await response.json();
-    if (!response.ok) {
-      const message = resolveHttpAuthError(
-        response.status,
-        data as {
-          message?: string;
-          issues?: Array<{ path?: Array<string | number>; message: string }>;
-        },
-      );
-      throw new AuthApiError(message, { status: response.status });
-    }
-
-    return AuthResponseSchema.parse(data);
   } catch (err) {
-    if (err instanceof AuthApiError) throw err;
     if (err instanceof Error) {
       const isNetwork = err.name === 'AbortError' || err.message.toLowerCase().includes('network');
       throw new AuthApiError(
@@ -252,8 +243,51 @@ export async function loginRequest(input: LoginInput): Promise<AuthResponse> {
         { cause: err },
       );
     }
-    throw new AuthApiError('Error inesperado al iniciar sesión.');
+    throw new AuthApiError(defaultErrorMessage);
   }
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    data = null;
+  }
+
+  if (!response.ok) {
+    const message = resolveHttpAuthError(
+      response.status,
+      data as {
+        message?: string;
+        issues?: Array<{ path?: Array<string | number>; message: string }>;
+      },
+    );
+    throw new AuthApiError(message, { status: response.status });
+  }
+
+  if (!schema) {
+    return data as T;
+  }
+
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) {
+    throw new AuthApiError('La respuesta del servidor no tiene el formato esperado.');
+  }
+
+  return parsed.data;
+}
+
+/**
+ * Dispatches a POST /auth/login request.
+ * Returns AuthResponse: either requiresTwoFactor: true (with no tokens) or requiresTwoFactor: false (with tokens and user).
+ */
+export async function loginRequest(input: LoginInput): Promise<AuthResponse> {
+  const validated = LoginInputSchema.parse(input);
+  return postAuth(
+    '/auth/login',
+    validated,
+    AuthResponseSchema,
+    'Error inesperado al iniciar sesión.',
+  );
 }
 
 /**
@@ -262,42 +296,12 @@ export async function loginRequest(input: LoginInput): Promise<AuthResponse> {
  */
 export async function registerRequest(input: RegisterInput): Promise<AuthResponse> {
   const validated = RegisterInputSchema.parse(input);
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(validated),
-    });
-
-    const data: unknown = await response.json();
-    if (!response.ok) {
-      const message = resolveHttpAuthError(
-        response.status,
-        data as {
-          message?: string;
-          issues?: Array<{ path?: Array<string | number>; message: string }>;
-        },
-      );
-      throw new AuthApiError(message, { status: response.status });
-    }
-
-    return AuthResponseSchema.parse(data);
-  } catch (err) {
-    if (err instanceof AuthApiError) throw err;
-    if (err instanceof Error) {
-      const isNetwork = err.name === 'AbortError' || err.message.toLowerCase().includes('network');
-      throw new AuthApiError(
-        isNetwork
-          ? 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
-          : err.message,
-        { cause: err },
-      );
-    }
-    throw new AuthApiError('Error inesperado al registrar la cuenta.');
-  }
+  return postAuth(
+    '/auth/register',
+    validated,
+    AuthResponseSchema,
+    'Error inesperado al registrar la cuenta.',
+  );
 }
 
 /**
@@ -308,42 +312,12 @@ export async function forgotPasswordRequest(
   input: ForgotPasswordInput,
 ): Promise<ForgotPasswordResponse> {
   const validated = ForgotPasswordInputSchema.parse(input);
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(validated),
-    });
-
-    const data: unknown = await response.json();
-    if (!response.ok) {
-      const message = resolveHttpAuthError(
-        response.status,
-        data as {
-          message?: string;
-          issues?: Array<{ path?: Array<string | number>; message: string }>;
-        },
-      );
-      throw new AuthApiError(message, { status: response.status });
-    }
-
-    return ForgotPasswordResponseSchema.parse(data);
-  } catch (err) {
-    if (err instanceof AuthApiError) throw err;
-    if (err instanceof Error) {
-      const isNetwork = err.name === 'AbortError' || err.message.toLowerCase().includes('network');
-      throw new AuthApiError(
-        isNetwork
-          ? 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
-          : err.message,
-        { cause: err },
-      );
-    }
-    throw new AuthApiError('Error inesperado al solicitar restablecimiento de contraseña.');
-  }
+  return postAuth(
+    '/auth/forgot-password',
+    validated,
+    ForgotPasswordResponseSchema,
+    'Error inesperado al solicitar restablecimiento de contraseña.',
+  );
 }
 
 /**
@@ -352,40 +326,12 @@ export async function forgotPasswordRequest(
  */
 export async function resetPasswordRequest(input: ResetPasswordInput): Promise<void> {
   const validated = ResetPasswordInputSchema.parse(input);
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(validated),
-    });
-
-    if (!response.ok) {
-      const data: unknown = await response.json().catch(() => ({}));
-      const message = resolveHttpAuthError(
-        response.status,
-        data as {
-          message?: string;
-          issues?: Array<{ path?: Array<string | number>; message: string }>;
-        },
-      );
-      throw new AuthApiError(message, { status: response.status });
-    }
-  } catch (err) {
-    if (err instanceof AuthApiError) throw err;
-    if (err instanceof Error) {
-      const isNetwork = err.name === 'AbortError' || err.message.toLowerCase().includes('network');
-      throw new AuthApiError(
-        isNetwork
-          ? 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
-          : err.message,
-        { cause: err },
-      );
-    }
-    throw new AuthApiError('Error inesperado al restablecer la contraseña.');
-  }
+  await postAuth(
+    '/auth/reset-password',
+    validated,
+    undefined,
+    'Error inesperado al restablecer la contraseña.',
+  );
 }
 
 /**

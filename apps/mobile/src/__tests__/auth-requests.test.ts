@@ -97,6 +97,30 @@ describe('auth request helpers in lib/api.ts', () => {
           password: 'WrongPassword!',
         }),
       ).rejects.toThrow(AuthApiError);
+
+      await expect(
+        loginRequest({
+          email: 'wrong@example.com',
+          password: 'WrongPassword!',
+        }),
+      ).rejects.toThrow('Correo o contraseña incorrectos. Verifica tus credenciales.');
+    });
+
+    it('throws AuthApiError in Spanish when server response does not match expected schema', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ unexpectedField: 'invalid' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      vi.stubGlobal('fetch', mockFetch);
+
+      await expect(
+        loginRequest({
+          email: 'user@example.com',
+          password: 'Password123!',
+        }),
+      ).rejects.toThrow('La respuesta del servidor no tiene el formato esperado.');
     });
   });
 
@@ -156,7 +180,7 @@ describe('auth request helpers in lib/api.ts', () => {
           lastName: 'Perez',
           roles: [USER_ROLES.CAREGIVER],
         }),
-      ).rejects.toThrow('El correo electrónico ya está registrado');
+      ).rejects.toThrow('El correo electrónico o número de licencia ya se encuentra registrado.');
     });
   });
 

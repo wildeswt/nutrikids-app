@@ -54,21 +54,16 @@ export function resolveHttpAuthError(
     issues?: Array<{ path?: Array<string | number>; message: string }>;
   },
 ): string {
-  // If API returned a specific first validation issue, prioritize it
+  // If API returned validation issues, prioritize the first specific issue message
   if (payload?.issues && payload.issues.length > 0) {
     const firstIssue = payload.issues[0];
-    if (firstIssue && firstIssue.message) {
+    if (
+      firstIssue &&
+      typeof firstIssue.message === 'string' &&
+      firstIssue.message.trim().length > 0
+    ) {
       return firstIssue.message;
     }
-  }
-
-  // Use backend message if already in Spanish / user-friendly
-  if (
-    payload?.message &&
-    typeof payload.message === 'string' &&
-    !payload.message.includes('Error')
-  ) {
-    return payload.message;
   }
 
   switch (status) {
