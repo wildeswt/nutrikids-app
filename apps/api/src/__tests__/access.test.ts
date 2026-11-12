@@ -388,6 +388,7 @@ describe('matriz de permisos', () => {
     ['checkup:create', true, true, true, true],
     ['alert:review', false, true, true, true],
     ['followup:create', false, false, true, true],
+    ['audit:read', false, true, true, true],
   ])('%s', (perm, c, e, n, p) => {
     expect(hasPermission(caregiver, perm)).toBe(c);
     expect(hasPermission(prof('nursing'), perm)).toBe(e);

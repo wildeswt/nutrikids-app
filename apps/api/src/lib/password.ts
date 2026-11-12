@@ -15,7 +15,7 @@ function getDummyHash(): Promise<string> {
   if (!cachedDummyHashPromise) {
     cachedDummyHashPromise = hash('nutrikids-dummy-password-for-timing-safety', ARGON2_OPTIONS);
   }
-  return cachedDummyHashPromise;
+  return cachedDummyHashPromise!;
 }
 
 /**

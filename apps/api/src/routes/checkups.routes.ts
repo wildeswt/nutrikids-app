@@ -3,6 +3,7 @@ import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
 import { HttpError } from '../lib/http-error.js';
 import { requireActiveConsent, requirePermission, requireVinculo } from '../middlewares/access.js';
+import { auditHealth } from '../middlewares/auditHealth.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import { validateRequest } from '../middlewares/validate.js';
 import { correctCheckup, getCheckupChildId } from '../services/checkups.service.js';
@@ -48,6 +49,11 @@ export function createCheckupsRouter(): Router {
     requireVinculo(checkupChildId),
     requireActiveConsent(checkupChildId),
     validateRequest({ body: CorrectCheckupInputSchema }),
+    auditHealth({
+      action: 'CREATE',
+      entityType: 'checkups',
+      getEntityId: (_req, res) => res.locals.auditEntityId as string | undefined,
+    }),
     async (req, res) => {
       const { checkup, created } = await correctCheckup(
         req.auth!,
@@ -55,6 +61,7 @@ export function createCheckupsRouter(): Router {
         req.params.checkupId as string,
         req.body as CorrectCheckupInput,
       );
+      res.locals.auditEntityId = checkup.id;
       res.status(created ? 201 : 200).json(checkup);
     },
   );

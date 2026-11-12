@@ -1,3 +1,4 @@
+export * from './schemas/audit.js';
 export * from './schemas/auth.js';
 export * from './schemas/checkup.js';
 export * from './schemas/child.js';
