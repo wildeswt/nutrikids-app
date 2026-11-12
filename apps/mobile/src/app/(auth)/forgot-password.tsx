@@ -69,7 +69,7 @@ export default function ForgotPasswordScreen() {
 
               <Pressable
                 style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
-                onPress={() => router.push(APP_ROUTES.AUTH.RESET_PASSWORD as never)}
+                onPress={() => router.push(APP_ROUTES.AUTH.RESET_PASSWORD)}
               >
                 <Text style={styles.submitButtonText}>Ingresar Token de Recuperación</Text>
               </Pressable>

@@ -15,7 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
 import { loginRequest } from '../../lib/api.js';
-import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
+import {
+  AuthApiError,
+  extractZodFieldErrors,
+  formatAuthErrorMessage,
+} from '../../lib/auth-errors.js';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -61,7 +65,11 @@ export default function LoginScreen() {
         await signIn(response);
       }
     } catch (err) {
-      setGeneralError(formatAuthErrorMessage(err));
+      if (requiresTwoFactor && err instanceof AuthApiError && err.status === 401) {
+        setGeneralError('Código incorrecto o vencido. Inténtalo nuevamente.');
+      } else {
+        setGeneralError(formatAuthErrorMessage(err));
+      }
     } finally {
       setLoading(false);
     }

@@ -89,7 +89,7 @@ export default function ResetPasswordScreen() {
 
               <Pressable
                 style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
-                onPress={() => router.replace(APP_ROUTES.AUTH.LOGIN as never)}
+                onPress={() => router.replace(APP_ROUTES.AUTH.LOGIN)}
               >
                 <Text style={styles.submitButtonText}>Iniciar Sesión</Text>
               </Pressable>

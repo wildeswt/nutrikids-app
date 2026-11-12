@@ -99,7 +99,7 @@ export default function RegisterScreen() {
         await signIn(response);
       } else {
         // If two-factor authentication is required, direct user to login flow
-        router.replace(APP_ROUTES.AUTH.LOGIN as never);
+        router.replace(APP_ROUTES.AUTH.LOGIN);
       }
     } catch (err) {
       setGeneralError(formatAuthErrorMessage(err));
