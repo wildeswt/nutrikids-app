@@ -47,7 +47,7 @@ export default function WelcomeScreen() {
               {/* Botón Secundario: Registrarse */}
               <Pressable
                 style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
-                onPress={() => router.push(APP_ROUTES.AUTH.REGISTER as never)}
+                onPress={() => router.push(APP_ROUTES.AUTH.SELECT_ROLE as never)}
                 accessibilityRole="button"
                 accessibilityLabel="Registrarse"
               >

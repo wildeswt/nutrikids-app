@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { RegisterInputSchema, USER_ROLES } from '@nutrikids/shared';
-import { Link, useRouter } from 'expo-router';
+import { RegisterInputSchema, USER_ROLES, type Specialty, type UserRole } from '@nutrikids/shared';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -20,16 +20,33 @@ import { useAuth } from '../../context/auth-context.js';
 import { registerRequest } from '../../lib/api.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
 
+const SPECIALTIES: Array<{ value: Specialty; label: string }> = [
+  { value: 'pediatrics', label: 'Pediatría' },
+  { value: 'nutrition', label: 'Nutrición' },
+  { value: 'nursing', label: 'Enfermería' },
+];
+
 export default function RegisterScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ role?: string }>();
   const { signIn } = useAuth();
 
-  const [fullName, setFullName] = useState('');
+  const selectedRole: UserRole =
+    params.role === USER_ROLES.PROFESSIONAL ? USER_ROLES.PROFESSIONAL : USER_ROLES.CAREGIVER;
+  const isProfessional = selectedRole === USER_ROLES.PROFESSIONAL;
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Campos exclusivos para Profesional de Salud
+  const [specialty, setSpecialty] = useState<Specialty | ''>('');
+  const [licenseNumber, setLicenseNumber] = useState('');
+  const [invitationCode, setInvitationCode] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -39,29 +56,24 @@ export default function RegisterScreen() {
     setGeneralError(null);
     setFieldErrors({});
 
-    // Parse full name into firstName and lastName
-    const trimmedFullName = fullName.trim();
-    const nameParts = trimmedFullName.split(/\s+/);
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0] || '';
-
-    if (!trimmedFullName) {
-      setFieldErrors({ fullName: 'Ingrese su nombre completo' });
-      return;
-    }
-
-    // Client-side password confirmation check
     if (password !== confirmPassword) {
       setFieldErrors({ confirmPassword: 'Las contraseñas no coinciden' });
       return;
     }
 
     const payload = {
-      firstName,
-      lastName,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
       email: email.trim(),
       password,
-      roles: [USER_ROLES.CAREGIVER],
+      roles: [selectedRole],
+      ...(isProfessional
+        ? {
+            specialty: specialty || undefined,
+            licenseNumber: licenseNumber.trim() || undefined,
+            invitationCode: invitationCode.trim() || undefined,
+          }
+        : {}),
     };
 
     const validation = RegisterInputSchema.safeParse(payload);
@@ -104,47 +116,65 @@ export default function RegisterScreen() {
         <View style={styles.formContainer}>
           <Text style={styles.title}>Crear Cuenta</Text>
 
+          {/* Indicador del perfil elegido con opción de cambiar */}
+          <View style={styles.roleBadgeRow}>
+            <Text style={styles.roleBadgeText}>
+              Perfil: {isProfessional ? 'Profesional de Salud' : 'Cuidador'}
+            </Text>
+            <Link href={APP_ROUTES.AUTH.SELECT_ROLE} asChild>
+              <Pressable hitSlop={6}>
+                <Text style={styles.changeRoleLink}>Cambiar perfil</Text>
+              </Pressable>
+            </Link>
+          </View>
+
           {generalError && (
             <View style={styles.errorBox}>
               <Text style={styles.errorBoxText}>{generalError}</Text>
             </View>
           )}
 
-          {/* Nombre Completo */}
+          {/* Nombre */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nombre Completo</Text>
+            <Text style={styles.label}>Nombre</Text>
             <TextInput
-              style={[
-                styles.input,
-                fieldErrors['fullName'] || fieldErrors['firstName'] || fieldErrors['lastName']
-                  ? styles.inputError
-                  : undefined,
-              ]}
-              value={fullName}
+              style={[styles.input, fieldErrors['firstName'] ? styles.inputError : undefined]}
+              value={firstName}
               onChangeText={(text) => {
-                setFullName(text);
-                if (
-                  fieldErrors['fullName'] ||
-                  fieldErrors['firstName'] ||
-                  fieldErrors['lastName']
-                ) {
-                  setFieldErrors((prev) => ({
-                    ...prev,
-                    fullName: '',
-                    firstName: '',
-                    lastName: '',
-                  }));
+                setFirstName(text);
+                if (fieldErrors['firstName']) {
+                  setFieldErrors((prev) => ({ ...prev, firstName: '' }));
                 }
               }}
-              placeholder="Ingrese su nombre completo"
+              placeholder="Ingrese su nombre"
               placeholderTextColor={PALETTE.input.placeholder}
               autoCapitalize="words"
               editable={!loading}
             />
-            {fieldErrors['fullName'] || fieldErrors['firstName'] || fieldErrors['lastName'] ? (
-              <Text style={styles.errorText}>
-                {fieldErrors['fullName'] || fieldErrors['firstName'] || fieldErrors['lastName']}
-              </Text>
+            {fieldErrors['firstName'] ? (
+              <Text style={styles.errorText}>{fieldErrors['firstName']}</Text>
+            ) : null}
+          </View>
+
+          {/* Apellido */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Apellido</Text>
+            <TextInput
+              style={[styles.input, fieldErrors['lastName'] ? styles.inputError : undefined]}
+              value={lastName}
+              onChangeText={(text) => {
+                setLastName(text);
+                if (fieldErrors['lastName']) {
+                  setFieldErrors((prev) => ({ ...prev, lastName: '' }));
+                }
+              }}
+              placeholder="Ingrese su apellido"
+              placeholderTextColor={PALETTE.input.placeholder}
+              autoCapitalize="words"
+              editable={!loading}
+            />
+            {fieldErrors['lastName'] ? (
+              <Text style={styles.errorText}>{fieldErrors['lastName']}</Text>
             ) : null}
           </View>
 
@@ -171,6 +201,92 @@ export default function RegisterScreen() {
               <Text style={styles.errorText}>{fieldErrors['email']}</Text>
             ) : null}
           </View>
+
+          {/* Campos adicionales si eligió Profesional de Salud */}
+          {isProfessional && (
+            <>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Especialidad</Text>
+                <View style={styles.specialtiesRow}>
+                  {SPECIALTIES.map((spec) => (
+                    <Pressable
+                      key={spec.value}
+                      style={[
+                        styles.specialtyChip,
+                        specialty === spec.value ? styles.specialtyChipActive : undefined,
+                      ]}
+                      onPress={() => {
+                        setSpecialty(spec.value);
+                        if (fieldErrors['specialty']) {
+                          setFieldErrors((prev) => ({ ...prev, specialty: '' }));
+                        }
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.specialtyChipText,
+                          specialty === spec.value ? styles.specialtyChipTextActive : undefined,
+                        ]}
+                      >
+                        {spec.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                {fieldErrors['specialty'] ? (
+                  <Text style={styles.errorText}>{fieldErrors['specialty']}</Text>
+                ) : null}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Número de Licencia / Matrícula</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    fieldErrors['licenseNumber'] ? styles.inputError : undefined,
+                  ]}
+                  value={licenseNumber}
+                  onChangeText={(text) => {
+                    setLicenseNumber(text);
+                    if (fieldErrors['licenseNumber']) {
+                      setFieldErrors((prev) => ({ ...prev, licenseNumber: '' }));
+                    }
+                  }}
+                  placeholder="Ej: MED-12345"
+                  placeholderTextColor={PALETTE.input.placeholder}
+                  editable={!loading}
+                />
+                {fieldErrors['licenseNumber'] ? (
+                  <Text style={styles.errorText}>{fieldErrors['licenseNumber']}</Text>
+                ) : null}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Código de Invitación Profesional</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    fieldErrors['invitationCode'] ? styles.inputError : undefined,
+                  ]}
+                  value={invitationCode}
+                  onChangeText={(text) => {
+                    setInvitationCode(text);
+                    if (fieldErrors['invitationCode']) {
+                      setFieldErrors((prev) => ({ ...prev, invitationCode: '' }));
+                    }
+                  }}
+                  placeholder="Código provisto por su institución"
+                  placeholderTextColor={PALETTE.input.placeholder}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!loading}
+                />
+                {fieldErrors['invitationCode'] ? (
+                  <Text style={styles.errorText}>{fieldErrors['invitationCode']}</Text>
+                ) : null}
+              </View>
+            </>
+          )}
 
           {/* Contraseña */}
           <View style={styles.inputGroup}>
@@ -334,7 +450,25 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: PALETTE.text.title,
     textAlign: 'center',
-    marginBottom: 8,
+  },
+  roleBadgeRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: -4,
+    marginBottom: 4,
+  },
+  roleBadgeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: PALETTE.text.body,
+  },
+  changeRoleLink: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: PALETTE.primary,
+    textDecorationLine: 'underline',
   },
   errorBox: {
     backgroundColor: PALETTE.feedback.errorBg,
@@ -366,6 +500,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: PALETTE.text.body,
     backgroundColor: PALETTE.input.background,
+  },
+  specialtiesRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  specialtyChip: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: PALETTE.border.default,
+    borderRadius: 20,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: PALETTE.input.background,
+  },
+  specialtyChipActive: {
+    borderColor: PALETTE.primary,
+    backgroundColor: PALETTE.primaryLight,
+  },
+  specialtyChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: PALETTE.text.body,
+  },
+  specialtyChipTextActive: {
+    color: PALETTE.primary,
+    fontWeight: '700',
   },
   passwordContainer: {
     flexDirection: 'row',

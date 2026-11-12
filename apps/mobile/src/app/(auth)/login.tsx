@@ -294,7 +294,7 @@ export default function LoginScreen() {
           {!requiresTwoFactor && (
             <View style={styles.registerContainer}>
               <Text style={styles.registerPrompt}>¿No tienes una cuenta?</Text>
-              <Link href={APP_ROUTES.AUTH.REGISTER} asChild>
+              <Link href={APP_ROUTES.AUTH.SELECT_ROLE} asChild>
                 <Pressable hitSlop={6}>
                   <Text style={styles.registerLink}>Regístrate</Text>
                 </Pressable>

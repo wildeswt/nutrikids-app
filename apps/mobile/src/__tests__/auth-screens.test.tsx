@@ -58,6 +58,7 @@ import ForgotPasswordScreen from '../app/(auth)/forgot-password.js';
 import LoginScreen from '../app/(auth)/login.js';
 import RegisterScreen from '../app/(auth)/register.js';
 import ResetPasswordScreen from '../app/(auth)/reset-password.js';
+import SelectRoleScreen from '../app/(auth)/select-role.js';
 import WelcomeScreen from '../app/(auth)/welcome.js';
 
 describe('Auth Screens Rendering', () => {
@@ -69,6 +70,18 @@ describe('Auth Screens Rendering', () => {
       expect(html).toContain('Bienvenido');
       expect(html).toContain('Iniciar Sesión');
       expect(html).toContain('Registrarse');
+    });
+  });
+
+  describe('SelectRoleScreen', () => {
+    it('renders role selection screen with caregiver and professional options', () => {
+      const html = renderToString(React.createElement(SelectRoleScreen));
+
+      expect(html).toContain('Cuidar su crecimiento, juntos.');
+      expect(html).toContain('¿Con qué perfil deseas registrarte?');
+      expect(html).toContain('Soy Cuidador');
+      expect(html).toContain('Soy Profesional de Salud');
+      expect(html).toContain('Iniciar Sesión');
     });
   });
 
@@ -92,7 +105,7 @@ describe('Auth Screens Rendering', () => {
   });
 
   describe('RegisterScreen', () => {
-    it('renders registration screen matching final design requirements', () => {
+    it('renders registration screen with split Nombre and Apellido fields', () => {
       const html = renderToString(React.createElement(RegisterScreen));
 
       // Brand headers
@@ -100,7 +113,8 @@ describe('Auth Screens Rendering', () => {
       expect(html).toContain('Crear Cuenta');
 
       // Core fields
-      expect(html).toContain('Nombre Completo');
+      expect(html).toContain('Nombre');
+      expect(html).toContain('Apellido');
       expect(html).toContain('Correo Electrónico');
       expect(html).toContain('Contraseña');
       expect(html).toContain('Confirmar Contraseña');

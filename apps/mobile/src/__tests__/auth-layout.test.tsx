@@ -26,6 +26,13 @@ describe('AuthLayout', () => {
     const screens = React.Children.toArray(layout.props.children) as StackScreenElement[];
     const names = screens.map((s) => s.props.name);
 
-    expect(names).toEqual(['welcome', 'login', 'register', 'forgot-password', 'reset-password']);
+    expect(names).toEqual([
+      'welcome',
+      'select-role',
+      'login',
+      'register',
+      'forgot-password',
+      'reset-password',
+    ]);
   });
 });
