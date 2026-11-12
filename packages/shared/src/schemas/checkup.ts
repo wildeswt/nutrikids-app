@@ -121,7 +121,10 @@ const BaseCheckupResponseShape = {
   position: PositionSchema,
   origin: OriginSchema,
   recordedById: UuidSchema,
+  /** Control original al que este control corrige (null si no es una corrección). */
   correctedCheckupId: UuidSchema.nullable(),
+  /** Derivado: `true` si ningún otro control lo corrige (es el que cuenta para gráficas y alertas). */
+  isCurrent: z.boolean(),
   createdAt: IsoDateTimeSchema,
 };
 

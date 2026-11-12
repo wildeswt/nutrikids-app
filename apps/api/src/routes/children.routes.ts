@@ -1,6 +1,7 @@
 import {
   AssignCaregiverInputSchema,
   AssignProfessionalInputSchema,
+  CreateCheckupInputSchema,
   CreateChildInputSchema,
   EndProfessionalAssignmentInputSchema,
   GrantConsentInputSchema,
@@ -8,6 +9,7 @@ import {
   UuidSchema,
   type AssignCaregiverInput,
   type AssignProfessionalInput,
+  type CreateCheckupInput,
   type CreateChildInput,
   type EndProfessionalAssignmentInput,
   type GrantConsentInput,
@@ -15,9 +17,15 @@ import {
 } from '@nutrikids/shared';
 import { Router } from 'express';
 import { z } from 'zod';
-import { requirePermission, requireRole, requireVinculo } from '../middlewares/access.js';
+import {
+  requireActiveConsent,
+  requirePermission,
+  requireRole,
+  requireVinculo,
+} from '../middlewares/access.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import { validateRequest } from '../middlewares/validate.js';
+import { createCheckup, listChildCheckups } from '../services/checkups.service.js';
 import {
   assignCaregiver,
   assignProfessional,
@@ -42,6 +50,13 @@ const ChildProfessionalParamsSchema = z.object({
 const ChildCaregiverParamsSchema = z.object({
   childId: UuidSchema,
   caregiverId: UuidSchema,
+});
+
+const ListCheckupsQuerySchema = z.object({
+  onlyCurrent: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => value === 'true'),
 });
 
 export function createChildrenRouter(): Router {
@@ -270,6 +285,52 @@ export function createChildrenRouter(): Router {
     async (req, res) => {
       const consent = await revokeConsent(req.auth!, req.params.childId as string);
       res.status(200).json(consent);
+    },
+  );
+
+  /**
+   * GET /children/:childId/checkups
+   * Historial completo de controles (incluye los reemplazados por una corrección), ordenado por
+   * fecha de medición descendente. `?onlyCurrent=true` devuelve solo los controles vigentes.
+   * El cuidador no recibe z-scores, percentiles ni clasificaciones (RF-14).
+   */
+  router.get(
+    '/:childId/checkups',
+    requirePermission('checkup:read'),
+    requireVinculo('childId'),
+    validateRequest({ query: ListCheckupsQuerySchema }),
+    async (req, res) => {
+      const { onlyCurrent } = req.query as unknown as z.infer<typeof ListCheckupsQuerySchema>;
+      const checkups = await listChildCheckups(
+        req.auth!,
+        req.vinculo!,
+        req.params.childId as string,
+        onlyCurrent,
+      );
+      res.status(200).json(checkups);
+    },
+  );
+
+  /**
+   * POST /children/:childId/checkups
+   * Registra un control con UUID generado en el cliente; reenviar el mismo id devuelve el control
+   * existente (200) sin duplicarlo. `origin` y `recordedById` los asigna el servidor.
+   * Requiere vínculo y consentimiento informado vigente.
+   */
+  router.post(
+    '/:childId/checkups',
+    requirePermission('checkup:create'),
+    requireVinculo('childId'),
+    requireActiveConsent('childId'),
+    validateRequest({ body: CreateCheckupInputSchema }),
+    async (req, res) => {
+      const { checkup, created } = await createCheckup(
+        req.auth!,
+        req.vinculo!,
+        req.params.childId as string,
+        req.body as CreateCheckupInput,
+      );
+      res.status(created ? 201 : 200).json(checkup);
     },
   );
 
