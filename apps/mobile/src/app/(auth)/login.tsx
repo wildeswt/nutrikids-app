@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LoginInputSchema } from '@nutrikids/shared';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -25,6 +25,7 @@ import {
 } from '../../lib/auth-errors.js';
 
 export default function LoginScreen() {
+  const router = useRouter();
   const { signIn } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -89,6 +90,19 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Botón Volver */}
+      <View style={styles.topBar}>
+        <Pressable
+          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+          onPress={() => router.back()}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Volver a la pantalla anterior"
+        >
+          <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
+        </Pressable>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* Header con Logo y Slogan estilo UI final */}
         <View style={styles.brandHeader}>
@@ -311,6 +325,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: PALETTE.background,
+  },
+  topBar: {
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    alignItems: 'flex-start',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: PALETTE.surface,
+    borderWidth: 1,
+    borderColor: PALETTE.border.default,
+  },
+  backButtonPressed: {
+    opacity: 0.7,
+    backgroundColor: PALETTE.border.subtle,
   },
   scrollContent: {
     paddingHorizontal: 24,
