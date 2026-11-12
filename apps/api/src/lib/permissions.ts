@@ -1,6 +1,6 @@
 import type { Specialty, UserRole } from '@nutrikids/shared';
 
-/** Permisos de negocio que se aplican en el servidor (RT-05). Ver `docs/permisos.md`. */
+/** Business permissions enforced on server (RT-05). See `docs/permissions.md`. */
 export const PERMISSIONS = [
   'child:read',
   'checkup:read',
@@ -14,7 +14,7 @@ export const PERMISSIONS = [
 
 export type Permission = (typeof PERMISSIONS)[number];
 
-/** Identidad autenticada que deja `authenticate` en `req.auth`. */
+/** Authenticated identity populated by `authenticate` into `req.auth`. */
 export interface AuthContext {
   userId: string;
   roles: UserRole[];
@@ -30,7 +30,7 @@ const READ_ALL: readonly Permission[] = [
   'feedinglog:read',
 ];
 
-/** Matriz de permisos: qué puede ver y registrar el cuidador y cada especialidad profesional. */
+/** Permissions matrix: capabilities of caregiver and each professional specialty. */
 export const PERMISSIONS_BY_ACTOR: Readonly<{
   CAREGIVER: readonly Permission[];
   nursing: readonly Permission[];
@@ -43,7 +43,7 @@ export const PERMISSIONS_BY_ACTOR: Readonly<{
   pediatrics: [...READ_ALL, 'alert:review', 'followup:create'],
 };
 
-/** Permisos efectivos: unión de los del cuidador (si tiene ese rol) y los de su especialidad. */
+/** Effective permissions: union of caregiver role (if held) and specialty permissions. */
 export function permissionsFor(auth: AuthContext): Set<Permission> {
   const result = new Set<Permission>();
   if (auth.roles.includes('CAREGIVER')) {

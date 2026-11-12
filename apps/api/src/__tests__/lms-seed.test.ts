@@ -60,10 +60,10 @@ const CASOS_OFICIALES_OMS = [
   },
 ] as const;
 
-describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () => {
-  describe('Verificación de los datos del seed (LMS_SEED_GROUPS) contra la tabla oficial OMS', () => {
+describe('RT-08: LMS References Database Seed and WHO Verification', () => {
+  describe('Verification of seed data (LMS_SEED_GROUPS) against official WHO tables', () => {
     for (const caso of CASOS_OFICIALES_OMS) {
-      it(`Seed [${caso.indicador}] [${caso.sexo}] x=${caso.x} coincide con ${caso.fuente}`, () => {
+      it(`Seed [${caso.indicador}] [${caso.sexo}] x=${caso.x} matches ${caso.fuente}`, () => {
         const group = LMS_SEED_GROUPS.find(
           (g) => g.indicator === caso.indicador && g.sex === caso.sexo,
         );
@@ -79,7 +79,7 @@ describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () =
     }
   });
 
-  describe('Persistencia e idempotencia en base de datos (lms_references)', () => {
+  describe('Database persistence and idempotency (lms_references)', () => {
     let client: pg.Client;
     let dbAvailable = false;
 
@@ -88,7 +88,7 @@ describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () =
         client = new pg.Client({ connectionString, connectionTimeoutMillis: 3000 });
         await client.connect();
         dbAvailable = true;
-        // Aseguramos que el seed esté aplicado antes de los tests
+        // Ensure seed is applied prior to tests
         await seedLmsReferences(prisma);
       } catch {
         dbAvailable = false;
@@ -103,9 +103,9 @@ describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () =
       await prisma.$disconnect();
     });
 
-    describe('Verificación de 5 valores en base de datos contra la tabla oficial de la OMS', () => {
+    describe('Verification of 5 database values against official WHO tables', () => {
       for (const caso of CASOS_OFICIALES_OMS) {
-        it(`[${caso.indicador}] [${caso.sexo}] x=${caso.x} coincide con ${caso.fuente}`, async ({
+        it(`[${caso.indicador}] [${caso.sexo}] x=${caso.x} matches ${caso.fuente}`, async ({
           skip,
         }) => {
           if (!dbAvailable) {
@@ -132,8 +132,8 @@ describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () =
       }
     });
 
-    describe('Cobertura de rangos en base de datos', () => {
-      it('cubre rango de 12 a 60 meses para WEIGHT_FOR_AGE', async ({ skip }) => {
+    describe('Database range coverage', () => {
+      it('covers range 12 to 60 months for WEIGHT_FOR_AGE', async ({ skip }) => {
         if (!dbAvailable) {
           skip();
           return;
@@ -142,11 +142,11 @@ describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () =
         const count = await prisma.lmsReference.count({
           where: { indicator: 'WEIGHT_FOR_AGE' },
         });
-        // 49 meses * 2 sexos = 98 registros
+        // 49 months * 2 sexes = 98 rows
         expect(count).toBe(98);
       });
 
-      it('cubre rango de 12 a 60 meses para LENGTH_HEIGHT_FOR_AGE', async ({ skip }) => {
+      it('covers range 12 to 60 months for LENGTH_HEIGHT_FOR_AGE', async ({ skip }) => {
         if (!dbAvailable) {
           skip();
           return;
@@ -158,7 +158,7 @@ describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () =
         expect(count).toBe(98);
       });
 
-      it('cubre rango de 12 a 60 meses para BMI_FOR_AGE', async ({ skip }) => {
+      it('covers range 12 to 60 months for BMI_FOR_AGE', async ({ skip }) => {
         if (!dbAvailable) {
           skip();
           return;
@@ -170,7 +170,7 @@ describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () =
         expect(count).toBe(98);
       });
 
-      it('cubre longitud y talla para WEIGHT_FOR_LENGTH_HEIGHT de 45 a 120 cm', async ({
+      it('covers length and height for WEIGHT_FOR_LENGTH_HEIGHT from 45 to 120 cm', async ({
         skip,
       }) => {
         if (!dbAvailable) {
@@ -181,15 +181,13 @@ describe('RT-08: Seed LMS References en Base de Datos y verificación OMS', () =
         const count = await prisma.lmsReference.count({
           where: { indicator: 'WEIGHT_FOR_LENGTH_HEIGHT' },
         });
-        // 151 medidas * 2 sexos = 302 registros
+        // 151 values * 2 sexes = 302 rows
         expect(count).toBe(302);
       });
     });
 
-    describe('Idempotencia del seed', () => {
-      it('ejecutar seedLmsReferences nuevamente no arroja errores ni duplica datos', async ({
-        skip,
-      }) => {
+    describe('Seed idempotency', () => {
+      it('running seedLmsReferences again does not throw or duplicate data', async ({ skip }) => {
         if (!dbAvailable) {
           skip();
           return;
