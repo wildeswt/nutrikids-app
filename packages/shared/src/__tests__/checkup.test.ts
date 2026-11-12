@@ -123,7 +123,7 @@ describe('IndicatorResultSchema y respuestas de control (profesional vs cuidador
     indicator: 'WEIGHT_FOR_LENGTH_HEIGHT',
     zScore: -2.21,
     percentile: 1.36,
-    classification: 'emaciacion',
+    classification: 'WASTING',
     referenceVersion: 'WHO-2006',
   };
 

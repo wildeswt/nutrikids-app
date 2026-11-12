@@ -4,17 +4,18 @@ import type {
   CheckupResponse,
   CorrectCheckupInput,
   CreateCheckupInput,
+  IndicatorResult,
 } from '@nutrikids/shared';
 import {
   WHO_REFERENCE_VERSION,
-  ajustarLongitudTalla,
-  calcularZ,
-  clasificar,
-  edadEnMeses,
-  obtenerLMS,
-  percentilDesdeZ,
-  type IndicadorOMS,
-  type PosicionMedicion,
+  adjustLengthHeight,
+  calculateZScore,
+  classify,
+  ageInMonths,
+  getLmsParameters,
+  percentileFromZScore,
+  type MeasurementPosition,
+  type WhoIndicator,
 } from '@nutrikids/who-growth';
 import type { Prisma } from '../generated/prisma/client.js';
 import { HttpError } from '../lib/http-error.js';
@@ -22,14 +23,14 @@ import type { AuthContext } from '../lib/permissions.js';
 import { withUser } from '../lib/prisma.js';
 import { assertActiveConsent, assertChildAgeInOmsRange } from './children.service.js';
 
-/** Perfil desde el que se consulta o registra: determina `origin` y la forma de la respuesta. */
+/** Viewer profile under which checkup is queried or recorded: determines `origin` and response shape. */
 export type CheckupViewer = 'CAREGIVER' | 'PROFESSIONAL';
 
 export type CheckupView = CheckupResponse | CaregiverCheckupResponse;
 
 export interface CheckupWriteResult {
   checkup: CheckupView;
-  /** `true` si el control se creó en esta llamada; `false` si el reenvío del mismo id devolvió el existente. */
+  /** `true` if checkup was created in this call; `false` if idempotent resend returned existing. */
   created: boolean;
 }
 
@@ -37,8 +38,8 @@ type CheckupRow = Prisma.CheckupGetPayload<{ include: { results: true } }>;
 
 const round2 = (v: number): number => Math.round(v * 100) / 100;
 
-function mapPosition(position: string): PosicionMedicion {
-  return position === 'RECUMBENT' ? 'acostado' : 'de_pie';
+function mapPosition(position: string): MeasurementPosition {
+  return position === 'RECUMBENT' ? 'recumbent' : 'standing';
 }
 
 function formatCheckupResponse(
@@ -60,7 +61,7 @@ function formatCheckupResponse(
     createdAt: row.createdAt.toISOString(),
   };
 
-  // El cuidador nunca recibe z-scores, percentiles ni clasificaciones (RF-14).
+  // Caregivers never receive z-scores, percentiles, or technical classifications (RF-14).
   if (viewer === 'CAREGIVER') {
     return base;
   }
@@ -73,18 +74,17 @@ function formatCheckupResponse(
       indicator: r.indicator,
       zScore: Number(r.zScore),
       percentile: Number(r.percentile),
-      classification: r.classification,
+      classification: r.classification as IndicatorResult['classification'],
       referenceVersion: r.referenceVersion,
     })),
   };
 }
 
 /**
- * Calcula los 4 indicadores OMS de un control.
- * - P/E, T/E e IMC/E usan la edad en meses cumplidos a la fecha del control.
- * - T/E se ajusta ±0,7 cm si la posición no coincide con la de la tabla (< 24 meses acostado).
- * - P/T-P/L usa la tabla según la posición medida; la medida se redondea a 0,5 cm porque
- *   `obtenerLMS` no interpola.
+ * Computes the 4 WHO indicators for a checkup.
+ * - WFA, LHFA, and BFA use completed age in months at checkup date.
+ * - LHFA is adjusted +/-0.7 cm if position does not match table reference (<24 months recumbent).
+ * - WFLH uses the table matching measured position; rounded to 0.5 cm.
  */
 export function computeIndicatorResults(params: {
   sex: 'FEMALE' | 'MALE';
@@ -95,39 +95,39 @@ export function computeIndicatorResults(params: {
   position: string;
 }) {
   const { sex, birthDate, measuredAt, weightKg, lengthHeightCm } = params;
-  const posicion = mapPosition(params.position);
+  const position = mapPosition(params.position);
 
   try {
-    const ageMonths = edadEnMeses(birthDate, measuredAt);
-    const z = (ind: IndicadorOMS, x: number, value: number, pos?: PosicionMedicion): number => {
-      const { l, m, s } = obtenerLMS(ind, sex, x, pos);
-      return round2(calcularZ(value, l, m, s));
+    const ageMonths = ageInMonths(birthDate, measuredAt);
+    const z = (ind: WhoIndicator, x: number, value: number, pos?: MeasurementPosition): number => {
+      const { l, m, s } = getLmsParameters(ind, sex, x, pos);
+      return round2(calculateZScore(value, l, m, s));
     };
 
-    const tablaLhfa: PosicionMedicion = ageMonths < 24 ? 'acostado' : 'de_pie';
-    const lhfaValue = ajustarLongitudTalla(lengthHeightCm, posicion, tablaLhfa);
+    const tableLhfa: MeasurementPosition = ageMonths < 24 ? 'recumbent' : 'standing';
+    const lhfaValue = adjustLengthHeight(lengthHeightCm, position, tableLhfa);
     const wflX = Math.round(lengthHeightCm * 2) / 2;
     const bmi = weightKg / (lengthHeightCm / 100) ** 2;
 
     const zs = {
       WEIGHT_FOR_AGE: z('WEIGHT_FOR_AGE', ageMonths, weightKg),
       LENGTH_HEIGHT_FOR_AGE: z('LENGTH_HEIGHT_FOR_AGE', ageMonths, lhfaValue),
-      WEIGHT_FOR_LENGTH_HEIGHT: z('WEIGHT_FOR_LENGTH_HEIGHT', wflX, weightKg, posicion),
+      WEIGHT_FOR_LENGTH_HEIGHT: z('WEIGHT_FOR_LENGTH_HEIGHT', wflX, weightKg, position),
       BMI_FOR_AGE: z('BMI_FOR_AGE', ageMonths, bmi),
     } as const;
 
     const classOf = {
-      WEIGHT_FOR_AGE: clasificar({ zPE: zs.WEIGHT_FOR_AGE }).principal,
-      LENGTH_HEIGHT_FOR_AGE: clasificar({ zTE: zs.LENGTH_HEIGHT_FOR_AGE }).principal,
-      WEIGHT_FOR_LENGTH_HEIGHT: clasificar({ zPT: zs.WEIGHT_FOR_LENGTH_HEIGHT }).principal,
-      BMI_FOR_AGE: clasificar({ zIMCE: zs.BMI_FOR_AGE }).principal,
+      WEIGHT_FOR_AGE: classify({ zWFA: zs.WEIGHT_FOR_AGE }).primary,
+      LENGTH_HEIGHT_FOR_AGE: classify({ zLHFA: zs.LENGTH_HEIGHT_FOR_AGE }).primary,
+      WEIGHT_FOR_LENGTH_HEIGHT: classify({ zWFLH: zs.WEIGHT_FOR_LENGTH_HEIGHT }).primary,
+      BMI_FOR_AGE: classify({ zBFA: zs.BMI_FOR_AGE }).primary,
     } as const;
 
     return (Object.keys(zs) as (keyof typeof zs)[]).map((indicator) => ({
       id: crypto.randomUUID(),
       indicator,
       zScore: zs[indicator],
-      percentile: round2(percentilDesdeZ(zs[indicator])),
+      percentile: round2(percentileFromZScore(zs[indicator])),
       classification: classOf[indicator],
       referenceVersion: WHO_REFERENCE_VERSION,
     }));
@@ -141,7 +141,7 @@ export function computeIndicatorResults(params: {
   }
 }
 
-/** Traduce errores de restricciones de BD (PK duplicada, triggers) a respuestas 4xx. */
+/** Translates database constraint errors (duplicate PK, triggers) to 4xx HTTP responses. */
 function mapCheckupDbError(err: unknown): never {
   if (typeof err === 'object' && err !== null) {
     const code = (err as { code?: unknown }).code;
@@ -167,7 +167,7 @@ function assertMeasuredAtNotFuture(measuredAt: Date): void {
   }
 }
 
-/** Un control es vigente si ningún otro lo corrige. */
+/** A checkup is current if no other checkup corrects it. */
 async function isCheckupCurrent(tx: Prisma.TransactionClient, checkupId: string): Promise<boolean> {
   const correction = await tx.checkup.findFirst({
     where: { correctedCheckupId: checkupId },
@@ -177,8 +177,8 @@ async function isCheckupCurrent(tx: Prisma.TransactionClient, checkupId: string)
 }
 
 /**
- * Inserta el control (y sus 4 resultados) tras validar consentimiento, edad OMS y fecha.
- * Idempotente por `id` generado en el cliente: reenviar el mismo id devuelve el control existente.
+ * Inserts checkup and its 4 computed indicator results after validating consent, WHO age, and date.
+ * Idempotent by client-generated `id`: resending the same id returns the existing checkup.
  */
 async function insertCheckup(
   tx: Prisma.TransactionClient,
@@ -256,7 +256,7 @@ async function insertCheckup(
   }
 }
 
-/** Registra un control nuevo para el niño (RF-04, RF-05). */
+/** Records a new checkup for a child (RF-04, RF-05). */
 export async function createCheckup(
   auth: AuthContext,
   viewer: CheckupViewer,
@@ -269,8 +269,8 @@ export async function createCheckup(
 }
 
 /**
- * Obtiene el niño al que pertenece un control. RLS oculta los controles de niños sin vínculo,
- * por lo que un control ajeno responde 404 igual que uno inexistente.
+ * Retrieves the child to which a checkup belongs. RLS conceals unlinked children,
+ * returning 404 for unlinked or non-existent checkups identically.
  */
 export async function getCheckupChildId(auth: AuthContext, checkupId: string): Promise<string> {
   const checkup = await withUser(auth.userId, (tx) =>
@@ -283,9 +283,9 @@ export async function getCheckupChildId(auth: AuthContext, checkupId: string): P
 }
 
 /**
- * Corrige un control: nunca se edita ni se borra; se crea un control nuevo que apunta al original
- * con `correctedCheckupId`. El original conserva sus resultados y alertas, pero deja de ser vigente.
- * Solo se puede corregir el control vigente (la cadena de correcciones es lineal).
+ * Corrects a checkup: checkups are never edited or deleted; a new checkup pointing to
+ * original with `correctedCheckupId` is created. Original retains its results and alerts,
+ * but ceases to be current. Only current checkups may be corrected (linear chains).
  */
 export async function correctCheckup(
   auth: AuthContext,
@@ -306,7 +306,7 @@ export async function correctCheckup(
       where: { correctedCheckupId: checkupId },
       select: { id: true },
     });
-    // Reenvío idempotente de la misma corrección: lo resuelve insertCheckup.
+    // Idempotent retry of same correction: handled in insertCheckup.
     if (replacement && replacement.id !== input.id) {
       throw HttpError.conflict('Este control ya fue corregido; corrige el control vigente');
     }
@@ -322,8 +322,8 @@ export async function correctCheckup(
 }
 
 /**
- * Historial completo de controles del niño (incluye los reemplazados), del más reciente al más
- * antiguo por fecha de medición. `onlyCurrent` deja solo los vigentes (los que usan las gráficas).
+ * Complete checkup history of child (including superseded checkups), in descending measuredAt order.
+ * `onlyCurrent` returns only active checkups (used by charts and alerts).
  */
 export async function listChildCheckups(
   auth: AuthContext,

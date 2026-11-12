@@ -98,6 +98,22 @@ export const CorrectCheckupInputSchema = BaseCheckupInputObject.superRefine(
 
 // ---------- Salida ----------
 
+export const CLASSIFICATIONS = [
+  'SEVERE_WASTING',
+  'SEVERE_STUNTING',
+  'SEVERE_UNDERWEIGHT',
+  'WASTING',
+  'STUNTING',
+  'UNDERWEIGHT',
+  'OBESITY',
+  'OVERWEIGHT',
+  'OVERWEIGHT_RISK',
+  'NORMAL',
+] as const;
+
+export const ClassificationSchema = z.enum(CLASSIFICATIONS);
+export type Classification = z.infer<typeof ClassificationSchema>;
+
 /** Resultado de un indicador antropométrico (vista profesional). */
 export const IndicatorResultSchema = z.object({
   id: UuidSchema,
@@ -108,7 +124,7 @@ export const IndicatorResultSchema = z.object({
     .number()
     .min(0, { error: 'El percentil debe estar entre 0 y 100' })
     .max(100, { error: 'El percentil debe estar entre 0 y 100' }),
-  classification: requiredText(100),
+  classification: ClassificationSchema,
   referenceVersion: requiredText(50),
 });
 

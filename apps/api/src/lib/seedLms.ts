@@ -9,7 +9,7 @@ import {
   BFA_MALE,
   WFLH_FEMALE,
   WFLH_MALE,
-  type FilaLMS,
+  type LmsRow,
 } from '@nutrikids/who-growth';
 import { env } from '../config/env.js';
 import { PrismaClient, type Indicator, type Sex } from '../generated/prisma/client.js';
@@ -18,7 +18,7 @@ interface SeedGroup {
   indicator: Indicator;
   sex: Sex;
   label: string;
-  rows: FilaLMS[];
+  rows: LmsRow[];
 }
 
 export const LMS_SEED_GROUPS: SeedGroup[] = [
@@ -53,9 +53,7 @@ export async function seedLmsReferences(client?: PrismaClient): Promise<number> 
   const prismaClient = client ?? new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
   try {
-    console.log(
-      `🌱 Poblando tabla lms_references con datos oficiales [${WHO_REFERENCE_VERSION}]...`,
-    );
+    console.log(`Poblando tabla lms_references con datos oficiales [${WHO_REFERENCE_VERSION}]...`);
 
     let totalUpserted = 0;
 
@@ -82,7 +80,7 @@ export async function seedLmsReferences(client?: PrismaClient): Promise<number> 
       );
     }
 
-    console.log(`✨ Seed LMS completado. Filas nuevas insertadas: ${totalUpserted}`);
+    console.log(`Seed LMS completado. Filas nuevas insertadas: ${totalUpserted}`);
     return totalUpserted;
   } finally {
     if (shouldDisconnect) {

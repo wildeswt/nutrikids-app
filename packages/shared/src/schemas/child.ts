@@ -23,7 +23,7 @@ export function todayIsoDate(): string {
 
 /**
  * Meses cumplidos entre dos fechas `YYYY-MM-DD` ya validadas.
- * Misma regla que `edadEnMeses` de `@nutrikids/who-growth` (meses completos).
+ * Misma regla que `ageInMonths` de `@nutrikids/who-growth` (meses completos).
  */
 export function completedMonths(from: string, to: string): number {
   const [fy, fm, fd] = from.split('-').map(Number) as [number, number, number];
