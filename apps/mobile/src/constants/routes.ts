@@ -5,6 +5,7 @@ export const APP_ROUTES = {
   INDEX: '/',
   AUTH: {
     GROUP: '(auth)',
+    WELCOME: '/(auth)/welcome' as const,
     LOGIN: '/(auth)/login' as const,
     REGISTER: '/(auth)/register' as const,
     FORGOT_PASSWORD: '/(auth)/forgot-password' as const,

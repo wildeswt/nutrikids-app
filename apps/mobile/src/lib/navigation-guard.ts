@@ -21,7 +21,7 @@ export function resolveGuardRedirect(params: GuardParams): string | null {
   const inProfessionalGroup = params.currentGroup === APP_ROUTES.PROFESSIONAL.GROUP;
 
   if (params.status === AUTH_STATUS.UNAUTHENTICATED) {
-    return inAuthGroup ? null : APP_ROUTES.AUTH.LOGIN;
+    return inAuthGroup ? null : APP_ROUTES.AUTH.WELCOME;
   }
 
   if (params.status === AUTH_STATUS.AUTHENTICATED) {

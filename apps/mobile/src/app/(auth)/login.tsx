@@ -4,6 +4,7 @@ import { Link } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +13,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { APP_ASSETS } from '../../constants/assets.js';
+import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
 import { loginRequest } from '../../lib/api.js';
@@ -87,14 +90,22 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <Text style={styles.brandTitle}>NutriKids</Text>
-          <Text style={styles.brandSubtitle}>
-            {requiresTwoFactor ? 'Verificación en Dos Pasos' : 'Iniciar Sesión'}
-          </Text>
+        {/* Header con Logo y Slogan estilo UI final */}
+        <View style={styles.brandHeader}>
+          <Image
+            source={APP_ASSETS.LOGO}
+            style={styles.logo}
+            resizeMode="contain"
+            accessibilityLabel="NutriKids Logo"
+          />
+          <Text style={styles.slogan}>Cuidar su crecimiento, juntos.</Text>
+          <View style={styles.orangeDivider} />
         </View>
 
-        <View style={styles.card}>
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>
+            {requiresTwoFactor ? 'Verificación en Dos Pasos' : 'Iniciar Sesión'}
+          </Text>
           {generalError && (
             <View style={styles.errorBox}>
               <Text style={styles.errorBoxText}>{generalError}</Text>
@@ -105,7 +116,7 @@ export default function LoginScreen() {
             <>
               {/* Email Field */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Correo electrónico</Text>
+                <Text style={styles.label}>Correo Electrónico</Text>
                 <TextInput
                   style={[styles.input, fieldErrors['email'] ? styles.inputError : undefined]}
                   value={email}
@@ -115,7 +126,7 @@ export default function LoginScreen() {
                       setFieldErrors((prev) => ({ ...prev, email: '' }));
                     }
                   }}
-                  placeholder="ejemplo@correo.com"
+                  placeholder="Ingrese su correo"
                   placeholderTextColor="#9CA3AF"
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -130,12 +141,14 @@ export default function LoginScreen() {
               {/* Password Field */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Contraseña</Text>
-                <View style={styles.passwordContainer}>
+                <View
+                  style={[
+                    styles.passwordContainer,
+                    fieldErrors['password'] ? styles.inputError : undefined,
+                  ]}
+                >
                   <TextInput
-                    style={[
-                      styles.passwordInput,
-                      fieldErrors['password'] ? styles.inputError : undefined,
-                    ]}
+                    style={styles.passwordInput}
                     value={password}
                     onChangeText={(text) => {
                       setPassword(text);
@@ -143,7 +156,7 @@ export default function LoginScreen() {
                         setFieldErrors((prev) => ({ ...prev, password: '' }));
                       }
                     }}
-                    placeholder="Tu contraseña"
+                    placeholder="Ingrese su contraseña"
                     placeholderTextColor="#9CA3AF"
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
@@ -156,11 +169,7 @@ export default function LoginScreen() {
                     hitSlop={8}
                     accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
-                    <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                      size={20}
-                      color="#4B5563"
-                    />
+                    <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#374151" />
                   </Pressable>
                 </View>
                 {fieldErrors['password'] ? (
@@ -172,7 +181,7 @@ export default function LoginScreen() {
               <View style={styles.forgotPasswordContainer}>
                 <Link href={APP_ROUTES.AUTH.FORGOT_PASSWORD} asChild>
                   <Pressable hitSlop={6}>
-                    <Text style={styles.forgotPasswordText}>Olvidé mi contraseña</Text>
+                    <Text style={styles.forgotPasswordText}>¿Olvidó su contraseña?</Text>
                   </Pressable>
                 </Link>
               </View>
@@ -186,7 +195,7 @@ export default function LoginScreen() {
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Entrar</Text>
+                  <Text style={styles.submitButtonText}>Iniciar Sesión</Text>
                 )}
               </Pressable>
             </>
@@ -284,10 +293,10 @@ export default function LoginScreen() {
           {/* Registration Link */}
           {!requiresTwoFactor && (
             <View style={styles.registerContainer}>
-              <Text style={styles.registerPrompt}>No tienes cuenta?</Text>
+              <Text style={styles.registerPrompt}>¿No tienes una cuenta?</Text>
               <Link href={APP_ROUTES.AUTH.REGISTER} asChild>
                 <Pressable hitSlop={6}>
-                  <Text style={styles.registerLink}>Crear cuenta</Text>
+                  <Text style={styles.registerLink}>Regístrate</Text>
                 </Pressable>
               </Link>
             </View>
@@ -301,51 +310,60 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: PALETTE.background,
   },
   scrollContent: {
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100%',
   },
-  header: {
-    marginBottom: 24,
+  brandHeader: {
     alignItems: 'center',
-  },
-  brandTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#14532D',
-  },
-  brandSubtitle: {
-    fontSize: 16,
-    color: '#4B5563',
-    marginTop: 4,
-    fontWeight: '600',
-  },
-  card: {
     width: '100%',
-    maxWidth: 420,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
+    maxWidth: 400,
+    marginBottom: 24,
+  },
+  logo: {
+    width: 300,
+    height: 85,
+  },
+  slogan: {
+    fontSize: 16,
+    color: PALETTE.text.body,
+    fontWeight: '500',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  orangeDivider: {
+    width: '90%',
+    height: 4,
+    backgroundColor: PALETTE.secondary,
+    borderRadius: 2,
+    marginTop: 18,
+  },
+  formContainer: {
+    width: '100%',
+    maxWidth: 380,
     gap: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: PALETTE.text.title,
+    textAlign: 'center',
+    marginBottom: 8,
   },
   errorBox: {
-    backgroundColor: '#FEE2E2',
-    borderColor: '#FCA5A5',
+    backgroundColor: PALETTE.feedback.errorBg,
+    borderColor: PALETTE.feedback.errorBorder,
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
   },
   errorBoxText: {
-    color: '#DC2626',
+    color: PALETTE.feedback.error,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -355,43 +373,46 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: PALETTE.text.title,
+    marginLeft: 4,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 15,
-    color: '#111827',
-    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: PALETTE.border.default,
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: PALETTE.text.body,
+    backgroundColor: PALETTE.input.background,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: PALETTE.border.default,
+    borderRadius: 24,
+    backgroundColor: PALETTE.input.background,
+    paddingRight: 8,
   },
   passwordInput: {
     flex: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 15,
-    color: '#111827',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: PALETTE.text.body,
   },
   eyeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 11,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   inputError: {
-    borderColor: '#EF4444',
+    borderColor: PALETTE.feedback.error,
   },
   errorText: {
-    color: '#DC2626',
+    color: PALETTE.feedback.error,
     fontSize: 12,
+    marginLeft: 8,
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',
@@ -399,28 +420,35 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     fontSize: 13,
-    color: '#16A34A',
-    fontWeight: '600',
+    color: PALETTE.primary,
+    textDecorationLine: 'underline',
+    fontWeight: '500',
   },
   submitButton: {
-    backgroundColor: '#16A34A',
-    paddingVertical: 13,
-    borderRadius: 10,
+    backgroundColor: PALETTE.primary,
+    paddingVertical: 14,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   buttonPressed: {
     opacity: 0.85,
+    transform: [{ scale: 0.99 }],
   },
   submitButtonText: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 15,
     fontWeight: '700',
   },
   stepDescription: {
     fontSize: 13,
-    color: '#4B5563',
+    color: PALETTE.text.body,
     lineHeight: 19,
   },
   switchModeButton: {
@@ -428,7 +456,7 @@ const styles = StyleSheet.create({
   },
   switchModeText: {
     fontSize: 12,
-    color: '#059669',
+    color: PALETTE.primary,
     fontWeight: '600',
   },
   cancelTwoFactorButton: {
@@ -437,26 +465,24 @@ const styles = StyleSheet.create({
   },
   cancelTwoFactorText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: PALETTE.text.muted,
     fontWeight: '600',
   },
   registerContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 16,
+    gap: 4,
+    marginTop: 12,
   },
   registerPrompt: {
-    fontSize: 14,
-    color: '#6B7280',
+    fontSize: 13,
+    color: PALETTE.text.body,
   },
   registerLink: {
-    fontSize: 14,
-    color: '#16A34A',
+    fontSize: 13,
+    color: PALETTE.primary,
     fontWeight: '700',
+    textDecorationLine: 'underline',
   },
 });

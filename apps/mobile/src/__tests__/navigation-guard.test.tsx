@@ -14,31 +14,31 @@ describe('resolveGuardRedirect (NavigationGuard routing logic)', () => {
   });
 
   describe('unauthenticated state', () => {
-    it('redirects to login when user is on the root path', () => {
+    it('redirects to welcome when user is on the root path', () => {
       const result = resolveGuardRedirect({
         status: AUTH_STATUS.UNAUTHENTICATED,
         activeRole: null,
         currentGroup: undefined,
       });
-      expect(result).toBe(APP_ROUTES.AUTH.LOGIN);
+      expect(result).toBe(APP_ROUTES.AUTH.WELCOME);
     });
 
-    it('redirects to login when unauthenticated user tries to access caregiver group', () => {
+    it('redirects to welcome when unauthenticated user tries to access caregiver group', () => {
       const result = resolveGuardRedirect({
         status: AUTH_STATUS.UNAUTHENTICATED,
         activeRole: null,
         currentGroup: APP_ROUTES.CAREGIVER.GROUP,
       });
-      expect(result).toBe(APP_ROUTES.AUTH.LOGIN);
+      expect(result).toBe(APP_ROUTES.AUTH.WELCOME);
     });
 
-    it('redirects to login when unauthenticated user tries to access professional group', () => {
+    it('redirects to welcome when unauthenticated user tries to access professional group', () => {
       const result = resolveGuardRedirect({
         status: AUTH_STATUS.UNAUTHENTICATED,
         activeRole: null,
         currentGroup: APP_ROUTES.PROFESSIONAL.GROUP,
       });
-      expect(result).toBe(APP_ROUTES.AUTH.LOGIN);
+      expect(result).toBe(APP_ROUTES.AUTH.WELCOME);
     });
 
     it('allows access (returns null) when unauthenticated user is inside auth group', () => {

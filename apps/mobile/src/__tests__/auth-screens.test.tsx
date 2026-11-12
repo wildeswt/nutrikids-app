@@ -2,6 +2,12 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
+vi.mock('../constants/assets.js', () => ({
+  APP_ASSETS: {
+    LOGO: { uri: 'mock-logo.png' },
+  },
+}));
+
 vi.mock('expo-router', () => ({
   Link: (props: { href: string; children: React.ReactNode }) =>
     React.createElement('mock-link', { href: props.href }, props.children),
@@ -52,51 +58,56 @@ import ForgotPasswordScreen from '../app/(auth)/forgot-password.js';
 import LoginScreen from '../app/(auth)/login.js';
 import RegisterScreen from '../app/(auth)/register.js';
 import ResetPasswordScreen from '../app/(auth)/reset-password.js';
+import WelcomeScreen from '../app/(auth)/welcome.js';
 
 describe('Auth Screens Rendering', () => {
+  describe('WelcomeScreen', () => {
+    it('renders welcome screen with logo, slogan and action buttons', () => {
+      const html = renderToString(React.createElement(WelcomeScreen));
+
+      expect(html).toContain('Cuidar su crecimiento, juntos.');
+      expect(html).toContain('Bienvenido');
+      expect(html).toContain('Iniciar Sesión');
+      expect(html).toContain('Registrarse');
+    });
+  });
+
   describe('LoginScreen', () => {
     it('renders login screen elements matching Figure 5 requirements', () => {
       const html = renderToString(React.createElement(LoginScreen));
 
       // Brand headers
-      expect(html).toContain('NutriKids');
+      expect(html).toContain('Cuidar su crecimiento, juntos.');
       expect(html).toContain('Iniciar Sesión');
 
       // Form labels and placeholders
-      expect(html).toContain('Correo electrónico');
+      expect(html).toContain('Correo Electrónico');
       expect(html).toContain('Contraseña');
-      expect(html).toContain('Olvidé mi contraseña');
+      expect(html).toContain('¿Olvidó su contraseña?');
 
       // Actions
-      expect(html).toContain('Entrar');
-      expect(html).toContain('Crear cuenta');
+      expect(html).toContain('Iniciar Sesión');
+      expect(html).toContain('Regístrate');
     });
   });
 
   describe('RegisterScreen', () => {
-    it('renders registration screen with role selector and fields', () => {
+    it('renders registration screen matching final design requirements', () => {
       const html = renderToString(React.createElement(RegisterScreen));
 
       // Brand headers
-      expect(html).toContain('NutriKids');
+      expect(html).toContain('Cuidar su crecimiento, juntos.');
       expect(html).toContain('Crear Cuenta');
 
-      // Role selector chips
-      expect(html).toContain('Tipo de Perfil');
-      expect(html).toContain('Cuidador');
-      expect(html).toContain('Profesional de Salud');
-
       // Core fields
-      expect(html).toContain('Nombre');
-      expect(html).toContain('Apellido');
-      expect(html).toContain('Correo electrónico');
-      expect(html).toContain('Teléfono (opcional)');
+      expect(html).toContain('Nombre Completo');
+      expect(html).toContain('Correo Electrónico');
       expect(html).toContain('Contraseña');
       expect(html).toContain('Confirmar Contraseña');
 
       // Submit and link back to login
-      expect(html).toContain('Registrarme');
-      expect(html).toContain('Iniciar sesión');
+      expect(html).toContain('Crear Cuenta');
+      expect(html).toContain('Iniciar Sesión');
     });
   });
 
