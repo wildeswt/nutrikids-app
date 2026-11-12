@@ -118,3 +118,23 @@ Para garantizar que ningún dato clínico ni de filiación del menor exista o se
 - **Al dar de alta (`POST /children`):** el niño debe tener entre `12` y `60` meses cumplidos (`400 Bad Request` fuera de ese rango).
 - **Lecturas históricas (`GET /children`, `GET /children/:childId`, `GET /children/:childId/professionals`, `GET /children/:childId/caregivers` y futuras consultas clínicas):** permanecen accesibles incluso cuando el niño supere los `60` meses, garantizando la preservación de su historial.
 - **Registro de nuevos controles (`POST /children/:childId/checkups`):** las tablas `lms_references` de la OMS cubren exclusivamente de `12` a `60` meses cumplidos. Todo nuevo control valida la edad del niño **a la fecha de medición (`measuredAt`)** mediante `assertChildAgeInOmsRange`; si en esa fecha supera los `60` meses (o tiene menos de `12`), la API rechaza la operación con `400 Bad Request`.
+
+### 6.5 Controles antropométricos: registro, corrección y vigencia (RF-04, RF-05, RF-09)
+
+**Endpoints** (permisos `checkup:create` / `checkup:read`, vínculo vigente con el niño):
+
+| Método y ruta                          | Descripción                                                                                                                                                                                                                |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /children/:childId/checkups`     | Registra un control con el UUID generado en el cliente. Exige consentimiento vigente. `201` al crear; `200` con el control existente si se reenvía el mismo `id` (idempotente). `409` si el `id` ya pertenece a otro niño. |
+| `POST /checkups/:checkupId/correction` | Crea un control nuevo con `correctedCheckupId` = original. Mismo cuerpo que el registro. Idempotente por `id`. `409` si el original ya fue corregido. `404` si el control no existe o no es visible.                       |
+| `GET /children/:childId/checkups`      | Historial completo (incluye controles reemplazados), orden `measuredAt` descendente. `?onlyCurrent=true` deja solo los vigentes.                                                                                           |
+
+**Reglas:** `origin` (`CAREGIVER` o `PROFESSIONAL`) y `recordedById` los asigna el servidor según el vínculo y la sesión. Los límites físicos son errores `400`; un valor fuera del rango plausible exige `confirmOutlier: true`. La fecha no puede ser futura ni anterior al nacimiento y la edad a `measuredAt` debe estar entre 12 y 60 meses. Al registrar se calculan y guardan los 4 `indicator_results` (OMS 2006). La longitud/talla se redondea a 0,5 cm para el cálculo P/T, y T/E se ajusta ±0,7 cm según la posición. El cuidador no recibe z-scores, percentiles ni clasificaciones (RF-14).
+
+**Qué pasa con el control original al corregirlo** (`checkups` es inmutable, NK-8):
+
+- El original **no se modifica**: conserva sus `indicator_results` y sus alertas como registro histórico auditable. No se recalculan ni se borran.
+- "Vigente" es un valor **derivado**: un control es vigente si ningún otro control lo apunta con `corrected_checkup_id`. La API lo expone como `isCurrent` y la base de datos como la vista `current_checkups` (con RLS vía `security_invoker`).
+- Solo se corrige el control vigente (la cadena de correcciones es lineal).
+- **Gráficas (NK-26) y alertas (NK-30):** deben usar solo controles vigentes (`current_checkups` / `onlyCurrent=true`). Las alertas ya generadas sobre un control reemplazado se conservan en su historial; NK-30 decide cómo marcarlas como reemplazadas.
+- **Sincronización (NK-28):** debe transferir tanto el control original como la corrección; el cliente deriva la vigencia con `correctedCheckupId`. Al ser idempotente por `id`, reintentar un envío nunca duplica controles.

@@ -133,6 +133,7 @@ describe('IndicatorResultSchema y respuestas de control (profesional vs cuidador
     origin: 'CAREGIVER',
     recordedById: '6c2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c',
     correctedCheckupId: null,
+    isCurrent: true,
     createdAt: '2026-10-18T14:31:00Z',
     results: [resultRow],
   };
