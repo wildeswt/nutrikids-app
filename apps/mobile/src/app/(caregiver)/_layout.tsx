@@ -83,6 +83,14 @@ export default function CaregiverTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="chat-detail"
+        options={{
+          title: 'Chat',
+          tabBarStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Perfil',

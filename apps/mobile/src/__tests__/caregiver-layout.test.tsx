@@ -44,6 +44,7 @@ describe('CaregiverTabsLayout', () => {
       'add-checkup',
       'checkup-saved',
       'messages',
+      'chat-detail',
       'profile',
     ]);
   });

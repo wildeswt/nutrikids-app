@@ -110,6 +110,7 @@ export default function MessagesScreen() {
             <Pressable
               key={thread.id}
               style={({ pressed }) => [styles.threadItem, pressed && styles.pressed]}
+              onPress={() => router.push(APP_ROUTES.CAREGIVER.CHAT_DETAIL)}
               accessibilityRole="button"
               accessibilityLabel={`Mensaje de ${thread.title}`}
             >
