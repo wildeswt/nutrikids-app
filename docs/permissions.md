@@ -31,6 +31,7 @@ Role first, link second: possessing the correct role is never sufficient to view
 | Record anthropometric checkup (`checkup:create`)                                                     |               Yes                |   Yes   |    Yes    |    Yes     |
 | Review alerts (`alert:review`)                                                                       |                No                |   Yes   |    Yes    |    Yes     |
 | Create clinical follow-ups (`followup:create`)                                                       |                No                |   No    |    Yes    |    Yes     |
+| View audit log (`audit:read`)                                                                        |                No                |   Yes   |    Yes    |    Yes     |
 
 All permissions in this matrix apply **strictly to linked children** (step 4). The `origin` of a checkup (`CAREGIVER`/`PROFESSIONAL`) is derived by the server from the link context, never accepted from the client.
 
