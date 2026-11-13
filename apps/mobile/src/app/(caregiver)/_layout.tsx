@@ -64,9 +64,10 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="checkup-saved"
         options={{
-          href: null,
           title: 'Control Guardado',
           tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
         }}
       />
       <Tabs.Screen
@@ -86,9 +87,10 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="chat-detail"
         options={{
-          href: null,
           title: 'Chat',
           tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
         }}
       />
       <Tabs.Screen
