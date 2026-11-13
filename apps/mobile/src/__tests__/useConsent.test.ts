@@ -16,7 +16,7 @@ vi.mock('expo-secure-store', () => ({
   WHEN_UNLOCKED_THIS_DEVICE_ONLY: 1,
 }));
 
-import { useConsent, type ConsentHookState } from '../hooks/useConsent.js';
+import { useConsent } from '../hooks/useConsent.js';
 import * as consentApi from '../lib/consent-api.js';
 
 describe('useConsent hook', () => {
