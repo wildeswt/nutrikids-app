@@ -21,6 +21,7 @@ interface TabScreenElement {
   props: {
     name: string;
     options?: {
+      href?: string | null;
       title?: string;
       headerTitle?: string;
       tabBarLabel?: () => unknown;
@@ -35,10 +36,15 @@ describe('CaregiverTabsLayout', () => {
     return React.Children.toArray(layout.props.children) as TabScreenElement[];
   }
 
-  it('configures exactly the 5 required tabs in order', () => {
+  it('configures exactly the 5 required visible tabs in order and hidden consent screen', () => {
     const screens = getTabScreens();
-    const names = screens.map((s) => s.props.name);
-    expect(names).toEqual(['index', 'evolution', 'add-checkup', 'messages', 'profile']);
+    const visibleScreens = screens.filter((s) => s.props.options?.href !== null);
+    const visibleNames = visibleScreens.map((s) => s.props.name);
+    expect(visibleNames).toEqual(['index', 'evolution', 'add-checkup', 'messages', 'profile']);
+
+    const consentScreen = screens.find((s) => s.props.name === 'consent');
+    expect(consentScreen).toBeDefined();
+    expect(consentScreen?.props.options?.href).toBeNull();
   });
 
   it('assigns correct tab titles for caregiver navigation', () => {

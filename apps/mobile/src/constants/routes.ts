@@ -18,6 +18,7 @@ export const APP_ROUTES = {
     ADD_CHECKUP: '/(caregiver)/add-checkup' as const,
     MESSAGES: '/(caregiver)/messages' as const,
     PROFILE: '/(caregiver)/profile' as const,
+    CONSENT: '/(caregiver)/consent' as const,
   },
   PROFESSIONAL: {
     GROUP: '(professional)',

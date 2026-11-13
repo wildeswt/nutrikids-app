@@ -87,6 +87,14 @@ export default function CaregiverTabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="consent"
+        options={{
+          href: null,
+          title: 'Consentimiento',
+          headerTitle: 'Consentimiento Informado',
+        }}
+      />
     </Tabs>
   );
 }
