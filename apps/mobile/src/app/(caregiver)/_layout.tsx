@@ -49,6 +49,7 @@ export default function CaregiverTabsLayout() {
         options={{
           title: 'Control',
           headerTitle: 'Registrar Control',
+          tabBarStyle: { display: 'none' },
           tabBarLabel: () => null,
           tabBarIcon: () => (
             <View style={styles.centerButtonContainer}>
