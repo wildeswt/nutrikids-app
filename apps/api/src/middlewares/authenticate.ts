@@ -8,7 +8,7 @@ declare global {
   namespace Express {
     interface Request {
       auth?: AuthContext;
-      vinculo?: 'CAREGIVER' | 'PROFESSIONAL';
+      link?: 'CAREGIVER' | 'PROFESSIONAL';
     }
   }
 }

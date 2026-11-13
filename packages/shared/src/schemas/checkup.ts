@@ -69,6 +69,21 @@ function validateOutlierConfirmation(
 
 // ---------- Entrada ----------
 
+/**
+ * Resultados que el celular pudo haber calculado sin conexión. Se aceptan para no rechazar
+ * el envío, pero el servidor los **ignora** y siempre recalcula (es la fuente de verdad, RF-07).
+ */
+const ClientComputedResultsSchema = z
+  .array(
+    z.looseObject({
+      indicator: IndicatorSchema,
+      zScore: z.number().optional(),
+      percentile: z.number().optional(),
+      classification: z.string().optional(),
+    }),
+  )
+  .max(4, { error: 'Se esperan como máximo 4 resultados de indicadores' });
+
 const BaseCheckupInputObject = z.strictObject({
   /** UUID generado en el cliente para garantizar idempotencia sin conexión. */
   id: UuidSchema,
@@ -78,6 +93,8 @@ const BaseCheckupInputObject = z.strictObject({
   position: PositionSchema,
   /** Bandera de confirmación cuando el peso o la talla están fuera del rango plausible. */
   confirmOutlier: z.boolean().optional(),
+  /** Cálculo local del celular (opcional); el servidor lo descarta y recalcula. */
+  results: ClientComputedResultsSchema.optional(),
 });
 
 /**
@@ -98,6 +115,22 @@ export const CorrectCheckupInputSchema = BaseCheckupInputObject.superRefine(
 
 // ---------- Salida ----------
 
+export const CLASSIFICATIONS = [
+  'SEVERE_WASTING',
+  'SEVERE_STUNTING',
+  'SEVERE_UNDERWEIGHT',
+  'WASTING',
+  'STUNTING',
+  'UNDERWEIGHT',
+  'OBESITY',
+  'OVERWEIGHT',
+  'OVERWEIGHT_RISK',
+  'NORMAL',
+] as const;
+
+export const ClassificationSchema = z.enum(CLASSIFICATIONS);
+export type Classification = z.infer<typeof ClassificationSchema>;
+
 /** Resultado de un indicador antropométrico (vista profesional). */
 export const IndicatorResultSchema = z.object({
   id: UuidSchema,
@@ -108,7 +141,18 @@ export const IndicatorResultSchema = z.object({
     .number()
     .min(0, { error: 'El percentil debe estar entre 0 y 100' })
     .max(100, { error: 'El percentil debe estar entre 0 y 100' }),
-  classification: requiredText(100),
+  classification: ClassificationSchema,
+  referenceVersion: requiredText(50),
+});
+
+/**
+ * Resultado de un indicador para el perfil cuidador (RF-14, NK-35): sin puntaje z,
+ * percentil ni clasificación técnica.
+ */
+export const CaregiverIndicatorResultSchema = z.object({
+  id: UuidSchema,
+  checkupId: UuidSchema,
+  indicator: IndicatorSchema,
   referenceVersion: requiredText(50),
 });
 
@@ -146,5 +190,6 @@ export const CaregiverCheckupResponseSchema = z.object(BaseCheckupResponseShape)
 export type CreateCheckupInput = z.infer<typeof CreateCheckupInputSchema>;
 export type CorrectCheckupInput = z.infer<typeof CorrectCheckupInputSchema>;
 export type IndicatorResult = z.infer<typeof IndicatorResultSchema>;
+export type CaregiverIndicatorResult = z.infer<typeof CaregiverIndicatorResultSchema>;
 export type CheckupResponse = z.infer<typeof CheckupResponseSchema>;
 export type CaregiverCheckupResponse = z.infer<typeof CaregiverCheckupResponseSchema>;

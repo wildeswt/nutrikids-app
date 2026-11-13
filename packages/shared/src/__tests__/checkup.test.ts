@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CaregiverCheckupResponseSchema,
+  CaregiverIndicatorResultSchema,
   CheckupResponseSchema,
   CorrectCheckupInputSchema,
   CreateCheckupInputSchema,
@@ -105,6 +106,28 @@ describe('CreateCheckupInputSchema y CorrectCheckupInputSchema', () => {
     ).toBe(false);
   });
 
+  it('acepta resultados calculados por el celular (el servidor los ignora y recalcula)', () => {
+    const withClientResults = {
+      ...mateoCheckup,
+      results: [
+        { indicator: 'WEIGHT_FOR_LENGTH_HEIGHT', zScore: -2.2, classification: 'WASTING' },
+        { indicator: 'WEIGHT_FOR_AGE' },
+      ],
+    };
+    expect(CreateCheckupInputSchema.safeParse(withClientResults).success).toBe(true);
+    expect(CorrectCheckupInputSchema.safeParse(withClientResults).success).toBe(true);
+    expect(
+      CreateCheckupInputSchema.safeParse({
+        ...mateoCheckup,
+        results: Array.from({ length: 5 }, () => ({ indicator: 'WEIGHT_FOR_AGE' })),
+      }).success,
+    ).toBe(false);
+    expect(
+      CreateCheckupInputSchema.safeParse({ ...mateoCheckup, results: [{ indicator: 'X' }] })
+        .success,
+    ).toBe(false);
+  });
+
   it('exige fecha ISO 8601 con zona horaria y UUID válido', () => {
     expect(
       CreateCheckupInputSchema.safeParse({
@@ -123,7 +146,7 @@ describe('IndicatorResultSchema y respuestas de control (profesional vs cuidador
     indicator: 'WEIGHT_FOR_LENGTH_HEIGHT',
     zScore: -2.21,
     percentile: 1.36,
-    classification: 'emaciacion',
+    classification: 'WASTING',
     referenceVersion: 'WHO-2006',
   };
 
@@ -156,6 +179,16 @@ describe('IndicatorResultSchema y respuestas de control (profesional vs cuidador
     expect(Object.keys(CaregiverCheckupResponseSchema.shape)).not.toContain('results');
     const parsed = CaregiverCheckupResponseSchema.parse(fullCheckup);
     expect(parsed).not.toHaveProperty('results');
+  });
+
+  it('CaregiverIndicatorResultSchema (cuidador) no expone z, percentil ni clasificación', () => {
+    const parsed = CaregiverIndicatorResultSchema.parse(resultRow);
+    expect(parsed).toEqual({
+      id: resultRow.id,
+      checkupId: resultRow.checkupId,
+      indicator: resultRow.indicator,
+      referenceVersion: resultRow.referenceVersion,
+    });
   });
 });
 

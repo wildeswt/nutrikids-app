@@ -21,7 +21,7 @@ import {
   requireActiveConsent,
   requirePermission,
   requireRole,
-  requireVinculo,
+  requireLink,
 } from '../middlewares/access.js';
 import { auditHealth } from '../middlewares/auditHealth.js';
 import { authenticate } from '../middlewares/authenticate.js';
@@ -111,7 +111,7 @@ export function createChildrenRouter(): Router {
   router.get(
     '/:childId',
     requirePermission('child:read'),
-    requireVinculo('childId'),
+    requireLink('childId'),
     auditHealth({ action: 'READ', entityType: 'children' }),
     async (req, res) => {
       const child = await getChildById(req.auth!, req.params.childId as string);
@@ -126,7 +126,7 @@ export function createChildrenRouter(): Router {
   router.get(
     '/:childId/professionals',
     requirePermission('child:read'),
-    requireVinculo('childId'),
+    requireLink('childId'),
     async (req, res) => {
       const assignments = await listChildProfessionals(req.auth!, req.params.childId as string);
       res.status(200).json(assignments);
@@ -140,7 +140,7 @@ export function createChildrenRouter(): Router {
    */
   router.post(
     '/:childId/professionals',
-    requireVinculo('childId'),
+    requireLink('childId'),
     validateRequest({ body: AssignProfessionalInputSchema }),
     async (req, res) => {
       const assignment = await assignProfessional(
@@ -159,7 +159,7 @@ export function createChildrenRouter(): Router {
    */
   router.patch(
     '/:childId/professionals/:professionalId/end',
-    requireVinculo('childId'),
+    requireLink('childId'),
     validateRequest({
       params: ChildProfessionalParamsSchema,
       body: EndProfessionalAssignmentInputSchema,
@@ -185,7 +185,7 @@ export function createChildrenRouter(): Router {
   router.get(
     '/:childId/caregivers',
     requirePermission('child:read'),
-    requireVinculo('childId'),
+    requireLink('childId'),
     async (req, res) => {
       const caregivers = await listChildCaregivers(req.auth!, req.params.childId as string);
       res.status(200).json(caregivers);
@@ -199,7 +199,7 @@ export function createChildrenRouter(): Router {
    */
   router.post(
     '/:childId/caregivers',
-    requireVinculo('childId'),
+    requireLink('childId'),
     validateRequest({ body: AssignCaregiverInputSchema }),
     async (req, res) => {
       const assignment = await assignCaregiver(
@@ -218,7 +218,7 @@ export function createChildrenRouter(): Router {
    */
   router.patch(
     '/:childId/caregivers/:caregiverId',
-    requireVinculo('childId'),
+    requireLink('childId'),
     validateRequest({
       params: ChildCaregiverParamsSchema,
       body: UpdateCaregiverLinkInputSchema,
@@ -242,7 +242,7 @@ export function createChildrenRouter(): Router {
    */
   router.delete(
     '/:childId/caregivers/:caregiverId',
-    requireVinculo('childId'),
+    requireLink('childId'),
     validateRequest({ params: ChildCaregiverParamsSchema }),
     async (req, res) => {
       const { childId, caregiverId } = req.params as z.infer<typeof ChildCaregiverParamsSchema>;
@@ -259,7 +259,7 @@ export function createChildrenRouter(): Router {
   router.get(
     '/:childId/consent',
     requirePermission('child:read'),
-    requireVinculo('childId'),
+    requireLink('childId'),
     auditHealth({
       action: 'READ',
       entityType: 'consents',
@@ -279,7 +279,7 @@ export function createChildrenRouter(): Router {
   router.post(
     '/:childId/consent',
     requireRole('CAREGIVER'),
-    requireVinculo('childId'),
+    requireLink('childId'),
     validateRequest({ body: GrantConsentInputSchema }),
     auditHealth({
       action: 'CREATE',
@@ -305,7 +305,7 @@ export function createChildrenRouter(): Router {
   router.delete(
     '/:childId/consent',
     requireRole('CAREGIVER'),
-    requireVinculo('childId'),
+    requireLink('childId'),
     auditHealth({
       action: 'REVOKE',
       entityType: 'consents',
@@ -327,7 +327,7 @@ export function createChildrenRouter(): Router {
   router.get(
     '/:childId/checkups',
     requirePermission('checkup:read'),
-    requireVinculo('childId'),
+    requireLink('childId'),
     auditHealth({
       action: 'READ',
       entityType: 'checkups',
@@ -338,7 +338,7 @@ export function createChildrenRouter(): Router {
       const { onlyCurrent } = req.query as unknown as z.infer<typeof ListCheckupsQuerySchema>;
       const checkups = await listChildCheckups(
         req.auth!,
-        req.vinculo!,
+        req.link!,
         req.params.childId as string,
         onlyCurrent,
       );
@@ -355,7 +355,7 @@ export function createChildrenRouter(): Router {
   router.post(
     '/:childId/checkups',
     requirePermission('checkup:create'),
-    requireVinculo('childId'),
+    requireLink('childId'),
     requireActiveConsent('childId'),
     validateRequest({ body: CreateCheckupInputSchema }),
     auditHealth({
@@ -366,7 +366,7 @@ export function createChildrenRouter(): Router {
     async (req, res) => {
       const { checkup, created } = await createCheckup(
         req.auth!,
-        req.vinculo!,
+        req.link!,
         req.params.childId as string,
         req.body as CreateCheckupInput,
       );

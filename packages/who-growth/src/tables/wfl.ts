@@ -1,7 +1,7 @@
-import type { FilaLMS } from './types.js';
+import type { LmsRow } from './types.js';
 
 /** Peso para la longitud (P/L, decúbito supino 45 a 110 cm) — Niñas — OMS 2006 */
-export const WFL_FEMALE: FilaLMS[] = [
+export const WFL_FEMALE: LmsRow[] = [
   { x: 45.0, l: -0.3833, m: 2.4607, s: 0.09029 },
   { x: 45.5, l: -0.3833, m: 2.5457, s: 0.09033 },
   { x: 46.0, l: -0.3833, m: 2.6306, s: 0.09037 },
@@ -136,7 +136,7 @@ export const WFL_FEMALE: FilaLMS[] = [
 ];
 
 /** Peso para la longitud (P/L, decúbito supino 45 a 110 cm) — Niños — OMS 2006 */
-export const WFL_MALE: FilaLMS[] = [
+export const WFL_MALE: LmsRow[] = [
   { x: 45.0, l: -0.3521, m: 2.441, s: 0.09182 },
   { x: 45.5, l: -0.3521, m: 2.5244, s: 0.09153 },
   { x: 46.0, l: -0.3521, m: 2.6077, s: 0.09124 },

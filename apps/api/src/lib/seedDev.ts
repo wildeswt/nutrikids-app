@@ -9,13 +9,14 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import {
   WHO_REFERENCE_VERSION,
-  calcularZ,
-  clasificar,
-  edadEnMeses,
-  obtenerLMS,
-  percentilDesdeZ,
-  type IndicadorOMS,
-  type RiesgoT,
+  ageInMonths,
+  calculateZScore,
+  classify,
+  getLmsParameters,
+  percentileFromZScore,
+  type Cutoffs,
+  type RiskCategory,
+  type WhoIndicator,
 } from '@nutrikids/who-growth';
 import { env } from '../config/env.js';
 import { PrismaClient, type Indicator } from '../generated/prisma/client.js';
@@ -54,7 +55,7 @@ export const MATEO = {
 /** Fecha local (Caracas, UTC-4) y hora del control; todos a las 09:12. */
 interface ControlInput {
   n: 1 | 2 | 3 | 4;
-  fecha: string;
+  date: string;
   weightKg: number;
   lengthHeightCm: number;
 }
@@ -63,13 +64,13 @@ interface ControlInput {
  * Controles de 2026 (abr, jun, ago, oct). El de octubre es el de la Tabla 7.
  * Los tres anteriores son sintéticos y reproducen la tendencia de la Figura 7
  * (z P/T ≈ 0, −0,05 y −0,15). Las tallas están en pasos de 0,5 cm porque
- * `obtenerLMS` no interpola entre filas de la tabla OMS.
+ * `getLmsParameters` no interpola entre filas de la tabla OMS.
  */
 export const MATEO_CONTROLS: readonly ControlInput[] = [
-  { n: 1, fecha: '2026-04-18', weightKg: 13.6, lengthHeightCm: 93.0 },
-  { n: 2, fecha: '2026-06-20', weightKg: 13.9, lengthHeightCm: 94.5 },
-  { n: 3, fecha: '2026-08-22', weightKg: 14.0, lengthHeightCm: 95.5 },
-  { n: 4, fecha: '2026-10-18', weightKg: 12.2, lengthHeightCm: 97.0 },
+  { n: 1, date: '2026-04-18', weightKg: 13.6, lengthHeightCm: 93.0 },
+  { n: 2, date: '2026-06-20', weightKg: 13.9, lengthHeightCm: 94.5 },
+  { n: 3, date: '2026-08-22', weightKg: 14.0, lengthHeightCm: 95.5 },
+  { n: 4, date: '2026-10-18', weightKg: 12.2, lengthHeightCm: 97.0 },
 ];
 
 const ALERT_CONTROL_N = 4;
@@ -78,7 +79,7 @@ export interface SeedResult {
   indicator: Indicator;
   zScore: number;
   percentile: number;
-  classification: RiesgoT;
+  classification: RiskCategory;
 }
 
 export interface SeedCheckup {
@@ -105,13 +106,18 @@ export function assertNotProduction(nodeEnv: string | undefined = process.env.NO
   }
 }
 
-/** Calcula con who-growth los 4 resultados de cada control (sin tocar la BD). */
-export function buildMateoCheckups(): SeedCheckup[] {
+/**
+ * Calcula con who-growth los 4 resultados de cada control (sin tocar la BD). Clasifica con los
+ * mismos puntos de corte configurados que usa el servidor (`env.CLASSIFICATION_CUTOFFS`, RF-08).
+ */
+export function buildMateoCheckups(
+  cutoffs: Readonly<Cutoffs> = env.CLASSIFICATION_CUTOFFS,
+): SeedCheckup[] {
   return MATEO_CONTROLS.map((c) => {
-    const ageMonths = edadEnMeses(MATEO.birthDate, c.fecha);
-    const z = (ind: IndicadorOMS, x: number, value: number): number => {
-      const { l, m, s } = obtenerLMS(ind, MATEO.sex, x, 'de_pie');
-      return round2(calcularZ(value, l, m, s));
+    const ageMonths = ageInMonths(MATEO.birthDate, c.date);
+    const z = (ind: WhoIndicator, x: number, value: number): number => {
+      const { l, m, s } = getLmsParameters(ind, MATEO.sex, x, 'standing');
+      return round2(calculateZScore(value, l, m, s));
     };
     const bmi = c.weightKg / (c.lengthHeightCm / 100) ** 2;
     const zs = {
@@ -122,17 +128,17 @@ export function buildMateoCheckups(): SeedCheckup[] {
     } satisfies Record<Indicator, number>;
 
     const classOf = {
-      WEIGHT_FOR_AGE: clasificar({ zPE: zs.WEIGHT_FOR_AGE }).principal,
-      LENGTH_HEIGHT_FOR_AGE: clasificar({ zTE: zs.LENGTH_HEIGHT_FOR_AGE }).principal,
-      WEIGHT_FOR_LENGTH_HEIGHT: clasificar({ zPT: zs.WEIGHT_FOR_LENGTH_HEIGHT }).principal,
-      BMI_FOR_AGE: clasificar({ zIMCE: zs.BMI_FOR_AGE }).principal,
-    } satisfies Record<Indicator, RiesgoT>;
+      WEIGHT_FOR_AGE: classify({ zWFA: zs.WEIGHT_FOR_AGE }, cutoffs).primary,
+      LENGTH_HEIGHT_FOR_AGE: classify({ zLHFA: zs.LENGTH_HEIGHT_FOR_AGE }, cutoffs).primary,
+      WEIGHT_FOR_LENGTH_HEIGHT: classify({ zWFLH: zs.WEIGHT_FOR_LENGTH_HEIGHT }, cutoffs).primary,
+      BMI_FOR_AGE: classify({ zBFA: zs.BMI_FOR_AGE }, cutoffs).primary,
+    } satisfies Record<Indicator, RiskCategory>;
 
     const indicators = Object.keys(zs) as Indicator[];
     return {
       id: seedUuid(30, c.n),
       n: c.n,
-      measuredAt: new Date(`${c.fecha}T09:12:00-04:00`),
+      measuredAt: new Date(`${c.date}T09:12:00-04:00`),
       weightKg: c.weightKg,
       lengthHeightCm: c.lengthHeightCm,
       ageMonths,
@@ -140,7 +146,7 @@ export function buildMateoCheckups(): SeedCheckup[] {
         id: seedUuid(31, c.n, k),
         indicator,
         zScore: zs[indicator],
-        percentile: round2(percentilDesdeZ(zs[indicator])),
+        percentile: round2(percentileFromZScore(zs[indicator])),
         classification: classOf[indicator],
       })),
     };
@@ -153,9 +159,10 @@ export async function seedDevData(client?: PrismaClient): Promise<void> {
   const checkups = buildMateoCheckups();
   const alertCheckup = checkups.find((c) => c.n === ALERT_CONTROL_N)!;
   const alertResult = alertCheckup.results.find((r) => r.indicator === 'WEIGHT_FOR_LENGTH_HEIGHT')!;
-  if (alertResult.classification !== 'emaciacion') {
+  if (alertResult.classification !== 'WASTING') {
     throw new Error(
-      `Incoherencia en el seed: se esperaba emaciación en el control del 18 oct (z P/T = ${alertResult.zScore}).`,
+      `Incoherencia en el seed: se esperaba emaciación en el control del 18 oct (z P/T = ${alertResult.zScore}). ` +
+        `Revisa CUTOFF_WASTING_WFLH / CUTOFF_SEVERE_WASTING_WFLH (actual: ${env.CLASSIFICATION_CUTOFFS.wastingWFLH} / ${env.CLASSIFICATION_CUTOFFS.severeWastingWFLH}).`,
     );
   }
 
@@ -164,7 +171,7 @@ export async function seedDevData(client?: PrismaClient): Promise<void> {
   const prisma = client ?? new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
   try {
-    console.log('🌱 Poblando datos sintéticos de desarrollo (Mateo)...');
+    console.log('Poblando datos sintéticos de desarrollo (Mateo)...');
     const passwordHash = await hashPassword(DEV_SEED_PASSWORD);
     const alertAt = alertCheckup.measuredAt;
 
@@ -330,7 +337,7 @@ export async function seedDevData(client?: PrismaClient): Promise<void> {
     });
 
     console.log(
-      `✨ Seed de desarrollo completado: 3 usuarios, 1 niño, ${checkups.length} controles, alerta del 18 oct (z P/T = ${alertResult.zScore}).`,
+      `Seed de desarrollo completado: 3 usuarios, 1 niño, ${checkups.length} controles, alerta del 18 oct (z P/T = ${alertResult.zScore}).`,
     );
   } finally {
     if (shouldDisconnect) {

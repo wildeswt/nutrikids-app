@@ -1,4 +1,5 @@
 import { ErrorResponseSchema } from '@nutrikids/shared';
+import { DEFAULT_CUTOFFS } from '@nutrikids/who-growth';
 import express from 'express';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
@@ -49,6 +50,36 @@ describe('parseEnv (variables de entorno de autenticación)', () => {
         JWT_ACCESS_SECRET: 'secreto-de-produccion-con-mas-de-32-caracteres',
       }),
     ).toThrow(/PROFESSIONAL_INVITE_CODES/);
+  });
+});
+
+describe('parseEnv (puntos de corte de clasificación, RF-08)', () => {
+  it('usa los puntos de corte OMS por defecto si no hay variables', () => {
+    expect(parseEnv({ NODE_ENV: 'test' }).CLASSIFICATION_CUTOFFS).toEqual(DEFAULT_CUTOFFS);
+  });
+
+  it('lee los puntos de corte y el criterio de sobrepeso desde la configuración', () => {
+    const parsed = parseEnv({
+      NODE_ENV: 'test',
+      CUTOFF_WASTING_WFLH: '-2.5',
+      CUTOFF_OVERWEIGHT_RISK_BFA: '1.5',
+      CUTOFF_STUNTING_LHFA: '',
+      OVERWEIGHT_CRITERION: 'both',
+    });
+    expect(parsed.CLASSIFICATION_CUTOFFS).toEqual({
+      ...DEFAULT_CUTOFFS,
+      wastingWFLH: -2.5,
+      overweightRiskBFA: 1.5,
+      overweightCriterion: 'both',
+    });
+  });
+
+  it('rechaza valores no numéricos, criterios desconocidos y cortes incoherentes', () => {
+    expect(() => parseEnv({ NODE_ENV: 'test', CUTOFF_WASTING_WFLH: 'abc' })).toThrow();
+    expect(() => parseEnv({ NODE_ENV: 'test', OVERWEIGHT_CRITERION: 'IMC' })).toThrow();
+    expect(() =>
+      parseEnv({ NODE_ENV: 'test', CUTOFF_SEVERE_WASTING_WFLH: '-1', CUTOFF_WASTING_WFLH: '-2' }),
+    ).toThrow(/severeWastingWFLH/);
   });
 });
 

@@ -11,7 +11,7 @@ function getAuth(req: Request): AuthContext {
   return req.auth;
 }
 
-/** Exige que el usuario tenga al menos uno de los roles indicados. Va después de `authenticate`. */
+/** Requires user to have at least one of the specified roles. Placed after `authenticate`. */
 export function requireRole(...roles: UserRole[]): RequestHandler {
   return (req, _res, next) => {
     try {
@@ -26,7 +26,7 @@ export function requireRole(...roles: UserRole[]): RequestHandler {
   };
 }
 
-/** Exige rol profesional con una de las especialidades indicadas (enfermería, nutrición, pediatría). */
+/** Requires professional role with one of the specified specialties (nursing, nutrition, pediatrics). */
 export function requireSpecialty(...specialties: Specialty[]): RequestHandler {
   return (req, _res, next) => {
     try {
@@ -45,7 +45,7 @@ export function requireSpecialty(...specialties: Specialty[]): RequestHandler {
   };
 }
 
-/** Exige un permiso de la matriz (`lib/permissions.ts`). */
+/** Requires a permission defined in the permissions matrix (`lib/permissions.ts`). */
 export function requirePermission(permission: Permission): RequestHandler {
   return (req, _res, next) => {
     try {
@@ -62,12 +62,12 @@ export function requirePermission(permission: Permission): RequestHandler {
 export type ChildIdSource = string | ((req: Request) => unknown);
 
 /**
- * Exige vínculo con el niño: el cuidador solo accede a niños de `cuida` y el profesional solo a
- * niños de `atiende` con vínculo vigente (hoy entre `startDate` y `endDate`). Sin vínculo, o si el
- * niño no existe, responde 403 sin revelar la diferencia. `source` es el nombre del parámetro de
- * ruta (por defecto `childId`) o una función que extrae el id.
+ * Requires link to the child: caregivers only access children they care for,
+ * and professionals only access children they attend with an active link
+ * (today between startDate and endDate). Without link or if the child does not
+ * exist, responds with 403 without revealing the difference.
  */
-export function requireVinculo(source: ChildIdSource = 'childId'): RequestHandler {
+export function requireLink(source: ChildIdSource = 'childId'): RequestHandler {
   return async (req, _res, next) => {
     try {
       const auth = getAuth(req);
@@ -80,15 +80,15 @@ export function requireVinculo(source: ChildIdSource = 'childId'): RequestHandle
       const today = new Date();
       today.setUTCHours(0, 0, 0, 0);
 
-      const vinculo = await withUser(auth.userId, async (tx) => {
+      const link = await withUser(auth.userId, async (tx) => {
         if (auth.roles.includes('CAREGIVER')) {
-          const link = await tx.caregiverChild.findUnique({
+          const caregiverLink = await tx.caregiverChild.findUnique({
             where: { caregiverId_childId: { caregiverId: auth.userId, childId } },
           });
-          if (link) return 'CAREGIVER' as const;
+          if (caregiverLink) return 'CAREGIVER' as const;
         }
         if (auth.roles.includes('PROFESSIONAL')) {
-          const link = await tx.professionalChild.findFirst({
+          const professionalLink = await tx.professionalChild.findFirst({
             where: {
               childId,
               professionalId: auth.userId,
@@ -96,15 +96,15 @@ export function requireVinculo(source: ChildIdSource = 'childId'): RequestHandle
               OR: [{ endDate: null }, { endDate: { gte: today } }],
             },
           });
-          if (link) return 'PROFESSIONAL' as const;
+          if (professionalLink) return 'PROFESSIONAL' as const;
         }
         return null;
       });
 
-      if (!vinculo) {
+      if (!link) {
         throw HttpError.forbidden('No tienes acceso a este niño');
       }
-      req.vinculo = vinculo;
+      req.link = link;
       next();
     } catch (err) {
       next(err);
@@ -113,9 +113,9 @@ export function requireVinculo(source: ChildIdSource = 'childId'): RequestHandle
 }
 
 /**
- * Exige consentimiento informado activo (revokedAt es null) para el niño (RF-02).
- * Sin consentimiento vigente, no se pueden registrar datos clínicos del niño (controles, etc.).
- * `source` es el parámetro de ruta (por defecto `childId`) o extractor personalizado.
+ * Requires active informed consent (revokedAt is null) for the child (RF-02).
+ * Without active consent, clinical data (checkups, etc.) cannot be registered.
+ * `source` is route parameter name (default `childId`) or custom extractor function.
  */
 export function requireActiveConsent(source: ChildIdSource = 'childId'): RequestHandler {
   return async (req, _res, next) => {

@@ -332,7 +332,7 @@ export async function listChildren(auth: AuthContext): Promise<ChildResponse[]> 
 }
 
 /**
- * Obtiene los datos mínimos de un niño por su ID. La autorización por vínculo se garantiza previamente en `requireVinculo`.
+ * Obtiene los datos mínimos de un niño por su ID. La autorización por vínculo se garantiza previamente en `requireLink`.
  */
 export async function getChildById(auth: AuthContext, childId: string): Promise<ChildResponse> {
   return withUser(auth.userId, async (tx) => {
