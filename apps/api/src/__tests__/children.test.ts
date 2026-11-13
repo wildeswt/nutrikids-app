@@ -87,7 +87,14 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
         await adminClient.query(`DELETE FROM consents WHERE caregiver_id = ANY($1::uuid[])`, [
           createdUserIds,
         ]);
-        await adminClient.query(`DELETE FROM users WHERE id = ANY($1::uuid[])`, [createdUserIds]);
+        // audit_logs es inmutable (trigger forbid_mutation) y su FK a users es RESTRICT: los
+        // usuarios con rastro de auditoría se conservan (emails únicos por UUID, no colisionan).
+        await adminClient.query(
+          `DELETE FROM users u
+           WHERE u.id = ANY($1::uuid[])
+             AND NOT EXISTS (SELECT 1 FROM audit_logs a WHERE a.user_id = u.id)`,
+          [createdUserIds],
+        );
       }
 
       createdUserIds.length = 0;
