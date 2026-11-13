@@ -61,6 +61,14 @@ export default function CaregiverTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="checkup-saved"
+        options={{
+          title: 'Control Guardado',
+          tabBarStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
         name="messages"
         options={{
           title: 'Mensajes',

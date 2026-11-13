@@ -35,10 +35,17 @@ describe('CaregiverTabsLayout', () => {
     return React.Children.toArray(layout.props.children) as TabScreenElement[];
   }
 
-  it('configures exactly the 5 required tabs in order', () => {
+  it('configures the required tabs and auxiliary screens in order', () => {
     const screens = getTabScreens();
     const names = screens.map((s) => s.props.name);
-    expect(names).toEqual(['index', 'evolution', 'add-checkup', 'messages', 'profile']);
+    expect(names).toEqual([
+      'index',
+      'evolution',
+      'add-checkup',
+      'checkup-saved',
+      'messages',
+      'profile',
+    ]);
   });
 
   it('assigns correct tab titles for caregiver navigation', () => {

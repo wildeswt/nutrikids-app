@@ -133,7 +133,7 @@ export default function AddCheckupScreen() {
     setOutlierWarning(null);
     setConfirmedOutlier(false);
     setSavedSuccess(true);
-    router.push(APP_ROUTES.CAREGIVER.EVOLUTION);
+    router.push(APP_ROUTES.CAREGIVER.CHECKUP_SAVED);
   };
 
   return (
