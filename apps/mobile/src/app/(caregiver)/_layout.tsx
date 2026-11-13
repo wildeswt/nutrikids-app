@@ -22,14 +22,12 @@ export default function CaregiverTabsLayout() {
         options={{
           title: 'Inicio',
           headerTitle: 'Mis Niños',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={styles.tabIconWrapper}>
-              <Ionicons
-                name={focused ? 'home' : 'home-outline'}
-                size={26}
-                color={color as string}
-              />
-            </View>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={size + 2}
+              color={color as string}
+            />
           ),
         }}
       />
@@ -38,14 +36,12 @@ export default function CaregiverTabsLayout() {
         options={{
           title: 'Evolución',
           headerTitle: 'Evolución y Curvas OMS',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={styles.tabIconWrapper}>
-              <Ionicons
-                name={focused ? 'trending-up' : 'trending-up-outline'}
-                size={26}
-                color={color as string}
-              />
-            </View>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'trending-up' : 'trending-up-outline'}
+              size={size + 2}
+              color={color as string}
+            />
           ),
         }}
       />
@@ -68,9 +64,9 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="checkup-saved"
         options={{
+          href: null,
           title: 'Control Guardado',
           tabBarStyle: { display: 'none' },
-          tabBarButton: () => null,
         }}
       />
       <Tabs.Screen
@@ -78,23 +74,21 @@ export default function CaregiverTabsLayout() {
         options={{
           title: 'Mensajes',
           headerTitle: 'Mensajes y Recordatorios',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={styles.tabIconWrapper}>
-              <Ionicons
-                name={focused ? 'chatbox-ellipses' : 'chatbox-ellipses-outline'}
-                size={26}
-                color={color as string}
-              />
-            </View>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'chatbox-ellipses' : 'chatbox-ellipses-outline'}
+              size={size + 2}
+              color={color as string}
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="chat-detail"
         options={{
+          href: null,
           title: 'Chat',
           tabBarStyle: { display: 'none' },
-          tabBarButton: () => null,
         }}
       />
       <Tabs.Screen
@@ -102,14 +96,12 @@ export default function CaregiverTabsLayout() {
         options={{
           title: 'Perfil',
           headerTitle: 'Mi Perfil',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={styles.tabIconWrapper}>
-              <Ionicons
-                name={focused ? 'person-circle' : 'person-circle-outline'}
-                size={28}
-                color={color as string}
-              />
-            </View>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'person-circle' : 'person-circle-outline'}
+              size={size + 4}
+              color={color as string}
+            />
           ),
         }}
       />
@@ -119,9 +111,9 @@ export default function CaregiverTabsLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 68,
-    paddingTop: 6,
+    height: 70,
     paddingBottom: 8,
+    paddingTop: 8,
     backgroundColor: PALETTE.surface,
     borderTopColor: PALETTE.border.default,
     borderTopWidth: 1,
@@ -135,20 +127,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  tabIconWrapper: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   tabBarLabel: {
     fontSize: 11,
     fontWeight: '600',
   },
   centerButtonContainer: {
-    top: -14,
-    width: 60,
-    height: 60,
+    top: -16,
     justifyContent: 'center',
     alignItems: 'center',
   },
