@@ -14,6 +14,7 @@ import {
   classify,
   getLmsParameters,
   percentileFromZScore,
+  type Cutoffs,
   type RiskCategory,
   type WhoIndicator,
 } from '@nutrikids/who-growth';
@@ -105,8 +106,13 @@ export function assertNotProduction(nodeEnv: string | undefined = process.env.NO
   }
 }
 
-/** Calcula con who-growth los 4 resultados de cada control (sin tocar la BD). */
-export function buildMateoCheckups(): SeedCheckup[] {
+/**
+ * Calcula con who-growth los 4 resultados de cada control (sin tocar la BD). Clasifica con los
+ * mismos puntos de corte configurados que usa el servidor (`env.CLASSIFICATION_CUTOFFS`, RF-08).
+ */
+export function buildMateoCheckups(
+  cutoffs: Readonly<Cutoffs> = env.CLASSIFICATION_CUTOFFS,
+): SeedCheckup[] {
   return MATEO_CONTROLS.map((c) => {
     const ageMonths = ageInMonths(MATEO.birthDate, c.date);
     const z = (ind: WhoIndicator, x: number, value: number): number => {
@@ -122,10 +128,10 @@ export function buildMateoCheckups(): SeedCheckup[] {
     } satisfies Record<Indicator, number>;
 
     const classOf = {
-      WEIGHT_FOR_AGE: classify({ zWFA: zs.WEIGHT_FOR_AGE }).primary,
-      LENGTH_HEIGHT_FOR_AGE: classify({ zLHFA: zs.LENGTH_HEIGHT_FOR_AGE }).primary,
-      WEIGHT_FOR_LENGTH_HEIGHT: classify({ zWFLH: zs.WEIGHT_FOR_LENGTH_HEIGHT }).primary,
-      BMI_FOR_AGE: classify({ zBFA: zs.BMI_FOR_AGE }).primary,
+      WEIGHT_FOR_AGE: classify({ zWFA: zs.WEIGHT_FOR_AGE }, cutoffs).primary,
+      LENGTH_HEIGHT_FOR_AGE: classify({ zLHFA: zs.LENGTH_HEIGHT_FOR_AGE }, cutoffs).primary,
+      WEIGHT_FOR_LENGTH_HEIGHT: classify({ zWFLH: zs.WEIGHT_FOR_LENGTH_HEIGHT }, cutoffs).primary,
+      BMI_FOR_AGE: classify({ zBFA: zs.BMI_FOR_AGE }, cutoffs).primary,
     } satisfies Record<Indicator, RiskCategory>;
 
     const indicators = Object.keys(zs) as Indicator[];
@@ -155,7 +161,8 @@ export async function seedDevData(client?: PrismaClient): Promise<void> {
   const alertResult = alertCheckup.results.find((r) => r.indicator === 'WEIGHT_FOR_LENGTH_HEIGHT')!;
   if (alertResult.classification !== 'WASTING') {
     throw new Error(
-      `Incoherencia en el seed: se esperaba emaciación en el control del 18 oct (z P/T = ${alertResult.zScore}).`,
+      `Incoherencia en el seed: se esperaba emaciación en el control del 18 oct (z P/T = ${alertResult.zScore}). ` +
+        `Revisa CUTOFF_WASTING_WFLH / CUTOFF_SEVERE_WASTING_WFLH (actual: ${env.CLASSIFICATION_CUTOFFS.wastingWFLH} / ${env.CLASSIFICATION_CUTOFFS.severeWastingWFLH}).`,
     );
   }
 
