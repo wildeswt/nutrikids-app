@@ -3,6 +3,7 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
+import { createAlertsRouter } from './routes/alerts.routes.js';
 import { createAuditRouter } from './routes/audit.routes.js';
 import { createAuthRouter } from './routes/auth.routes.js';
 import { createCheckupsRouter } from './routes/checkups.routes.js';
@@ -27,6 +28,7 @@ export function createApp(): Express {
   app.use('/checkups', createCheckupsRouter());
   app.use('/reference', referenceRouter);
   app.use('/audit', createAuditRouter());
+  app.use('/alerts', createAlertsRouter());
 
   app.use(notFoundHandler);
   app.use(errorHandler);

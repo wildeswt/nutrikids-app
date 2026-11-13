@@ -67,6 +67,10 @@ const EnvSchema = z
     LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
     LOGIN_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
     PROFESSIONAL_INVITE_CODES: z.string().optional(),
+    /** Plazo (horas) para revisar una alerta sin revisar antes de marcarla vencida (NK-30). */
+    ALERT_REVIEW_DEADLINE_HOURS: z.coerce.number().int().positive().default(72),
+    /** Plazo (horas) para alertas de riesgo grave (z < −3). */
+    ALERT_REVIEW_DEADLINE_SEVERE_HOURS: z.coerce.number().int().positive().default(24),
     ...cutoffEnvShape,
     OVERWEIGHT_CRITERION: z.preprocess(
       (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
@@ -119,6 +123,15 @@ const EnvSchema = z
       }
     }
 
+    if (raw.ALERT_REVIEW_DEADLINE_SEVERE_HOURS > raw.ALERT_REVIEW_DEADLINE_HOURS) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ALERT_REVIEW_DEADLINE_SEVERE_HOURS'],
+        message:
+          'ALERT_REVIEW_DEADLINE_SEVERE_HOURS no puede ser mayor que ALERT_REVIEW_DEADLINE_HOURS',
+      });
+    }
+
     return {
       NODE_ENV: raw.NODE_ENV,
       PORT: raw.PORT,
@@ -132,6 +145,8 @@ const EnvSchema = z
       LOGIN_WINDOW_MINUTES: raw.LOGIN_WINDOW_MINUTES,
       PROFESSIONAL_INVITE_CODES: inviteCodes,
       CLASSIFICATION_CUTOFFS: Object.freeze(cutoffs) as Readonly<Cutoffs>,
+      ALERT_REVIEW_DEADLINE_HOURS: raw.ALERT_REVIEW_DEADLINE_HOURS,
+      ALERT_REVIEW_DEADLINE_SEVERE_HOURS: raw.ALERT_REVIEW_DEADLINE_SEVERE_HOURS,
     };
   });
 
