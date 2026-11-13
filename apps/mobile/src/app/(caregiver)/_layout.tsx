@@ -12,6 +12,7 @@ export default function CaregiverTabsLayout() {
         tabBarActiveTintColor: PALETTE.primary,
         tabBarInactiveTintColor: PALETTE.text.title,
         tabBarStyle: styles.tabBar,
+        tabBarItemStyle: styles.tabBarItem,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarShowLabel: false,
       }}
@@ -21,12 +22,14 @@ export default function CaregiverTabsLayout() {
         options={{
           title: 'Inicio',
           headerTitle: 'Mis Niños',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'home' : 'home-outline'}
-              size={size + 2}
-              color={color as string}
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={styles.tabIconWrapper}>
+              <Ionicons
+                name={focused ? 'home' : 'home-outline'}
+                size={26}
+                color={color as string}
+              />
+            </View>
           ),
         }}
       />
@@ -35,12 +38,14 @@ export default function CaregiverTabsLayout() {
         options={{
           title: 'Evolución',
           headerTitle: 'Evolución y Curvas OMS',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'trending-up' : 'trending-up-outline'}
-              size={size + 2}
-              color={color as string}
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={styles.tabIconWrapper}>
+              <Ionicons
+                name={focused ? 'trending-up' : 'trending-up-outline'}
+                size={26}
+                color={color as string}
+              />
+            </View>
           ),
         }}
       />
@@ -73,12 +78,14 @@ export default function CaregiverTabsLayout() {
         options={{
           title: 'Mensajes',
           headerTitle: 'Mensajes y Recordatorios',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'chatbox-ellipses' : 'chatbox-ellipses-outline'}
-              size={size + 2}
-              color={color as string}
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={styles.tabIconWrapper}>
+              <Ionicons
+                name={focused ? 'chatbox-ellipses' : 'chatbox-ellipses-outline'}
+                size={26}
+                color={color as string}
+              />
+            </View>
           ),
         }}
       />
@@ -95,12 +102,14 @@ export default function CaregiverTabsLayout() {
         options={{
           title: 'Perfil',
           headerTitle: 'Mi Perfil',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'person-circle' : 'person-circle-outline'}
-              size={size + 4}
-              color={color as string}
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={styles.tabIconWrapper}>
+              <Ionicons
+                name={focused ? 'person-circle' : 'person-circle-outline'}
+                size={28}
+                color={color as string}
+              />
+            </View>
           ),
         }}
       />
@@ -110,9 +119,9 @@ export default function CaregiverTabsLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 70,
+    height: 68,
+    paddingTop: 6,
     paddingBottom: 8,
-    paddingTop: 8,
     backgroundColor: PALETTE.surface,
     borderTopColor: PALETTE.border.default,
     borderTopWidth: 1,
@@ -122,12 +131,24 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 8,
   },
+  tabBarItem: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabIconWrapper: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   tabBarLabel: {
     fontSize: 11,
     fontWeight: '600',
   },
   centerButtonContainer: {
-    top: -16,
+    top: -14,
+    width: 60,
+    height: 60,
     justifyContent: 'center',
     alignItems: 'center',
   },
