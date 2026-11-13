@@ -1,10 +1,12 @@
+import { DEFAULT_CUTOFFS } from '@nutrikids/who-growth';
 import { describe, it, expect } from 'vitest';
 import { assertNotProduction, buildMateoCheckups } from '../lib/seedDev.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 describe('Development seed (in-memory, no DB)', () => {
-  const checkups = buildMateoCheckups();
+  // WHO defaults explicitly, so the test does not depend on local CUTOFF_* env vars.
+  const checkups = buildMateoCheckups(DEFAULT_CUTOFFS);
   const oct = checkups.find((c) => c.n === 4)!;
   const pt = (c: (typeof checkups)[number]) =>
     c.results.find((r) => r.indicator === 'WEIGHT_FOR_LENGTH_HEIGHT')!;

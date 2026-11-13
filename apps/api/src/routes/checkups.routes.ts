@@ -5,7 +5,11 @@ import { HttpError } from '../lib/http-error.js';
 import { requireActiveConsent, requirePermission, requireLink } from '../middlewares/access.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import { validateRequest } from '../middlewares/validate.js';
-import { correctCheckup, getCheckupChildId } from '../services/checkups.service.js';
+import {
+  correctCheckup,
+  getCheckupChildId,
+  getCheckupResults,
+} from '../services/checkups.service.js';
 
 const CheckupParamsSchema = z.object({ checkupId: UuidSchema });
 
@@ -56,6 +60,24 @@ export function createCheckupsRouter(): Router {
         req.body as CorrectCheckupInput,
       );
       res.status(created ? 201 : 200).json(checkup);
+    },
+  );
+
+  /**
+   * GET /checkups/:checkupId/results
+   * The 4 WHO indicator results of a checkup. z-score, percentile, and classification are
+   * only returned to linked professionals; linked caregivers receive the indicators without
+   * technical data (RF-14, NK-35). Unlinked users receive 403/404.
+   */
+  router.get(
+    '/:checkupId/results',
+    requirePermission('checkup:read'),
+    validateRequest({ params: CheckupParamsSchema }),
+    loadCheckupChild,
+    requireLink(checkupChildId),
+    async (req, res) => {
+      const results = await getCheckupResults(req.auth!, req.link!, req.params.checkupId as string);
+      res.status(200).json(results);
     },
   );
 
