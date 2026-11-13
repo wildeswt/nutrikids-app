@@ -24,6 +24,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { HttpError } from '../lib/http-error.js';
 import type { AuthContext } from '../lib/permissions.js';
 import { withUser } from '../lib/prisma.js';
+import { createAlertsForResults } from './alerts.service.js';
 import { assertActiveConsent, assertChildAgeInOmsRange } from './children.service.js';
 
 /** Viewer profile under which checkup is queried or recorded: determines `origin` and response shape. */
@@ -274,6 +275,8 @@ async function insertCheckup(
       },
       include: { results: true },
     });
+    // RF-11: each result with a risk condition raises an alert in this same transaction.
+    await createAlertsForResults(tx, created.results, auth.userId);
     return { checkup: formatCheckupResponse(created, true, viewer), created: true };
   } catch (err) {
     return mapCheckupDbError(err);
