@@ -75,5 +75,16 @@
   "account": {
     "fetch": "No pudimos cargar tu cuenta. Intenta de nuevo.",
     "update": "No pudimos guardar tus datos. Intenta de nuevo."
+  },
+  "messages": {
+    "conversations": "No pudimos cargar tus conversaciones. Intenta de nuevo.",
+    "thread": "No pudimos cargar los mensajes. Intenta de nuevo.",
+    "send": "No pudimos enviar el mensaje. Intenta de nuevo.",
+    "markRead": "No pudimos marcar los mensajes como leídos.",
+    "professionals": "No pudimos cargar el equipo de salud de este niño. Intenta de nuevo.",
+    "forbidden": "No tienes permiso para acceder o escribir en esta conversación.",
+    "noConsent": "No puedes enviar mensajes porque este niño no tiene un consentimiento informado vigente.",
+    "network": "No hay conexión. Verifica tu internet e intenta de nuevo.",
+    "conflict": "Este mensaje ya fue enviado con otro contenido."
   }
 }

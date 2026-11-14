@@ -97,15 +97,16 @@ describe('ProfessionalDrawerLayout', () => {
       'follow-up',
       'children',
       'messages',
+      'chat-detail',
       'profile',
       'notifications',
     ]);
     expect(screenNames[0]).toBe('index');
   });
 
-  it('hides the alert detail and the follow-up form from the drawer and draws their own header', () => {
+  it('hides the alert detail, follow-up form, and chat detail from the drawer and draws their own header', () => {
     const screens = getDrawerScreens();
-    for (const name of ['alert-detail', 'follow-up']) {
+    for (const name of ['alert-detail', 'follow-up', 'chat-detail']) {
       const options = screens.find((s) => s.props.name === name)?.props.options as
         { drawerItemStyle?: { display?: string }; headerShown?: boolean } | undefined;
       expect(options?.drawerItemStyle).toEqual({ display: 'none' });

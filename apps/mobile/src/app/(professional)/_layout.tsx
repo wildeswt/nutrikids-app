@@ -124,6 +124,16 @@ export default function ProfessionalDrawerLayout() {
         }}
       />
       <Drawer.Screen
+        name="chat-detail"
+        options={{
+          title: t('drawer.chatTitle'),
+          // The screen draws its own back button and title.
+          headerShown: false,
+          // Reachable only by tapping a conversation, so it has no drawer entry.
+          drawerItemStyle: { display: 'none' },
+        }}
+      />
+      <Drawer.Screen
         name="profile"
         options={{
           drawerLabel: t('drawer.profile'),

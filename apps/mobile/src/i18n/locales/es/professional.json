@@ -14,7 +14,8 @@
     "notifications": "Notificaciones",
     "notificationsTitle": "Notificaciones",
     "alertDetailTitle": "Detalle de la Alerta",
-    "followUpTitle": "Seguimiento clínico"
+    "followUpTitle": "Seguimiento clínico",
+    "chatTitle": "Conversación"
   },
   "alerts": {
     "title": "Alertas",
@@ -62,7 +63,12 @@
   },
   "messages": {
     "title": "Mensajes y Seguimientos",
-    "description": "Comunicación asistencial con cuidadores y registro de planes de seguimiento nutricional."
+    "description": "Comunicación asistencial con cuidadores y registro de planes de seguimiento nutricional.",
+    "banner": "Conversa con cuidadores y otros profesionales vinculados.",
+    "emergencyNotice": "Este canal no atiende urgencias. Si el niño requiere atención inmediata, acude a un centro de salud.",
+    "emptySubtitle": "Cuando inicies o recibas mensajes sobre un niño vinculado, aparecerán aquí.",
+    "chatTitleFallback": "Conversación",
+    "chatPrivacy": "Solo tú y los participantes vinculados al niño pueden ver esta conversación."
   },
   "profile": {
     "title": "Perfil Profesional",

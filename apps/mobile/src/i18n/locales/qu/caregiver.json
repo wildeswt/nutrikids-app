@@ -191,23 +191,54 @@
     "healthCenterSubtitle": "Runakunata uyana",
     "threadA11y": "{{title}}-pak willay",
     "emergencyNotice": "Kaypika utka unkuykunataka mana rikunchu. Kikinpak wawa kunanlla yanapayta mutsushpaka, hampi wasiman riy.",
-    "newMessage": "Mushuk willay"
+    "newMessage": "Mushuk willay",
+    "loading": "Cargando tus conversaciones...",
+    "loadError": "No pudimos cargar tus conversaciones.",
+    "retry": "Intentar de nuevo",
+    "emptyTitle": "Aún no tienes conversaciones",
+    "emptySubtitle": "Cuando escribas a tu equipo de salud o recibas un mensaje, aparecerá aquí.",
+    "emptyUnreadTitle": "No tienes mensajes sin leer",
+    "emptyUnreadSubtitle": "Estás al día con tus conversaciones.",
+    "newMessageModal": {
+      "title": "Nuevo mensaje",
+      "chooseChild": "Elige para qué niño",
+      "chooseProfessional": "Elige un profesional de {{name}}",
+      "changeChild": "Cambiar de niño",
+      "loading": "Buscando profesionales vinculados...",
+      "noChildren": "Aún no tienes niños registrados.",
+      "noProfessionals": "Este niño aún no tiene profesionales vinculados.",
+      "noProfessionalsHint": "Cuando un profesional se vincule a {{name}}, podrás escribirle desde aquí.",
+      "close": "Cerrar",
+      "professionalFallback": "Profesional de salud"
+    }
   },
   "chat": {
     "back": "Tikray",
     "title": "{{name}}-pak tantanakuy",
+    "titleFallback": "Conversación",
     "professional": "{{name}} · {{specialty}}",
     "about": "{{name}}-manta",
     "me": "Kan",
     "status": {
       "read": "Ñawinchishka",
-      "sent": "Kachashka"
+      "sent": "Kachashka",
+      "sending": "Enviando...",
+      "failed": "No se pudo enviar"
     },
     "inputPlaceholder": "Willayta killkay...",
     "inputA11y": "Willayta killkay",
     "send": "Kachay",
     "sendA11y": "Willayta kachay",
-    "privacy": "Kanllami, kikinpak hampik tantanakuyllami kay rimanakuyta rikuy ushankichik."
+    "privacy": "Kanllami, kikinpak hampik tantanakuyllami kay rimanakuyta rikuy ushankichik.",
+    "loading": "Cargando mensajes...",
+    "loadError": "No pudimos cargar la conversación.",
+    "retry": "Intentar de nuevo",
+    "retrySend": "Reintentar",
+    "empty": "Aún no hay mensajes en esta conversación. Escribe el primero abajo.",
+    "loadOlder": "Cargar mensajes anteriores",
+    "loadingOlder": "Cargando anteriores...",
+    "missingParams": "No encontramos la conversación que intentas abrir.",
+    "charCount": "{{count}}/{{max}}"
   },
   "profile": {
     "title": "Ñukamanta",
