@@ -116,7 +116,7 @@ describe('Caregiver Screens (NK-21)', () => {
   });
 
   describe('CaregiverHomeScreen («Mis niños» - Figura 6a)', () => {
-    it('navigates to notifications when bell button is pressed', () => {
+    it('navigates to messages when bell button is pressed', () => {
       let capturedTree: unknown = null;
       function TestWrapper() {
         capturedTree = CaregiverHomeScreen();
@@ -128,7 +128,7 @@ describe('Caregiver Screens (NK-21)', () => {
       expect(bellButton).toBeDefined();
       const onPress = bellButton?.props?.['onPress'] as (() => void) | undefined;
       onPress?.();
-      expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.NOTIFICATIONS);
+      expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.MESSAGES);
     });
 
     it('renders personalized greeting with caregiver name', () => {

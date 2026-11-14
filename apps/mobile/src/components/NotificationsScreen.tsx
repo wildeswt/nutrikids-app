@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { NotificationResponse } from '@nutrikids/shared';
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -22,6 +22,13 @@ export function NotificationsScreen() {
   const router = useRouter();
   const { notifications, loading, refreshing, error, refresh, reload, markAsRead } =
     useNotifications();
+
+  // Recarga notificaciones al enfocar o volver a la pantalla (NK-36)
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
 
   const handleBack = () => {
     if (router.canGoBack()) {

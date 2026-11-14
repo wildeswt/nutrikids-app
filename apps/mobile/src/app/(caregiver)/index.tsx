@@ -62,7 +62,7 @@ export default function CaregiverHomeScreen() {
           />
           <Pressable
             style={({ pressed }) => [styles.notificationButton, pressed && styles.buttonPressed]}
-            onPress={() => router.push(APP_ROUTES.CAREGIVER.NOTIFICATIONS)}
+            onPress={() => router.push(APP_ROUTES.CAREGIVER.MESSAGES)}
             accessibilityRole="button"
             accessibilityLabel={t('home.notifications')}
             testID="caregiver-notifications-bell"
