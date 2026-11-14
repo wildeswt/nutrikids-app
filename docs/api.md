@@ -56,6 +56,9 @@ Common rules:
 | `GET /checkups/:checkupId/results`     | `checkup:read`, link            | The four WHO indicator results; z-score and classification only for professionals.                               | -                  |
 | `POST /sync/checkups`                  | `checkup:create`                | Batch (1-100) of checkups captured offline; idempotent, one result per item. Audits creations and discrepancies. | [sync.md](sync.md) |
 
+- Checkup requests (`POST` and corrections) accept optional `notes` (1-500 trimmed chars, stored as `null` when omitted) and return `notes` in `GET`/`POST` responses.
+- When `notes` is present, audit logs store `{ hasNotes: true }` in `details` and never copy the note text.
+
 ## Alerts and follow-ups (professionals)
 
 | Method and path                      | Guards                                                | Description                                                                                            | Details                        |

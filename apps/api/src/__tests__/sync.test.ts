@@ -373,4 +373,48 @@ describe('Sync API (POST /sync/checkups)', { timeout: 60000 }, () => {
       .send({ checkups: [{}] });
     expect(noAuth.status).toBe(401);
   });
+
+  it('sincroniza notas opcionales, valida su largo por ítem y no copia el texto a auditoría', async () => {
+    const caregiver = await createUser('CAREGIVER');
+    const childId = await seedChild(caregiver.userId);
+    const noteText = 'Tomó leche materna antes del control';
+
+    const withNotes = item(childId, {
+      measuredAt: isoDaysAgo(4),
+      notes: `  ${noteText}  `,
+    });
+    const withoutNotes = item(childId, { measuredAt: isoDaysAgo(3) });
+    const tooLong = item(childId, { measuredAt: isoDaysAgo(2), notes: 'a'.repeat(501) });
+    const blank = item(childId, { measuredAt: isoDaysAgo(1), notes: '   ' });
+
+    const res = await request(app)
+      .post('/sync/checkups')
+      .set('Authorization', caregiver.token)
+      .send({ checkups: [withNotes, withoutNotes, tooLong, blank] });
+
+    expect(res.status).toBe(200);
+    expect(SyncCheckupsResponseSchema.safeParse(res.body).success).toBe(true);
+    expect(res.body.results.map((r: { status: string }) => r.status)).toEqual([
+      'CREATED',
+      'CREATED',
+      'ERROR',
+      'ERROR',
+    ]);
+    expect(res.body.results[0].checkup.notes).toBe(noteText);
+    expect(res.body.results[1].checkup.notes).toBeNull();
+    expect(res.body.results[2].error.status).toBe(400);
+    expect(res.body.results[3].error.status).toBe(400);
+
+    const audits = await waitForAudit(
+      `SELECT * FROM audit_logs WHERE action = 'CREATE' AND entity_type = 'checkups'
+       AND entity_id = ANY($1::uuid[])`,
+      [[withNotes.id, withoutNotes.id]],
+      2,
+    );
+    const auditWithNotes = audits.find((a) => a.entity_id === withNotes.id);
+    const auditWithoutNotes = audits.find((a) => a.entity_id === withoutNotes.id);
+    expect(auditWithNotes?.details).toEqual({ hasNotes: true });
+    expect(auditWithoutNotes?.details).toBeNull();
+    expect(JSON.stringify(audits)).not.toContain(noteText);
+  });
 });

@@ -96,6 +96,11 @@ function AlertCard({
               })
             : t('alertDetail.checkupUnknown')}
         </Text>
+        {checkup?.notes ? (
+          <Text style={styles.checkupNotes}>
+            {t('alertDetail.checkupNotes', { notes: checkup.notes })}
+          </Text>
+        ) : null}
       </InfoRow>
       <InfoRow label={t('alertDetail.rows.result')}>
         <Text style={[styles.infoValue, styles.infoResult]} testID="alert-detail-result">
@@ -477,6 +482,12 @@ const styles = StyleSheet.create({
     fontFamily: font('regular'),
     fontSize: 15,
     color: PALETTE.text.body,
+  },
+  checkupNotes: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    color: PALETTE.text.muted,
+    marginTop: 4,
   },
   infoResult: {
     fontFamily: font('semibold'),

@@ -34,6 +34,7 @@ const checkup = {
   recordedById: '33333333-3333-4333-8333-333333333333',
   correctedCheckupId: null,
   isCurrent: true,
+  notes: null,
   createdAt: '2026-11-10T15:00:01.000Z',
 };
 

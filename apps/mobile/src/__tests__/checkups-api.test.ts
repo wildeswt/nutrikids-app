@@ -34,6 +34,7 @@ const storedCheckup = {
   recordedById: '33333333-3333-4333-8333-333333333333',
   correctedCheckupId: null,
   isCurrent: true,
+  notes: null,
   createdAt: '2026-11-10T15:00:01.000Z',
 };
 
@@ -125,6 +126,21 @@ describe('checkups-api', () => {
         expect.objectContaining({ method: 'POST', body: JSON.stringify(input) }),
       );
       expect(result).toEqual(storedCheckup);
+    });
+
+    it('sends notes when provided and returns stored notes', async () => {
+      const withNotes = { ...storedCheckup, notes: 'Buen apetito hoy' };
+      const mockFetch = vi.fn().mockResolvedValue(jsonResponse(withNotes, 201));
+      vi.stubGlobal('fetch', mockFetch);
+
+      const payload = { ...input, notes: 'Buen apetito hoy' };
+      const result = await createChildCheckup(CHILD_ID, payload);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining(`/children/${CHILD_ID}/checkups`),
+        expect.objectContaining({ method: 'POST', body: JSON.stringify(payload) }),
+      );
+      expect(result.notes).toBe('Buen apetito hoy');
     });
 
     it('sends confirmOutlier for atypical values', async () => {

@@ -94,6 +94,7 @@
       "reason": "Motivo"
     },
     "checkupValue": "{{date}} · {{weight}} · {{height}}",
+    "checkupNotes": "Observaciones: {{notes}}",
     "checkupUnknown": "Control no disponible",
     "result": {
       "below": "Puntaje z por debajo de −{{limit}}",

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import type { Position } from '@nutrikids/shared';
+import { CHECKUP_NOTES_MAX, type Position } from '@nutrikids/shared';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React, { useEffect, useRef, useState } from 'react';
@@ -91,6 +91,8 @@ export default function AddCheckupScreen() {
         return t('addCheckup.errors.weightRange', { min: error.min, max: error.max });
       case 'heightRange':
         return t('addCheckup.errors.heightRange', { min: error.min, max: error.max });
+      case 'notesTooLong':
+        return t('addCheckup.errors.notesTooLong', { max: error.max });
       case 'dateInvalid':
         return t('addCheckup.errors.dateInvalid', { example: formatDateInput(new Date()) });
       case 'outlier':
@@ -130,7 +132,13 @@ export default function AddCheckupScreen() {
 
     attemptId.current ??= generateUuid();
     const result = buildCreateCheckupInput(
-      { dateText: measuredDateText, weightText, heightText, position },
+      {
+        dateText: measuredDateText,
+        weightText,
+        heightText,
+        position,
+        notesText: observations,
+      },
       { birthDate: activeChild.birthDate, confirmOutlier: confirmedOutlier, id: attemptId.current },
     );
 
@@ -463,7 +471,11 @@ export default function AddCheckupScreen() {
             <KeyboardAwareTextInput
               style={styles.observationsInput}
               value={observations}
-              onChangeText={setObservations}
+              onChangeText={(val) => {
+                setObservations(val);
+                resetAttempt();
+              }}
+              maxLength={CHECKUP_NOTES_MAX}
               placeholder={t('addCheckup.notesPlaceholder')}
               placeholderTextColor={PALETTE.input.placeholder}
               multiline
@@ -472,6 +484,12 @@ export default function AddCheckupScreen() {
               accessibilityLabel={t('addCheckup.notesLabel')}
             />
           </View>
+          <Text style={styles.notesCounter}>
+            {t('addCheckup.notesCounter', {
+              count: observations.length,
+              max: CHECKUP_NOTES_MAX,
+            })}
+          </Text>
         </View>
 
         {/* Botón Guardar y calcular */}
@@ -651,6 +669,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: PALETTE.text.body,
     minHeight: 96,
+  },
+  notesCounter: {
+    fontFamily: font('regular'),
+    fontSize: 12,
+    color: PALETTE.text.muted,
+    textAlign: 'right',
+    paddingRight: 8,
+    marginTop: 6,
   },
   submitButton: {
     marginTop: 10,

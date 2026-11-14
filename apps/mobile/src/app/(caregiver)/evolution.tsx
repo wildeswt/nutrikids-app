@@ -330,6 +330,21 @@ export default function EvolutionScreen() {
               {t(`evolution.origin.${latest.origin}`)}
             </Text>
           </View>
+
+          {latest.notes ? (
+            <View style={styles.notesRow}>
+              <Ionicons
+                name="document-text-outline"
+                size={18}
+                color={PALETTE.secondary}
+                style={styles.notesIcon}
+              />
+              <View style={styles.notesContent}>
+                <Text style={styles.recordedByLabel}>{t('evolution.notes')}</Text>
+                <Text style={styles.notesValue}>{latest.notes}</Text>
+              </View>
+            </View>
+          ) : null}
         </Card>
       </ScrollView>
 
@@ -552,6 +567,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: PALETTE.text.muted,
     flex: 1,
+  },
+  notesRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 10,
+  },
+  notesIcon: {
+    marginTop: 2,
+  },
+  notesContent: {
+    flex: 1,
+    gap: 2,
+  },
+  notesValue: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    lineHeight: 20,
+    color: PALETTE.text.body,
   },
   modalOverlay: {
     flex: 1,

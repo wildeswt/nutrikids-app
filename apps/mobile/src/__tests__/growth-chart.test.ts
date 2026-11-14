@@ -32,6 +32,7 @@ const makeCheckup = (measuredAt: string, weightKg: number, lengthHeightCm: numbe
   recordedById: 'u',
   correctedCheckupId: null,
   isCurrent: true,
+  notes: null,
   createdAt: measuredAt,
 });
 

@@ -16,6 +16,7 @@ Code: `src/services/sync.service.ts`, `src/routes/sync.routes.ts`, shared contra
       "weightKg": 12.5,
       "lengthHeightCm": 90,
       "position": "STANDING",
+      "notes": "Buen apetito hoy",
       "results": [{ "indicator": "WEIGHT_FOR_AGE", "zScore": -0.4, "classification": "NORMAL" }]
     }
   ]
@@ -23,7 +24,7 @@ Code: `src/services/sync.service.ts`, `src/routes/sync.routes.ts`, shared contra
 ```
 
 - Batch of 1 to 100 items (`SYNC_MAX_BATCH_SIZE`). An empty/oversized batch or a malformed body returns `400`.
-- Each item has the same fields as `POST /children/:childId/checkups` plus `childId`. Items are validated one by one, so an invalid item does not reject the batch.
+- Each item has the same fields as `POST /children/:childId/checkups` (including optional `notes`, 1–500 trimmed chars, stored as `null` when omitted) plus `childId`. Items are validated one by one, so an invalid item does not reject the batch.
 
 ## Response
 
@@ -62,7 +63,7 @@ When a newly created item carries `results` computed by the phone, the server co
 - the response lists `{ indicator, fields }` under `discrepancies`;
 - an `audit_logs` row is written with `action = 'DISCREPANCY'`, `entityType = 'indicator_results'`, `entityId` = server result id, and `details = { checkupId, indicator, fields, client, server }` (column added by migration `20261113120000_audit_details`).
 
-Resends (`DUPLICATE`) are not compared again. Every created checkup is also audited as `CREATE` / `checkups`.
+Resends (`DUPLICATE`) are not compared again. Every created checkup is also audited as `CREATE` / `checkups` (including `{ hasNotes: true }` when `notes` is present, never copying the note text).
 
 ## Out of scope: feeding logs
 

@@ -61,6 +61,7 @@ export function makeCheckup(overrides: Partial<CheckupResponse> = {}, z = -1): C
     recordedById: '66666666-6666-4666-8666-666666666666',
     correctedCheckupId: null,
     isCurrent: true,
+    notes: null,
     createdAt: '2026-11-10T08:00:00.000Z',
     results: (
       [

@@ -370,6 +370,10 @@ export function createChildrenRouter(): Router {
       action: 'CREATE',
       entityType: 'checkups',
       getEntityId: (_req, res) => res.locals.auditEntityId as string | undefined,
+      // Solo se registra si tiene observaciones, nunca el texto ingresado.
+      getDetails: (_req, res) => {
+        return res.locals.auditHasNotes ? { hasNotes: true } : undefined;
+      },
     }),
     async (req, res) => {
       const { checkup, created } = await createCheckup(
@@ -379,6 +383,7 @@ export function createChildrenRouter(): Router {
         req.body as CreateCheckupInput,
       );
       res.locals.auditEntityId = checkup.id;
+      res.locals.auditHasNotes = checkup.notes !== null;
       res.status(created ? 201 : 200).json(checkup);
     },
   );

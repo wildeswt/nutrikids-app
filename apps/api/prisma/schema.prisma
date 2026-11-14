@@ -182,6 +182,7 @@ model Checkup {
   origin               Origin
   recordedById         String              @map("recorded_by_id") @db.Uuid
   correctedCheckupId   String?             @map("corrected_checkup_id") @db.Uuid
+  notes                String?             @map("notes") @db.VarChar(500)
   createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
 
   child                Child               @relation(fields: [childId], references: [id], onDelete: Restrict)

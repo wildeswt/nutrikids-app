@@ -86,6 +86,7 @@ function formatCheckupResponse(
     recordedById: row.recordedById,
     correctedCheckupId: row.correctedCheckupId,
     isCurrent,
+    notes: row.notes ?? null,
     createdAt: row.createdAt.toISOString(),
   };
 
@@ -181,6 +182,9 @@ function mapCheckupDbError(err: unknown): never {
     throw HttpError.forbidden(
       'El niño no cuenta con un consentimiento informado vigente para registrar datos',
     );
+  }
+  if (/checkups_notes_check/i.test(message)) {
+    throw HttpError.badRequest('Las observaciones deben tener entre 1 y 500 caracteres');
   }
   throw err;
 }
@@ -295,16 +299,17 @@ export async function insertCheckup(
     position: input.position,
   });
 
+  const notes = input.notes ?? null;
   let inserted: number;
   try {
     inserted = await tx.$executeRaw`
       INSERT INTO checkups (
         id, child_id, measured_at, weight_kg, length_height_cm,
-        position, origin, recorded_by_id, corrected_checkup_id
+        position, origin, recorded_by_id, corrected_checkup_id, notes
       ) VALUES (
         ${input.id}::uuid, ${childId}::uuid, ${measuredAt}, ${input.weightKg}, ${input.lengthHeightCm},
         ${input.position}::"Position", ${viewer}::"Origin", ${auth.userId}::uuid,
-        ${correctedCheckupId}::uuid
+        ${correctedCheckupId}::uuid, ${notes}
       )
       ON CONFLICT (id) DO NOTHING`;
   } catch (err) {
