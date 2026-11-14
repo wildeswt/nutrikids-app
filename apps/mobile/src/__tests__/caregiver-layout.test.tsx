@@ -57,6 +57,7 @@ describe('CaregiverTabsLayout', () => {
       'evolution',
       'add-checkup',
       'checkup-saved',
+      'feeding',
       'messages',
       'chat-detail',
       'profile',
