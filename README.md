@@ -24,7 +24,9 @@ nutrikids-app/
 ├── packages/
 │   ├── shared/              # Shared Zod schemas and TypeScript types
 │   └── who-growth/          # WHO Child Growth Standards (LMS calculation)
-├── docs/                    # Architecture and security documentation
+├── docs/                    # Architecture, API index and per-feature documentation
+├── scripts/
+│   └── backup/              # Encrypted PostgreSQL backup and restore (NK-44)
 ├── docker-compose.yml       # PostgreSQL 16 with persistent volume
 ├── .env.example             # Environment variable template
 ├── eslint.config.mjs        # Global ESLint configuration
@@ -32,6 +34,26 @@ nutrikids-app/
 ├── tsconfig.base.json       # Base strict TypeScript configuration
 └── package.json             # Root monorepo scripts
 ```
+
+## Architecture
+
+```mermaid
+flowchart LR
+  APP["apps/mobile\nExpo + React Native"] -->|"REST / JSON, bearer token"| API["apps/api\nExpress 5 + Prisma"]
+  API -->|"role nutrikids_app + RLS"| DB[("PostgreSQL 16")]
+  API -->|"push"| PUSH["Expo push service"]
+  PUSH --> APP
+  SH["packages/shared\nZod schemas"] -.-> APP
+  SH -.-> API
+  WG["packages/who-growth\nWHO LMS z-scores"] -.-> API
+```
+
+- The app is a **native mobile app** (React Native with Expo; Android and iOS, plus Expo's web target for development). It only talks to the API.
+- The API validates every request with the Zod schemas of `@nutrikids/shared`, checks role, permission, child link and informed consent, and runs every query inside `withUser(userId, ...)` so PostgreSQL Row Level Security applies as a second barrier.
+- The API computes the WHO indicators with `@nutrikids/who-growth` when a checkup is stored and raises alerts in the same transaction.
+- Three background jobs run inside the API process: overdue alerts, due reminders and execution of erasure requests.
+
+More diagrams (request flow, alert states, data model) and a list of what is not implemented yet: [docs/architecture.md](docs/architecture.md). Every endpoint: [docs/api.md](docs/api.md).
 
 ## Prerequisites
 
@@ -93,6 +115,85 @@ Configure `EXPO_PUBLIC_API_URL` (in `.env` or `apps/mobile/.env`) based on targe
 
 Opening the app displays **`API OK`** alongside **`Base de datos: ok`** by querying `GET /health`.
 
+## Running Each Module
+
+All commands run from the repository root. `pnpm install` and `pnpm db:up` come first (see Getting Started).
+
+| Module                                   | Run                                                              | Check                                                                              |
+| ---------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| PostgreSQL (Docker)                      | `pnpm db:up` / `pnpm db:down`                                    | `pnpm db:logs`; the container is `nutrikids-postgres` on port `5433`               |
+| Migrations and Prisma client             | `pnpm db:migrate` (dev), `pnpm db:migrate:deploy` (unattended)   | `pnpm db:studio`                                                                   |
+| WHO reference + dev seed                 | `pnpm db:seed`                                                   | See "Development Seed"                                                             |
+| API (`apps/api`)                         | `pnpm dev:api` (http://localhost:3000)                           | `GET /health` answers `{ "status": "ok", "db": "ok" }`                             |
+| Mobile (`apps/mobile`)                   | `pnpm dev:mobile` (Expo; `a` Android, `i` iOS, `w` web)          | Home shows the API status; see "Connecting Mobile App to API"                      |
+| `packages/shared`, `packages/who-growth` | Built automatically by the API scripts (`pnpm build` builds all) | `pnpm --filter @nutrikids/shared test`, `pnpm --filter @nutrikids/who-growth test` |
+| Backups                                  | `scripts/backup/backup.sh`, `scripts/backup/restore.sh`          | [docs/backups.md](docs/backups.md)                                                 |
+| All tests                                | `pnpm test` (API tests need the migrated database)               | `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test` is what CI runs    |
+
+Single API test file: `pnpm --filter api exec vitest run src/__tests__/<file>.test.ts`.
+
+## Environment Variables
+
+Copy `.env.example` to `.env` at the repository root (the API also reads `apps/api/.env`). Every variable has a default for local development unless marked required. Invalid values stop the API at startup.
+
+### Database
+
+| Variable                                                             | Default                      | Meaning                                                                                              |
+| -------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` | `nutrikids` x3, `5433`       | Used by `docker-compose.yml` only.                                                                   |
+| `DATABASE_URL`                                                       | local `nutrikids` database   | API runtime connection. Use the restricted role `nutrikids_app` so RLS applies (pooled URL on Neon). |
+| `DIRECT_URL`                                                         | falls back to `DATABASE_URL` | Owner connection for Prisma migrations, the seed, CI and backups.                                    |
+
+### API
+
+| Variable                                     | Default              | Meaning                                                                                                          |
+| -------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                                   | `development`        | `development`, `test` or `production`. Production makes the next two required and blocks the seed.               |
+| `PORT`                                       | `3000`               | HTTP port.                                                                                                       |
+| `CORS_ORIGIN`                                | `*`                  | `*` or a comma-separated list of allowed origins.                                                                |
+| `JWT_ACCESS_SECRET`                          | dev value            | Signing secret, at least 32 characters. **Required in production.**                                              |
+| `PROFESSIONAL_INVITE_CODES`                  | `NK-PROF-2026` (dev) | Comma-separated invitation codes to register as a professional. **Required in production.**                      |
+| `ACCESS_TOKEN_TTL_SECONDS`                   | `900`                | Access token lifetime.                                                                                           |
+| `REFRESH_TOKEN_TTL_DAYS`                     | `30`                 | Refresh token lifetime.                                                                                          |
+| `LOGIN_MAX_ATTEMPTS`, `LOGIN_WINDOW_MINUTES` | `5`, `15`            | Failed sign-in attempts allowed per IP + email in the window; then `429`.                                        |
+| `ALERT_REVIEW_DEADLINE_HOURS`                | `72`                 | Hours an alert may stay unreviewed before it is overdue.                                                         |
+| `ALERT_REVIEW_DEADLINE_SEVERE_HOURS`         | `24`                 | Same for severe alerts; must be at most the previous one.                                                        |
+| `OVERDUE_ALERTS_INTERVAL_MINUTES`            | `60`                 | How often the overdue-alerts and reminders jobs run.                                                             |
+| `OVERDUE_ALERT_RENOTIFY_HOURS`               | `24`                 | Minimum hours before notifying the same professional again about the same overdue alert.                         |
+| `REMINDER_LEAD_HOURS`                        | `24`                 | Hours before a reminder's date at which caregivers are notified ([docs/reminders.md](docs/reminders.md)).        |
+| `ERASURE_GRACE_DAYS`                         | `7`                  | Days between an erasure request and its execution, 0 to 14 ([docs/data-rights.md](docs/data-rights.md)).         |
+| `CUTOFF_*`, `OVERWEIGHT_CRITERION`           | WHO defaults         | Optional classification cutoffs (z-scores) and overweight criterion (`WFLH`, `BFA`, `both`); see `.env.example`. |
+
+### Mobile and backups
+
+| Variable                | Default                 | Meaning                                                                                           |
+| ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------- |
+| `EXPO_PUBLIC_API_URL`   | `http://localhost:3000` | API base URL seen from the app (see "Connecting Mobile App to API").                              |
+| `BACKUP_PASSPHRASE`     | none, **required**      | Passphrase that encrypts backups (`scripts/backup`). Keep it outside the backup directory.        |
+| `BACKUP_DIR`            | `./backups`             | Where `backup.sh` writes.                                                                         |
+| `BACKUP_RETENTION_DAYS` | `30`                    | Backups older than this are deleted.                                                              |
+| `DOCKER_CONTAINER`      | none                    | Run `pg_dump`/`psql` inside this container (`nutrikids-postgres` locally) instead of local tools. |
+| `RESTORE_CLEAN`         | unset                   | `1` makes `restore.sh` drop and recreate the target database first.                               |
+
+## Documentation
+
+| Document                                                       | Topic                                                                            |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [docs/architecture.md](docs/architecture.md)                   | Components, request flow, alert states, data model, what is not implemented yet. |
+| [docs/api.md](docs/api.md)                                     | Index of every endpoint with its guards.                                         |
+| [docs/auth.md](docs/auth.md)                                   | Registration, login, tokens, password recovery, rate limit.                      |
+| [docs/permissions.md](docs/permissions.md)                     | Roles, specialties, child link and permission matrix.                            |
+| [docs/alerts.md](docs/alerts.md)                               | Alert generation, state machine and review deadline.                             |
+| [docs/follow-ups.md](docs/follow-ups.md)                       | Clinical follow-ups and the next-checkup reminder.                               |
+| [docs/sync.md](docs/sync.md)                                   | Offline checkup sync endpoint.                                                   |
+| [docs/notifications.md](docs/notifications.md)                 | Internal notifications and push delivery.                                        |
+| [docs/reminders.md](docs/reminders.md)                         | Reminders and their scheduled dispatch.                                          |
+| [docs/feeding-and-education.md](docs/feeding-and-education.md) | Feeding logs and educational content.                                            |
+| [docs/data-rights.md](docs/data-rights.md)                     | Rectify, export and delete the child's data.                                     |
+| [docs/backups.md](docs/backups.md)                             | Encrypted backups, restore and retention policy.                                 |
+| [docs/i18n.md](docs/i18n.md)                                   | Spanish and Kichwa translations in the app.                                      |
+| [docs/informe-cambios.md](docs/informe-cambios.md)             | Changes the analysis report needs (Spanish), checked against this code.          |
+
 ## Root Scripts
 
 | Command                             | Description                                                                    |
@@ -126,7 +227,7 @@ Uses `DIRECT_URL` (database owner) and **aborts if `NODE_ENV=production`**.
 
 ## Continuous Integration (GitHub Actions CI)
 
-Every Pull Request targeting `main` automatically runs the validation pipeline in [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+Every Pull Request targeting `main` or `develop` (and every push to them) runs the validation pipeline in [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
 
 1. **Install:** `pnpm install --frozen-lockfile` (enforces `pnpm-lock.yaml` integrity).
 2. **Format:** `pnpm format:check` (Prettier).
@@ -206,31 +307,32 @@ The relational model originates from the project specification (Table 4). To mai
 - **PostgreSQL Database:** Plural `snake_case` tables (e.g. `checkups`, `children`), mapped with `@@map("checkups")`. Column names in `snake_case` (e.g. `weight_kg`), mapped with `@map("weight_kg")`.
 - **Specification Report:** Retains the original conceptual domain names in Spanish.
 
-### Equivalence Table (19 Specification Tables + 2 Infrastructure Tables = 21 Tables)
+### Equivalence Table (19 Specification Tables + 3 Infrastructure Tables = 22 Tables)
 
-| Report Entity (Table 4)         | Prisma Model (TS)    | PostgreSQL Table        | Purpose / Area                                                       |
-| ------------------------------- | -------------------- | ----------------------- | -------------------------------------------------------------------- |
-| `usuario`                       | `User`               | `users`                 | Shared identity supertype                                            |
-| `cuidador`                      | `Caregiver`          | `caregivers`            | User subtype with caregiver role (1:1 with `User`)                   |
-| `profesional`                   | `Professional`       | `professionals`         | User subtype with health professional role (1:1 with `User`)         |
-| `nino`                          | `Child`              | `children`              | Central pediatric patient entity (1 to 5 years old)                  |
-| `cuida`                         | `CaregiverChild`     | `caregiver_children`    | N:M link between child and caregiver (composite PK)                  |
-| `atiende`                       | `ProfessionalChild`  | `professional_children` | N:M clinical assignment between professional and child with validity |
-| `consentimiento`                | `Consent`            | `consents`              | Legal authorization and personal data processing consent             |
-| `control`                       | `Checkup`            | `checkups`              | Immutable anthropometric record (weight, height, position)           |
-| `referencia_lms`                | `LmsReference`       | `lms_references`        | WHO reference tables (L, M, S parameters by sex, age, length/height) |
-| `resultado_indicador`           | `IndicatorResult`    | `indicator_results`     | Persisted z-score, percentile, and nutritional classification        |
-| `registro_alimentacion`         | `FeedingLog`         | `feeding_logs`          | Feeding and meal frequency logs                                      |
-| `alerta`                        | `Alert`              | `alerts`                | Nutritional risk detection (wasting, stunting, overweight, etc.)     |
-| `alerta_historial`              | `AlertHistory`       | `alert_history`         | Immutable audit trail of alert state transitions                     |
-| `seguimiento`                   | `FollowUp`           | `follow_ups`            | Clinical action plans (observation, recommendation, referral)        |
-| `mensaje`                       | `Message`            | `messages`              | Bidirectional user communication                                     |
-| `recordatorio`                  | `Reminder`           | `reminders`             | Scheduling of upcoming checkups and activities                       |
-| `notificacion`                  | `Notification`       | `notifications`         | In-app notifications for alerts and events                           |
-| `contenido_educativo`           | `EducationalContent` | `educational_contents`  | Nutritional guidelines filtered by child age                         |
-| `auditoria`                     | `AuditLog`           | `audit_logs`            | Immutable system audit trail                                         |
-| _(Infrastructure NK-13, NK-14)_ | `RefreshToken`       | `refresh_tokens`        | Active sessions, rotation, and revocation of JWTs                    |
-| _(Infrastructure NK-36)_        | `PushDevice`         | `push_devices`          | Device push notification tokens                                      |
+| Report Entity (Table 4)         | Prisma Model (TS)    | PostgreSQL Table        | Purpose / Area                                                        |
+| ------------------------------- | -------------------- | ----------------------- | --------------------------------------------------------------------- |
+| `usuario`                       | `User`               | `users`                 | Shared identity supertype                                             |
+| `cuidador`                      | `Caregiver`          | `caregivers`            | User subtype with caregiver role (1:1 with `User`)                    |
+| `profesional`                   | `Professional`       | `professionals`         | User subtype with health professional role (1:1 with `User`)          |
+| `nino`                          | `Child`              | `children`              | Central pediatric patient entity (1 to 5 years old)                   |
+| `cuida`                         | `CaregiverChild`     | `caregiver_children`    | N:M link between child and caregiver (composite PK)                   |
+| `atiende`                       | `ProfessionalChild`  | `professional_children` | N:M clinical assignment between professional and child with validity  |
+| `consentimiento`                | `Consent`            | `consents`              | Legal authorization and personal data processing consent              |
+| `control`                       | `Checkup`            | `checkups`              | Immutable anthropometric record (weight, height, position)            |
+| `referencia_lms`                | `LmsReference`       | `lms_references`        | WHO reference tables (L, M, S parameters by sex, age, length/height)  |
+| `resultado_indicador`           | `IndicatorResult`    | `indicator_results`     | Persisted z-score, percentile, and nutritional classification         |
+| `registro_alimentacion`         | `FeedingLog`         | `feeding_logs`          | Feeding and meal frequency logs                                       |
+| `alerta`                        | `Alert`              | `alerts`                | Nutritional risk detection (wasting, stunting, overweight, etc.)      |
+| `alerta_historial`              | `AlertHistory`       | `alert_history`         | Immutable audit trail of alert state transitions                      |
+| `seguimiento`                   | `FollowUp`           | `follow_ups`            | Clinical action plans (observation, recommendation, referral)         |
+| `mensaje`                       | `Message`            | `messages`              | Bidirectional user communication                                      |
+| `recordatorio`                  | `Reminder`           | `reminders`             | Scheduling of upcoming checkups and activities                        |
+| `notificacion`                  | `Notification`       | `notifications`         | In-app notifications for alerts and events                            |
+| `contenido_educativo`           | `EducationalContent` | `educational_contents`  | Nutritional guidelines filtered by child age                          |
+| `auditoria`                     | `AuditLog`           | `audit_logs`            | Immutable system audit trail                                          |
+| _(Infrastructure NK-13, NK-14)_ | `RefreshToken`       | `refresh_tokens`        | Active sessions, rotation, and revocation of JWTs                     |
+| _(Infrastructure NK-36)_        | `PushDevice`         | `push_devices`          | Device push notification tokens                                       |
+| _(Infrastructure NK-41)_        | `ErasureRequest`     | `erasure_requests`      | Legal representative deletion requests with grace period and due date |
 
 ## Database Configuration and Neon
 
@@ -333,7 +435,7 @@ The navigation guard in `apps/mobile/src/app/_layout.tsx` inspects auth status a
 - **Login (`apps/mobile/src/app/(auth)/login.tsx`):**
   - Email and password fields with toggleable visibility.
   - Password recovery and account creation links.
-  - Second-step prompt for professionals with 2FA enabled (`requiresTwoFactor: true`), accepting 6-digit TOTP or recovery codes.
+  - Second-step prompt (6-digit TOTP or recovery code) shown when the API answers `requiresTwoFactor: true`. The API does not enable two-factor authentication yet (it always answers `false`), so the prompt is not reachable today.
 - **Registration (`apps/mobile/src/app/(auth)/register.tsx`):**
   - Profile selector chips (`Cuidador` and `Profesional de Salud`, supporting dual registration).
   - Demographics: first name, last name, email, optional phone.
