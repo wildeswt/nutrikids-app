@@ -3,6 +3,7 @@ import {
   AssignProfessionalInputSchema,
   CreateCheckupInputSchema,
   CreateChildInputSchema,
+  CreateFollowUpInputSchema,
   EndProfessionalAssignmentInputSchema,
   GrantConsentInputSchema,
   UpdateCaregiverLinkInputSchema,
@@ -11,6 +12,7 @@ import {
   type AssignProfessionalInput,
   type CreateCheckupInput,
   type CreateChildInput,
+  type CreateFollowUpInput,
   type EndProfessionalAssignmentInput,
   type GrantConsentInput,
   type UpdateCaregiverLinkInput,
@@ -42,6 +44,7 @@ import {
   revokeConsent,
   updateCaregiverLink,
 } from '../services/children.service.js';
+import { createFollowUp } from '../services/followUps.service.js';
 
 const ChildProfessionalParamsSchema = z.object({
   childId: UuidSchema,
@@ -372,6 +375,36 @@ export function createChildrenRouter(): Router {
       );
       res.locals.auditEntityId = checkup.id;
       res.status(created ? 201 : 200).json(checkup);
+    },
+  );
+
+  /**
+   * POST /children/:childId/follow-ups
+   * Registra un seguimiento clínico (RF-15): observación, recomendación, intervención o
+   * derivación, opcionalmente ligado a una alerta del niño. Si trae `nextCheckupDate` se crea
+   * el recordatorio del próximo control. Idempotente por `id` del cliente (reenvío → 200).
+   * Solo profesionales con `followup:create`, vínculo `atiende` vigente y consentimiento vigente.
+   */
+  router.post(
+    '/:childId/follow-ups',
+    requireRole('PROFESSIONAL'),
+    requirePermission('followup:create'),
+    requireLink('childId'),
+    requireActiveConsent('childId'),
+    validateRequest({ body: CreateFollowUpInputSchema }),
+    auditHealth({
+      action: 'CREATE',
+      entityType: 'follow_ups',
+      getEntityId: (_req, res) => res.locals.auditEntityId as string | undefined,
+    }),
+    async (req, res) => {
+      const { followUp, created } = await createFollowUp(
+        req.auth!,
+        req.params.childId as string,
+        req.body as CreateFollowUpInput,
+      );
+      res.locals.auditEntityId = followUp.id;
+      res.status(created ? 201 : 200).json(followUp);
     },
   );
 

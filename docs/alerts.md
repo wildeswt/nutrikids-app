@@ -63,4 +63,4 @@ All require `authenticate` + `alert:review` (professionals only: alerts carry z-
 | `GET /alerts/:alertId`          | Detail with `history`; delivers it if still `GENERATED`. `404` if hidden by RLS, `403` without an active professional link.                                                                                                                                                            |
 | `PATCH /alerts/:alertId/status` | Body `{ "status": "REVIEWED" \| "FOLLOW_UP_ESTABLISHED" }`. `200` with detail; `409` invalid transition / missing follow-up / concurrent change; `400` unknown status.                                                                                                                 |
 
-Creating follow-ups (`follow_ups`) is a separate endpoint (out of NK-30's scope).
+Follow-ups are created with `POST /children/:childId/follow-ups` (RF-15, see [follow-ups.md](follow-ups.md)); creating one does not change the alert status by itself.
