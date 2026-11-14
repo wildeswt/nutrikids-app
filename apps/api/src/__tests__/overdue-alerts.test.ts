@@ -167,6 +167,30 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
     return { childId, professionalId, alertId, checkupId };
   }
 
+  /**
+   * Lecturas de verificación con el cliente admin: el cliente de la app (`prisma`) corre sin
+   * usuario y, con el rol restringido `nutrikids_app` del CI, el RLS le oculta estas filas.
+   */
+  async function overdueNotifications(
+    alertId: string,
+    professionalId?: string,
+  ): Promise<{ id: string }[]> {
+    const { rows } = await admin.query<{ id: string }>(
+      `SELECT id FROM notifications
+       WHERE entity_id = $1 AND type = 'alert_overdue' AND ($2::uuid IS NULL OR user_id = $2::uuid)`,
+      [alertId, professionalId ?? null],
+    );
+    return rows;
+  }
+
+  async function alertStatus(alertId: string): Promise<string | undefined> {
+    const { rows } = await admin.query<{ status: string }>(
+      `SELECT status FROM alerts WHERE id = $1`,
+      [alertId],
+    );
+    return rows[0]?.status;
+  }
+
   describe('find_overdue_alert_recipients and processOverdueAlerts', () => {
     it('notifica una alerta grave vencida tras superar las 24 horas (plazo severo)', async () => {
       const sendPushSpy = vi
@@ -183,18 +207,11 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
       expect(result.processed).toBeGreaterThanOrEqual(1);
 
       // Verificar que se creó la notificación interna alert_overdue
-      const overdueNotifs = await prisma.notification.findMany({
-        where: {
-          entityId: alertId,
-          type: 'alert_overdue',
-          userId: professionalId,
-        },
-      });
+      const overdueNotifs = await overdueNotifications(alertId, professionalId);
       expect(overdueNotifs).toHaveLength(1);
 
       // Verificar que el estado de la alerta NO cambió (permanece PENDING_REVIEW)
-      const alertInDb = await prisma.alert.findUnique({ where: { id: alertId } });
-      expect(alertInDb?.status).toBe('PENDING_REVIEW');
+      expect(await alertStatus(alertId)).toBe('PENDING_REVIEW');
 
       // Esperar brevemente despacho push en segundo plano
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -210,13 +227,7 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
 
       await processOverdueAlerts();
 
-      const overdueNotifs = await prisma.notification.findMany({
-        where: {
-          entityId: alertId,
-          type: 'alert_overdue',
-          userId: professionalId,
-        },
-      });
+      const overdueNotifs = await overdueNotifications(alertId, professionalId);
       expect(overdueNotifs).toHaveLength(0);
     });
 
@@ -229,13 +240,7 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
 
       await processOverdueAlerts();
 
-      const overdueNotifs = await prisma.notification.findMany({
-        where: {
-          entityId: alertId,
-          type: 'alert_overdue',
-          userId: professionalId,
-        },
-      });
+      const overdueNotifs = await overdueNotifications(alertId, professionalId);
       expect(overdueNotifs).toHaveLength(1);
     });
 
@@ -248,13 +253,7 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
 
       await processOverdueAlerts();
 
-      const overdueNotifs = await prisma.notification.findMany({
-        where: {
-          entityId: alertId,
-          type: 'alert_overdue',
-          userId: professionalId,
-        },
-      });
+      const overdueNotifs = await overdueNotifications(alertId, professionalId);
       expect(overdueNotifs).toHaveLength(0);
     });
 
@@ -268,25 +267,13 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
       // Primera pasada: se procesa y notifica
       await processOverdueAlerts();
 
-      const notifsAfterFirst = await prisma.notification.findMany({
-        where: {
-          entityId: alertId,
-          type: 'alert_overdue',
-          userId: professionalId,
-        },
-      });
+      const notifsAfterFirst = await overdueNotifications(alertId, professionalId);
       expect(notifsAfterFirst).toHaveLength(1);
 
       // Segunda pasada inmediata: debe ser omitida por el filtro de 24 horas
       await processOverdueAlerts();
 
-      const notifsAfterSecond = await prisma.notification.findMany({
-        where: {
-          entityId: alertId,
-          type: 'alert_overdue',
-          userId: professionalId,
-        },
-      });
+      const notifsAfterSecond = await overdueNotifications(alertId, professionalId);
       expect(notifsAfterSecond).toHaveLength(1);
     });
 
@@ -306,13 +293,7 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
       // Ejecutar proceso: dado que 26h > 24h, debe re-notificar
       await processOverdueAlerts();
 
-      const overdueNotifs = await prisma.notification.findMany({
-        where: {
-          entityId: alertId,
-          type: 'alert_overdue',
-          userId: professionalId,
-        },
-      });
+      const overdueNotifs = await overdueNotifications(alertId, professionalId);
       expect(overdueNotifs).toHaveLength(2);
     });
 
@@ -326,13 +307,7 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
 
       await processOverdueAlerts();
 
-      const overdueNotifs = await prisma.notification.findMany({
-        where: {
-          entityId: alertId,
-          type: 'alert_overdue',
-          userId: professionalId,
-        },
-      });
+      const overdueNotifs = await overdueNotifications(alertId, professionalId);
       expect(overdueNotifs).toHaveLength(0);
     });
 
@@ -345,9 +320,7 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
 
       await processOverdueAlerts();
 
-      const notifsReviewed = await prisma.notification.findMany({
-        where: { entityId: reviewed.alertId, type: 'alert_overdue' },
-      });
+      const notifsReviewed = await overdueNotifications(reviewed.alertId);
 
       expect(notifsReviewed).toHaveLength(0);
     });
@@ -361,13 +334,7 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
 
       await processOverdueAlerts();
 
-      const overdueNotifs = await prisma.notification.findMany({
-        where: {
-          entityId: alertId,
-          type: 'alert_overdue',
-          userId: professionalId,
-        },
-      });
+      const overdueNotifs = await overdueNotifications(alertId, professionalId);
       expect(overdueNotifs).toHaveLength(0);
     });
   });
