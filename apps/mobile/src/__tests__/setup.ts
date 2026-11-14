@@ -70,4 +70,76 @@ vi.mock('expo-file-system', () => {
   return { File, Paths: { document: { uri: 'file:///documents' } }, __files: files };
 });
 
+// expo-sqlite es un módulo nativo; se provee un mock mínimo en memoria para Node/Vitest.
+vi.mock('expo-sqlite', () => ({
+  openDatabaseAsync: vi.fn(async (databaseName: string) => {
+    const database = {
+      databasePath: databaseName,
+      options: {},
+      execAsync: vi.fn(async () => {}),
+      runAsync: vi.fn(async () => ({ lastInsertRowId: 0, changes: 0 })),
+      getFirstAsync: vi.fn(async () => ({ count: 0 })),
+      getAllAsync: vi.fn(async () => []),
+      closeAsync: vi.fn(async () => {}),
+      withTransactionAsync: vi.fn(async (task: () => Promise<void>) => task()),
+      withExclusiveTransactionAsync: vi.fn(async (task: (txn: unknown) => Promise<void>) =>
+        task(database),
+      ),
+    };
+    return database;
+  }),
+}));
+
+// @react-native-community/netinfo es un módulo nativo; se mockea en Node/Vitest con estado configurable.
+vi.mock('@react-native-community/netinfo', () => {
+  const listeners = new Set<(state: Record<string, unknown>) => void>();
+  const defaultState = {
+    type: 'wifi',
+    isConnected: true,
+    isInternetReachable: true,
+    details: { isConnectionExpensive: false },
+  };
+  const fetch = vi.fn(async () => defaultState);
+  const refresh = vi.fn(async () => defaultState);
+  const configure = vi.fn();
+  const addEventListener = vi.fn((listener: (state: Record<string, unknown>) => void) => {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  });
+  const useNetInfo = vi.fn(() => defaultState);
+  return {
+    default: {
+      configure,
+      fetch,
+      refresh,
+      addEventListener,
+      useNetInfo,
+    },
+    configure,
+    fetch,
+    refresh,
+    addEventListener,
+    useNetInfo,
+    NetInfoStateType: {
+      unknown: 'unknown',
+      none: 'none',
+      cellular: 'cellular',
+      wifi: 'wifi',
+      bluetooth: 'bluetooth',
+      ethernet: 'ethernet',
+      wimax: 'wimax',
+      vpn: 'vpn',
+      other: 'other',
+    },
+    __listeners: listeners,
+    __emit: (state: Record<string, unknown>) => {
+      for (const listener of listeners) {
+        listener(state);
+      }
+    },
+  };
+});
+
 await import('../i18n/index.js');
