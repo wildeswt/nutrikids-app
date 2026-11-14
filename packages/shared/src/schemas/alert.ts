@@ -80,6 +80,8 @@ export const ListAlertsQuerySchema = z.object({
 export const AlertHistoryEntrySchema = z.object({
   status: AlertStatusSchema,
   changedById: UuidSchema,
+  /** Nombre de quien hizo el cambio, para mostrar el historial sin otra consulta. */
+  changedByName: z.string(),
   changedAt: IsoDateTimeSchema,
 });
 

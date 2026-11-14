@@ -1,3 +1,4 @@
+import { UuidSchema } from '@nutrikids/shared';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -154,4 +155,17 @@ export async function unregisterPushNotifications(): Promise<void> {
   } finally {
     await clearStoredPushToken();
   }
+}
+
+/**
+ * Alert a tapped push notification refers to. The API sends `{ alertId, notificationId, type }` in
+ * the push `data`; anything else (or a malformed id) returns `null` and the tap is ignored.
+ */
+export function alertIdFromPushResponse(
+  response: { notification?: { request?: { content?: { data?: unknown } } } } | null | undefined,
+): string | null {
+  const data = response?.notification?.request?.content?.data;
+  if (!data || typeof data !== 'object') return null;
+  const parsed = UuidSchema.safeParse((data as Record<string, unknown>)['alertId']);
+  return parsed.success ? parsed.data : null;
 }

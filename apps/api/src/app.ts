@@ -12,6 +12,7 @@ import { createDataRightsRouter } from './routes/dataRights.routes.js';
 import { createEducationRouter } from './routes/education.routes.js';
 import { createGrowthMessageRouter } from './routes/growthMessage.routes.js';
 import { healthRouter } from './routes/health.routes.js';
+import { createMessagesRouter, createReferralsRouter } from './routes/messages.routes.js';
 import { createNotificationsRouter } from './routes/notifications.routes.js';
 import { referenceRouter } from './routes/reference.routes.js';
 import { createRemindersRouter } from './routes/reminders.routes.js';
@@ -41,6 +42,8 @@ export function createApp(): Express {
   app.use('/sync', createSyncRouter());
   app.use('/notifications', createNotificationsRouter());
   app.use('/reminders', createRemindersRouter());
+  app.use('/messages', createMessagesRouter());
+  app.use('/referrals', createReferralsRouter());
 
   app.use(notFoundHandler);
   app.use(errorHandler);

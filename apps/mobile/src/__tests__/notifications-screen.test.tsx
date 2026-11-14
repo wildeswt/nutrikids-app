@@ -169,4 +169,88 @@ describe('NotificationsScreen Component (NK-36)', () => {
     expect(html).toContain(i18n.t('common:notifications.types.alert_new'));
     expect(html).toContain(i18n.t('common:notifications.types.alert_overdue'));
   });
+
+  describe('opening an alert from a notification (NK-33)', () => {
+    const base = {
+      userId: 'user-1',
+      sentAt: '2026-11-14T08:00:00.000Z',
+    };
+    const alertId = '22222222-2222-4222-8222-222222222222';
+
+    function renderItemOf(item: unknown) {
+      let tree: unknown = null;
+      function Capture() {
+        tree = NotificationsScreen();
+        return null;
+      }
+      renderToString(React.createElement(Capture));
+      const list = findByProp(tree, 'renderItem');
+      const renderItem = list?.props?.['renderItem'] as (arg: { item: unknown }) => {
+        props: { onPress: () => void };
+      };
+      return renderItem({ item });
+    }
+
+    function findByProp(node: unknown, prop: string): ElementWithProps | null {
+      if (!node || typeof node !== 'object') return null;
+      const element = node as ElementWithProps;
+      if (element.props?.[prop] !== undefined) return element;
+      const children = element.props?.children;
+      for (const child of Array.isArray(children) ? children : [children]) {
+        const found = findByProp(child, prop);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    it('marks it as read and opens the alert detail with the alert id', () => {
+      mocks.hookResult = { ...mocks.hookResult, loading: false, error: null, notifications: [] };
+
+      renderItemOf({
+        ...base,
+        id: 'notif-1',
+        type: 'alert_new',
+        entityType: 'alert',
+        entityId: alertId,
+        readAt: null,
+      }).props.onPress();
+
+      expect(mocks.hookResult.markAsRead).toHaveBeenCalledWith('notif-1');
+      expect(mocks.push).toHaveBeenCalledWith({
+        pathname: '/(professional)/alert-detail',
+        params: { alertId },
+      });
+    });
+
+    it('opens the alert even when the notification was already read', () => {
+      mocks.hookResult = { ...mocks.hookResult, loading: false, error: null, notifications: [] };
+
+      renderItemOf({
+        ...base,
+        id: 'notif-2',
+        type: 'alert_overdue',
+        entityType: 'alert',
+        entityId: alertId,
+        readAt: '2026-11-14T09:00:00.000Z',
+      }).props.onPress();
+
+      expect(mocks.hookResult.markAsRead).not.toHaveBeenCalled();
+      expect(mocks.push).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not navigate for notifications about something else', () => {
+      mocks.hookResult = { ...mocks.hookResult, loading: false, error: null, notifications: [] };
+
+      renderItemOf({
+        ...base,
+        id: 'notif-3',
+        type: 'reminder_due',
+        entityType: 'reminder',
+        entityId: alertId,
+        readAt: null,
+      }).props.onPress();
+
+      expect(mocks.push).not.toHaveBeenCalled();
+    });
+  });
 });

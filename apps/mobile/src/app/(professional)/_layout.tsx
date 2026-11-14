@@ -89,7 +89,18 @@ export default function ProfessionalDrawerLayout() {
         name="alert-detail"
         options={{
           title: t('drawer.alertDetailTitle'),
+          // The screen draws its own back button and title.
+          headerShown: false,
           // Reachable only by tapping an alert card, so it has no drawer entry.
+          drawerItemStyle: { display: 'none' },
+        }}
+      />
+      <Drawer.Screen
+        name="follow-up"
+        options={{
+          title: t('drawer.followUpTitle'),
+          headerShown: false,
+          // Reachable only from the alert detail.
           drawerItemStyle: { display: 'none' },
         }}
       />

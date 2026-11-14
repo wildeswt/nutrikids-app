@@ -28,6 +28,7 @@ export const AuditEntityTypeSchema = z.enum([
   'follow_ups',
   'alerts',
   'consents',
+  'messages',
   'erasure_requests',
 ]);
 
