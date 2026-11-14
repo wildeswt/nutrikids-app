@@ -48,7 +48,7 @@ export default function ConsentScreen() {
         await grant(CURRENT_CONSENT_VERSION);
         Alert.alert(
           'Consentimiento registrado',
-          `Has otorgado el consentimiento informado (versión ${CURRENT_CONSENT_VERSION}) exitosamente.`,
+          'Has otorgado el consentimiento informado exitosamente.',
           [{ text: 'Aceptar', onPress: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE) }],
         );
       } catch (err) {
@@ -58,20 +58,8 @@ export default function ConsentScreen() {
         );
       }
     } else {
-      // Flujo pre-registro: Se acepta el consentimiento antes de ingresar los datos del niño
-      Alert.alert(
-        'Consentimiento aceptado',
-        `Has aceptado el consentimiento informado (versión ${CURRENT_CONSENT_VERSION}). Ahora puedes continuar con el registro del niño.`,
-        [
-          {
-            text: 'Continuar al registro',
-            onPress: () => {
-              // Navega a la pantalla de alta de datos del niño tras aceptar consentimiento
-              router.replace(APP_ROUTES.CAREGIVER.ADD_CHILD as never);
-            },
-          },
-        ],
-      );
+      // Flujo pre-registro: Navega directamente a la pantalla de alta de datos del niño sin modal intermedio
+      router.replace(APP_ROUTES.CAREGIVER.ADD_CHILD as never);
     }
   };
 

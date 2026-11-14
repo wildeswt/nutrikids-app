@@ -164,7 +164,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       expect(html).toContain('Ahora no');
     });
 
-    it('accepting consent without childId displays alert and clicking "Continuar al registro" redirects to ADD_CHILD', async () => {
+    it('accepting consent without childId navigates directly to ADD_CHILD without modal', async () => {
       mocks.searchParams = { mode: 'register' };
       const alertSpy = vi.spyOn(Alert, 'alert');
 
@@ -204,18 +204,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       const onPress = acceptButton?.props?.['onPress'] as (() => void | Promise<void>) | undefined;
       await onPress?.();
 
-      expect(alertSpy).toHaveBeenCalledWith(
-        'Consentimiento aceptado',
-        expect.stringContaining('v1'),
-        expect.any(Array),
-      );
-
-      const buttons = alertSpy.mock.calls[0]?.[2] as Array<{ text: string; onPress?: () => void }>;
-      expect(buttons).toBeDefined();
-      const continueButton = buttons.find((b) => b.text === 'Continuar al registro');
-      expect(continueButton).toBeDefined();
-
-      continueButton?.onPress?.();
+      expect(alertSpy).not.toHaveBeenCalled();
       expect(mocks.replace).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.ADD_CHILD);
     });
 
