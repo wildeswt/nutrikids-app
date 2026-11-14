@@ -1,7 +1,10 @@
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { APP_ROUTES } from '../constants/routes.js';
 import type { ChildrenHookState } from '../hooks/useChildren.js';
+import * as childrenApi from '../lib/children-api.js';
+import { CURRENT_CONSENT_VERSION } from '../lib/consent-api.js';
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
@@ -44,6 +47,7 @@ vi.mock('expo-router', () => ({
     replace: mocks.replace,
     back: mocks.back,
   }),
+  useFocusEffect: vi.fn(),
 }));
 
 vi.mock('@expo/vector-icons', () => ({
@@ -81,7 +85,7 @@ vi.mock('../hooks/useChildren.js', () => ({
   useChildren: () => mocks.childrenHookState,
 }));
 
-import AddChildScreen from '../app/(caregiver)/add-child.js';
+import AddChildScreen, { type AddChildScreenProps } from '../app/(caregiver)/add-child.js';
 import CaregiverHomeScreen from '../app/(caregiver)/index.js';
 
 describe('Caregiver Screens (NK-21)', () => {
@@ -95,7 +99,7 @@ describe('Caregiver Screens (NK-21)', () => {
       expect(html).toContain('¡Hola, Andrea!');
     });
 
-    it('renders child card with clear language status and no z-scores', () => {
+    it('renders child card with clear language status, dashed add card, and no z-scores', () => {
       mocks.childrenHookState = {
         ...mocks.childrenHookState,
         status: 'ready',
@@ -118,6 +122,9 @@ describe('Caregiver Screens (NK-21)', () => {
 
       // Status in clear language (text + icon)
       expect(html).toContain('Todo en orden');
+
+      // Dashed add child card and privacy notice
+      expect(html).toContain('Solo ves a los niños vinculados a tu cuenta');
 
       // Acceptance criterion: No technical WHO z-scores shown to caregiver
       expect(html).not.toContain('zPE');
@@ -154,7 +161,53 @@ describe('Caregiver Screens (NK-21)', () => {
       expect(html).toContain('Niña');
       expect(html).toContain('Tu parentesco con el niño/a');
       expect(html).toContain('representante legal');
-      expect(html).toContain('Guardar y continuar al consentimiento');
+      expect(html).toContain('Guardar niño');
+    });
+
+    it('submits form with valid child data, calls createChild and navigates to Home', async () => {
+      const mockChild = {
+        id: '11111111-1111-4111-8111-111111111111',
+        firstName: 'Mateo',
+        lastName: 'Gómez',
+        birthDate: '2023-06-15',
+        sex: 'MALE' as const,
+      };
+      vi.spyOn(childrenApi, 'createChild').mockResolvedValueOnce(mockChild);
+
+      let submitForm: (() => Promise<void>) | undefined;
+
+      renderToString(
+        React.createElement<AddChildScreenProps>(AddChildScreen, {
+          initialValues: {
+            firstName: 'Mateo',
+            lastName: 'Gómez',
+            birthDay: '15',
+            birthMonth: '06',
+            birthYear: '2023',
+            sex: 'MALE',
+            relationship: 'Padre',
+            isLegalRepresentative: true,
+          },
+          onSubmitForTest: (fn: () => Promise<void>) => {
+            submitForm = fn;
+          },
+        }),
+      );
+
+      expect(submitForm).toBeDefined();
+      await submitForm!();
+
+      expect(childrenApi.createChild).toHaveBeenCalledWith({
+        firstName: 'Mateo',
+        lastName: 'Gómez',
+        birthDate: '2023-06-15',
+        sex: 'MALE',
+        relationship: 'Padre',
+        isLegalRepresentative: true,
+        consentTextVersion: CURRENT_CONSENT_VERSION,
+      });
+
+      expect(mocks.replace).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.HOME);
     });
   });
 });
