@@ -35,7 +35,7 @@ One JSON document: `exportedAt`, `child`, `caregivers`, `professionals`, `consen
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Child's first and last name                                | Replaced by `Anonimizado`.                                                            |
 | Birth date                                                 | Reduced to the first day of the month (age statistics stay possible).                 |
-| Feeding log and reminders                                  | Deleted.                                                                              |
+| Feeding log, reminders and messages                        | Deleted ([messages.md](messages.md)).                                                 |
 | Free text of follow-ups (can name the child or the family) | Replaced by `[eliminado por solicitud del representante]`.                            |
 | Consent                                                    | Revoked.                                                                              |
 | Links with professionals                                   | Ended today.                                                                          |
