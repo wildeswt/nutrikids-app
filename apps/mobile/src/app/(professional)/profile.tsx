@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LanguageSelector } from '../../components/LanguageSelector.js';
+import { PALETTE } from '../../constants/colors.js';
 import { useAuth } from '../../context/auth-context.js';
 
 export default function ProfessionalProfileScreen() {
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   logoutButtonText: {
-    color: '#DC2626',
+    color: PALETTE.feedback.error,
     fontSize: 14,
     fontWeight: '700',
   },

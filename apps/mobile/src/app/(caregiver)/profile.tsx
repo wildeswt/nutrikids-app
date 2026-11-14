@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ConsentChildItem } from '../../components/ConsentChildItem.js';
 import { LanguageSelector } from '../../components/LanguageSelector.js';
+import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
 import { fetchCaregiverChildren } from '../../lib/consent-api.js';
@@ -213,7 +214,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: PALETTE.input.background,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   emptyBox: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: PALETTE.input.background,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -260,7 +261,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   logoutButtonText: {
-    color: '#DC2626',
+    color: PALETTE.feedback.error,
     fontSize: 14,
     fontWeight: '700',
   },

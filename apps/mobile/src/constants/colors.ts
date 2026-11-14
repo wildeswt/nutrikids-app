@@ -1,12 +1,15 @@
 /**
- * NutriKids Design System - Color Palette
+ * Sistema de diseno NutriKids - Paleta de colores (Figma)
  *
- * Primary (buttons, main elements): #2D5F5A
- * Secondary (accents, dividers, badges): #F77E4D
- * Background: #FDFDFD
- * Text:
- *   - Titles / Headings: #575757
- *   - Body / Rest: #4D4D4D
+ * Primario (botones y elementos principales): #2D5F5A
+ * Secundario (acentos, divisores, insignias): #F77E4D
+ * Fondo / Superficie: #FBFBFB
+ * Entrada (fondo / placeholder): #F9F9F9 / #969696
+ * Bordes (entrada / casilla): #E5E5E5 / #D4D4D8
+ * Error: #E14100
+ * Texto:
+ *   - Titulos / Encabezados: #575757
+ *   - Cuerpo / Resto: #4D4D4D
  */
 export const PALETTE = {
   primary: '#2D5F5A',
@@ -17,8 +20,8 @@ export const PALETTE = {
   secondaryPressed: '#e06a39',
   secondaryLight: '#FEF2EC',
 
-  background: '#FDFDFD',
-  surface: '#FFFFFF',
+  background: '#FBFBFB',
+  surface: '#FBFBFB',
 
   text: {
     title: '#575757',
@@ -31,15 +34,17 @@ export const PALETTE = {
     default: '#E5E7EB',
     focus: '#2D5F5A',
     subtle: '#F3F4F6',
+    input: '#E5E5E5',
+    checkbox: '#D4D4D8',
   },
 
   input: {
-    background: '#F9FAFB',
-    placeholder: '#9CA3AF',
+    background: '#F9F9F9',
+    placeholder: '#969696',
   },
 
   feedback: {
-    error: '#DC2626',
+    error: '#E14100',
     errorBg: '#FEE2E2',
     errorBorder: '#FCA5A5',
     success: '#16A34A',

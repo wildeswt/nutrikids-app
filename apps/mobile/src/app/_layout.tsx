@@ -1,4 +1,7 @@
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import { useFonts } from 'expo-font';
 import { Redirect, Stack, useRouter, useSegments } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
@@ -49,16 +52,32 @@ export function NavigationGuard() {
   );
 }
 
+void SplashScreen.preventAutoHideAsync().catch(() => {});
+
 export default function RootLayout() {
   // Wait for the language saved in the app (Español / Kichwa) before showing any screen, so a
   // user who picked Kichwa on a Spanish phone never sees a flash of Spanish.
   const [isLanguageReady, setIsLanguageReady] = useState(false);
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+  });
 
   useEffect(() => {
     void restoreLanguagePreference().finally(() => setIsLanguageReady(true));
   }, []);
 
-  if (!isLanguageReady) {
+  const isAppReady = isLanguageReady && (fontsLoaded || Boolean(fontError));
+
+  useEffect(() => {
+    if (isAppReady) {
+      // Si la carga de fuentes falla, continua con la fuente del sistema sin bloquear la app.
+      void SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isAppReady]);
+
+  if (!isAppReady) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#16A34A" />

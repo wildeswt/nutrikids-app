@@ -406,9 +406,9 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   chip: {
-    backgroundColor: '#F7F7F7',
+    backgroundColor: PALETTE.input.background,
     borderWidth: 1.5,
-    borderColor: '#D4D4D8',
+    borderColor: PALETTE.border.checkbox,
     borderRadius: 24,
     paddingHorizontal: 18,
     paddingVertical: 9,

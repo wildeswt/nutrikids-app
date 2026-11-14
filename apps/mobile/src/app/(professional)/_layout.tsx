@@ -4,6 +4,7 @@ import { Drawer, DrawerContentScrollView, DrawerItemList } from 'expo-router/dra
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { PALETTE } from '../../constants/colors.js';
 import { useAuth } from '../../context/auth-context.js';
 
 type DrawerContentProps = Parameters<
@@ -52,7 +53,7 @@ export function CustomDrawerContent(props: DrawerContentProps) {
           style={({ pressed }) => [styles.logoutButton, pressed && styles.buttonPressed]}
           onPress={() => void signOut()}
         >
-          <Ionicons name="log-out-outline" size={18} color="#DC2626" />
+          <Ionicons name="log-out-outline" size={18} color={PALETTE.feedback.error} />
           <Text style={styles.logoutButtonText}>{t('drawer.logout')}</Text>
         </Pressable>
       </View>
@@ -244,7 +245,7 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#DC2626',
+    color: PALETTE.feedback.error,
   },
   buttonPressed: {
     opacity: 0.85,
