@@ -10,6 +10,7 @@ export const PERMISSIONS = [
   'alert:review',
   'feedinglog:read',
   'followup:create',
+  'audit:read',
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -38,9 +39,9 @@ export const PERMISSIONS_BY_ACTOR: Readonly<{
   pediatrics: readonly Permission[];
 }> = {
   CAREGIVER: READ_ALL,
-  nursing: [...READ_ALL, 'alert:review'],
-  nutrition: [...READ_ALL, 'alert:review', 'followup:create'],
-  pediatrics: [...READ_ALL, 'alert:review', 'followup:create'],
+  nursing: [...READ_ALL, 'alert:review', 'audit:read'],
+  nutrition: [...READ_ALL, 'alert:review', 'followup:create', 'audit:read'],
+  pediatrics: [...READ_ALL, 'alert:review', 'followup:create', 'audit:read'],
 };
 
 /** Effective permissions: union of caregiver role (if held) and specialty permissions. */

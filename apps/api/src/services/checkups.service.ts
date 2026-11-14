@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import type {
   CaregiverCheckupResponse,
+  CaregiverIndicatorResult,
   CheckupResponse,
   CorrectCheckupInput,
   CreateCheckupInput,
@@ -14,13 +15,16 @@ import {
   ageInMonths,
   getLmsParameters,
   percentileFromZScore,
+  type Cutoffs,
   type MeasurementPosition,
   type WhoIndicator,
 } from '@nutrikids/who-growth';
+import { env } from '../config/env.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { HttpError } from '../lib/http-error.js';
 import type { AuthContext } from '../lib/permissions.js';
 import { withUser } from '../lib/prisma.js';
+import { createAlertsForResults } from './alerts.service.js';
 import { assertActiveConsent, assertChildAgeInOmsRange } from './children.service.js';
 
 /** Viewer profile under which checkup is queried or recorded: determines `origin` and response shape. */
@@ -35,11 +39,34 @@ export interface CheckupWriteResult {
 }
 
 type CheckupRow = Prisma.CheckupGetPayload<{ include: { results: true } }>;
+type IndicatorResultRow = CheckupRow['results'][number];
 
 const round2 = (v: number): number => Math.round(v * 100) / 100;
 
 function mapPosition(position: string): MeasurementPosition {
   return position === 'RECUMBENT' ? 'recumbent' : 'standing';
+}
+
+function formatIndicatorResult(r: IndicatorResultRow): IndicatorResult {
+  return {
+    id: r.id,
+    checkupId: r.checkupId,
+    indicator: r.indicator,
+    zScore: Number(r.zScore),
+    percentile: Number(r.percentile),
+    classification: r.classification as IndicatorResult['classification'],
+    referenceVersion: r.referenceVersion,
+  };
+}
+
+/** Caregiver view of a result: no z-score, percentile, or technical classification (RF-14, NK-35). */
+function formatCaregiverIndicatorResult(r: IndicatorResultRow): CaregiverIndicatorResult {
+  return {
+    id: r.id,
+    checkupId: r.checkupId,
+    indicator: r.indicator,
+    referenceVersion: r.referenceVersion,
+  };
 }
 
 function formatCheckupResponse(
@@ -68,15 +95,7 @@ function formatCheckupResponse(
 
   return {
     ...base,
-    results: row.results.map((r) => ({
-      id: r.id,
-      checkupId: r.checkupId,
-      indicator: r.indicator,
-      zScore: Number(r.zScore),
-      percentile: Number(r.percentile),
-      classification: r.classification as IndicatorResult['classification'],
-      referenceVersion: r.referenceVersion,
-    })),
+    results: row.results.map(formatIndicatorResult),
   };
 }
 
@@ -85,15 +104,19 @@ function formatCheckupResponse(
  * - WFA, LHFA, and BFA use completed age in months at checkup date.
  * - LHFA is adjusted +/-0.7 cm if position does not match table reference (<24 months recumbent).
  * - WFLH uses the table matching measured position; rounded to 0.5 cm.
+ * - Classification cutoffs come from configuration (`env.CLASSIFICATION_CUTOFFS`, RF-08).
  */
-export function computeIndicatorResults(params: {
-  sex: 'FEMALE' | 'MALE';
-  birthDate: Date;
-  measuredAt: Date;
-  weightKg: number;
-  lengthHeightCm: number;
-  position: string;
-}) {
+export function computeIndicatorResults(
+  params: {
+    sex: 'FEMALE' | 'MALE';
+    birthDate: Date;
+    measuredAt: Date;
+    weightKg: number;
+    lengthHeightCm: number;
+    position: string;
+  },
+  cutoffs: Readonly<Cutoffs> = env.CLASSIFICATION_CUTOFFS,
+) {
   const { sex, birthDate, measuredAt, weightKg, lengthHeightCm } = params;
   const position = mapPosition(params.position);
 
@@ -117,10 +140,10 @@ export function computeIndicatorResults(params: {
     } as const;
 
     const classOf = {
-      WEIGHT_FOR_AGE: classify({ zWFA: zs.WEIGHT_FOR_AGE }).primary,
-      LENGTH_HEIGHT_FOR_AGE: classify({ zLHFA: zs.LENGTH_HEIGHT_FOR_AGE }).primary,
-      WEIGHT_FOR_LENGTH_HEIGHT: classify({ zWFLH: zs.WEIGHT_FOR_LENGTH_HEIGHT }).primary,
-      BMI_FOR_AGE: classify({ zBFA: zs.BMI_FOR_AGE }).primary,
+      WEIGHT_FOR_AGE: classify({ zWFA: zs.WEIGHT_FOR_AGE }, cutoffs).primary,
+      LENGTH_HEIGHT_FOR_AGE: classify({ zLHFA: zs.LENGTH_HEIGHT_FOR_AGE }, cutoffs).primary,
+      WEIGHT_FOR_LENGTH_HEIGHT: classify({ zWFLH: zs.WEIGHT_FOR_LENGTH_HEIGHT }, cutoffs).primary,
+      BMI_FOR_AGE: classify({ zBFA: zs.BMI_FOR_AGE }, cutoffs).primary,
     } as const;
 
     return (Object.keys(zs) as (keyof typeof zs)[]).map((indicator) => ({
@@ -223,6 +246,8 @@ async function insertCheckup(
   }
   assertChildAgeInOmsRange(child.birthDate, measuredAt);
 
+  // The server is the source of truth (RF-07): any `results` computed by the phone are ignored
+  // and the 4 indicators are always recomputed here, then stored in this same transaction.
   const results = computeIndicatorResults({
     sex: child.sex,
     birthDate: child.birthDate,
@@ -250,6 +275,8 @@ async function insertCheckup(
       },
       include: { results: true },
     });
+    // RF-11: each result with a risk condition raises an alert in this same transaction.
+    await createAlertsForResults(tx, created.results, auth.userId);
     return { checkup: formatCheckupResponse(created, true, viewer), created: true };
   } catch (err) {
     return mapCheckupDbError(err);
@@ -280,6 +307,24 @@ export async function getCheckupChildId(auth: AuthContext, checkupId: string): P
     throw HttpError.notFound('Control no encontrado');
   }
   return checkup.childId;
+}
+
+/**
+ * Indicator results of a checkup (`GET /checkups/:checkupId/results`). Linked professionals
+ * receive z-score, percentile, and classification; caregivers only the indicator and
+ * reference version (RF-14, NK-35). The route must verify the link (`requireLink`).
+ */
+export async function getCheckupResults(
+  auth: AuthContext,
+  viewer: CheckupViewer,
+  checkupId: string,
+): Promise<IndicatorResult[] | CaregiverIndicatorResult[]> {
+  const rows = await withUser(auth.userId, (tx) =>
+    tx.indicatorResult.findMany({ where: { checkupId }, orderBy: { indicator: 'asc' } }),
+  );
+  return viewer === 'PROFESSIONAL'
+    ? rows.map(formatIndicatorResult)
+    : rows.map(formatCaregiverIndicatorResult);
 }
 
 /**

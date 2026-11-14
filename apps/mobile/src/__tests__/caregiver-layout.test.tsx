@@ -21,9 +21,11 @@ interface TabScreenElement {
   props: {
     name: string;
     options?: {
+      href?: string | null;
       title?: string;
       headerTitle?: string;
       tabBarLabel?: () => unknown;
+      tabBarButton?: () => unknown;
       tabBarIcon?: (props: { color: string; size: number; focused: boolean }) => React.ReactNode;
     };
   };
@@ -35,10 +37,16 @@ describe('CaregiverTabsLayout', () => {
     return React.Children.toArray(layout.props.children) as TabScreenElement[];
   }
 
-  it('configures the required tabs and auxiliary screens in order', () => {
+  it('configures exactly the 5 required visible tabs in order and hidden auxiliary screens', () => {
     const screens = getTabScreens();
-    const names = screens.map((s) => s.props.name);
-    expect(names).toEqual([
+    const visibleScreens = screens.filter(
+      (s) => s.props.options?.href !== null && s.props.options?.tabBarButton === undefined,
+    );
+    const visibleNames = visibleScreens.map((s) => s.props.name);
+    expect(visibleNames).toEqual(['index', 'evolution', 'add-checkup', 'messages', 'profile']);
+
+    const allNames = screens.map((s) => s.props.name);
+    expect(allNames).toEqual([
       'index',
       'evolution',
       'add-checkup',
@@ -46,7 +54,12 @@ describe('CaregiverTabsLayout', () => {
       'messages',
       'chat-detail',
       'profile',
+      'consent',
     ]);
+
+    const consentScreen = screens.find((s) => s.props.name === 'consent');
+    expect(consentScreen).toBeDefined();
+    expect(consentScreen?.props.options?.href).toBeNull();
   });
 
   it('assigns correct tab titles for caregiver navigation', () => {

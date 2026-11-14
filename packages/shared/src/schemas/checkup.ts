@@ -69,6 +69,21 @@ function validateOutlierConfirmation(
 
 // ---------- Entrada ----------
 
+/**
+ * Resultados que el celular pudo haber calculado sin conexión. Se aceptan para no rechazar
+ * el envío, pero el servidor los **ignora** y siempre recalcula (es la fuente de verdad, RF-07).
+ */
+const ClientComputedResultsSchema = z
+  .array(
+    z.looseObject({
+      indicator: IndicatorSchema,
+      zScore: z.number().optional(),
+      percentile: z.number().optional(),
+      classification: z.string().optional(),
+    }),
+  )
+  .max(4, { error: 'Se esperan como máximo 4 resultados de indicadores' });
+
 const BaseCheckupInputObject = z.strictObject({
   /** UUID generado en el cliente para garantizar idempotencia sin conexión. */
   id: UuidSchema,
@@ -78,6 +93,8 @@ const BaseCheckupInputObject = z.strictObject({
   position: PositionSchema,
   /** Bandera de confirmación cuando el peso o la talla están fuera del rango plausible. */
   confirmOutlier: z.boolean().optional(),
+  /** Cálculo local del celular (opcional); el servidor lo descarta y recalcula. */
+  results: ClientComputedResultsSchema.optional(),
 });
 
 /**
@@ -128,6 +145,17 @@ export const IndicatorResultSchema = z.object({
   referenceVersion: requiredText(50),
 });
 
+/**
+ * Resultado de un indicador para el perfil cuidador (RF-14, NK-35): sin puntaje z,
+ * percentil ni clasificación técnica.
+ */
+export const CaregiverIndicatorResultSchema = z.object({
+  id: UuidSchema,
+  checkupId: UuidSchema,
+  indicator: IndicatorSchema,
+  referenceVersion: requiredText(50),
+});
+
 const BaseCheckupResponseShape = {
   id: UuidSchema,
   childId: UuidSchema,
@@ -162,5 +190,6 @@ export const CaregiverCheckupResponseSchema = z.object(BaseCheckupResponseShape)
 export type CreateCheckupInput = z.infer<typeof CreateCheckupInputSchema>;
 export type CorrectCheckupInput = z.infer<typeof CorrectCheckupInputSchema>;
 export type IndicatorResult = z.infer<typeof IndicatorResultSchema>;
+export type CaregiverIndicatorResult = z.infer<typeof CaregiverIndicatorResultSchema>;
 export type CheckupResponse = z.infer<typeof CheckupResponseSchema>;
 export type CaregiverCheckupResponse = z.infer<typeof CaregiverCheckupResponseSchema>;

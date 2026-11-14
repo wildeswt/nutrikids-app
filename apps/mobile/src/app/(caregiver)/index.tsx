@@ -14,8 +14,20 @@ export default function CaregiverHomeScreen() {
 
   const caregiverName = user?.firstName || 'Andrea';
 
+  const handleRegisterChild = () => {
+    // Criterio NK-20: Se muestra la pantalla de consentimiento antes de registrar los datos del niño
+    router.push({
+      pathname: APP_ROUTES.CAREGIVER.CONSENT,
+      params: { mode: 'register' },
+    });
+  };
+
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      style={styles.container}
+      edges={['top', 'left', 'right']}
+      testID="caregiver-home-screen"
+    >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header superior: Logo a la izquierda y Campana de notificaciones a la derecha */}
         <View style={styles.topHeader}>
@@ -150,6 +162,23 @@ export default function CaregiverHomeScreen() {
               />
             </View>
           </View>
+        </View>
+
+        {/* Sección NK-20: Registro de nuevo niño con consentimiento informado */}
+        <View style={styles.actionSection}>
+          <Pressable
+            style={({ pressed }) => [styles.registerButton, pressed && styles.buttonPressed]}
+            onPress={handleRegisterChild}
+            testID="start-child-registration-button"
+            accessibilityRole="button"
+            accessibilityLabel="Registrar nuevo niño"
+          >
+            <Text style={styles.registerButtonText}>+ Registrar nuevo niño</Text>
+          </Pressable>
+          <Text style={styles.consentNotice}>
+            Antes de ingresar los datos del niño, te solicitaremos la lectura y aceptación del
+            consentimiento informado.
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -393,6 +422,35 @@ const styles = StyleSheet.create({
   },
   articleIcon: {
     marginBottom: -2,
+  },
+  actionSection: {
+    marginTop: 24,
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: PALETTE.border.default,
+    paddingTop: 18,
+  },
+  registerButton: {
+    backgroundColor: PALETTE.primary,
+    paddingVertical: 15,
+    borderRadius: 28,
+    alignItems: 'center',
+    shadowColor: PALETTE.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  registerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  consentNotice: {
+    fontSize: 12,
+    color: PALETTE.text.muted,
+    textAlign: 'center',
+    lineHeight: 17,
   },
   buttonPressed: {
     opacity: 0.85,

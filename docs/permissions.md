@@ -31,6 +31,7 @@ Role first, link second: possessing the correct role is never sufficient to view
 | Record anthropometric checkup (`checkup:create`)                                                     |               Yes                |   Yes   |    Yes    |    Yes     |
 | Review alerts (`alert:review`)                                                                       |                No                |   Yes   |    Yes    |    Yes     |
 | Create clinical follow-ups (`followup:create`)                                                       |                No                |   No    |    Yes    |    Yes     |
+| View audit log (`audit:read`)                                                                        |                No                |   Yes   |    Yes    |    Yes     |
 
 All permissions in this matrix apply **strictly to linked children** (step 4). The `origin` of a checkup (`CAREGIVER`/`PROFESSIONAL`) is derived by the server from the link context, never accepted from the client.
 
@@ -118,13 +119,14 @@ To guarantee that no clinical or identifying minor data exists without active co
 
 ### 6.5 Anthropometric Checkups: Registration, Correction, and Currency (RF-04, RF-05, RF-09)
 
-| Method and Route                       | Description                                                                                                                                                                                |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `POST /children/:childId/checkups`     | Records checkup with client-generated UUID. Requires active consent. `201` on creation; `200` with existing record on idempotent replay. `409` if the UUID belongs to another child.       |
-| `POST /checkups/:checkupId/correction` | Creates a new checkup with `correctedCheckupId` pointing to original. Same body schema. Idempotent by `id`. `409` if original already corrected. `404` if original checkup does not exist. |
-| `GET /children/:childId/checkups`      | Full history (including superseded checkups) in descending `measuredAt` order. `?onlyCurrent=true` filters to active checkups only.                                                        |
+| Method and Route                       | Description                                                                                                                                                                                                                                                                      |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /children/:childId/checkups`     | Records checkup with client-generated UUID. Requires active consent. `201` on creation; `200` with existing record on idempotent replay. `409` if the UUID belongs to another child.                                                                                             |
+| `POST /checkups/:checkupId/correction` | Creates a new checkup with `correctedCheckupId` pointing to original. Same body schema. Idempotent by `id`. `409` if original already corrected. `404` if original checkup does not exist.                                                                                       |
+| `GET /children/:childId/checkups`      | Full history (including superseded checkups) in descending `measuredAt` order. `?onlyCurrent=true` filters to active checkups only.                                                                                                                                              |
+| `GET /checkups/:checkupId/results`     | The 4 WHO indicator results (RF-07, RF-08). Linked professionals receive `zScore`, `percentile`, and `classification`; linked caregivers only `indicator` and `referenceVersion` (NK-35). `404` if the checkup does not exist or is hidden by RLS; `403` without an active link. |
 
-**Rules:** `origin` (`CAREGIVER` or `PROFESSIONAL`) and `recordedById` are assigned by the server. Physical boundaries return `400 Bad Request`; values outside plausible boundaries require `confirmOutlier: true`. Future dates and pre-birth dates are rejected. On recording, the 4 `indicator_results` are computed and stored. Caregivers never receive raw z-scores, percentiles, or technical classifications (RF-14).
+**Rules:** `origin` (`CAREGIVER` or `PROFESSIONAL`) and `recordedById` are assigned by the server. Physical boundaries return `400 Bad Request`; values outside plausible boundaries require `confirmOutlier: true`. Future dates and pre-birth dates are rejected. On recording (and on correction), the server always recomputes the 4 `indicator_results` with `@nutrikids/who-growth` and stores them in the same transaction as the checkup; any `results` computed by the phone are accepted in the body but ignored (RF-07). Classification cutoffs are read from configuration (`CUTOFF_*` and `OVERWEIGHT_CRITERION` env vars, WHO defaults when unset; see `.env.example`), not hard-coded (RF-08). Caregivers never receive raw z-scores, percentiles, or technical classifications (RF-14).
 
 **Correction Semantics (`checkups` is immutable, NK-8):**
 

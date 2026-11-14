@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DEFAULT_CUTOFFS, type Cutoffs } from '@nutrikids/who-growth';
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
@@ -11,6 +12,44 @@ dotenv.config({ path: path.resolve(__dirname, '../../../../.env'), quiet: true }
 
 const DEV_TEST_JWT_SECRET = 'nutrikids-dev-test-jwt-secret-key-min-32-chars';
 const DEV_TEST_INVITE_CODES = 'NK-PROF-2026';
+
+/**
+ * Classification cutoffs (z-scores) read from configuration (RF-08).
+ * Each env var is optional; missing ones fall back to WHO defaults (`DEFAULT_CUTOFFS`).
+ */
+const CUTOFF_ENV_KEYS = {
+  CUTOFF_SEVERE_WASTING_WFLH: 'severeWastingWFLH',
+  CUTOFF_WASTING_WFLH: 'wastingWFLH',
+  CUTOFF_SEVERE_UNDERWEIGHT_WFA: 'severeUnderweightWFA',
+  CUTOFF_UNDERWEIGHT_WFA: 'underweightWFA',
+  CUTOFF_SEVERE_STUNTING_LHFA: 'severeStuntingLHFA',
+  CUTOFF_STUNTING_LHFA: 'stuntingLHFA',
+  CUTOFF_OVERWEIGHT_WFLH: 'overweightWFLH',
+  CUTOFF_OVERWEIGHT_BFA: 'overweightBFA',
+  CUTOFF_OVERWEIGHT_RISK_BFA: 'overweightRiskBFA',
+  CUTOFF_OBESITY_BFA: 'obesityBFA',
+} as const satisfies Record<string, Exclude<keyof Cutoffs, 'overweightCriterion'>>;
+
+type CutoffEnvKey = keyof typeof CUTOFF_ENV_KEYS;
+
+const optionalNumber = z.preprocess(
+  (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+  z.coerce.number().finite().optional(),
+);
+
+const cutoffEnvShape = Object.fromEntries(
+  Object.keys(CUTOFF_ENV_KEYS).map((key) => [key, optionalNumber]),
+) as Record<CutoffEnvKey, typeof optionalNumber>;
+
+/** Pairs [lower, upper] that must satisfy lower < upper for the classification to be coherent. */
+const CUTOFF_ORDER: readonly [keyof Cutoffs, keyof Cutoffs][] = [
+  ['severeWastingWFLH', 'wastingWFLH'],
+  ['severeUnderweightWFA', 'underweightWFA'],
+  ['severeStuntingLHFA', 'stuntingLHFA'],
+  ['wastingWFLH', 'overweightWFLH'],
+  ['overweightRiskBFA', 'overweightBFA'],
+  ['overweightBFA', 'obesityBFA'],
+];
 
 const EnvSchema = z
   .object({
@@ -28,6 +67,15 @@ const EnvSchema = z
     LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
     LOGIN_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
     PROFESSIONAL_INVITE_CODES: z.string().optional(),
+    /** Plazo (horas) para revisar una alerta sin revisar antes de marcarla vencida (NK-30). */
+    ALERT_REVIEW_DEADLINE_HOURS: z.coerce.number().int().positive().default(72),
+    /** Plazo (horas) para alertas de riesgo grave (z < −3). */
+    ALERT_REVIEW_DEADLINE_SEVERE_HOURS: z.coerce.number().int().positive().default(24),
+    ...cutoffEnvShape,
+    OVERWEIGHT_CRITERION: z.preprocess(
+      (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+      z.enum(['WFLH', 'BFA', 'both']).optional(),
+    ),
   })
   .transform((raw, ctx) => {
     const isProd = raw.NODE_ENV === 'production';
@@ -55,6 +103,35 @@ const EnvSchema = z
       });
     }
 
+    const cutoffs: Cutoffs = { ...DEFAULT_CUTOFFS };
+    for (const [envKey, cutoffKey] of Object.entries(CUTOFF_ENV_KEYS) as [
+      CutoffEnvKey,
+      (typeof CUTOFF_ENV_KEYS)[CutoffEnvKey],
+    ][]) {
+      const value = raw[envKey];
+      if (value !== undefined) cutoffs[cutoffKey] = value;
+    }
+    if (raw.OVERWEIGHT_CRITERION) cutoffs.overweightCriterion = raw.OVERWEIGHT_CRITERION;
+
+    for (const [lower, upper] of CUTOFF_ORDER) {
+      if (!((cutoffs[lower] as number) < (cutoffs[upper] as number))) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['CLASSIFICATION_CUTOFFS'],
+          message: `Puntos de corte incoherentes: ${lower} (${cutoffs[lower]}) debe ser menor que ${upper} (${cutoffs[upper]})`,
+        });
+      }
+    }
+
+    if (raw.ALERT_REVIEW_DEADLINE_SEVERE_HOURS > raw.ALERT_REVIEW_DEADLINE_HOURS) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ALERT_REVIEW_DEADLINE_SEVERE_HOURS'],
+        message:
+          'ALERT_REVIEW_DEADLINE_SEVERE_HOURS no puede ser mayor que ALERT_REVIEW_DEADLINE_HOURS',
+      });
+    }
+
     return {
       NODE_ENV: raw.NODE_ENV,
       PORT: raw.PORT,
@@ -67,6 +144,9 @@ const EnvSchema = z
       LOGIN_MAX_ATTEMPTS: raw.LOGIN_MAX_ATTEMPTS,
       LOGIN_WINDOW_MINUTES: raw.LOGIN_WINDOW_MINUTES,
       PROFESSIONAL_INVITE_CODES: inviteCodes,
+      CLASSIFICATION_CUTOFFS: Object.freeze(cutoffs) as Readonly<Cutoffs>,
+      ALERT_REVIEW_DEADLINE_HOURS: raw.ALERT_REVIEW_DEADLINE_HOURS,
+      ALERT_REVIEW_DEADLINE_SEVERE_HOURS: raw.ALERT_REVIEW_DEADLINE_SEVERE_HOURS,
     };
   });
 
