@@ -75,5 +75,11 @@
   },
   "education": {
     "fetch": "No pudimos descargar los artículos. Intenta de nuevo."
+  },
+  "referrals": {
+    "professionals": "No pudimos cargar los profesionales vinculados al niño. Intenta de nuevo.",
+    "create": "No pudimos enviar la interconsulta. Intenta de nuevo.",
+    "forbidden": "No tienes permiso para enviar esta interconsulta. Verifica tu vínculo profesional y el consentimiento activo del niño.",
+    "network": "No hay conexión con el servidor. Revisa tu internet e intenta de nuevo; lo escrito se conserva."
   }
 }
