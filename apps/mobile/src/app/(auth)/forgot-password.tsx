@@ -1,29 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ForgotPasswordInputSchema } from '@nutrikids/shared';
 import { Link, useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  KeyboardAwareScrollView,
+  KeyboardAwareTextInput,
+} from '../../components/KeyboardAwareScrollView.js';
 import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
-import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { forgotPasswordRequest } from '../../lib/api.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const keyboardInset = useKeyboardBottomInset();
-  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -68,16 +60,9 @@ export default function ForgotPasswordScreen() {
         </Pressable>
       </View>
 
-      <ScrollView
-        ref={scrollViewRef}
+      <KeyboardAwareScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: keyboardInset > 0 ? keyboardInset + 40 : 48 },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
         {/* Header con Logo y Slogan */}
         <View style={styles.brandHeader}>
@@ -128,7 +113,7 @@ export default function ForgotPasswordScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Correo electrónico</Text>
-                <TextInput
+                <KeyboardAwareTextInput
                   style={[styles.input, fieldErrors['email'] ? styles.inputError : undefined]}
                   value={email}
                   onChangeText={(text) => {
@@ -173,7 +158,7 @@ export default function ForgotPasswordScreen() {
             </>
           )}
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

@@ -2,32 +2,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { ResetPasswordInputSchema } from '@nutrikids/shared';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  KeyboardAwareScrollView,
+  KeyboardAwareTextInput,
+} from '../../components/KeyboardAwareScrollView.js';
 import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
-import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { resetPasswordRequest } from '../../lib/api.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ token?: string }>();
-  const keyboardInset = useKeyboardBottomInset();
 
-  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
-  const newPasswordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
-  const confirmPasswordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const newPasswordRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
+  const confirmPasswordRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
 
   const [token, setToken] = useState(params.token ?? '');
   const [newPassword, setNewPassword] = useState('');
@@ -89,16 +81,9 @@ export default function ResetPasswordScreen() {
         </Pressable>
       </View>
 
-      <ScrollView
-        ref={scrollViewRef}
+      <KeyboardAwareScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: keyboardInset > 0 ? keyboardInset + 40 : 48 },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
         {/* Header con Logo y Slogan */}
         <View style={styles.brandHeader}>
@@ -143,7 +128,7 @@ export default function ResetPasswordScreen() {
               {/* Token */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Token de recuperación</Text>
-                <TextInput
+                <KeyboardAwareTextInput
                   style={[styles.input, fieldErrors['token'] ? styles.inputError : undefined]}
                   value={token}
                   onChangeText={(text) => {
@@ -170,7 +155,7 @@ export default function ResetPasswordScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Nueva contraseña</Text>
                 <View style={styles.passwordContainer}>
-                  <TextInput
+                  <KeyboardAwareTextInput
                     ref={newPasswordRef}
                     style={[
                       styles.passwordInput,
@@ -191,11 +176,6 @@ export default function ResetPasswordScreen() {
                     returnKeyType="next"
                     onSubmitEditing={() => confirmPasswordRef.current?.focus()}
                     blurOnSubmit={false}
-                    onFocus={() => {
-                      setTimeout(() => {
-                        scrollViewRef.current?.scrollToEnd({ animated: true });
-                      }, 150);
-                    }}
                     editable={!loading}
                   />
                   <Pressable
@@ -222,7 +202,7 @@ export default function ResetPasswordScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Confirmar nueva contraseña</Text>
                 <View style={styles.passwordContainer}>
-                  <TextInput
+                  <KeyboardAwareTextInput
                     ref={confirmPasswordRef}
                     style={[
                       styles.passwordInput,
@@ -242,11 +222,6 @@ export default function ResetPasswordScreen() {
                     autoCorrect={false}
                     returnKeyType="done"
                     onSubmitEditing={() => void handleSubmit()}
-                    onFocus={() => {
-                      setTimeout(() => {
-                        scrollViewRef.current?.scrollToEnd({ animated: true });
-                      }, 150);
-                    }}
                     editable={!loading}
                   />
                   <Pressable
@@ -291,7 +266,7 @@ export default function ResetPasswordScreen() {
             </>
           )}
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }
