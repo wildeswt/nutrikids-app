@@ -15,6 +15,7 @@ import { withUser } from '../lib/prisma.js';
 import { resolveChildLink } from '../middlewares/access.js';
 import { logAuditEvent, type AuditParams } from './audit.service.js';
 import { insertCheckup } from './checkups.service.js';
+import { notifyNewAlerts } from './notifications.service.js';
 
 /**
  * Sincronización por lotes de controles registrados sin conexión (RT-02).
@@ -133,9 +134,13 @@ async function syncOne(auth: AuthContext, raw: unknown): Promise<SyncCheckupResu
       throw HttpError.forbidden('No tienes acceso a este niño');
     }
 
-    const { checkup, created, results } = await withUser(auth.userId, (tx) =>
+    const { checkup, created, results, alertIds } = await withUser(auth.userId, (tx) =>
       insertCheckup(tx, { auth, viewer, childId, input, correctedCheckupId: null }),
     );
+
+    if (created && alertIds && alertIds.length > 0) {
+      await notifyNewAlerts(auth.userId, alertIds);
+    }
 
     // Solo se compara al crear: un reenvío no vuelve a registrar la misma discrepancia.
     const discrepancies = created && input.results ? findDiscrepancies(input.results, results) : [];

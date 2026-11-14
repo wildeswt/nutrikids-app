@@ -336,6 +336,7 @@ model Notification {
   user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([entityType, entityId, type, sentAt(sort: Desc)], map: "notifications_entity_sent_idx")
   @@map("notifications")
 }
 

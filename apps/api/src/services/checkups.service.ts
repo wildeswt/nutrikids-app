@@ -26,6 +26,7 @@ import type { AuthContext } from '../lib/permissions.js';
 import { withUser } from '../lib/prisma.js';
 import { createAlertsForResults } from './alerts.service.js';
 import { assertActiveConsent, assertChildAgeInOmsRange } from './children.service.js';
+import { notifyNewAlerts } from './notifications.service.js';
 
 /** Viewer profile under which checkup is queried or recorded: determines `origin` and response shape. */
 export type CheckupViewer = 'CAREGIVER' | 'PROFESSIONAL';
@@ -202,6 +203,7 @@ async function isCheckupCurrent(tx: Prisma.TransactionClient, checkupId: string)
 /** Checkup write result including the server-side indicator result rows (for internal comparison). */
 export interface CheckupInsertResult extends CheckupWriteResult {
   results: IndicatorResultRow[];
+  alertIds?: string[];
 }
 
 /**
@@ -233,6 +235,7 @@ async function loadExistingCheckup(
     ),
     created: false,
     results: existing.results,
+    alertIds: [],
   };
 }
 
@@ -331,11 +334,12 @@ export async function insertCheckup(
     include: { results: true },
   });
   // RF-11: each result with a risk condition raises an alert in this same transaction.
-  await createAlertsForResults(tx, created.results, auth.userId);
+  const alertIds = await createAlertsForResults(tx, created.results, auth.userId);
   return {
     checkup: formatCheckupResponse(created, true, viewer),
     created: true,
     results: created.results,
+    alertIds,
   };
 }
 
@@ -346,9 +350,12 @@ export async function createCheckup(
   childId: string,
   input: CreateCheckupInput,
 ): Promise<CheckupWriteResult> {
-  const { checkup, created } = await withUser(auth.userId, (tx) =>
+  const { checkup, created, alertIds } = await withUser(auth.userId, (tx) =>
     insertCheckup(tx, { auth, viewer, childId, input, correctedCheckupId: null }),
   );
+  if (created && alertIds && alertIds.length > 0) {
+    await notifyNewAlerts(auth.userId, alertIds);
+  }
   return { checkup, created };
 }
 
@@ -395,7 +402,7 @@ export async function correctCheckup(
   checkupId: string,
   input: CorrectCheckupInput,
 ): Promise<CheckupWriteResult> {
-  return withUser(auth.userId, async (tx) => {
+  const { checkup, created, alertIds } = await withUser(auth.userId, async (tx) => {
     const original = await tx.checkup.findUnique({
       where: { id: checkupId },
       select: { id: true, childId: true },
@@ -413,15 +420,18 @@ export async function correctCheckup(
       throw HttpError.conflict('Este control ya fue corregido; corrige el control vigente');
     }
 
-    const { checkup, created } = await insertCheckup(tx, {
+    return insertCheckup(tx, {
       auth,
       viewer,
       childId: original.childId,
       input,
       correctedCheckupId: checkupId,
     });
-    return { checkup, created };
   });
+  if (created && alertIds && alertIds.length > 0) {
+    await notifyNewAlerts(auth.userId, alertIds);
+  }
+  return { checkup, created };
 }
 
 /**
