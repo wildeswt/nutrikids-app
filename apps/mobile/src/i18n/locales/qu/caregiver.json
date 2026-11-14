@@ -114,6 +114,8 @@
     "changeChild": "Shuk wawata akllay",
     "dateLabel": "Kamay puncha",
     "datePlaceholder": "Shina: {{example}}",
+    "openDatePicker": "Abrir selector de fecha",
+    "closeDatePicker": "Listo",
     "positionLabel": "¿Imashinata tupurkanki?",
     "positions": {
       "STANDING": "Shayarishka",

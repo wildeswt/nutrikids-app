@@ -149,6 +149,10 @@ vi.mock('@expo/vector-icons', () => ({
   Ionicons: (props: Record<string, unknown>) => React.createElement('mock-icon', props),
 }));
 
+vi.mock('@react-native-community/datetimepicker', () => ({
+  default: (props: Record<string, unknown>) => React.createElement('mock-date-picker', props),
+}));
+
 vi.mock('react-native-safe-area-context', () => ({
   SafeAreaView: (props: { children: React.ReactNode }) =>
     React.createElement('mock-safe-area', null, props.children),
@@ -199,7 +203,10 @@ function findElementByTestId(node: unknown, testId: string): ElementWithProps | 
   }
   const element = node as ElementWithProps;
   if (element.props?.testID === testId) return element;
-  return findElementByTestId(element.props?.children, testId);
+  return (
+    findElementByTestId(element.props?.children, testId) ??
+    findElementByTestId(element.props?.['rightIcon'], testId)
+  );
 }
 
 function textContent(node: unknown): string {
@@ -315,6 +322,34 @@ describe('AddCheckupScreen («Anotar un nuevo control»)', () => {
     const html = render(AddCheckupScreen);
 
     expect(html).not.toMatch(/z-?score|percentil|desnutrición/i);
+  });
+
+  it('opens the date picker when pressing the calendar icon and updates the date field', () => {
+    hookStore.enabled = true;
+    let tree = renderTree(AddCheckupScreen as () => unknown);
+
+    expect(findElementByTestId(tree, 'add-checkup-date-picker')).toBeNull();
+
+    press(tree, 'add-checkup-date-picker-button');
+    tree = renderTree(AddCheckupScreen as () => unknown);
+
+    const picker = findElementByTestId(tree, 'add-checkup-date-picker');
+    expect(picker).not.toBeNull();
+    expect(picker?.props?.['mode']).toBe('date');
+
+    const onChange = picker?.props?.['onChange'] as
+      | ((event: { type: string; nativeEvent: { timestamp: number } }, date?: Date) => void)
+      | undefined;
+    expect(onChange).toBeTypeOf('function');
+
+    const picked = new Date(2026, 9, 18);
+    onChange!({ type: 'set', nativeEvent: { timestamp: picked.getTime() } }, picked);
+    tree = renderTree(AddCheckupScreen as () => unknown);
+
+    expect(findElementByTestId(tree, 'add-checkup-date-input')?.props?.['value']).toBe(
+      '18/10/2026',
+    );
+    expect(findElementByTestId(tree, 'add-checkup-date-picker')).toBeNull();
   });
 });
 

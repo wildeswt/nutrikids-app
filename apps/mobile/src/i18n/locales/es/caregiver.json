@@ -114,6 +114,8 @@
     "changeChild": "Cambiar de niño",
     "dateLabel": "Fecha del control",
     "datePlaceholder": "Ej. {{example}}",
+    "openDatePicker": "Abrir selector de fecha",
+    "closeDatePicker": "Listo",
     "positionLabel": "¿Cómo lo mediste?",
     "positions": {
       "STANDING": "De pie",

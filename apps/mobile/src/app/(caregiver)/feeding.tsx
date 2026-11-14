@@ -11,7 +11,15 @@ import {
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
 import { PALETTE } from '../../constants/colors.js';
+import {
+  BUTTON_HEIGHT,
+  BUTTON_WIDTH,
+  FIELD_HEIGHT,
+  RADIUS_PILL,
+  SCREEN_MARGIN,
+} from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { useFeedingLog } from '../../hooks/useFeedingLog.js';
 import { formatLongDate } from '../../i18n/format.js';
@@ -26,13 +34,6 @@ import {
   type MealOption,
 } from '../../lib/feeding-form.js';
 import { generateUuid } from '../../lib/uuid.js';
-
-const FEEDING_COLORS = {
-  background: '#FBFBFB',
-  fieldBackground: '#F9F9F9',
-  notesBorder: '#E5E5E5',
-  placeholder: '#969696',
-} as const;
 
 const MEAL_ROWS: readonly (readonly [MealOption, MealOption | null])[] = [
   [MEAL_OPTIONS[0]!, MEAL_OPTIONS[1]!],
@@ -317,7 +318,10 @@ export default function FeedingScreen() {
                       accessibilityState={{ checked }}
                       testID={`feeding-meal-${meal.id}`}
                     >
-                      <View style={[styles.checkboxBox, checked && styles.checkboxBoxChecked]}>
+                      <View
+                        style={[styles.checkboxBox, checked && styles.checkboxBoxChecked]}
+                        testID={`feeding-meal-box-${meal.id}`}
+                      >
                         {checked ? (
                           <Ionicons name="checkmark" size={14} color={PALETTE.text.light} />
                         ) : null}
@@ -334,7 +338,7 @@ export default function FeedingScreen() {
         {/* ¿Cuántas veces comió? */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{t('feeding.mealsCountLabel')}</Text>
-          <View style={styles.counterContainer}>
+          <View style={styles.counterContainer} testID="feeding-meals-counter">
             <Pressable
               style={({ pressed }) => [
                 styles.counterButton,
@@ -383,7 +387,7 @@ export default function FeedingScreen() {
               value={notes}
               onChangeText={handleChangeNotes}
               placeholder={t('feeding.notesPlaceholder')}
-              placeholderTextColor={FEEDING_COLORS.placeholder}
+              placeholderTextColor={PALETTE.input.placeholder}
               multiline
               maxLength={FEEDING_DETAILS_MAX}
               textAlignVertical="top"
@@ -434,10 +438,10 @@ export default function FeedingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: FEEDING_COLORS.background,
+    backgroundColor: PALETTE.background,
   },
   scrollContent: {
-    paddingHorizontal: 30,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 12,
     paddingBottom: 36,
   },
@@ -450,11 +454,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   backText: {
+    fontFamily: font('medium'),
     fontSize: 20,
     fontWeight: '500',
-    color: PALETTE.text.body,
+    color: PALETTE.text.title,
   },
   screenTitle: {
+    fontFamily: font('semibold'),
     fontSize: 32,
     fontWeight: '600',
     color: PALETTE.text.title,
@@ -521,6 +527,7 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   sectionLabel: {
+    fontFamily: font('medium'),
     fontSize: 18,
     fontWeight: '500',
     color: PALETTE.text.title,
@@ -548,25 +555,27 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: PALETTE.primary,
+    borderColor: PALETTE.border.checkbox,
     backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxBoxChecked: {
     backgroundColor: PALETTE.primary,
+    borderColor: PALETTE.primary,
   },
   mealLabel: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.body,
   },
   counterContainer: {
     width: '100%',
-    height: 50,
-    backgroundColor: FEEDING_COLORS.fieldBackground,
-    borderRadius: 25,
+    height: FIELD_HEIGHT,
+    backgroundColor: PALETTE.input.background,
+    borderRadius: RADIUS_PILL,
     borderWidth: 1,
-    borderColor: PALETTE.primary,
+    borderColor: PALETTE.border.checkbox,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -576,9 +585,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: FEEDING_COLORS.background,
+    backgroundColor: PALETTE.background,
     borderWidth: 1,
-    borderColor: PALETTE.primary,
+    borderColor: PALETTE.border.checkbox,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -586,25 +595,28 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   counterLabel: {
+    fontFamily: font('regular'),
     fontSize: 16,
     color: PALETTE.text.body,
   },
   counterNumber: {
+    fontFamily: font('semibold'),
     fontWeight: '600',
     color: PALETTE.text.title,
   },
   notesContainer: {
     width: '100%',
     height: 110,
-    backgroundColor: FEEDING_COLORS.fieldBackground,
-    borderRadius: 25,
+    backgroundColor: PALETTE.input.background,
+    borderRadius: RADIUS_PILL,
     borderWidth: 1,
-    borderColor: FEEDING_COLORS.notesBorder,
+    borderColor: PALETTE.border.input,
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   notesInput: {
     flex: 1,
+    fontFamily: font('regular'),
     fontSize: 15,
     color: PALETTE.text.body,
     padding: 0,
@@ -618,11 +630,11 @@ const styles = StyleSheet.create({
   submitButton: {
     marginTop: 18,
     width: '100%',
-    maxWidth: 318,
-    height: 50,
+    maxWidth: BUTTON_WIDTH,
+    height: BUTTON_HEIGHT,
     alignSelf: 'center',
     backgroundColor: PALETTE.primary,
-    borderRadius: 25,
+    borderRadius: RADIUS_PILL,
     alignItems: 'center',
     justifyContent: 'center',
   },
