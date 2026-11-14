@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../constants/colors.js';
+import { APP_ROUTES } from '../constants/routes.js';
 import { useNotifications } from '../hooks/useNotifications.js';
 import { formatShortDate } from '../i18n/format.js';
 
@@ -76,6 +77,13 @@ export function NotificationsScreen() {
         onPress={() => {
           if (isUnread) {
             void markAsRead(item.id);
+          }
+          // Alert notifications open the alert (NK-33).
+          if (item.entityType === 'alert') {
+            router.push({
+              pathname: APP_ROUTES.PROFESSIONAL.ALERT_DETAIL as never,
+              params: { alertId: item.entityId },
+            });
           }
         }}
         accessibilityRole="button"

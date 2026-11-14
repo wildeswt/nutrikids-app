@@ -29,7 +29,8 @@
     "missingChildForRevoke": "Falta elegir el niño para retirar el permiso."
   },
   "children": {
-    "create": "No pudimos registrar al niño. Intenta de nuevo."
+    "create": "No pudimos registrar al niño. Intenta de nuevo.",
+    "fetch": "No pudimos cargar los datos del niño. Intenta de nuevo."
   },
   "notifications": {
     "registerDevice": "No se pudo registrar el dispositivo para notificaciones.",
@@ -45,6 +46,8 @@
     "fetch": "No pudimos cargar las curvas de referencia. Intenta de nuevo."
   },
   "alerts": {
-    "list": "No pudimos cargar las alertas. Intenta de nuevo."
+    "list": "No pudimos cargar las alertas. Intenta de nuevo.",
+    "detail": "No pudimos cargar la alerta. Intenta de nuevo.",
+    "review": "No pudimos marcar la alerta como revisada. Intenta de nuevo."
   }
 }
