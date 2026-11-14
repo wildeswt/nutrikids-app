@@ -13,6 +13,10 @@ vi.mock('expo-router/drawer', () => ({
         React.createElement('mock-drawer-screen', props),
     },
   ),
+  DrawerContentScrollView: (props: { children: React.ReactNode }) =>
+    React.createElement('mock-drawer-scroll', props),
+  DrawerItemList: (props: Record<string, unknown>) =>
+    React.createElement('mock-drawer-item-list', props),
 }));
 
 vi.mock('@react-navigation/drawer', () => ({

@@ -95,6 +95,24 @@ describe('Push Notifications Utilities (NK-36)', () => {
       Platform.OS = originalOS;
     });
 
+    it('retorna null si corre en Expo Go (Constants.appOwnership === "expo")', async () => {
+      const originalOS = Platform.OS;
+      Platform.OS = 'android';
+      // @ts-expect-error mock mutable isDevice
+      Device.isDevice = true;
+
+      const Constants = (await import('expo-constants')).default;
+      // @ts-expect-error mock appOwnership
+      Constants.appOwnership = 'expo';
+
+      const token = await registerPushNotifications();
+      expect(token).toBeNull();
+
+      // @ts-expect-error restore
+      Constants.appOwnership = undefined;
+      Platform.OS = originalOS;
+    });
+
     it('solicita permisos, obtiene token push de Expo y lo registra en la API', async () => {
       const originalOS = Platform.OS;
       Platform.OS = 'android';

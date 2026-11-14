@@ -69,16 +69,20 @@ export async function clearStoredPushToken(): Promise<void> {
 export function initPushNotifications(): void {
   if (Platform.OS === 'web') return;
 
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-      priority: Notifications.AndroidNotificationPriority.HIGH,
-    }),
-  });
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+      }),
+    });
+  } catch (err) {
+    console.warn('No se pudo inicializar el manejador de notificaciones:', err);
+  }
 }
 
 /**
@@ -92,6 +96,15 @@ export async function registerPushNotifications(): Promise<string | null> {
 
   if (!Device.isDevice) {
     console.warn('Registro de push omitido: se requiere un dispositivo fisico');
+    return null;
+  }
+
+  // En Expo Go para Android (SDK 53+), las notificaciones remotas no estan soportadas
+  // y llamar al manager nativo lanza excepciones (NullPointerException).
+  if (Constants.appOwnership === 'expo') {
+    console.warn(
+      'Registro de push omitido: Expo Go no soporta notificaciones remotas en Android desde SDK 53. Utilice un development build.',
+    );
     return null;
   }
 
@@ -110,12 +123,16 @@ export async function registerPushNotifications(): Promise<string | null> {
     }
 
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#2D5F5A',
-      });
+      try {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#2D5F5A',
+        });
+      } catch (channelErr) {
+        console.warn('No se pudo configurar el canal de notificaciones en Android:', channelErr);
+      }
     }
 
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;

@@ -3,6 +3,7 @@ dist/
 build/
 coverage/
 .expo/
+.claude/
 pnpm-lock.yaml
 *.tsbuildinfo
 **/generated/

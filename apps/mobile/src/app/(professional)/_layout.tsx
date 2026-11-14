@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { USER_ROLES } from '@nutrikids/shared';
-import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
-import { Drawer } from 'expo-router/drawer';
+import { Drawer, DrawerContentScrollView, DrawerItemList } from 'expo-router/drawer';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
