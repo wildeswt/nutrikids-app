@@ -4,14 +4,15 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app.js';
 import { hashPassword } from '../lib/password.js';
 import { prisma } from '../lib/prisma.js';
+import { encryptUserNames } from '../services/pii.service.js';
 import { hashRefreshToken, verifyAccessToken } from '../services/token.service.js';
 
 interface MockUserRecord {
   id: string;
   email: string;
   passwordHash: string;
-  firstName: string;
-  lastName: string;
+  firstNameEnc: string;
+  lastNameEnc: string;
   status: string;
   caregiver: { userId: string } | null;
   professional: { userId: string; specialty: string } | null;
@@ -34,8 +35,7 @@ describe('POST /auth/login y límite de intentos', () => {
         id: '00000000-0000-4000-8000-000000000010',
         email: 'ana@correo.ec',
         passwordHash,
-        firstName: 'Ana',
-        lastName: 'Pérez',
+        ...encryptUserNames({ firstName: 'Ana', lastName: 'Pérez' }),
         status: 'active',
         caregiver: { userId: '00000000-0000-4000-8000-000000000010' },
         professional: null,
@@ -44,8 +44,7 @@ describe('POST /auth/login y límite de intentos', () => {
         id: '00000000-0000-4000-8000-000000000020',
         email: 'elena@hospital.ec',
         passwordHash,
-        firstName: 'Elena',
-        lastName: 'Vega',
+        ...encryptUserNames({ firstName: 'Elena', lastName: 'Vega' }),
         status: 'active',
         caregiver: { userId: '00000000-0000-4000-8000-000000000020' },
         professional: {
@@ -57,8 +56,7 @@ describe('POST /auth/login y límite de intentos', () => {
         id: '00000000-0000-4000-8000-000000000030',
         email: 'suspendido@correo.ec',
         passwordHash,
-        firstName: 'Mario',
-        lastName: 'Ríos',
+        ...encryptUserNames({ firstName: 'Mario', lastName: 'Ríos' }),
         status: 'suspended',
         caregiver: { userId: '00000000-0000-4000-8000-000000000030' },
         professional: null,

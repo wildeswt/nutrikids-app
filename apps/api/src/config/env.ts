@@ -51,6 +51,16 @@ const CUTOFF_ORDER: readonly [keyof Cutoffs, keyof Cutoffs][] = [
   ['overweightBFA', 'obesityBFA'],
 ];
 
+const BASE64_32B_REGEX = /^[A-Za-z0-9+/]{43}=$/;
+
+const Base64KeySchema = z
+  .string()
+  .trim()
+  .regex(BASE64_32B_REGEX, 'Debe ser un string Base64 válido de 32 bytes')
+  .refine((val) => Buffer.from(val, 'base64').length === 32, {
+    message: 'La clave decodificada debe tener exactamente 32 bytes',
+  });
+
 const EnvSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -67,6 +77,9 @@ const EnvSchema = z
     LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
     LOGIN_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
     PROFESSIONAL_INVITE_CODES: z.string().optional(),
+    DATA_ENCRYPTION_KEY: Base64KeySchema,
+    DATA_ENCRYPTION_KEY_ID: z.string().trim().min(1).default('k1'),
+    PSEUDONYMIZATION_KEY: Base64KeySchema,
     /** Plazo (horas) para revisar una alerta sin revisar antes de marcarla vencida (NK-30). */
     ALERT_REVIEW_DEADLINE_HOURS: z.coerce.number().int().positive().default(72),
     /** Plazo (horas) para alertas de riesgo grave (z < −3). */
@@ -159,6 +172,9 @@ const EnvSchema = z
       OVERDUE_ALERT_RENOTIFY_HOURS: raw.OVERDUE_ALERT_RENOTIFY_HOURS,
       ERASURE_GRACE_DAYS: raw.ERASURE_GRACE_DAYS,
       REMINDER_LEAD_HOURS: raw.REMINDER_LEAD_HOURS,
+      DATA_ENCRYPTION_KEY: raw.DATA_ENCRYPTION_KEY,
+      DATA_ENCRYPTION_KEY_ID: raw.DATA_ENCRYPTION_KEY_ID,
+      PSEUDONYMIZATION_KEY: raw.PSEUDONYMIZATION_KEY,
     };
   });
 

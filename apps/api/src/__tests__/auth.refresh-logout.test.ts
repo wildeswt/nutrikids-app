@@ -3,13 +3,14 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app.js';
 import { prisma } from '../lib/prisma.js';
+import { encryptUserNames } from '../services/pii.service.js';
 import { generateRefreshToken, verifyAccessToken } from '../services/token.service.js';
 
 interface MockUser {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  firstNameEnc: string;
+  lastNameEnc: string;
   status: string;
   caregiver: { userId: string } | null;
   professional: { userId: string; specialty: string } | null;
@@ -33,8 +34,7 @@ describe('POST /auth/refresh (rotación) y POST /auth/logout', () => {
       {
         id: '00000000-0000-4000-8000-000000000010',
         email: 'elena@hospital.ec',
-        firstName: 'Elena',
-        lastName: 'Vega',
+        ...encryptUserNames({ firstName: 'Elena', lastName: 'Vega' }),
         status: 'active',
         caregiver: null,
         professional: {

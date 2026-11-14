@@ -26,6 +26,7 @@ export default function RegisterScreen() {
 
   const lastNameRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
   const emailRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
+  const phoneRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
   const licenseNumberRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
   const invitationCodeRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
   const passwordRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
@@ -38,6 +39,7 @@ export default function RegisterScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -67,6 +69,7 @@ export default function RegisterScreen() {
       email: email.trim(),
       password,
       roles: [selectedRole],
+      ...(!isProfessional && phone.trim() ? { phone: phone.trim() } : {}),
       ...(isProfessional
         ? {
             specialty: specialty || undefined,
@@ -224,7 +227,7 @@ export default function RegisterScreen() {
                 if (isProfessional) {
                   licenseNumberRef.current?.focus();
                 } else {
-                  passwordRef.current?.focus();
+                  phoneRef.current?.focus();
                 }
               }}
               blurOnSubmit={false}
@@ -234,6 +237,36 @@ export default function RegisterScreen() {
               <Text style={styles.errorText}>{fieldErrors['email']}</Text>
             ) : null}
           </View>
+
+          {/* Teléfono opcional si es Cuidador */}
+          {!isProfessional && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t('register.phoneLabel')}</Text>
+              <KeyboardAwareTextInput
+                ref={phoneRef}
+                style={[styles.input, fieldErrors['phone'] ? styles.inputError : undefined]}
+                value={phone}
+                onChangeText={(text) => {
+                  setPhone(text);
+                  if (fieldErrors['phone']) {
+                    setFieldErrors((prev) => ({ ...prev, phone: '' }));
+                  }
+                }}
+                placeholder={t('register.phonePlaceholder')}
+                placeholderTextColor={PALETTE.input.placeholder}
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                blurOnSubmit={false}
+                editable={!loading}
+              />
+              {fieldErrors['phone'] ? (
+                <Text style={styles.errorText}>{fieldErrors['phone']}</Text>
+              ) : null}
+            </View>
+          )}
 
           {/* Campos adicionales si eligió Profesional de Salud */}
           {isProfessional && (

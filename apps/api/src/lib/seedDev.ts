@@ -21,6 +21,7 @@ import {
 import { env } from '../config/env.js';
 import { PrismaClient, type Indicator } from '../generated/prisma/client.js';
 import { hashPassword } from './password.js';
+import { encryptChildNames, encryptPhone, encryptUserNames } from '../services/pii.service.js';
 
 /** Contraseña de desarrollo compartida por las cuentas sintéticas (solo local). */
 export const DEV_SEED_PASSWORD = 'NutriKids-Dev-2026';
@@ -182,7 +183,13 @@ export async function seedDevData(client?: PrismaClient): Promise<void> {
         ['pediatrician', SEED_USERS.pediatrician],
       ] as const;
       for (const [key, u] of users) {
-        const data = { ...u, passwordHash, status: 'active' };
+        const { firstName, lastName, ...rest } = u;
+        const data = {
+          ...rest,
+          ...encryptUserNames({ firstName, lastName }),
+          passwordHash,
+          status: 'active',
+        };
         await tx.user.upsert({
           where: { id: SEED_IDS[key] },
           create: { id: SEED_IDS[key], ...data },
@@ -192,8 +199,13 @@ export async function seedDevData(client?: PrismaClient): Promise<void> {
 
       await tx.caregiver.upsert({
         where: { userId: SEED_IDS.caregiver },
-        create: { userId: SEED_IDS.caregiver, phone: '+584120000001' },
-        update: {},
+        create: {
+          userId: SEED_IDS.caregiver,
+          phoneEnc: encryptPhone('+584120000001'),
+        },
+        update: {
+          phoneEnc: encryptPhone('+584120000001'),
+        },
       });
       await tx.professional.upsert({
         where: { userId: SEED_IDS.nurse },
@@ -211,8 +223,10 @@ export async function seedDevData(client?: PrismaClient): Promise<void> {
       });
 
       const child = {
-        firstName: MATEO.firstName,
-        lastName: MATEO.lastName,
+        ...encryptChildNames({
+          firstName: MATEO.firstName,
+          lastName: MATEO.lastName,
+        }),
         birthDate: new Date(`${MATEO.birthDate}T00:00:00Z`),
         sex: MATEO.sex,
       };

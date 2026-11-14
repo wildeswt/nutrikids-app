@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
 import { env } from '../config/env.js';
 import { runErasureJob } from '../jobs/erasure.js';
+import { decryptPii, encryptPii, isEncrypted } from '../lib/pii-crypto.js';
 import { prisma } from '../lib/prisma.js';
 import { signAccessToken } from '../services/token.service.js';
 
@@ -33,12 +34,18 @@ describe('Derechos del representante (NK-41)', { timeout: 60000 }, () => {
     const userId = crypto.randomUUID();
     await admin.query(
       `INSERT INTO users (id, email, password_hash, first_name, last_name, status, updated_at)
-       VALUES ($1, $2, 'secret-hash', 'Ana', 'Rep', 'active', now())`,
-      [userId, `rights-${userId}@nutrikids.local`],
+       VALUES ($1, $2, 'secret-hash', $3, $4, 'active', now())`,
+      [
+        userId,
+        `rights-${userId}@nutrikids.local`,
+        encryptPii('Ana', 'users:first_name'),
+        encryptPii('Rep', 'users:last_name'),
+      ],
     );
     if (role === 'CAREGIVER') {
-      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, '+593990000')`, [
+      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, $2)`, [
         userId,
+        encryptPii('+593990000', 'caregivers:phone'),
       ]);
     } else {
       await admin.query(
@@ -59,8 +66,12 @@ describe('Derechos del representante (NK-41)', { timeout: 60000 }, () => {
     const childId = crypto.randomUUID();
     await admin.query(
       `INSERT INTO children (id, first_name, last_name, birth_date, sex)
-       VALUES ($1, 'Mateo', 'Rodriguez', CURRENT_DATE - 900, 'MALE')`,
-      [childId],
+       VALUES ($1, $2, $3, CURRENT_DATE - 900, 'MALE')`,
+      [
+        childId,
+        encryptPii('Mateo', 'children:first_name'),
+        encryptPii('Rodriguez', 'children:last_name'),
+      ],
     );
     await admin.query(
       `INSERT INTO caregiver_children (caregiver_id, child_id, relationship, is_legal_representative)
@@ -302,10 +313,11 @@ describe('Derechos del representante (NK-41)', { timeout: 60000 }, () => {
 
       // Recién pedida: dentro del plazo de gracia, no se toca nada.
       await runErasureJob();
-      expect(
-        (await admin.query(`SELECT first_name FROM children WHERE id = $1`, [childId])).rows[0]
-          .first_name,
-      ).toBe('Mateo');
+      const preErasureFirstName = (
+        await admin.query(`SELECT first_name FROM children WHERE id = $1`, [childId])
+      ).rows[0].first_name;
+      expect(isEncrypted(preErasureFirstName)).toBe(true);
+      expect(decryptPii(preErasureFirstName, 'children:first_name')).toBe('Mateo');
 
       await admin.query(
         `UPDATE erasure_requests SET requested_at = now() - make_interval(days => $2) WHERE id = $1`,

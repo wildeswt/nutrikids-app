@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import pg from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { env } from '../config/env.js';
+import { encryptPii } from '../lib/pii-crypto.js';
 import {
   isBackgroundJobsActive,
   isOverdueAlertsJobRunning,
@@ -47,12 +48,18 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
     const userId = crypto.randomUUID();
     await admin.query(
       `INSERT INTO users (id, email, password_hash, first_name, last_name, status, updated_at)
-       VALUES ($1, $2, 'hash', 'Test', 'User', 'active', now())`,
-      [userId, `overdue-${userId}@nutrikids.local`],
+       VALUES ($1, $2, 'hash', $3, $4, 'active', now())`,
+      [
+        userId,
+        `overdue-${userId}@nutrikids.local`,
+        encryptPii('Test', 'users:first_name'),
+        encryptPii('User', 'users:last_name'),
+      ],
     );
     if (role === 'CAREGIVER') {
-      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, '+593990000')`, [
+      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, $2)`, [
         userId,
+        encryptPii('+593990000', 'caregivers:phone'),
       ]);
     } else {
       await admin.query(
@@ -67,8 +74,13 @@ describe('Overdue Alerts Background Job (NK-36)', { timeout: 60000 }, () => {
     const childId = crypto.randomUUID();
     await admin.query(
       `INSERT INTO children (id, first_name, last_name, birth_date, sex)
-       VALUES ($1, 'Ana', 'Overdue', $2::date, 'FEMALE')`,
-      [childId, isoDateMonthsAgo(20)],
+       VALUES ($1, $2, $3, $4::date, 'FEMALE')`,
+      [
+        childId,
+        encryptPii('Ana', 'children:first_name'),
+        encryptPii('Overdue', 'children:last_name'),
+        isoDateMonthsAgo(20),
+      ],
     );
     await admin.query(
       `INSERT INTO caregiver_children (caregiver_id, child_id, relationship, is_legal_representative)

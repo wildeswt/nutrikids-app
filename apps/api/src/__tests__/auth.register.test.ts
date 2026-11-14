@@ -9,8 +9,13 @@ interface StoredUser {
   id: string;
   email: string;
   passwordHash: string;
-  firstName: string;
-  lastName: string;
+  firstNameEnc: string;
+  lastNameEnc: string;
+}
+
+interface StoredCaregiver {
+  userId: string;
+  phoneEnc: string | null;
 }
 
 interface StoredProfessional {
@@ -29,7 +34,7 @@ describe('POST /auth/register', () => {
   const app = createApp();
 
   let users: StoredUser[] = [];
-  let caregivers: { userId: string; phone: string | null }[] = [];
+  let caregivers: StoredCaregiver[] = [];
   let professionals: StoredProfessional[] = [];
   let refreshTokens: StoredRefreshToken[] = [];
 
@@ -54,7 +59,7 @@ describe('POST /auth/register', () => {
         }),
       },
       caregiver: {
-        create: vi.fn(async ({ data }: { data: { userId: string; phone: string | null } }) => {
+        create: vi.fn(async ({ data }: { data: StoredCaregiver }) => {
           caregivers.push(data);
           return data;
         }),
@@ -117,6 +122,14 @@ describe('POST /auth/register', () => {
     expect(JSON.stringify(res.body)).not.toContain(plainPassword);
     expect(JSON.stringify(logSpy.mock.calls)).not.toContain(plainPassword);
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(plainPassword);
+
+    // Verifica que el nombre, apellido y teléfono se guardaron cifrados con AES-256-GCM (v1:)
+    expect(users[0]?.firstNameEnc).toMatch(/^v1:/);
+    expect(users[0]?.firstNameEnc).not.toContain('María');
+    expect(users[0]?.lastNameEnc).toMatch(/^v1:/);
+    expect(users[0]?.lastNameEnc).not.toContain('Andrade');
+    expect(caregivers[0]?.phoneEnc).toMatch(/^v1:/);
+    expect(caregivers[0]?.phoneEnc).not.toContain('+593');
 
     // Verifica que el refresh token se guardó hasheado (SHA-256)
     expect(refreshTokens[0]?.tokenHash).toBe(hashRefreshToken(parsed.refreshToken));

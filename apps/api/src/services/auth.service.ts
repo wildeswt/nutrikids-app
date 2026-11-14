@@ -16,6 +16,7 @@ import {
 import { HttpError } from '../lib/http-error.js';
 import { hashPassword, verifyDummyPassword, verifyPassword } from '../lib/password.js';
 import { prisma } from '../lib/prisma.js';
+import { decryptUserNames, encryptPhone, encryptUserNames } from './pii.service.js';
 import {
   computePasswordHashFingerprint,
   generateRefreshToken,
@@ -133,14 +134,16 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
         data: {
           email: input.email,
           passwordHash,
-          firstName: input.firstName,
-          lastName: input.lastName,
+          ...encryptUserNames({
+            firstName: input.firstName,
+            lastName: input.lastName,
+          }),
         },
         select: {
           id: true,
           email: true,
-          firstName: true,
-          lastName: true,
+          firstNameEnc: true,
+          lastNameEnc: true,
         },
       });
 
@@ -148,7 +151,7 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
         await tx.caregiver.create({
           data: {
             userId: user.id,
-            phone: input.phone ?? null,
+            phoneEnc: encryptPhone(input.phone),
           },
         });
       }
@@ -171,11 +174,13 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
         },
       });
 
+      const { firstName, lastName } = decryptUserNames(user);
+
       return {
         id: user.id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName,
+        lastName,
         roles: input.roles,
         specialty: isProfessional && input.specialty ? input.specialty : null,
       };
@@ -219,8 +224,8 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
       id: true,
       email: true,
       passwordHash: true,
-      firstName: true,
-      lastName: true,
+      firstNameEnc: true,
+      lastNameEnc: true,
       status: true,
       caregiver: { select: { userId: true } },
       professional: { select: { userId: true, specialty: true } },
@@ -259,6 +264,8 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
     specialty,
   });
 
+  const { firstName, lastName } = decryptUserNames(user);
+
   return AuthResponseSchema.parse({
     requiresTwoFactor: false,
     accessToken,
@@ -267,8 +274,8 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
     user: {
       id: user.id,
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName,
+      lastName,
       roles,
       specialty,
     },
@@ -296,8 +303,8 @@ export async function refreshUserSession(input: RefreshInput): Promise<AuthRespo
         select: {
           id: true,
           email: true,
-          firstName: true,
-          lastName: true,
+          firstNameEnc: true,
+          lastNameEnc: true,
           status: true,
           caregiver: { select: { userId: true } },
           professional: { select: { userId: true, specialty: true } },
@@ -369,6 +376,8 @@ export async function refreshUserSession(input: RefreshInput): Promise<AuthRespo
     specialty,
   });
 
+  const { firstName, lastName } = decryptUserNames(stored.user);
+
   return AuthResponseSchema.parse({
     requiresTwoFactor: false,
     accessToken,
@@ -377,8 +386,8 @@ export async function refreshUserSession(input: RefreshInput): Promise<AuthRespo
     user: {
       id: stored.user.id,
       email: stored.user.email,
-      firstName: stored.user.firstName,
-      lastName: stored.user.lastName,
+      firstName,
+      lastName,
       roles,
       specialty,
     },

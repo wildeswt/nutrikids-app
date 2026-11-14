@@ -6,6 +6,7 @@ import { createApp } from '../app.js';
 import { env } from '../config/env.js';
 import { runRemindersJob } from '../jobs/overdue-alerts.js';
 import { prisma } from '../lib/prisma.js';
+import { encryptPii } from '../lib/pii-crypto.js';
 import { dispatchDueReminders } from '../services/reminders.service.js';
 import { signAccessToken } from '../services/token.service.js';
 
@@ -40,12 +41,18 @@ describe('Recordatorios (NK-37)', { timeout: 60000 }, () => {
     const userId = crypto.randomUUID();
     await admin.query(
       `INSERT INTO users (id, email, password_hash, first_name, last_name, status, updated_at)
-       VALUES ($1, $2, 'hash', 'Test', 'User', 'active', now())`,
-      [userId, `reminder-${userId}@nutrikids.local`],
+       VALUES ($1, $2, 'hash', $3, $4, 'active', now())`,
+      [
+        userId,
+        `reminder-${userId}@nutrikids.local`,
+        encryptPii('Test', 'users:first_name'),
+        encryptPii('User', 'users:last_name'),
+      ],
     );
     if (role === 'CAREGIVER') {
-      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, '+593990000')`, [
+      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, $2)`, [
         userId,
+        encryptPii('+593990000', 'caregivers:phone'),
       ]);
     } else {
       await admin.query(
@@ -65,8 +72,12 @@ describe('Recordatorios (NK-37)', { timeout: 60000 }, () => {
     const childId = crypto.randomUUID();
     await admin.query(
       `INSERT INTO children (id, first_name, last_name, birth_date, sex)
-       VALUES ($1, 'Mateo', 'Recordatorio', CURRENT_DATE - 900, 'MALE')`,
-      [childId],
+       VALUES ($1, $2, $3, CURRENT_DATE - 900, 'MALE')`,
+      [
+        childId,
+        encryptPii('Mateo', 'children:first_name'),
+        encryptPii('Recordatorio', 'children:last_name'),
+      ],
     );
     await admin.query(
       `INSERT INTO caregiver_children (caregiver_id, child_id, relationship, is_legal_representative)
