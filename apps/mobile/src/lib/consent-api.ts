@@ -1,11 +1,8 @@
 import {
-  ChildResponseSchema,
   ConsentResponseSchema,
   GrantConsentInputSchema,
-  type ChildResponse,
   type ConsentResponse,
 } from '@nutrikids/shared';
-import { z } from 'zod';
 import { authFetch, parseApiError } from './api.js';
 
 /** Versión actual del texto de consentimiento informado para la app. */
@@ -101,18 +98,4 @@ export async function revokeConsentForChild(childId: string): Promise<ConsentRes
   return ConsentResponseSchema.parse(rawJson);
 }
 
-/**
- * Lista los niños asociados al cuidador autenticado para gestionar consentimientos.
- */
-export async function fetchCaregiverChildren(): Promise<ChildResponse[]> {
-  const response = await authFetch('/children');
-
-  if (!response.ok) {
-    const payload: unknown = await response.json().catch(() => ({}));
-    const parsed = parseApiError(payload, 'No se pudo obtener la lista de niños');
-    throw new Error(parsed.message);
-  }
-
-  const rawJson: unknown = await response.json();
-  return z.array(ChildResponseSchema).parse(rawJson);
-}
+export { fetchCaregiverChildren } from './children-api.js';
