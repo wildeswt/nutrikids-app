@@ -24,6 +24,9 @@ export default tseslint.config(
         ...globals.node,
         ...globals.es2022,
       },
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     rules: {
       '@typescript-eslint/no-unused-vars': [
