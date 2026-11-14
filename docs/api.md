@@ -51,6 +51,7 @@ Common rules:
 | Method and path                        | Guards                          | Description                                                                                                      | Details            |
 | -------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------ |
 | `GET /children/:childId/checkups`      | `checkup:read`, link            | Checkup history (`?onlyCurrent=true`); caregivers get no z-scores (RF-14).                                       | `READ` checkups    |
+| `GET /children/:childId/growth-trend`  | `checkup:read`, link            | Caregiver growth trend per indicator (FAVORABLE or NONE, NK-74); no technical scores.                            | `READ` checkups    |
 | `POST /children/:childId/checkups`     | `checkup:create`, link, consent | Records a checkup (client UUID; resend returns `200`). The server computes the results.                          | `CREATE` checkups  |
 | `POST /checkups/:checkupId/correction` | `checkup:create`, link, consent | Corrects a checkup by creating a new one that points to the original (checkups are immutable).                   | `CREATE` checkups  |
 | `GET /checkups/:checkupId/results`     | `checkup:read`, link            | The four WHO indicator results; z-score and classification only for professionals.                               | -                  |
@@ -62,6 +63,20 @@ Common rules:
   - Exposes only first name, last name, role (`CAREGIVER` or `PROFESSIONAL`), and specialty (`pediatrics`, `nutrition`, `nursing`, or `null`).
   - Never exposes sensitive attributes: email, phone, license number, document, or passwords.
   - If the user was deleted, anonymized, or is inactive, `recordedBy` resolves to `null`.
+- Growth trend responses (`GET /children/:childId/growth-trend`) return
+  `[{ indicator, trend, basedOnCheckupId }]` (NK-74):
+  - Accessible to linked caregivers and linked professionals (`checkup:read`,
+    `requireLink('childId')`).
+  - Evaluated on the server from the two latest current checkups (`isCurrent`); an unlinked child
+    returns `[]`.
+  - `trend` is `FAVORABLE` only if the latest current checkup has a `NORMAL` classification in that
+    indicator and, if an earlier current checkup exists,
+    `|z_latest| <= |z_previous| + TREND_Z_TOLERANCE` (with `TREND_Z_TOLERANCE = 0.5`); otherwise
+    `NONE`.
+  - Never exposes z-scores, percentiles, technical classifications, or which condition failed
+    (RF-14).
+  - **Clinical Validation Notice:** This rule is conservative and preliminary; it requires
+    validation and calibration by the clinical health team before release.
 
 ## Alerts and follow-ups (professionals)
 

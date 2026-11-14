@@ -50,6 +50,7 @@ import {
 } from '../services/children.service.js';
 import { createFeedingLog, listFeedingLogs } from '../services/feedingLogs.service.js';
 import { createFollowUp } from '../services/followUps.service.js';
+import { getGrowthTrend } from '../services/growthTrend.service.js';
 
 const ChildProfessionalParamsSchema = z.object({
   childId: UuidSchema,
@@ -351,6 +352,27 @@ export function createChildrenRouter(): Router {
         onlyCurrent,
       );
       res.status(200).json(checkups);
+    },
+  );
+
+  /**
+   * GET /children/:childId/growth-trend
+   * Tendencia de crecimiento por indicador para el cuidador (NK-74).
+   * Devuelve solo FAVORABLE o NONE; nunca expone puntajes z, percentiles ni clasificaciones (RF-14).
+   * Accesible para cuidador vinculado y profesional vinculado.
+   */
+  router.get(
+    '/:childId/growth-trend',
+    requirePermission('checkup:read'),
+    requireLink('childId'),
+    auditHealth({
+      action: 'READ',
+      entityType: 'checkups',
+      getEntityId: (req) => req.params.childId as string,
+    }),
+    async (req, res) => {
+      const trends = await getGrowthTrend(req.auth!, req.params.childId as string);
+      res.status(200).json(trends);
     },
   );
 

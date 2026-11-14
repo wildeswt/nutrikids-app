@@ -24,6 +24,7 @@ import { font } from '../../constants/typography.js';
 import { useOptionalAuth } from '../../context/auth-context.js';
 import { useCheckups } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
+import { useGrowthTrend } from '../../hooks/useGrowthTrend.js';
 import { useReferenceCurves } from '../../hooks/useReferenceCurves.js';
 import { formatAgeShort, formatDecimal, formatLongDate } from '../../i18n/format.js';
 import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
@@ -64,8 +65,12 @@ export default function EvolutionScreen() {
     load: loadCheckups,
   } = useCheckups(child?.id ?? null);
 
+  const { trends: growthTrends } = useGrowthTrend(child?.id ?? null);
+
   const activeIndicator =
     INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[0]!;
+  const activeTrend = growthTrends?.find((item) => item.indicator === activeIndicator.indicator);
+  const isFavorable = activeTrend?.trend === 'FAVORABLE';
   const latest = latestCheckup(checkups);
   const position = curvesPositionFor(activeIndicator, latest);
 
@@ -277,15 +282,23 @@ export default function EvolutionScreen() {
 
           {/* Leyenda del gráfico */}
           <View style={styles.legendRow}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.legendDotChild]} />
-              <Text style={styles.legendText}>{child.firstName}</Text>
+            <View style={styles.legendGroup}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, styles.legendDotChild]} />
+                <Text style={styles.legendText}>{child.firstName}</Text>
+              </View>
+
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, styles.legendDotOms]} />
+                <Text style={styles.legendText}>{t('evolution.legendReference')}</Text>
+              </View>
             </View>
 
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.legendDotOms]} />
-              <Text style={styles.legendText}>{t('evolution.legendReference')}</Text>
-            </View>
+            {isFavorable ? (
+              <Text style={styles.favorableTrendText} testID="evolution-growth-trend">
+                {t('evolution.favorableTrend')}
+              </Text>
+            ) : null}
           </View>
         </Card>
 
@@ -487,6 +500,11 @@ const styles = StyleSheet.create({
     borderTopColor: PALETTE.border.subtle,
     paddingTop: 14,
   },
+  legendGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -508,6 +526,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: PALETTE.text.body,
     fontWeight: '500',
+  },
+  favorableTrendText: {
+    fontFamily: font('semibold'),
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2D5F5A',
   },
   lastRecordCard: {
     paddingHorizontal: 20,

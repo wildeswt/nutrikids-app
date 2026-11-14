@@ -42,6 +42,9 @@
     "create": "No pudimos guardar el control. Intenta de nuevo.",
     "missingChild": "Falta elegir el niño para anotar el control."
   },
+  "growthTrend": {
+    "fetch": "No pudimos cargar la tendencia de crecimiento. Intenta de nuevo."
+  },
   "feeding": {
     "create": "No pudimos guardar la alimentación. Intenta de nuevo.",
     "missingChild": "Falta elegir el niño para registrar su alimentación.",
