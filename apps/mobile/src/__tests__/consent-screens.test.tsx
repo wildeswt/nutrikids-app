@@ -79,6 +79,16 @@ vi.mock('../context/auth-context.js', () => ({
   }),
 }));
 
+vi.mock('../hooks/useChildren.js', () => ({
+  useChildren: () => ({
+    status: 'empty',
+    children: [],
+    error: null,
+    load: vi.fn(),
+    create: vi.fn(),
+  }),
+}));
+
 vi.mock('../hooks/useConsent.js', () => ({
   useConsent: () => mocks.hookState,
 }));
@@ -128,12 +138,43 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
   });
 
   describe('CaregiverHomeScreen - Flujo Pre-Registro', () => {
-    it('muestra aviso y acción para aceptar consentimiento antes de registrar datos del niño', () => {
-      const html = renderToString(React.createElement(CaregiverHomeScreen));
+    it('muestra acción para agregar niño que abre consentimiento en modo pre-registro', () => {
+      let capturedTree: unknown = null;
+      function Capture() {
+        capturedTree = CaregiverHomeScreen();
+        return capturedTree as React.ReactElement;
+      }
+      const html = renderToString(React.createElement(Capture));
 
       expect(html).toContain('María');
-      expect(html).toContain('+ Registrar nuevo niño');
-      expect(html).toContain(i18n.t('caregiver:home.consentNotice'));
+      expect(html).toContain(i18n.t('caregiver:home.addChild'));
+
+      const findByTestId = (
+        node: unknown,
+        id: string,
+      ): { props?: Record<string, unknown> } | null => {
+        if (!node || typeof node !== 'object') return null;
+        const el = node as { props?: { testID?: string; children?: unknown } };
+        if (el.props?.testID === id) return el as { props?: Record<string, unknown> };
+        const children = el.props?.children;
+        if (Array.isArray(children)) {
+          for (const child of children) {
+            const found = findByTestId(child, id);
+            if (found) return found;
+          }
+        } else if (children) {
+          return findByTestId(children, id);
+        }
+        return null;
+      };
+
+      const addButton = findByTestId(capturedTree, 'empty-add-child-button');
+      expect(addButton).not.toBeNull();
+      (addButton?.props?.['onPress'] as (() => void) | undefined)?.();
+      expect(mocks.push).toHaveBeenCalledWith({
+        pathname: APP_ROUTES.CAREGIVER.CONSENT,
+        params: { mode: 'register' },
+      });
     });
   });
 

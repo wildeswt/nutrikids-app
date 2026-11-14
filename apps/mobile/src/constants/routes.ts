@@ -16,6 +16,7 @@ export const APP_ROUTES = {
     GROUP: '(caregiver)',
     ROOT: '/(caregiver)' as const,
     HOME: '/(caregiver)' as const,
+    MY_CHILDREN: '/(caregiver)/my-children' as const,
     EVOLUTION: '/(caregiver)/evolution' as const,
     ADD_CHECKUP: '/(caregiver)/add-checkup' as const,
     CHECKUP_SAVED: '/(caregiver)/checkup-saved' as const,

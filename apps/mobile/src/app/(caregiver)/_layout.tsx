@@ -219,6 +219,16 @@ export default function CaregiverTabsLayout() {
           tabBarButton: () => null,
         }}
       />
+      <Tabs.Screen
+        name="my-children"
+        options={{
+          title: t('tabs.myChildren'),
+          headerTitle: t('tabs.myChildrenHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
     </Tabs>
   );
 }
