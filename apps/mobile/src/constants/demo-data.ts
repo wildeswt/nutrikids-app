@@ -1,4 +1,4 @@
-import type { Position, Specialty } from '@nutrikids/shared';
+import type { Specialty } from '@nutrikids/shared';
 
 /**
  * Demo data shown while the caregiver screens are not yet connected to the API.
@@ -17,42 +17,13 @@ export interface DemoChild {
   ageMonths: number;
 }
 
-export const DEMO_CHILDREN: DemoChild[] = [
-  {
-    id: 'mateo-1',
-    firstName: 'Mateo',
-    fullName: 'Mateo José Rodríguez',
-    birthDate: '2023-05-12',
-    ageMonths: 41,
-  },
-  {
-    id: 'sofia-2',
-    firstName: 'Sofía',
-    fullName: 'Sofía Valentina Rodríguez',
-    birthDate: '2025-02-14',
-    ageMonths: 20,
-  },
-];
-
-export const DEMO_ACTIVE_CHILD: DemoChild = DEMO_CHILDREN[0]!;
-
-export const DEMO_NEW_CHECKUP = {
-  measuredAt: '2026-10-18',
-  weightKg: 12.2,
-  heightCm: 97.0,
-  position: 'STANDING' as Position,
+export const DEMO_ACTIVE_CHILD: DemoChild = {
+  id: 'mateo-1',
+  firstName: 'Mateo',
+  fullName: 'Mateo José Rodríguez',
+  birthDate: '2023-05-12',
+  ageMonths: 41,
 };
-
-export const DEMO_LAST_EVOLUTION_RECORD = {
-  measuredAt: '2026-08-18',
-  weightKg: 13.8,
-  heightCm: 95.0,
-  recordedBy: 'Dra. Ana Juarez',
-};
-
-/** Chart axis references: ages in months, or heights in cm for weight-for-height. */
-export const DEMO_AXIS_AGES_MONTHS = [36, 39, 41];
-export const DEMO_AXIS_HEIGHTS_CM = [92, 94, 96];
 
 export const DEMO_HOME_MESSAGE = {
   content: 'Sigamos ofreciendo agua durante el día',

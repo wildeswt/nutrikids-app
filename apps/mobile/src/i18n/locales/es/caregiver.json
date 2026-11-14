@@ -61,7 +61,6 @@
     "title": "Anotar un nuevo control",
     "childSubtitle": "{{age}} - nació el {{birthDate}}",
     "changeChild": "Cambiar de niño",
-    "saved": "Control guardado.",
     "dateLabel": "Fecha del control",
     "datePlaceholder": "Ej. {{example}}",
     "positionLabel": "¿Cómo lo mediste?",
@@ -81,8 +80,21 @@
       "dateRequired": "Escribe la fecha del control.",
       "weightRange": "El peso debe estar entre {{min}} y {{max}} kg.",
       "heightRange": "La estatura debe estar entre {{min}} y {{max}} cm.",
-      "outlier": "El peso o la estatura parece poco común para su edad. Revisa la medida. Si está bien, toca otra vez «Guardar y ver resultado»."
-    }
+      "outlier": "El peso o la estatura parece poco común para su edad. Revisa la medida. Si está bien, toca otra vez «Guardar y ver resultado».",
+      "dateInvalid": "Escribe la fecha como día/mes/año. Ejemplo: {{example}}.",
+      "dateFuture": "La fecha del control no puede ser de un día que aún no llega.",
+      "dateBeforeBirth": "La fecha del control no puede ser anterior al nacimiento.",
+      "invalid": "Revisa los datos del control e intenta de nuevo."
+    },
+    "loading": "Cargando a tus niños...",
+    "loadError": "No pudimos cargar a tus niños.",
+    "retry": "Intentar de nuevo",
+    "emptyTitle": "Aún no tienes niños registrados",
+    "emptySubtitle": "Registra a tu niño para poder anotar sus controles.",
+    "addChild": "Agregar niño",
+    "saving": "Guardando...",
+    "consentRequired": "Para anotar controles de {{name}} necesitamos su consentimiento informado vigente (tu permiso para guardar sus datos).",
+    "goToConsent": "Ir al consentimiento"
   },
   "checkupSaved": {
     "title": "¡Control guardado!",
@@ -92,9 +104,9 @@
     "height": "Estatura",
     "position": "Posición",
     "teamNote": "Tu equipo de salud revisará este control. Te avisaremos si necesitan algo más.",
-    "offline": "Sin internet · se enviará cuando vuelva la conexión",
     "seeEvolution": "Ver cómo va creciendo",
-    "goHome": "Volver al inicio"
+    "goHome": "Volver al inicio",
+    "missing": "No encontramos el control que acabas de guardar."
   },
   "evolution": {
     "title": "Cómo crece {{name}}",
@@ -119,16 +131,25 @@
         "name": "¿Su IMC (peso y estatura juntos) va bien para su edad?"
       }
     },
-    "status": {
-      "ok": "Va bien",
-      "improving": "Va mejorando"
-    },
     "legendReference": "Lo esperado (OMS)",
     "lastRecord": "Último control - {{date}}",
     "weight": "Peso",
     "height": "Estatura",
     "recordedBy": "Lo anotó",
-    "unitKgM2": "kg/m²"
+    "unitKgM2": "kg/m²",
+    "loading": "Cargando la evolución...",
+    "loadError": "No pudimos cargar la evolución.",
+    "retry": "Intentar de nuevo",
+    "emptyChildrenTitle": "Aún no tienes niños registrados",
+    "emptyChildrenSubtitle": "Registra a tu niño para ver cómo crece.",
+    "noCheckupsTitle": "Aún no hay controles de {{name}}",
+    "noCheckupsSubtitle": "Anota el primer control para ver su evolución.",
+    "addCheckup": "Anotar un control",
+    "origin": {
+      "CAREGIVER": "Tú",
+      "PROFESSIONAL": "Equipo de salud"
+    },
+    "chartLoading": "Cargando la gráfica..."
   },
   "messages": {
     "back": "Volver",

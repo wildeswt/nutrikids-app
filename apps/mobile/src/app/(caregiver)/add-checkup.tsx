@@ -1,54 +1,88 @@
 import { Ionicons } from '@expo/vector-icons';
-import {
-  LENGTH_HEIGHT_MAX_CM,
-  LENGTH_HEIGHT_MIN_CM,
-  WEIGHT_MAX_KG,
-  WEIGHT_MIN_KG,
-  isPlausibleLengthHeight,
-  isPlausibleWeight,
-  type Position,
-} from '@nutrikids/shared';
-import { useRouter } from 'expo-router';
+import type { Position } from '@nutrikids/shared';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   KeyboardAwareScrollView,
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
 import { PALETTE } from '../../constants/colors.js';
-import { DEMO_CHILDREN, DEMO_NEW_CHECKUP } from '../../constants/demo-data.js';
 import { APP_ROUTES } from '../../constants/routes.js';
-import { formatAge, formatDecimal, formatLongDate } from '../../i18n/format.js';
+import { useCheckups } from '../../hooks/useCheckups.js';
+import { useChildren } from '../../hooks/useChildren.js';
+import { formatLongDate } from '../../i18n/format.js';
+import { isConsentRequiredError } from '../../lib/checkups-api.js';
+import {
+  buildCreateCheckupInput,
+  formatDateInput,
+  type CheckupFormError,
+} from '../../lib/checkup-form.js';
+import { toCheckupSavedParams } from '../../lib/checkup-route.js';
+import { formatChildAge } from '../../lib/children-api.js';
+import { generateUuid } from '../../lib/uuid.js';
 
 const POSITION_OPTIONS: Position[] = ['STANDING', 'RECUMBENT'];
-
-function parseDecimalInput(raw: string): number {
-  const normalized = raw.trim().replace(',', '.');
-  return Number.parseFloat(normalized);
-}
 
 export default function AddCheckupScreen() {
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'common']);
+  const params = useLocalSearchParams<{ childId?: string }>();
 
-  const [selectedPatientIndex, setSelectedPatientIndex] = useState(0);
-  const [measuredDateText, setMeasuredDateText] = useState(() =>
-    formatLongDate(DEMO_NEW_CHECKUP.measuredAt),
-  );
-  const [position, setPosition] = useState<Position>(DEMO_NEW_CHECKUP.position);
+  const {
+    status: childrenStatus,
+    children,
+    error: childrenError,
+    load: loadChildren,
+  } = useChildren();
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(params.childId ?? null);
+  const activeChild = children.find((child) => child.id === selectedChildId) ?? children[0] ?? null;
+  const { create, saving } = useCheckups(activeChild?.id ?? null, { autoLoad: false });
+
+  const [measuredDateText, setMeasuredDateText] = useState(() => formatDateInput(new Date()));
+  const [position, setPosition] = useState<Position>('STANDING');
   const [showPositionMenu, setShowPositionMenu] = useState(false);
-  const [weightText, setWeightText] = useState(() => formatDecimal(DEMO_NEW_CHECKUP.weightKg));
-  const [heightText, setHeightText] = useState(() => formatDecimal(DEMO_NEW_CHECKUP.heightCm));
+  const [weightText, setWeightText] = useState('');
+  const [heightText, setHeightText] = useState('');
   const [observations, setObservations] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [outlierWarning, setOutlierWarning] = useState<string | null>(null);
   const [confirmedOutlier, setConfirmedOutlier] = useState(false);
-  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [consentRequired, setConsentRequired] = useState(false);
+  /** Same id for every retry of the same data, so a lost response never duplicates the checkup. */
+  const attemptId = useRef<string | null>(null);
 
-  const activePatient = DEMO_CHILDREN[selectedPatientIndex] ?? DEMO_CHILDREN[0]!;
+  useEffect(() => {
+    void loadChildren();
+  }, [loadChildren]);
+
   const selectedPositionLabel = t(`addCheckup.positions.${position}`);
+
+  /** Any change to the data starts a new attempt and clears the previous messages. */
+  const resetAttempt = () => {
+    attemptId.current = null;
+    setErrorMessage(null);
+    setOutlierWarning(null);
+    setConfirmedOutlier(false);
+    setConsentRequired(false);
+  };
+
+  const formErrorMessage = (error: CheckupFormError): string => {
+    switch (error.code) {
+      case 'weightRange':
+        return t('addCheckup.errors.weightRange', { min: error.min, max: error.max });
+      case 'heightRange':
+        return t('addCheckup.errors.heightRange', { min: error.min, max: error.max });
+      case 'dateInvalid':
+        return t('addCheckup.errors.dateInvalid', { example: formatDateInput(new Date()) });
+      case 'outlier':
+        return t('addCheckup.errors.outlier');
+      default:
+        return t(`addCheckup.errors.${error.code}`);
+    }
+  };
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -59,98 +93,160 @@ export default function AddCheckupScreen() {
   };
 
   const handleSwitchPatient = () => {
-    setSelectedPatientIndex((prev) => (prev + 1) % DEMO_CHILDREN.length);
-    setErrorMessage(null);
-    setOutlierWarning(null);
-    setConfirmedOutlier(false);
-    setSavedSuccess(false);
+    if (!activeChild || children.length < 2) return;
+    const index = children.findIndex((child) => child.id === activeChild.id);
+    setSelectedChildId(children[(index + 1) % children.length]!.id);
+    resetAttempt();
   };
 
-  const handleSaveAndCalculate = () => {
+  const handleGoToConsent = () => {
+    if (!activeChild) return;
+    router.push({
+      pathname: APP_ROUTES.CAREGIVER.CONSENT as never,
+      params: { childId: activeChild.id, childName: activeChild.firstName, mode: 'view' },
+    });
+  };
+
+  const handleSaveAndCalculate = async () => {
+    if (!activeChild || saving) return;
     setErrorMessage(null);
-    setSavedSuccess(false);
+    setConsentRequired(false);
 
-    const weightKg = parseDecimalInput(weightText);
-    const lengthHeightCm = parseDecimalInput(heightText);
+    attemptId.current ??= generateUuid();
+    const result = buildCreateCheckupInput(
+      { dateText: measuredDateText, weightText, heightText, position },
+      { birthDate: activeChild.birthDate, confirmOutlier: confirmedOutlier, id: attemptId.current },
+    );
 
-    if (!measuredDateText.trim()) {
-      setErrorMessage(t('addCheckup.errors.dateRequired'));
-      return;
-    }
-
-    if (Number.isNaN(weightKg) || weightKg < WEIGHT_MIN_KG || weightKg > WEIGHT_MAX_KG) {
-      setErrorMessage(
-        t('addCheckup.errors.weightRange', { min: WEIGHT_MIN_KG, max: WEIGHT_MAX_KG }),
-      );
-      return;
-    }
-
-    if (
-      Number.isNaN(lengthHeightCm) ||
-      lengthHeightCm < LENGTH_HEIGHT_MIN_CM ||
-      lengthHeightCm > LENGTH_HEIGHT_MAX_CM
-    ) {
-      setErrorMessage(
-        t('addCheckup.errors.heightRange', {
-          min: LENGTH_HEIGHT_MIN_CM,
-          max: LENGTH_HEIGHT_MAX_CM,
-        }),
-      );
-      return;
-    }
-
-    const weightPlausible = isPlausibleWeight(weightKg);
-    const heightPlausible = isPlausibleLengthHeight(lengthHeightCm);
-
-    if ((!weightPlausible || !heightPlausible) && !confirmedOutlier) {
-      setOutlierWarning(t('addCheckup.errors.outlier'));
-      setConfirmedOutlier(true);
+    if (!result.ok) {
+      if (result.error.code === 'outlier') {
+        // Atypical values: ask once, the next tap sends them with `confirmOutlier`.
+        setOutlierWarning(formErrorMessage(result.error));
+        setConfirmedOutlier(true);
+      } else {
+        setErrorMessage(formErrorMessage(result.error));
+      }
       return;
     }
 
     setOutlierWarning(null);
-    setConfirmedOutlier(false);
-    setSavedSuccess(true);
-    router.push(APP_ROUTES.CAREGIVER.CHECKUP_SAVED);
+
+    try {
+      const checkup = await create(result.input);
+      attemptId.current = null;
+      router.push({
+        pathname: APP_ROUTES.CAREGIVER.CHECKUP_SAVED as never,
+        params: toCheckupSavedParams(activeChild, checkup),
+      });
+    } catch (err) {
+      if (isConsentRequiredError(err)) {
+        setConsentRequired(true);
+      } else {
+        setErrorMessage(err instanceof Error ? err.message : t('addCheckup.errors.invalid'));
+      }
+    }
   };
+
+  const isLoadingChildren = childrenStatus === 'idle' || childrenStatus === 'loading';
+
+  const header = (
+    <>
+      {/* Botón superior: <- Volver */}
+      <Pressable
+        style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
+        onPress={handleBack}
+        accessibilityRole="button"
+        accessibilityLabel={t('addCheckup.back')}
+      >
+        <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
+        <Text style={styles.backText}>{t('addCheckup.back')}</Text>
+      </Pressable>
+
+      {/* Título principal */}
+      <Text style={styles.screenTitle}>{t('addCheckup.title')}</Text>
+    </>
+  );
+
+  if (!activeChild) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+        <View style={styles.scrollContent}>
+          {header}
+          {isLoadingChildren ? (
+            <View style={styles.stateBox} testID="add-checkup-loading">
+              <ActivityIndicator color={PALETTE.primary} />
+              <Text style={styles.stateText}>{t('addCheckup.loading')}</Text>
+            </View>
+          ) : childrenStatus === 'error' ? (
+            <View style={styles.stateBox} testID="add-checkup-error">
+              <Text style={styles.stateText}>{childrenError ?? t('addCheckup.loadError')}</Text>
+              <Pressable
+                style={({ pressed }) => [styles.stateButton, pressed && styles.pressed]}
+                onPress={() => void loadChildren()}
+                accessibilityRole="button"
+                accessibilityLabel={t('addCheckup.retry')}
+                testID="add-checkup-retry"
+              >
+                <Text style={styles.stateButtonText}>{t('addCheckup.retry')}</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.stateBox} testID="add-checkup-empty">
+              <Text style={styles.stateTitle}>{t('addCheckup.emptyTitle')}</Text>
+              <Text style={styles.stateText}>{t('addCheckup.emptySubtitle')}</Text>
+              <Pressable
+                style={({ pressed }) => [styles.stateButton, pressed && styles.pressed]}
+                onPress={() =>
+                  router.push({
+                    pathname: APP_ROUTES.CAREGIVER.CONSENT as never,
+                    params: { mode: 'register' },
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityLabel={t('addCheckup.addChild')}
+                testID="add-checkup-add-child"
+              >
+                <Text style={styles.stateButtonText}>{t('addCheckup.addChild')}</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAwareScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Botón superior: <- Volver */}
-        <Pressable
-          style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
-          onPress={handleBack}
-          accessibilityRole="button"
-          accessibilityLabel={t('addCheckup.back')}
-        >
-          <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-          <Text style={styles.backText}>{t('addCheckup.back')}</Text>
-        </Pressable>
-
-        {/* Título principal */}
-        <Text style={styles.screenTitle}>{t('addCheckup.title')}</Text>
+        {header}
 
         {/* Tarjeta naranja del paciente activo */}
         <View style={styles.patientCard}>
-          <Text style={styles.patientName}>{activePatient.fullName}</Text>
+          <Text style={styles.patientName}>
+            {activeChild.firstName} {activeChild.lastName}
+          </Text>
           <Text style={styles.patientSubtitle}>
             {t('addCheckup.childSubtitle', {
-              age: formatAge(activePatient.ageMonths),
-              birthDate: formatLongDate(activePatient.birthDate),
+              age: formatChildAge(activeChild.birthDate),
+              birthDate: formatLongDate(activeChild.birthDate),
             })}
           </Text>
         </View>
 
-        {/* Enlace Cambiar paciente */}
-        <Pressable
-          style={({ pressed }) => [styles.changePatientButton, pressed && styles.pressed]}
-          onPress={handleSwitchPatient}
-          accessibilityRole="button"
-          accessibilityLabel={t('addCheckup.changeChild')}
-        >
-          <Text style={styles.changePatientText}>{t('addCheckup.changeChild')}</Text>
-        </Pressable>
+        {/* Enlace Cambiar paciente (solo con más de un niño) */}
+        {children.length > 1 ? (
+          <Pressable
+            style={({ pressed }) => [styles.changePatientButton, pressed && styles.pressed]}
+            onPress={handleSwitchPatient}
+            accessibilityRole="button"
+            accessibilityLabel={t('addCheckup.changeChild')}
+            testID="change-child-button"
+          >
+            <Text style={styles.changePatientText}>{t('addCheckup.changeChild')}</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.changePatientButton} />
+        )}
 
         {/* Mensajes de error o confirmación de valor atípico */}
         {errorMessage ? (
@@ -165,9 +261,20 @@ export default function AddCheckupScreen() {
           </View>
         ) : null}
 
-        {savedSuccess ? (
-          <View style={styles.successBanner}>
-            <Text style={styles.successBannerText}>{t('addCheckup.saved')}</Text>
+        {consentRequired ? (
+          <View style={styles.errorBanner} accessibilityRole="alert" testID="consent-required">
+            <Text style={styles.errorBannerText}>
+              {t('addCheckup.consentRequired', { name: activeChild.firstName })}
+            </Text>
+            <Pressable
+              style={({ pressed }) => [styles.consentButton, pressed && styles.pressed]}
+              onPress={handleGoToConsent}
+              accessibilityRole="button"
+              accessibilityLabel={t('addCheckup.goToConsent')}
+              testID="go-to-consent-button"
+            >
+              <Text style={styles.consentButtonText}>{t('addCheckup.goToConsent')}</Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -178,9 +285,13 @@ export default function AddCheckupScreen() {
             <KeyboardAwareTextInput
               style={styles.pillTextInput}
               value={measuredDateText}
-              onChangeText={setMeasuredDateText}
+              onChangeText={(val) => {
+                setMeasuredDateText(val);
+                resetAttempt();
+              }}
+              keyboardType="numbers-and-punctuation"
               placeholder={t('addCheckup.datePlaceholder', {
-                example: formatLongDate(DEMO_NEW_CHECKUP.measuredAt),
+                example: formatDateInput(new Date()),
               })}
               placeholderTextColor={PALETTE.input.placeholder}
               accessibilityLabel={t('addCheckup.dateLabel')}
@@ -217,6 +328,7 @@ export default function AddCheckupScreen() {
                     onPress={() => {
                       setPosition(option);
                       setShowPositionMenu(false);
+                      resetAttempt();
                     }}
                   >
                     <Text
@@ -247,8 +359,7 @@ export default function AddCheckupScreen() {
                 value={weightText}
                 onChangeText={(val) => {
                   setWeightText(val);
-                  setConfirmedOutlier(false);
-                  setOutlierWarning(null);
+                  resetAttempt();
                 }}
                 keyboardType="decimal-pad"
                 placeholder={t('addCheckup.decimalPlaceholder')}
@@ -267,8 +378,7 @@ export default function AddCheckupScreen() {
                 value={heightText}
                 onChangeText={(val) => {
                   setHeightText(val);
-                  setConfirmedOutlier(false);
-                  setOutlierWarning(null);
+                  resetAttempt();
                 }}
                 keyboardType="decimal-pad"
                 placeholder={t('addCheckup.decimalPlaceholder')}
@@ -301,11 +411,16 @@ export default function AddCheckupScreen() {
         {/* Botón Guardar y calcular */}
         <Pressable
           style={({ pressed }) => [styles.submitButton, pressed && styles.submitButtonPressed]}
-          onPress={handleSaveAndCalculate}
+          onPress={() => void handleSaveAndCalculate()}
+          disabled={saving}
           accessibilityRole="button"
           accessibilityLabel={t('addCheckup.submit')}
+          accessibilityState={{ busy: saving, disabled: saving }}
+          testID="submit-checkup-button"
         >
-          <Text style={styles.submitButtonText}>{t('addCheckup.submit')}</Text>
+          <Text style={styles.submitButtonText}>
+            {saving ? t('addCheckup.saving') : t('addCheckup.submit')}
+          </Text>
         </Pressable>
       </KeyboardAwareScrollView>
     </SafeAreaView>
@@ -399,17 +514,6 @@ const styles = StyleSheet.create({
   },
   warningBannerText: {
     color: PALETTE.feedback.warning,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  successBanner: {
-    backgroundColor: PALETTE.feedback.successBg,
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 16,
-  },
-  successBannerText: {
-    color: PALETTE.feedback.success,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -536,6 +640,48 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: '700',
+  },
+  consentButton: {
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    backgroundColor: PALETTE.feedback.error,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  consentButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  stateBox: {
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 32,
+  },
+  stateTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: PALETTE.text.title,
+    textAlign: 'center',
+  },
+  stateText: {
+    fontSize: 14,
+    color: PALETTE.text.body,
+    textAlign: 'center',
+  },
+  stateButton: {
+    backgroundColor: PALETTE.primary,
+    borderRadius: 28,
+    paddingHorizontal: 28,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stateButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '700',
   },
   pressed: {
