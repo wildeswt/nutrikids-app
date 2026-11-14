@@ -360,6 +360,7 @@ model AuditLog {
   action               String              @map("action")
   entityType           String              @map("entity_type")
   entityId             String?             @map("entity_id") @db.Uuid
+  details              Json?               @map("details")
   occurredAt           DateTime            @default(now()) @map("occurred_at") @db.Timestamptz(3)
 
   user                 User                @relation(fields: [userId], references: [id], onDelete: Restrict)
