@@ -256,15 +256,18 @@ describe('Notifications API (/notifications) and Push Pipeline', { timeout: 6000
       expect(alertNotif.entityType).toBe('alert');
 
       // Verificar que la alerta pasó a PENDING_REVIEW en base de datos
-      const alert = await prisma.alert.findUnique({
-        where: { id: alertNotif.entityId },
-      });
-      expect(alert?.status).toBe('PENDING_REVIEW');
+      // Se lee con el cliente admin: el cliente de la app corre sin usuario y el RLS le oculta las filas.
+      const { rows: alertRows } = await admin.query<{ status: string }>(
+        `SELECT status FROM alerts WHERE id = $1`,
+        [alertNotif.entityId],
+      );
+      expect(alertRows[0]?.status).toBe('PENDING_REVIEW');
 
       // Verificar que alert_history tiene la transición
-      const history = await prisma.alertHistory.findMany({
-        where: { alertId: alertNotif.entityId },
-      });
+      const { rows: history } = await admin.query<{ status: string }>(
+        `SELECT status FROM alert_history WHERE alert_id = $1`,
+        [alertNotif.entityId],
+      );
       expect(history.some((h) => h.status === 'PENDING_REVIEW')).toBe(true);
 
       // Verificar que se invocó el envío push con cuerpo genérico sin datos confidenciales
@@ -443,9 +446,14 @@ describe('Notifications API (/notifications) and Push Pipeline', { timeout: 6000
       expect(notifRes.body).toEqual([]);
       expect(sendPushSpy).not.toHaveBeenCalled();
 
-      const alerts = await prisma.alert.findMany({
-        where: { indicatorResult: { checkupId } },
-      });
+      const { rows: alerts } = await admin.query<{ status: string }>(
+        `SELECT a.status FROM alerts a
+         JOIN indicator_results ir ON ir.id = a.indicator_result_id
+         WHERE ir.checkup_id = $1`,
+        [checkupId],
+      );
+      // Debe haber alertas (si no, el `every` pasaría sin comprobar nada) y ninguna notificada.
+      expect(alerts.length).toBeGreaterThan(0);
       expect(alerts.every((a) => a.status === 'GENERATED')).toBe(true);
     });
   });
