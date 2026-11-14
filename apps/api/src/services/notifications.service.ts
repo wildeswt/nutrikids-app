@@ -220,6 +220,7 @@ export async function notifyNewAlerts(
             childId,
             startDate: { lte: today },
             OR: [{ endDate: null }, { endDate: { gte: today } }],
+            professionalId: { not: actorUserId },
           },
           select: { professionalId: true },
         });

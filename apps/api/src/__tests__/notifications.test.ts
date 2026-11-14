@@ -409,5 +409,44 @@ describe('Notifications API (/notifications) and Push Pipeline', { timeout: 6000
       expect(notifsSecond.body.length).toBe(countAfterFirst);
       expect(sendPushSpy).toHaveBeenCalledTimes(1);
     });
+
+    it('un profesional que registra un control no recibe auto-notificación de su propia alerta', async () => {
+      const caregiver = await createUser('CAREGIVER');
+      const professional = await createUser('PROFESSIONAL');
+      const childId = await seedChild(caregiver.userId);
+      await linkProfessional(childId, professional.userId);
+
+      const sendPushSpy = vi
+        .spyOn(expoClient, 'sendPushNotificationsAsync')
+        .mockResolvedValue([{ status: 'ok', id: 'receipt-self' }]);
+
+      const checkupId = crypto.randomUUID();
+      const res = await request(app)
+        .post(`/children/${childId}/checkups`)
+        .set('Authorization', professional.token)
+        .send({
+          id: checkupId,
+          measuredAt: new Date().toISOString(),
+          weightKg: 9,
+          lengthHeightCm: 90,
+          position: 'STANDING',
+        });
+
+      expect(res.status).toBe(201);
+
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
+      const notifRes = await request(app)
+        .get('/notifications')
+        .set('Authorization', professional.token);
+
+      expect(notifRes.body).toEqual([]);
+      expect(sendPushSpy).not.toHaveBeenCalled();
+
+      const alerts = await prisma.alert.findMany({
+        where: { indicatorResult: { checkupId } },
+      });
+      expect(alerts.every((a) => a.status === 'GENERATED')).toBe(true);
+    });
   });
 });
