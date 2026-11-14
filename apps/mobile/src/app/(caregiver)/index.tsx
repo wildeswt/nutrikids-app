@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -23,11 +23,22 @@ export default function CaregiverHomeScreen() {
   const { user } = useAuth();
   const { status, children, error, load } = useChildren();
 
+  // Refresca la lista de niños al enfocar la pestaña
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
+
   const caregiverName = user?.firstName || 'Familia';
   const greetingText = `¡Hola, ${caregiverName}!`;
 
   const handleRegisterChild = () => {
-    router.push(APP_ROUTES.CAREGIVER.ADD_CHILD as never);
+    // Redirige al consentimiento en modo registro antes de dar de alta al menor (NK-20)
+    router.push({
+      pathname: APP_ROUTES.CAREGIVER.CONSENT as never,
+      params: { mode: 'register' },
+    });
   };
 
   return (
@@ -69,7 +80,7 @@ export default function CaregiverHomeScreen() {
         {/* Estado de error */}
         {status === 'error' && (
           <View style={styles.errorContainer} testID="caregiver-children-error">
-            <Ionicons name="alert-circle-outline" size={24} color="#DC2626" />
+            <Ionicons name="alert-circle-outline" size={24} color={PALETTE.feedback.error} />
             <Text style={styles.errorText}>{error || 'Error al cargar los niños'}</Text>
             <Pressable
               style={({ pressed }) => [styles.retryButton, pressed && styles.buttonPressed]}
@@ -100,7 +111,7 @@ export default function CaregiverHomeScreen() {
               accessibilityRole="button"
               accessibilityLabel="Agregar niño"
             >
-              <Ionicons name="add" size={18} color="#FFFFFF" />
+              <Ionicons name="add" size={18} color={PALETTE.text.light} />
               <Text style={styles.emptyAddButtonText}>Agregar niño</Text>
             </Pressable>
           </View>
@@ -116,7 +127,11 @@ export default function CaregiverHomeScreen() {
               return (
                 <View key={child.id} style={styles.childCard} testID={`child-card-${child.id}`}>
                   <View style={styles.childIconWrapper}>
-                    <Ionicons name={isGirl ? 'woman' : 'body'} size={50} color="#FFFFFF" />
+                    <Ionicons
+                      name={isGirl ? 'woman' : 'body'}
+                      size={50}
+                      color={PALETTE.text.light}
+                    />
                   </View>
 
                   <View style={styles.childInfoWrapper}>
@@ -143,12 +158,31 @@ export default function CaregiverHomeScreen() {
                       accessibilityLabel={`Ver más información de ${child.firstName}`}
                     >
                       <Text style={styles.seeMoreText}>Ver más información</Text>
-                      <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+                      <Ionicons name="arrow-forward" size={14} color={PALETTE.text.light} />
                     </Pressable>
                   </View>
                 </View>
               );
             })}
+
+            {/* Tarjeta punteada «Agregar niño» según diseño de Figma */}
+            <Pressable
+              style={({ pressed }) => [styles.dashedAddCard, pressed && styles.buttonPressed]}
+              onPress={handleRegisterChild}
+              testID="add-child-dashed-card"
+              accessibilityRole="button"
+              accessibilityLabel="Agregar niño"
+            >
+              <View style={styles.dashedAddIconCircle}>
+                <Ionicons name="add" size={22} color={PALETTE.primary} />
+              </View>
+              <Text style={styles.dashedAddText}>Agregar niño</Text>
+            </Pressable>
+
+            {/* Texto de privacidad según diseño de Figma */}
+            <Text style={styles.linkedChildrenNotice}>
+              Solo ves a los niños vinculados a tu cuenta
+            </Text>
           </View>
         )}
 
@@ -194,14 +228,14 @@ export default function CaregiverHomeScreen() {
           onPress={() => router.push(APP_ROUTES.CAREGIVER.EVOLUTION)}
         >
           <View style={styles.controlCardRow}>
-            <Ionicons name="calendar-outline" size={40} color="#FFFFFF" />
+            <Ionicons name="calendar-outline" size={40} color={PALETTE.text.light} />
             <View style={styles.controlContent}>
               <Text style={styles.controlTitle}>Control de crecimiento</Text>
               <Text style={styles.controlDate}>Fecha: 24 de noviembre de 2026</Text>
               <Text style={styles.controlLocation}>Centro de Salud La Esperanza - 09:30am</Text>
               <View style={styles.controlSeeMore}>
                 <Text style={styles.controlSeeMoreText}>Ver más detalles</Text>
-                <Ionicons name="arrow-forward" size={13} color="#FFFFFF" />
+                <Ionicons name="arrow-forward" size={13} color={PALETTE.text.light} />
               </View>
             </View>
           </View>
@@ -223,7 +257,12 @@ export default function CaregiverHomeScreen() {
             </Text>
             <View style={styles.articleFooter}>
               <Text style={styles.articleMeta}>Lectura de 3{'\n'}minutos</Text>
-              <Ionicons name="nutrition" size={38} color="#DC2626" style={styles.articleIcon} />
+              <Ionicons
+                name="nutrition"
+                size={38}
+                color={PALETTE.feedback.error}
+                style={styles.articleIcon}
+              />
             </View>
           </View>
 
@@ -320,28 +359,28 @@ const styles = StyleSheet.create({
     color: PALETTE.text.muted,
   },
   errorContainer: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: PALETTE.feedback.errorBg,
     borderRadius: 20,
     padding: 16,
     alignItems: 'center',
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: PALETTE.feedback.errorBorder,
     gap: 8,
   },
   errorText: {
     fontSize: 13,
-    color: '#DC2626',
+    color: PALETTE.feedback.error,
     textAlign: 'center',
   },
   retryButton: {
-    backgroundColor: '#DC2626',
+    backgroundColor: PALETTE.feedback.error,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 16,
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -397,7 +436,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   emptyAddButtonText: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 14,
     fontWeight: '700',
   },
@@ -426,12 +465,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   childNameTitle: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 16,
     fontWeight: '800',
   },
   childSubtitle: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 12,
     opacity: 0.9,
     marginTop: 2,
@@ -439,7 +478,7 @@ const styles = StyleSheet.create({
   },
   statusPill: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: PALETTE.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -461,9 +500,42 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   seeMoreText: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 12,
     fontWeight: '600',
+  },
+  dashedAddCard: {
+    backgroundColor: PALETTE.surface,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: PALETTE.border.default,
+    borderStyle: 'dashed',
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  dashedAddIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: PALETTE.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dashedAddText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: PALETTE.primary,
+  },
+  linkedChildrenNotice: {
+    fontSize: 12,
+    color: PALETTE.text.muted,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -542,18 +614,18 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   controlTitle: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 15,
     fontWeight: '800',
   },
   controlDate: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 12,
     fontWeight: '600',
     opacity: 0.95,
   },
   controlLocation: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 12,
     opacity: 0.9,
   },
@@ -564,7 +636,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   controlSeeMoreText: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 11,
     fontWeight: '600',
   },
@@ -626,7 +698,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   registerButtonText: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 15,
     fontWeight: '700',
   },
