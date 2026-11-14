@@ -4,9 +4,9 @@ import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AccountCard } from '../../components/AccountCard.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
-import { useAuth } from '../../context/auth-context.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { formatLongDate } from '../../i18n/format.js';
 import { formatChildAge } from '../../lib/children-api.js';
@@ -14,7 +14,6 @@ import { formatChildAge } from '../../lib/children-api.js';
 export default function MyDataScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
   const router = useRouter();
-  const { user } = useAuth();
   const { status, children, error, load } = useChildren();
 
   // The tabs keep their screens mounted, so the children are read again each time this one is shown.
@@ -149,43 +148,8 @@ export default function MyDataScreen() {
         </Pressable>
         <Text style={styles.screenTitle}>{t('myData.title')}</Text>
 
-        {/* Mi cuenta: solo lectura, la API aún no permite cambiarla */}
         <Text style={styles.sectionTitle}>{t('myData.accountTitle')}</Text>
-        <View style={styles.card} testID="my-data-account">
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>{t('myData.name')}</Text>
-            <Text style={styles.rowValue}>{user ? `${user.firstName} ${user.lastName}` : '-'}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>{t('myData.email')}</Text>
-            <Text style={styles.rowValue}>{user?.email ?? '-'}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>{t('myData.phone')}</Text>
-            <Text style={[styles.rowValue, styles.rowValueMuted]}>
-              {t('myData.phoneUnavailable')}
-            </Text>
-          </View>
-
-          <View style={styles.notice} testID="my-data-account-locked">
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color={PALETTE.feedback.warning}
-            />
-            <Text style={styles.noticeText}>{t('myData.accountLocked')}</Text>
-          </View>
-          <Pressable
-            style={[styles.primaryButton, styles.primaryButtonDisabled]}
-            disabled
-            accessibilityRole="button"
-            accessibilityLabel={t('myData.editAccount')}
-            accessibilityState={{ disabled: true }}
-            testID="my-data-edit-account"
-          >
-            <Text style={styles.primaryButtonText}>{t('myData.editAccount')}</Text>
-          </Pressable>
-        </View>
+        <AccountCard />
 
         <Text style={styles.sectionTitle}>{t('myData.childrenTitle')}</Text>
         <Text style={styles.sectionDescription}>{t('myData.childrenDescription')}</Text>

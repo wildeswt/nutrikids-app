@@ -215,16 +215,12 @@ afterEach(() => {
 const lastAlertButtons = () => (alertSpy.mock.calls.at(-1)?.[2] ?? []) as AlertButton[];
 
 describe('MyDataScreen («Mis datos»)', () => {
-  it('shows the account data read-only, with a clear reason why it cannot be edited yet', () => {
-    const tree = renderTree(MyDataScreen as () => unknown);
+  it('shows the account section (loaded from the API, editable)', () => {
     const html = render(MyDataScreen);
 
-    expect(html).toContain('Andrea Silva');
-    expect(html).toContain('andrea@example.com');
-    expect(html).toContain(t('caregiver:myData.phoneUnavailable'));
-    expect(html).toContain(t('caregiver:myData.accountLocked'));
-    const edit = findElementByTestId(tree, 'my-data-edit-account');
-    expect(edit?.props?.['disabled']).toBe(true);
+    expect(html).toContain(t('caregiver:myData.accountTitle'));
+    expect(html).toContain('account-loading');
+    expect(html).not.toContain(t('caregiver:myData.accountLocked'));
   });
 
   it('lists the linked children with their age', () => {

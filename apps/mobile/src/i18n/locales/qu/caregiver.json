@@ -268,7 +268,26 @@
     "retry": "Intentar de nuevo",
     "emptyTitle": "Aún no tienes niños vinculados",
     "emptySubtitle": "Cuando registres a un niño lo verás aquí.",
-    "addChild": "Agregar niño"
+    "addChild": "Agregar niño",
+    "account": {
+      "edit": "Editar mis datos",
+      "cancel": "Cancelar",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "saved": "Tus datos se guardaron.",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "email": "Correo",
+      "phone": "Teléfono de contacto",
+      "phoneHint": "Opcional",
+      "currentPassword": "Contraseña actual",
+      "currentPasswordHint": "Para cambiar el correo, escribe tu contraseña actual.",
+      "nothingChanged": "No cambiaste ningún dato.",
+      "wrongPassword": "La contraseña actual no es correcta.",
+      "emailTaken": "Ese correo ya está en uso.",
+      "loadError": "No pudimos cargar tus datos.",
+      "retry": "Reintentar"
+    }
   },
   "editChild": {
     "back": "Volver",
