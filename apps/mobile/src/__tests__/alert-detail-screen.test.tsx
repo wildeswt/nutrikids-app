@@ -261,6 +261,14 @@ describe('AlertDetailScreen (NK-33)', () => {
         params: { alertId: makeDetail().id, childId: CHILD_ID },
       });
     });
+
+    it('opens the referral screen with the child preselected', () => {
+      (byTestId('alert-detail-referral')?.props?.['onPress'] as () => void)();
+      expect(mocks.push).toHaveBeenCalledWith({
+        pathname: APP_ROUTES.PROFESSIONAL.REFERRAL,
+        params: { childId: CHILD_ID },
+      });
+    });
   });
 
   describe('states', () => {

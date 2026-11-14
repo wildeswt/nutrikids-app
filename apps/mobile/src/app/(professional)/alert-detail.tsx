@@ -244,6 +244,14 @@ export default function AlertDetailScreen() {
     });
   };
 
+  const openReferral = () => {
+    if (!alert) return;
+    router.push({
+      pathname: APP_ROUTES.PROFESSIONAL.REFERRAL as never,
+      params: { childId: alert.childId },
+    });
+  };
+
   const backButton = (
     <Pressable
       style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
@@ -342,6 +350,14 @@ export default function AlertDetailScreen() {
           <Text style={styles.secondaryButtonText}>{t('alertDetail.actions.followUp')}</Text>
         </Pressable>
       )}
+      <Pressable
+        style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+        onPress={openReferral}
+        accessibilityRole="button"
+        testID="alert-detail-referral"
+      >
+        <Text style={styles.secondaryButtonText}>{t('alertDetail.actions.referral')}</Text>
+      </Pressable>
     </View>
   );
 
