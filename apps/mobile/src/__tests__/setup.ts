@@ -37,4 +37,29 @@ vi.mock('expo-notifications', () => ({
   getExpoPushTokenAsync: vi.fn(async () => ({ data: 'ExponentPushToken[mock-token]' })),
 }));
 
+// expo-file-system is a native module: an in-memory file system stands in for it (the files live
+// in `__files`, keyed by uri, so a test can read or seed them).
+vi.mock('expo-file-system', () => {
+  const files = new Map<string, string>();
+  class File {
+    readonly uri: string;
+    constructor(...parts: Array<string | { uri: string }>) {
+      this.uri = parts.map((part) => (typeof part === 'string' ? part : part.uri)).join('/');
+    }
+    get exists(): boolean {
+      return files.has(this.uri);
+    }
+    create(): void {
+      files.set(this.uri, '');
+    }
+    async write(content: string): Promise<void> {
+      files.set(this.uri, content);
+    }
+    async text(): Promise<string> {
+      return files.get(this.uri) ?? '';
+    }
+  }
+  return { File, Paths: { document: { uri: 'file:///documents' } }, __files: files };
+});
+
 await import('../i18n/index.js');

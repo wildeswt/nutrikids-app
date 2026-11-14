@@ -17,7 +17,11 @@
     "addChild": "Registrar niño",
     "addChildHeader": "Registrar niño",
     "notifications": "Notificaciones",
-    "notificationsHeader": "Notificaciones"
+    "notificationsHeader": "Notificaciones",
+    "learn": "Aprende en casa",
+    "learnHeader": "Aprende en casa",
+    "learnArticle": "Artículo",
+    "learnArticleHeader": "Artículo"
   },
   "home": {
     "notifications": "Avisos",
@@ -37,10 +41,6 @@
     "checkupPlace": "{{place}} - {{time}}",
     "checkupDetails": "Ver detalles",
     "learnAtHome": "Aprende en casa",
-    "articleSnacks": "Ideas de\nmeriendas\nnutritivas",
-    "articleSnacksMeta": "Se lee en\n3 minutos",
-    "articleFeeding": "Alimentación\na los 3 años",
-    "articleFeedingMeta": "Guía práctica",
     "registerChild": "+ Registrar nuevo niño",
     "registerChildA11y": "Registrar nuevo niño",
     "consentNotice": "Antes de anotar los datos de tu niño, te pediremos leer y aceptar el consentimiento informado (tu permiso para guardar y revisar sus datos).",
@@ -54,7 +54,11 @@
     "addChild": "Agregar niño",
     "seeMoreA11y": "Ver cómo crece {{name}}",
     "linkedNotice": "Solo ves a los niños vinculados a tu cuenta",
-    "checkupDate": "Fecha: {{date}}"
+    "checkupDate": "Fecha: {{date}}",
+    "learnLoading": "Buscando artículos para ti...",
+    "learnConnect": "Conéctate una vez para descargar los artículos.",
+    "learnEmpty": "Pronto habrá artículos para esta edad.",
+    "articleA11y": "Leer el artículo: {{title}}"
   },
   "addCheckup": {
     "back": "Volver",
@@ -237,5 +241,33 @@
     "legalRepA11y": "Soy el representante legal del niño",
     "legalRepLabel": "Soy el representante legal del niño y puedo dar permiso para registrar sus datos.",
     "submit": "Guardar niño"
+  },
+  "learn": {
+    "back": "Volver",
+    "title": "Aprende en casa",
+    "bannerSubtitle": "Artículos para {{age}}",
+    "filterLabel": "Edad del niño",
+    "filterAll": "Todos",
+    "ageRange": "De {{min}} a {{max}} meses",
+    "readTime_one": "Se lee en {{count}} minuto",
+    "readTime_other": "Se lee en {{count}} minutos",
+    "readA11y": "Leer el artículo: {{title}}",
+    "loading": "Cargando los artículos...",
+    "loadError": "No pudimos cargar los artículos.",
+    "retry": "Intentar de nuevo",
+    "needsConnectionTitle": "Conéctate una vez para descargar",
+    "needsConnectionSubtitle": "Con internet se guardan los artículos en tu teléfono y después los puedes leer sin conexión.",
+    "offlineNotice": "Sin conexión: estás leyendo los artículos guardados en tu teléfono.",
+    "languageFallback": "Por ahora estos artículos solo están en español.",
+    "emptyCatalogTitle": "Todavía no hay artículos",
+    "emptyCatalogSubtitle": "Vuelve pronto: estamos preparando consejos para ti.",
+    "emptyForAgeTitle": "Aún no hay artículos para {{age}}",
+    "emptyForAgeSubtitle": "Mira los artículos de otras edades.",
+    "showAll": "Ver todos",
+    "article": {
+      "notFoundTitle": "No encontramos este artículo",
+      "notFoundSubtitle": "Puede que ya no esté disponible. Vuelve a la lista de artículos.",
+      "backToList": "Ver todos los artículos"
+    }
   }
 }

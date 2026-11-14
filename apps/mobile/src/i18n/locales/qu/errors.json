@@ -46,5 +46,8 @@
   },
   "alerts": {
     "list": "Mana yuyachikkunata apamunkapak ushashkanchu. Kutin yachay."
+  },
+  "education": {
+    "fetch": "No pudimos descargar los artículos. Intenta de nuevo."
   }
 }

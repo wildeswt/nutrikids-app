@@ -25,6 +25,8 @@ export const APP_ROUTES = {
     CONSENT: '/(caregiver)/consent' as const,
     ADD_CHILD: '/(caregiver)/add-child' as const,
     NOTIFICATIONS: '/(caregiver)/notifications' as const,
+    LEARN: '/(caregiver)/learn' as const,
+    LEARN_ARTICLE: '/(caregiver)/learn-article' as const,
   },
   PROFESSIONAL: {
     GROUP: '(professional)',

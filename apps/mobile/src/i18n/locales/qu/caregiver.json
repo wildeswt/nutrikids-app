@@ -17,7 +17,11 @@
     "addChild": "Wawata killkakatiy",
     "addChildHeader": "Wawata killkakatiy",
     "notifications": "Willaykuna",
-    "notificationsHeader": "Willaykuna"
+    "notificationsHeader": "Willaykuna",
+    "learn": "Aprende en casa",
+    "learnHeader": "Aprende en casa",
+    "learnArticle": "Artículo",
+    "learnArticleHeader": "Artículo"
   },
   "home": {
     "notifications": "Yuyachikkuna",
@@ -37,10 +41,6 @@
     "checkupPlace": "{{place}} - {{time}}",
     "checkupDetails": "Ashtawan rikuy",
     "learnAtHome": "Wasipi yachay",
-    "articleSnacks": "Alli\nichilla\nmikuykuna",
-    "articleSnacksMeta": "3 uchilla pachapi\nñawinchinki",
-    "articleFeeding": "3 watayuk\nwawapak mikuy",
-    "articleFeedingMeta": "Ruranapak yachay",
     "registerChild": "+ Mushuk wawata killkakatiy",
     "registerChildA11y": "Mushuk wawata killkakatiy",
     "consentNotice": "Kikinpak wawapak willaykunata killkanamanta ñawpaka, ari ninata ñawinchishpa chaskinatami mañashun (paypak willaykunata wakaychinkapak, rikunkapakpash ari nina).",
@@ -54,7 +54,11 @@
     "addChild": "Wawata yapay",
     "seeMoreA11y": "Imashina {{name}} wiñakunta rikuy",
     "linkedNotice": "Kikinpak kuentawan tinkishka wawakunallatami rikunki",
-    "checkupDate": "Puncha: {{date}}"
+    "checkupDate": "Puncha: {{date}}",
+    "learnLoading": "Buscando artículos para ti...",
+    "learnConnect": "Conéctate una vez para descargar los artículos.",
+    "learnEmpty": "Pronto habrá artículos para esta edad.",
+    "articleA11y": "Leer el artículo: {{title}}"
   },
   "addCheckup": {
     "back": "Tikray",
@@ -237,5 +241,33 @@
     "legalRepA11y": "Ñukami wawapak kamachik kamak kani",
     "legalRepLabel": "Ñukami wawapak kamachik kamak kani, paypak willaykunata killkakatinkapak ari ninata ushani.",
     "submit": "Wawata wakaychiy"
+  },
+  "learn": {
+    "back": "Volver",
+    "title": "Aprende en casa",
+    "bannerSubtitle": "Artículos para {{age}}",
+    "filterLabel": "Edad del niño",
+    "filterAll": "Todos",
+    "ageRange": "De {{min}} a {{max}} meses",
+    "readTime_one": "Se lee en {{count}} minuto",
+    "readTime_other": "Se lee en {{count}} minutos",
+    "readA11y": "Leer el artículo: {{title}}",
+    "loading": "Cargando los artículos...",
+    "loadError": "No pudimos cargar los artículos.",
+    "retry": "Intentar de nuevo",
+    "needsConnectionTitle": "Conéctate una vez para descargar",
+    "needsConnectionSubtitle": "Con internet se guardan los artículos en tu teléfono y después los puedes leer sin conexión.",
+    "offlineNotice": "Sin conexión: estás leyendo los artículos guardados en tu teléfono.",
+    "languageFallback": "Por ahora estos artículos solo están en español.",
+    "emptyCatalogTitle": "Todavía no hay artículos",
+    "emptyCatalogSubtitle": "Vuelve pronto: estamos preparando consejos para ti.",
+    "emptyForAgeTitle": "Aún no hay artículos para {{age}}",
+    "emptyForAgeSubtitle": "Mira los artículos de otras edades.",
+    "showAll": "Ver todos",
+    "article": {
+      "notFoundTitle": "No encontramos este artículo",
+      "notFoundSubtitle": "Puede que ya no esté disponible. Vuelve a la lista de artículos.",
+      "backToList": "Ver todos los artículos"
+    }
   }
 }

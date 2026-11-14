@@ -18,21 +18,34 @@ import { DEMO_HOME_MESSAGE, DEMO_NEXT_CHECKUP } from '../../constants/demo-data.
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
 import { useChildren } from '../../hooks/useChildren.js';
+import { useEducation } from '../../hooks/useEducation.js';
 import { formatLongDate } from '../../i18n/format.js';
 import { formatChildAge } from '../../lib/children-api.js';
+import { childAgeMonths, filterByAge, readingMinutes } from '../../lib/education.js';
 
 export default function CaregiverHomeScreen() {
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'common']);
   const { user } = useAuth();
   const { status, children, error, load } = useChildren();
+  const education = useEducation();
+  const loadEducation = education.load;
 
   // Refresh the children list when the tab gets focus
   useFocusEffect(
     useCallback(() => {
       void load();
-    }, [load]),
+      void loadEducation();
+    }, [load, loadEducation]),
   );
+
+  // The two articles shown on Home: those for the first child's age, or the first of the catalog.
+  const firstChild = children[0];
+  const learnArticles = (() => {
+    if (!firstChild) return education.articles.slice(0, 2);
+    const forAge = filterByAge(education.articles, childAgeMonths(firstChild));
+    return (forAge.length > 0 ? forAge : education.articles).slice(0, 2);
+  })();
 
   const caregiverName = user?.firstName || t('home.greetingFallback');
   const greetingText = t('home.greeting', { name: caregiverName });
@@ -256,43 +269,62 @@ export default function CaregiverHomeScreen() {
           </View>
         </Pressable>
 
-        {/* Sección: Aprende en casa */}
+        {/* Sección: Aprende en casa (artículos según la edad del primer niño) */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('home.learnAtHome')}</Text>
-          <Pressable>
+          <Pressable
+            onPress={() => router.push(APP_ROUTES.CAREGIVER.LEARN)}
+            accessibilityRole="button"
+            testID="home-learn-see-all"
+          >
             <Text style={styles.sectionLink}>{t('home.seeAll')}</Text>
           </Pressable>
         </View>
 
-        <View style={styles.cardsRow}>
-          {/* Card 1: Ideas de meriendas nutritivas */}
-          <View style={styles.articleCard}>
-            <Text style={styles.articleTitle}>{t('home.articleSnacks')}</Text>
-            <View style={styles.articleFooter}>
-              <Text style={styles.articleMeta}>{t('home.articleSnacksMeta')}</Text>
-              <Ionicons
-                name="nutrition"
-                size={38}
-                color={PALETTE.feedback.error}
-                style={styles.articleIcon}
-              />
-            </View>
+        {learnArticles.length > 0 ? (
+          <View style={styles.cardsRow} testID="home-learn-cards">
+            {learnArticles.map((article) => (
+              <Pressable
+                key={article.id}
+                style={({ pressed }) => [styles.articleCard, pressed && styles.buttonPressed]}
+                onPress={() =>
+                  router.push({
+                    pathname: APP_ROUTES.CAREGIVER.LEARN_ARTICLE as never,
+                    params: { id: article.id },
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityLabel={t('home.articleA11y', { title: article.title })}
+                testID={`home-learn-card-${article.id}`}
+              >
+                <Text style={styles.articleTitle} numberOfLines={4}>
+                  {article.title}
+                </Text>
+                <View style={styles.articleFooter}>
+                  <Text style={styles.articleMeta}>
+                    {t('learn.readTime', { count: readingMinutes(article.body) })}
+                  </Text>
+                  <Ionicons
+                    name="book-outline"
+                    size={34}
+                    color={PALETTE.secondary}
+                    style={styles.articleIcon}
+                  />
+                </View>
+              </Pressable>
+            ))}
           </View>
-
-          {/* Card 2: Alimentación a los 3 años */}
-          <View style={styles.articleCard}>
-            <Text style={styles.articleTitle}>{t('home.articleFeeding')}</Text>
-            <View style={styles.articleFooter}>
-              <Text style={styles.articleMeta}>{t('home.articleFeedingMeta')}</Text>
-              <Ionicons
-                name="restaurant"
-                size={34}
-                color={PALETTE.text.title}
-                style={styles.articleIcon}
-              />
-            </View>
+        ) : (
+          <View style={styles.whiteCard} testID="home-learn-empty">
+            <Text style={styles.messageQuote}>
+              {education.status === 'needs-connection'
+                ? t('home.learnConnect')
+                : education.status === 'idle' || education.status === 'loading'
+                  ? t('home.learnLoading')
+                  : t('home.learnEmpty')}
+            </Text>
           </View>
-        </View>
+        )}
 
         {/* Sección: Registro de nuevo niño con consentimiento informado */}
         <View style={styles.actionSection}>
