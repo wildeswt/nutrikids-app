@@ -104,6 +104,15 @@ export default function ProfessionalDrawerLayout() {
         }}
       />
       <Drawer.Screen
+        name="referral"
+        options={{
+          title: t('drawer.referralTitle'),
+          headerShown: false,
+          // Reachable from the alert detail; hidden from the drawer menu.
+          drawerItemStyle: { display: 'none' },
+        }}
+      />
+      <Drawer.Screen
         name="children"
         options={{
           drawerLabel: t('drawer.children'),

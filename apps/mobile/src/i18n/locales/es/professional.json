@@ -15,6 +15,7 @@
     "notificationsTitle": "Notificaciones",
     "alertDetailTitle": "Detalle de la Alerta",
     "followUpTitle": "Seguimiento clínico",
+    "referralTitle": "Interconsulta",
     "chatTitle": "Conversación"
   },
   "alerts": {
@@ -116,6 +117,7 @@
       "markReviewed": "Marcar como revisada",
       "marking": "Guardando...",
       "followUp": "Registrar seguimiento",
+      "referral": "Nueva interconsulta",
       "reviewedNote": "Ya marcaste esta alerta como revisada.",
       "establishedNote": "Esta alerta ya tiene seguimiento establecido."
     },
@@ -174,6 +176,47 @@
       "dateInvalid": "Escribe la fecha como DD/MM/AAAA.",
       "datePast": "La fecha del próximo control no puede ser anterior a hoy.",
       "invalid": "Revisa los datos del seguimiento."
+    }
+  },
+  "referral": {
+    "title": "Interconsulta",
+    "bannerTitle": "Comunicación entre profesionales",
+    "bannerSubtitle": "{{name}} · {{specialty}}",
+    "loadingChildren": "Cargando pacientes...",
+    "loadChildrenError": "No pudimos cargar tus pacientes.",
+    "retry": "Reintentar",
+    "emptyChildrenTitle": "Sin pacientes vinculados",
+    "emptyChildrenSubtitle": "Debes tener al menos un niño vinculado para enviar una interconsulta.",
+    "patientLabel": "Paciente",
+    "patientPlaceholder": "Selecciona un paciente",
+    "recipientLabel": "Dirigida a",
+    "recipientPlaceholder": "Selecciona un profesional",
+    "loadingRecipients": "Cargando profesionales vinculados...",
+    "loadRecipientsError": "No pudimos cargar los profesionales vinculados.",
+    "noRecipients": "Este niño no tiene otros profesionales vinculados",
+    "unknownProfessional": "Profesional",
+    "reasonLabel": "Motivo de la interconsulta",
+    "reasonPlaceholder": "Describe el motivo clínico de la interconsulta...",
+    "charCount": "{{count}} / {{max}}",
+    "priorityLabel": "Prioridad",
+    "priorities": {
+      "ordinary": "Ordinaria",
+      "priority": "Prioritaria"
+    },
+    "actions": {
+      "submit": "Enviar interconsulta",
+      "sending": "Enviando...",
+      "saveDraft": "Guardar borrador"
+    },
+    "draftSaved": "Borrador guardado en este dispositivo.",
+    "draftRestored": "Recuperamos tu borrador.",
+    "sentSuccess": "Interconsulta enviada.",
+    "errors": {
+      "childRequired": "Selecciona un paciente.",
+      "recipientRequired": "Selecciona el profesional destinatario.",
+      "bodyRequired": "Escribe el motivo de la interconsulta.",
+      "bodyTooLong": "El motivo no puede pasar de {{max}} caracteres.",
+      "invalid": "Revisa los datos de la interconsulta."
     }
   }
 }
