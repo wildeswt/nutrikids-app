@@ -15,6 +15,7 @@ vi.mock('expo-secure-store', () => ({
   WHEN_UNLOCKED_THIS_DEVICE_ONLY: 1,
 }));
 
+import type { CreateFollowUpBatchInput, FollowUpResponse } from '@nutrikids/shared';
 import * as alertsApi from '../lib/alerts-api.js';
 import * as followUpsApi from '../lib/follow-ups-api.js';
 import { FollowUpApiError, FollowUpOfflineError } from '../lib/follow-ups-api.js';
@@ -24,29 +25,54 @@ import { establishAlert, flushPendingFollowUps, submitFollowUp } from '../lib/fo
 const USER = '11111111-1111-4111-8111-111111111111';
 const CHILD = '22222222-2222-4222-8222-222222222222';
 const ALERT = makeDetail().id;
+const GROUP = '55555555-5555-4555-8555-555555555555';
 
-const input = {
-  id: '33333333-3333-4333-8333-333333333333',
-  type: 'recommendation' as const,
-  details: 'Reforzar la variedad de alimentos.',
-  nextCheckupDate: '2026-11-27',
+const input: CreateFollowUpBatchInput = {
+  groupId: GROUP,
   alertId: ALERT,
+  nextCheckupDate: '2026-11-27',
+  items: [
+    {
+      id: '33333333-3333-4333-8333-333333333333',
+      type: 'observation',
+      details: 'Observación de percentiles de peso.',
+    },
+    {
+      id: '44444444-4444-4444-8444-444444444444',
+      type: 'intervention',
+      details: 'Plan alimentario reforzado.',
+    },
+  ],
 };
 
 const submission = { userId: USER, childId: CHILD, alertId: ALERT, establish: true, input };
 
-const followUp = {
-  id: input.id,
-  childId: CHILD,
-  alertId: ALERT,
-  professionalId: '44444444-4444-4444-8444-444444444444',
-  type: input.type,
-  details: input.details,
-  nextCheckupDate: input.nextCheckupDate,
-  reminder: null,
-};
+const followUps: FollowUpResponse[] = [
+  {
+    id: input.items[0].id,
+    groupId: GROUP,
+    childId: CHILD,
+    alertId: ALERT,
+    professionalId: '44444444-4444-4444-8444-444444444444',
+    type: input.items[0].type,
+    details: input.items[0].details,
+    nextCheckupDate: input.nextCheckupDate ?? null,
+    reminder: null,
+  },
+  {
+    id: input.items[1].id,
+    groupId: GROUP,
+    childId: CHILD,
+    alertId: ALERT,
+    professionalId: '44444444-4444-4444-8444-444444444444',
+    type: input.items[1].type,
+    details: input.items[1].details,
+    nextCheckupDate: null,
+    reminder: null,
+  },
+];
 
-describe('follow-up sync (NK-34)', () => {
+describe('follow-up sync (NK-34, NK-75)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     secure.values.clear();
@@ -87,9 +113,9 @@ describe('follow-up sync (NK-34)', () => {
     });
   });
 
-  describe('submitFollowUp', () => {
-    it('sends the follow-up and moves the alert to «seguimiento establecido»', async () => {
-      const create = vi.spyOn(followUpsApi, 'createFollowUp').mockResolvedValue(followUp);
+  describe('submitFollowUp (batch)', () => {
+    it('sends the follow-up batch and moves the alert to «seguimiento establecido»', async () => {
+      const create = vi.spyOn(followUpsApi, 'createFollowUpBatch').mockResolvedValue(followUps);
       vi.spyOn(alertsApi, 'fetchAlertDetail').mockResolvedValue(makeDetail({ status: 'REVIEWED' }));
       vi.spyOn(alertsApi, 'updateAlertStatus').mockResolvedValue(
         makeDetail({ status: 'FOLLOW_UP_ESTABLISHED' }),
@@ -98,22 +124,22 @@ describe('follow-up sync (NK-34)', () => {
       const result = await submitFollowUp(submission);
 
       expect(create).toHaveBeenCalledWith(CHILD, input);
-      expect(result).toEqual({ kind: 'sent', followUp, alertStatus: 'FOLLOW_UP_ESTABLISHED' });
+      expect(result).toEqual({ kind: 'sent', followUps, alertStatus: 'FOLLOW_UP_ESTABLISHED' });
       expect(await listPending(USER)).toEqual([]);
     });
 
     it('leaves the alert alone when establishing was not asked for', async () => {
-      vi.spyOn(followUpsApi, 'createFollowUp').mockResolvedValue(followUp);
+      vi.spyOn(followUpsApi, 'createFollowUpBatch').mockResolvedValue(followUps);
       const fetchAlert = vi.spyOn(alertsApi, 'fetchAlertDetail');
 
       const result = await submitFollowUp({ ...submission, establish: false });
 
-      expect(result).toEqual({ kind: 'sent', followUp, alertStatus: null });
+      expect(result).toEqual({ kind: 'sent', followUps, alertStatus: null });
       expect(fetchAlert).not.toHaveBeenCalled();
     });
 
-    it('saves the follow-up on the phone when there is no connection', async () => {
-      vi.spyOn(followUpsApi, 'createFollowUp').mockRejectedValue(new FollowUpOfflineError());
+    it('saves the follow-up batch on the phone when there is no connection', async () => {
+      vi.spyOn(followUpsApi, 'createFollowUpBatch').mockRejectedValue(new FollowUpOfflineError());
 
       const result = await submitFollowUp(submission);
 
@@ -123,7 +149,7 @@ describe('follow-up sync (NK-34)', () => {
     });
 
     it('queues everything again when the connection drops while moving the alert', async () => {
-      vi.spyOn(followUpsApi, 'createFollowUp').mockResolvedValue(followUp);
+      vi.spyOn(followUpsApi, 'createFollowUpBatch').mockResolvedValue(followUps);
       vi.spyOn(alertsApi, 'fetchAlertDetail').mockRejectedValue(
         new TypeError('Network request failed'),
       );
@@ -132,8 +158,8 @@ describe('follow-up sync (NK-34)', () => {
       expect(await listPending(USER)).toHaveLength(1);
     });
 
-    it('reports the follow-up as saved when only the alert could not be moved', async () => {
-      vi.spyOn(followUpsApi, 'createFollowUp').mockResolvedValue(followUp);
+    it('reports the follow-up batch as saved when only the alert could not be moved', async () => {
+      vi.spyOn(followUpsApi, 'createFollowUpBatch').mockResolvedValue(followUps);
       vi.spyOn(alertsApi, 'fetchAlertDetail').mockResolvedValue(makeDetail({ status: 'REVIEWED' }));
       vi.spyOn(alertsApi, 'updateAlertStatus').mockRejectedValue(new Error('Cambio concurrente'));
 
@@ -141,7 +167,7 @@ describe('follow-up sync (NK-34)', () => {
 
       expect(result).toEqual({
         kind: 'sent',
-        followUp,
+        followUps,
         alertStatus: null,
         alertError: 'Cambio concurrente',
       });
@@ -149,7 +175,7 @@ describe('follow-up sync (NK-34)', () => {
     });
 
     it('throws when the server refuses the follow-up, without queuing it', async () => {
-      vi.spyOn(followUpsApi, 'createFollowUp').mockRejectedValue(
+      vi.spyOn(followUpsApi, 'createFollowUpBatch').mockRejectedValue(
         new FollowUpApiError('Falta el consentimiento', 403),
       );
 
@@ -160,8 +186,17 @@ describe('follow-up sync (NK-34)', () => {
 
   describe('flushPendingFollowUps', () => {
     const queue = async (id: string) => {
-      vi.spyOn(followUpsApi, 'createFollowUp').mockRejectedValueOnce(new FollowUpOfflineError());
-      await submitFollowUp({ ...submission, input: { ...input, id } });
+      vi.spyOn(followUpsApi, 'createFollowUpBatch').mockRejectedValueOnce(
+        new FollowUpOfflineError(),
+      );
+      await submitFollowUp({
+        ...submission,
+        input: {
+          ...input,
+          groupId: id,
+          items: [{ id, type: 'observation', details: 'Detalle pendiente' }],
+        },
+      });
     };
     const A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
     const B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -169,8 +204,8 @@ describe('follow-up sync (NK-34)', () => {
     it('sends what was waiting once there is connection', async () => {
       await queue(A);
       await queue(B);
-      const create = vi.spyOn(followUpsApi, 'createFollowUp').mockResolvedValue(followUp);
-      create.mockClear(); // the same spy recorded the calls that queued them
+      const create = vi.spyOn(followUpsApi, 'createFollowUpBatch').mockResolvedValue(followUps);
+      create.mockClear();
       vi.spyOn(alertsApi, 'fetchAlertDetail').mockResolvedValue(
         makeDetail({ status: 'FOLLOW_UP_ESTABLISHED' }),
       );
@@ -178,7 +213,7 @@ describe('follow-up sync (NK-34)', () => {
       const result = await flushPendingFollowUps(USER);
 
       expect(result).toEqual({ sent: 2, remaining: 0, rejected: 0 });
-      expect(create.mock.calls.map((c) => c[1].id)).toEqual([A, B]);
+      expect(create.mock.calls.map((c) => c[1].items[0].id)).toEqual([A, B]);
       expect(await listPending(USER)).toEqual([]);
     });
 
@@ -186,7 +221,7 @@ describe('follow-up sync (NK-34)', () => {
       await queue(A);
       await queue(B);
       const create = vi
-        .spyOn(followUpsApi, 'createFollowUp')
+        .spyOn(followUpsApi, 'createFollowUpBatch')
         .mockRejectedValue(new FollowUpOfflineError());
       create.mockClear();
 
@@ -197,9 +232,9 @@ describe('follow-up sync (NK-34)', () => {
       expect(await listPending(USER)).toHaveLength(2);
     });
 
-    it('turns a follow-up the server refuses into a draft with the reason', async () => {
+    it('turns a follow-up batch the server refuses into a draft with the reason', async () => {
       await queue(A);
-      vi.spyOn(followUpsApi, 'createFollowUp').mockRejectedValue(
+      vi.spyOn(followUpsApi, 'createFollowUpBatch').mockRejectedValue(
         new FollowUpApiError('La fecha del próximo control es pasada', 400),
       );
 
@@ -210,13 +245,18 @@ describe('follow-up sync (NK-34)', () => {
       const draft = await getDraft(draftKey(USER, { alertId: ALERT, childId: CHILD }));
       expect(draft).toMatchObject({
         lastError: 'La fecha del próximo control es pasada',
-        form: { type: 'recommendation', details: input.details, nextCheckupText: '27/11/2026' },
+        form: {
+          observations: 'Detalle pendiente',
+          intervention: '',
+          referral: '',
+          nextCheckupText: '27/11/2026',
+        },
       });
     });
 
     it('keeps the follow-up on a server error that may pass (5xx)', async () => {
       await queue(A);
-      vi.spyOn(followUpsApi, 'createFollowUp').mockRejectedValue(
+      vi.spyOn(followUpsApi, 'createFollowUpBatch').mockRejectedValue(
         new FollowUpApiError('Error', 503),
       );
 
@@ -226,7 +266,7 @@ describe('follow-up sync (NK-34)', () => {
     });
 
     it('does nothing when nothing is waiting', async () => {
-      const create = vi.spyOn(followUpsApi, 'createFollowUp');
+      const create = vi.spyOn(followUpsApi, 'createFollowUpBatch');
       await expect(flushPendingFollowUps(USER)).resolves.toEqual({
         sent: 0,
         remaining: 0,

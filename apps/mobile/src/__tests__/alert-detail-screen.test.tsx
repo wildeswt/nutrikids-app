@@ -175,6 +175,13 @@ describe('AlertDetailScreen (NK-33)', () => {
     expect(out).toContain('10 de noviembre de 2026');
     expect(out).toContain('12,2 kg');
     expect(out).toContain('97,0 cm');
+    expect(out).not.toContain('Observaciones:');
+  });
+
+  it('shows checkup notes in the Control row when present', () => {
+    setHook({ checkups: [makeCheckup({ notes: 'Control tras cuadro viral' })] });
+    const out = html();
+    expect(out).toContain('Observaciones: Control tras cuadro viral');
   });
 
   it('marks the overdue tag only when the alert is overdue', () => {

@@ -1,7 +1,11 @@
 import {
+  CreateFollowUpBatchInputSchema,
   CreateFollowUpInputSchema,
+  FollowUpBatchResponseSchema,
   FollowUpResponseSchema,
+  type CreateFollowUpBatchInput,
   type CreateFollowUpInput,
+  type FollowUpBatchResponse,
   type FollowUpResponse,
 } from '@nutrikids/shared';
 import i18n from '../i18n/index.js';
@@ -56,4 +60,35 @@ export async function createFollowUp(
 
   const rawJson: unknown = await response.json();
   return FollowUpResponseSchema.parse(rawJson);
+}
+
+/**
+ * Registers a batch of clinical follow-ups for a child (`POST /children/:childId/follow-ups/batch`, NK-75).
+ * Atomically links 1 to 3 items under the same group_id. Idempotent by item client-generated ids.
+ */
+export async function createFollowUpBatch(
+  childId: string,
+  input: CreateFollowUpBatchInput,
+): Promise<FollowUpBatchResponse> {
+  const validatedBody = CreateFollowUpBatchInputSchema.parse(input);
+
+  let response: Response;
+  try {
+    response = await authFetch(`/children/${encodeURIComponent(childId)}/follow-ups/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(validatedBody),
+    });
+  } catch (err) {
+    throw new FollowUpOfflineError({ cause: err });
+  }
+
+  if (!response.ok) {
+    const payload: unknown = await response.json().catch(() => ({}));
+    const parsed = parseApiError(payload, i18n.t('errors:followUps.create'));
+    throw new FollowUpApiError(parsed.message, response.status);
+  }
+
+  const rawJson: unknown = await response.json();
+  return FollowUpBatchResponseSchema.parse(rawJson);
 }

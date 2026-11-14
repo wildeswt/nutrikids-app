@@ -152,6 +152,8 @@ async function syncOne(auth: AuthContext, raw: unknown): Promise<SyncCheckupResu
         action: 'CREATE',
         entityType: 'checkups',
         entityId: checkup.id,
+        // Solo se registra si hay observaciones, nunca su texto libre.
+        ...(checkup.notes !== null ? { details: { hasNotes: true } } : {}),
       });
     }
     for (const d of discrepancies) {

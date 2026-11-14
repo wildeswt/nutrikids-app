@@ -1,7 +1,7 @@
-import type { AlertStatus, CreateFollowUpInput, FollowUpResponse } from '@nutrikids/shared';
+import type { AlertStatus, CreateFollowUpBatchInput, FollowUpResponse } from '@nutrikids/shared';
 import { fetchAlertDetail, updateAlertStatus } from './alerts-api.js';
 import { isoDateToInput } from './follow-up-form.js';
-import { FollowUpApiError, FollowUpOfflineError, createFollowUp } from './follow-ups-api.js';
+import { FollowUpApiError, FollowUpOfflineError, createFollowUpBatch } from './follow-ups-api.js';
 import {
   addPending,
   draftKey,
@@ -15,14 +15,14 @@ export interface FollowUpSubmission {
   childId: string;
   alertId?: string | undefined;
   establish: boolean;
-  input: CreateFollowUpInput;
+  input: CreateFollowUpBatchInput;
 }
 
 export type SubmitResult =
   /** Saved on the server. `alertError` is set when the alert could not be moved afterwards. */
   | {
       kind: 'sent';
-      followUp: FollowUpResponse;
+      followUps: FollowUpResponse[];
       alertStatus: AlertStatus | null;
       alertError?: string;
     }
@@ -59,20 +59,20 @@ function isPermanent(err: unknown): err is FollowUpApiError {
 }
 
 /**
- * Sends a follow-up and, when asked, moves its alert forward. Sending again with the same `id` is
- * safe (the API returns the existing follow-up), so a half-finished attempt can simply be repeated.
- * Throws when the server refuses the follow-up for good (`FollowUpApiError` 4xx); the caller shows it.
+ * Sends a follow-up batch and, when asked, moves its alert forward. Sending again with the same `id`s is
+ * safe (the API returns the existing follow-ups), so a half-finished attempt can simply be repeated.
+ * Throws when the server refuses the follow-ups for good (`FollowUpApiError` 4xx); the caller shows it.
  */
 async function send(
   submission: FollowUpSubmission,
 ): Promise<Extract<SubmitResult, { kind: 'sent' }>> {
-  const followUp = await createFollowUp(submission.childId, submission.input);
+  const followUps = await createFollowUpBatch(submission.childId, submission.input);
   if (!submission.establish || !submission.alertId) {
-    return { kind: 'sent', followUp, alertStatus: null };
+    return { kind: 'sent', followUps, alertStatus: null };
   }
   try {
     const alertStatus = await establishAlert(submission.alertId);
-    return { kind: 'sent', followUp, alertStatus };
+    return { kind: 'sent', followUps, alertStatus };
   } catch (err) {
     // No connection while moving the alert: let the caller queue the whole thing and retry.
     if (err instanceof FollowUpOfflineError || isNetworkFailure(err))
@@ -80,7 +80,7 @@ async function send(
     // Anything else (for example someone else already moved the alert): the follow-up is saved.
     return {
       kind: 'sent',
-      followUp,
+      followUps,
       alertStatus: null,
       alertError: err instanceof Error ? err.message : String(err),
     };
@@ -93,7 +93,7 @@ function isNetworkFailure(err: unknown): boolean {
 }
 
 /**
- * Saves a follow-up: sent now when there is connection, otherwise kept on the phone to be sent when
+ * Saves a follow-up batch: sent now when there is connection, otherwise kept on the phone to be sent when
  * it comes back («Sin conexión · Se guardará en este teléfono...»).
  */
 export async function submitFollowUp(submission: FollowUpSubmission): Promise<SubmitResult> {
@@ -132,21 +132,30 @@ export async function flushPendingFollowUps(userId: string): Promise<FlushResult
   const result: FlushResult = { sent: 0, remaining: pending.length, rejected: 0 };
 
   for (const entry of pending) {
+    const mainId = entry.input.items[0]?.id ?? entry.input.groupId ?? '';
     try {
       await send(entry);
-      await removePending(entry.input.id);
+      await removePending(mainId);
       result.sent += 1;
       result.remaining -= 1;
     } catch (err) {
       if (err instanceof FollowUpOfflineError) break;
       if (!isPermanent(err)) break;
+
+      const obs = entry.input.items.find((i) => i.type === 'observation')?.details ?? '';
+      const inter =
+        entry.input.items.find((i) => i.type === 'intervention' || i.type === 'recommendation')
+          ?.details ?? '';
+      const ref = entry.input.items.find((i) => i.type === 'referral')?.details ?? '';
+
       await saveDraft(draftKey(userId, entry), {
         userId,
         childId: entry.childId,
         alertId: entry.alertId,
         form: {
-          type: entry.input.type,
-          details: entry.input.details,
+          observations: obs,
+          intervention: inter,
+          referral: ref,
           nextCheckupText: entry.input.nextCheckupDate
             ? isoDateToInput(entry.input.nextCheckupDate)
             : '',
@@ -154,7 +163,7 @@ export async function flushPendingFollowUps(userId: string): Promise<FlushResult
         },
         lastError: err.message,
       });
-      await removePending(entry.input.id);
+      await removePending(mainId);
       result.rejected += 1;
       result.remaining -= 1;
     }

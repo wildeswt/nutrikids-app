@@ -30,6 +30,10 @@ The reading is recorded in the audit log as `READ` / `children`.
   - `reviewedAt`: when the alert reached its current state.
 - The response never contains z-scores, percentiles, classifications, the indicator, the risk type or the severity. This also holds for the rest of the caregiver API: `checkups` return no results for caregivers, and the alert endpoints (`/alerts`) require the `alert:review` permission, which caregivers do not have.
 
+### Automated favorable growth trend (NK-74)
+
+In parallel with the professional-reviewed growth message, the Evolution screen displays an automated "Tendencia favorable" label next to the chart (`GET /children/:childId/growth-trend`) when the latest current checkup is normal and `|z_latest| <= |z_previous| + 0.5`. Unlike the growth message, this endpoint never sends negative or cautionary labels to the caregiver (those remain strictly the responsibility of the health professional via the reviewed growth message). **Clinical note:** This automated trend rule is conservative and requires validation by the clinical health team prior to release.
+
 ## In the app
 
 The Home card of each child (`ChildGrowthStatus`) loads the message with `useGrowthMessage`. Before the review, while loading and on any error it shows "Todo va bien" (a failure never produces a clinical message). After the review it shows "Revisado por tu profesional", the orientation text for `below` or `above`, the recommendation and the next checkup date. Texts are in `caregiver:home.growth.*` (Spanish and Kichwa; the Kichwa copy of the Spanish text until a reviewed translation exists).

@@ -11,6 +11,7 @@ export * from './schemas/enums.js';
 export * from './schemas/feedingLog.js';
 export * from './schemas/followUp.js';
 export * from './schemas/growthMessage.js';
+export * from './schemas/growthTrend.js';
 export * from './schemas/health.js';
 export * from './schemas/message.js';
 export * from './schemas/notification.js';
