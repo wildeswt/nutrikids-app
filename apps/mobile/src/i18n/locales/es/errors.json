@@ -46,5 +46,8 @@
   },
   "alerts": {
     "list": "No pudimos cargar las alertas. Intenta de nuevo."
+  },
+  "growth": {
+    "fetch": "No pudimos cargar el estado de crecimiento. Intenta de nuevo."
   }
 }
