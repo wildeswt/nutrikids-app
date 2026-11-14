@@ -17,6 +17,8 @@
     "followUpTitle": "Seguimiento clínico"
   },
   "alerts": {
+    "title": "Alertas",
+    "subtitle": "Controles que requieren tu revisión.",
     "filtersA11y": "Filtrar alertas por estado",
     "filters": {
       "OPEN": "Sin revisar",
