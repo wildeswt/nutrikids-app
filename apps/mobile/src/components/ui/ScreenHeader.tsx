@@ -12,6 +12,41 @@ import {
 import { PALETTE } from '../../constants/colors.js';
 import { font } from '../../constants/typography.js';
 
+export interface BackButtonProps {
+  label?: string;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+  hitSlop?: number;
+  testID?: string;
+  style?: StyleProp<ViewStyle>;
+}
+
+/**
+ * Boton estandar de retorno con flecha y etiqueta de 20 px medium.
+ */
+export function BackButton({
+  label = 'Volver',
+  onPress,
+  accessibilityLabel,
+  hitSlop,
+  testID = 'back-button',
+  style,
+}: BackButtonProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={hitSlop}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      testID={testID}
+      style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed, style]}
+    >
+      <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
+      <Text style={styles.backLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export interface ScreenHeaderProps {
   title: string;
   onBack?: () => void;
@@ -37,16 +72,7 @@ export function ScreenHeader({
   return (
     <View style={[styles.container, style]} testID={testID}>
       {showBack ? (
-        <Pressable
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel={backLabel}
-          testID={`${testID}-back`}
-          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
-        >
-          <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-          <Text style={styles.backLabel}>{backLabel}</Text>
-        </Pressable>
+        <BackButton label={backLabel} onPress={onBack} testID={`${testID}-back`} />
       ) : null}
 
       <Text accessibilityRole={accessibilityRole} testID={`${testID}-title`} style={styles.title}>

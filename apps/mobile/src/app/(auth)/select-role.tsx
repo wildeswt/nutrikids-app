@@ -1,13 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { USER_ROLES, type UserRole } from '@nutrikids/shared';
 import { Link, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { APP_ASSETS } from '../../constants/assets.js';
+import { AuthBrandHeader, authStyles } from '../../components/auth/AuthBrandHeader.js';
+import { BackButton } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
+import { CARD_SHADOW, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 
 export default function SelectRoleScreen() {
   const router = useRouter();
@@ -21,37 +24,24 @@ export default function SelectRoleScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={authStyles.container}>
       {/* Botón Volver */}
-      <View style={styles.topBar}>
-        <Pressable
-          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+      <View style={authStyles.topBar}>
+        <BackButton
+          label={t('common:actions.back')}
+          accessibilityLabel={t('common:actions.goBack')}
           onPress={() => router.back()}
           hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={t('common:actions.goBack')}
-        >
-          <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-        </Pressable>
+        />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         <View style={styles.contentWrapper}>
-          {/* Header con Logo y Slogan */}
-          <View style={styles.brandHeader}>
-            <Image
-              source={APP_ASSETS.LOGO}
-              style={styles.logo}
-              resizeMode="contain"
-              accessibilityLabel={t('common:brand.logoLabel')}
-            />
-            <Text style={styles.slogan}>{t('common:brand.slogan')}</Text>
-            <View style={styles.orangeDivider} />
-          </View>
+          <AuthBrandHeader style={styles.brandHeader} />
 
           {/* Pregunta de selección de perfil */}
           <View style={styles.questionContainer}>
-            <Text style={styles.title}>{t('selectRole.title')}</Text>
+            <Text style={authStyles.title}>{t('selectRole.title')}</Text>
             <Text style={styles.subtitle}>{t('selectRole.subtitle')}</Text>
 
             <View style={styles.optionsGroup}>
@@ -93,11 +83,11 @@ export default function SelectRoleScreen() {
             </View>
 
             {/* Enlace a Iniciar Sesión */}
-            <View style={styles.loginContainer}>
-              <Text style={styles.loginPrompt}>{t('selectRole.haveAccount')}</Text>
+            <View style={[authStyles.footerPromptRow, styles.loginContainer]}>
+              <Text style={authStyles.footerPromptText}>{t('selectRole.haveAccount')}</Text>
               <Link href={APP_ROUTES.AUTH.LOGIN} asChild>
                 <Pressable hitSlop={6}>
-                  <Text style={styles.loginLink}>{t('common:actions.login')}</Text>
+                  <Text style={authStyles.footerPromptLink}>{t('common:actions.login')}</Text>
                 </Pressable>
               </Link>
             </View>
@@ -109,82 +99,32 @@ export default function SelectRoleScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: PALETTE.background,
-  },
-  topBar: {
-    width: '100%',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-    alignItems: 'flex-start',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
-  },
-  backButtonPressed: {
-    opacity: 0.7,
-    backgroundColor: PALETTE.border.subtle,
-  },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingVertical: 28,
   },
   contentWrapper: {
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 380,
     alignItems: 'center',
   },
   brandHeader: {
-    alignItems: 'center',
-    width: '100%',
     marginBottom: 28,
-  },
-  logo: {
-    width: 300,
-    height: 85,
-  },
-  slogan: {
-    fontSize: 16,
-    color: PALETTE.text.body,
-    fontWeight: '500',
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  orangeDivider: {
-    width: '90%',
-    height: 4,
-    backgroundColor: PALETTE.secondary,
-    borderRadius: 2,
-    marginTop: 18,
   },
   questionContainer: {
     width: '100%',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: PALETTE.text.title,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
   subtitle: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.body,
     textAlign: 'center',
     lineHeight: 20,
+    marginTop: 4,
     marginBottom: 24,
     paddingHorizontal: 8,
   },
@@ -198,14 +138,10 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.surface,
     borderWidth: 1.5,
     borderColor: PALETTE.primary,
-    borderRadius: 20,
+    borderRadius: RADIUS_PILL,
     padding: 18,
     gap: 14,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    ...CARD_SHADOW,
   },
   iconCircle: {
     width: 48,
@@ -220,11 +156,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   roleTitle: {
+    fontFamily: font('semibold'),
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     color: PALETTE.text.title,
   },
   roleDescription: {
+    fontFamily: font('regular'),
     fontSize: 13,
     color: PALETTE.text.body,
     lineHeight: 18,
@@ -234,20 +172,6 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
   loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 4,
     marginTop: 28,
-  },
-  loginPrompt: {
-    fontSize: 13,
-    color: PALETTE.text.body,
-  },
-  loginLink: {
-    fontSize: 13,
-    color: PALETTE.primary,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
   },
 });

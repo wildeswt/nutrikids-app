@@ -69,6 +69,8 @@ describe('Auth Screens Rendering', () => {
       expect(html).toContain('Cuidar su crecimiento, juntos.');
       expect(html).toContain('Iniciar Sesión');
       expect(html).toContain('Registrarse');
+      expect(html).toContain('primary-button');
+      expect(html).toContain('secondary-button');
     });
   });
 
@@ -76,6 +78,7 @@ describe('Auth Screens Rendering', () => {
     it('renders role selection screen with caregiver and professional options', () => {
       const html = renderToString(React.createElement(SelectRoleScreen));
 
+      expect(html).toContain('Volver');
       expect(html).toContain('Cuidar su crecimiento, juntos.');
       expect(html).toContain('¿Con qué perfil deseas registrarte?');
       expect(html).toContain('Soy Cuidador');
@@ -88,16 +91,19 @@ describe('Auth Screens Rendering', () => {
     it('renders login screen elements matching Figure 5 requirements', () => {
       const html = renderToString(React.createElement(LoginScreen));
 
-      // Brand headers
+      // Navigation and brand headers
+      expect(html).toContain('Volver');
       expect(html).toContain('Cuidar su crecimiento, juntos.');
       expect(html).toContain('Iniciar Sesión');
 
-      // Form labels and placeholders
+      // Form labels and placeholders inside PillField
+      expect(html).toContain('pill-field');
       expect(html).toContain('Correo Electrónico');
       expect(html).toContain('Contraseña');
       expect(html).toContain('¿Olvidó su contraseña?');
 
       // Actions
+      expect(html).toContain('primary-button');
       expect(html).toContain('Iniciar Sesión');
       expect(html).toContain('Regístrate');
     });
@@ -107,11 +113,14 @@ describe('Auth Screens Rendering', () => {
     it('renders registration screen with split Nombre and Apellido fields', () => {
       const html = renderToString(React.createElement(RegisterScreen));
 
-      // Brand headers
+      // Navigation and brand headers
+      expect(html).toContain('Volver');
       expect(html).toContain('Cuidar su crecimiento, juntos.');
       expect(html).toContain('Crear Cuenta');
+      expect(html).toContain('Cambiar perfil');
 
-      // Core fields
+      // Core fields inside PillField
+      expect(html).toContain('pill-field');
       expect(html).toContain('Nombre');
       expect(html).toContain('Apellido');
       expect(html).toContain('Correo Electrónico');
@@ -119,6 +128,7 @@ describe('Auth Screens Rendering', () => {
       expect(html).toContain('Confirmar Contraseña');
 
       // Submit and link back to login
+      expect(html).toContain('primary-button');
       expect(html).toContain('Crear Cuenta');
       expect(html).toContain('Iniciar Sesión');
     });
@@ -128,9 +138,12 @@ describe('Auth Screens Rendering', () => {
     it('renders recovery instructions, email input, and submit button', () => {
       const html = renderToString(React.createElement(ForgotPasswordScreen));
 
+      expect(html).toContain('Volver');
       expect(html).toContain('NutriKids');
       expect(html).toContain('Recuperar Contraseña');
+      expect(html).toContain('pill-field');
       expect(html).toContain('Correo electrónico');
+      expect(html).toContain('primary-button');
       expect(html).toContain('Enviar Instrucciones');
       expect(html).toContain('Volver al inicio de sesión');
     });
@@ -140,11 +153,14 @@ describe('Auth Screens Rendering', () => {
     it('renders token input, new password, confirm password, and submit button', () => {
       const html = renderToString(React.createElement(ResetPasswordScreen));
 
+      expect(html).toContain('Volver');
       expect(html).toContain('NutriKids');
       expect(html).toContain('Nueva Contraseña');
+      expect(html).toContain('pill-field');
       expect(html).toContain('Token de recuperación');
       expect(html).toContain('Nueva contraseña');
       expect(html).toContain('Confirmar nueva contraseña');
+      expect(html).toContain('primary-button');
       expect(html).toContain('Actualizar Contraseña');
       expect(html).toContain('Volver al inicio de sesión');
     });

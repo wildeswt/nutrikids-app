@@ -1,17 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ResetPasswordInputSchema } from '@nutrikids/shared';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthBrandHeader, authStyles } from '../../components/auth/AuthBrandHeader.js';
 import {
   KeyboardAwareScrollView,
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
-import { APP_ASSETS } from '../../constants/assets.js';
+import { PillField } from '../../components/ui/PillField.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { BackButton } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { resetPasswordRequest } from '../../lib/api.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
 
@@ -67,67 +71,51 @@ export default function ResetPasswordScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={authStyles.container}>
       {/* Botón Volver */}
-      <View style={styles.topBar}>
-        <Pressable
-          style={({ pressed }) => [styles.backNavButton, pressed && styles.backButtonPressed]}
+      <View style={authStyles.topBar}>
+        <BackButton
+          label={t('common:actions.back')}
+          accessibilityLabel={t('common:actions.goBack')}
           onPress={() => router.back()}
           hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={t('common:actions.goBack')}
-        >
-          <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-        </Pressable>
+        />
       </View>
 
       <KeyboardAwareScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={authStyles.scrollView}
+        contentContainerStyle={authStyles.scrollContent}
       >
-        {/* Header con Logo y Slogan */}
-        <View style={styles.brandHeader}>
-          <Image
-            source={APP_ASSETS.LOGO}
-            style={styles.logo}
-            resizeMode="contain"
-            accessibilityLabel={t('common:brand.logoLabel')}
-          />
-          <Text style={styles.slogan}>{t('common:brand.slogan')}</Text>
-          <View style={styles.orangeDivider} />
-        </View>
+        <AuthBrandHeader />
 
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>{t('resetPassword.title')}</Text>
+        <View style={authStyles.formContainer}>
+          <Text style={authStyles.title}>{t('resetPassword.title')}</Text>
           {generalError && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorBoxText}>{generalError}</Text>
+            <View style={authStyles.errorBox}>
+              <Text style={authStyles.errorBoxText}>{generalError}</Text>
             </View>
           )}
 
           {successMessage ? (
-            <View style={styles.successContainer}>
-              <View style={styles.successBox}>
-                <Text style={styles.successBoxTitle}>{t('resetPassword.successTitle')}</Text>
-                <Text style={styles.successBoxText}>{successMessage}</Text>
+            <View style={authStyles.successContainer}>
+              <View style={authStyles.successBox}>
+                <Text style={authStyles.successBoxTitle}>{t('resetPassword.successTitle')}</Text>
+                <Text style={authStyles.successBoxText}>{successMessage}</Text>
               </View>
 
-              <Pressable
-                style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
+              <PrimaryButton
+                label={t('common:actions.login')}
                 onPress={() => router.replace(APP_ROUTES.AUTH.LOGIN)}
-              >
-                <Text style={styles.submitButtonText}>{t('common:actions.login')}</Text>
-              </Pressable>
+              />
             </View>
           ) : (
             <>
               <Text style={styles.instructions}>{t('resetPassword.instructions')}</Text>
 
               {/* Token */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t('resetPassword.tokenLabel')}</Text>
+              <PillField label={t('resetPassword.tokenLabel')} error={fieldErrors['token']}>
                 <KeyboardAwareTextInput
-                  style={[styles.input, fieldErrors['token'] ? styles.inputError : undefined]}
+                  style={authStyles.pillInput}
                   value={token}
                   onChangeText={(text) => {
                     setToken(text);
@@ -136,7 +124,7 @@ export default function ResetPasswordScreen() {
                     }
                   }}
                   placeholder={t('resetPassword.tokenPlaceholder')}
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={PALETTE.input.placeholder}
                   autoCapitalize="none"
                   autoCorrect={false}
                   returnKeyType="next"
@@ -144,38 +132,13 @@ export default function ResetPasswordScreen() {
                   blurOnSubmit={false}
                   editable={!loading}
                 />
-                {fieldErrors['token'] ? (
-                  <Text style={styles.errorText}>{fieldErrors['token']}</Text>
-                ) : null}
-              </View>
+              </PillField>
 
               {/* New Password */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t('resetPassword.newPasswordLabel')}</Text>
-                <View style={styles.passwordContainer}>
-                  <KeyboardAwareTextInput
-                    ref={newPasswordRef}
-                    style={[
-                      styles.passwordInput,
-                      fieldErrors['newPassword'] ? styles.inputError : undefined,
-                    ]}
-                    value={newPassword}
-                    onChangeText={(text) => {
-                      setNewPassword(text);
-                      if (fieldErrors['newPassword']) {
-                        setFieldErrors((prev) => ({ ...prev, newPassword: '' }));
-                      }
-                    }}
-                    placeholder={t('resetPassword.newPasswordPlaceholder')}
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showNewPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    returnKeyType="next"
-                    onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-                    blurOnSubmit={false}
-                    editable={!loading}
-                  />
+              <PillField
+                label={t('resetPassword.newPasswordLabel')}
+                error={fieldErrors['newPassword']}
+                rightIcon={
                   <Pressable
                     style={styles.eyeButton}
                     onPress={() => setShowNewPassword((prev) => !prev)}
@@ -187,43 +150,40 @@ export default function ResetPasswordScreen() {
                     }
                   >
                     <Ionicons
-                      name={showNewPassword ? 'eye-off-outline' : 'eye-outline'}
+                      name={showNewPassword ? 'eye-off' : 'eye'}
                       size={20}
-                      color="#4B5563"
+                      color={PALETTE.text.title}
                     />
                   </Pressable>
-                </View>
-                {fieldErrors['newPassword'] ? (
-                  <Text style={styles.errorText}>{fieldErrors['newPassword']}</Text>
-                ) : null}
-              </View>
+                }
+              >
+                <KeyboardAwareTextInput
+                  ref={newPasswordRef}
+                  style={authStyles.pillInput}
+                  value={newPassword}
+                  onChangeText={(text) => {
+                    setNewPassword(text);
+                    if (fieldErrors['newPassword']) {
+                      setFieldErrors((prev) => ({ ...prev, newPassword: '' }));
+                    }
+                  }}
+                  placeholder={t('resetPassword.newPasswordPlaceholder')}
+                  placeholderTextColor={PALETTE.input.placeholder}
+                  secureTextEntry={!showNewPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                  blurOnSubmit={false}
+                  editable={!loading}
+                />
+              </PillField>
 
               {/* Confirm Password */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t('resetPassword.confirmPasswordLabel')}</Text>
-                <View style={styles.passwordContainer}>
-                  <KeyboardAwareTextInput
-                    ref={confirmPasswordRef}
-                    style={[
-                      styles.passwordInput,
-                      fieldErrors['confirmPassword'] ? styles.inputError : undefined,
-                    ]}
-                    value={confirmPassword}
-                    onChangeText={(text) => {
-                      setConfirmPassword(text);
-                      if (fieldErrors['confirmPassword']) {
-                        setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }));
-                      }
-                    }}
-                    placeholder={t('resetPassword.confirmPasswordPlaceholder')}
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showConfirmPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    returnKeyType="done"
-                    onSubmitEditing={() => void handleSubmit()}
-                    editable={!loading}
-                  />
+              <PillField
+                label={t('resetPassword.confirmPasswordLabel')}
+                error={fieldErrors['confirmPassword']}
+                rightIcon={
                   <Pressable
                     style={styles.eyeButton}
                     onPress={() => setShowConfirmPassword((prev) => !prev)}
@@ -235,33 +195,46 @@ export default function ResetPasswordScreen() {
                     }
                   >
                     <Ionicons
-                      name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                      name={showConfirmPassword ? 'eye-off' : 'eye'}
                       size={20}
-                      color="#4B5563"
+                      color={PALETTE.text.title}
                     />
                   </Pressable>
-                </View>
-                {fieldErrors['confirmPassword'] ? (
-                  <Text style={styles.errorText}>{fieldErrors['confirmPassword']}</Text>
-                ) : null}
-              </View>
-
-              <Pressable
-                style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
-                onPress={() => void handleSubmit()}
-                disabled={loading}
+                }
               >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.submitButtonText}>{t('resetPassword.submit')}</Text>
-                )}
-              </Pressable>
+                <KeyboardAwareTextInput
+                  ref={confirmPasswordRef}
+                  style={authStyles.pillInput}
+                  value={confirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    if (fieldErrors['confirmPassword']) {
+                      setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }));
+                    }
+                  }}
+                  placeholder={t('resetPassword.confirmPasswordPlaceholder')}
+                  placeholderTextColor={PALETTE.input.placeholder}
+                  secureTextEntry={!showConfirmPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={() => void handleSubmit()}
+                  editable={!loading}
+                />
+              </PillField>
+
+              <PrimaryButton
+                label={t('resetPassword.submit')}
+                onPress={() => void handleSubmit()}
+                loading={loading}
+                style={styles.submitButton}
+              />
 
               <View style={styles.footerRow}>
                 <Link href={APP_ROUTES.AUTH.LOGIN} asChild>
-                  <Pressable hitSlop={6}>
-                    <Text style={styles.footerLink}>{t('resetPassword.backToLogin')}</Text>
+                  <Pressable hitSlop={6} style={authStyles.backToLoginLink}>
+                    <Ionicons name="arrow-back" size={18} color={PALETTE.primary} />
+                    <Text style={authStyles.backToLoginText}>{t('resetPassword.backToLogin')}</Text>
                   </Pressable>
                 </Link>
               </View>
@@ -274,194 +247,21 @@ export default function ResetPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: PALETTE.background,
-  },
-  scrollView: {
-    flex: 1,
-    width: '100%',
-  },
-  topBar: {
-    width: '100%',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-    alignItems: 'flex-start',
-  },
-  backNavButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
-  },
-  backButtonPressed: {
-    opacity: 0.7,
-    backgroundColor: PALETTE.border.subtle,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 48,
-    alignItems: 'center',
-  },
-  brandHeader: {
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 400,
-    marginBottom: 24,
-  },
-  logo: {
-    width: 300,
-    height: 85,
-  },
-  slogan: {
-    fontSize: 16,
-    color: PALETTE.text.body,
-    fontWeight: '500',
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  orangeDivider: {
-    width: '90%',
-    height: 4,
-    backgroundColor: PALETTE.secondary,
-    borderRadius: 2,
-    marginTop: 18,
-  },
-  formContainer: {
-    width: '100%',
-    maxWidth: 380,
-    gap: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: PALETTE.text.title,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
   instructions: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.body,
     lineHeight: 20,
     textAlign: 'center',
   },
-  errorBox: {
-    backgroundColor: PALETTE.feedback.errorBg,
-    borderColor: PALETTE.feedback.errorBorder,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-  },
-  errorBoxText: {
-    color: PALETTE.feedback.error,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  inputGroup: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-    marginLeft: 4,
-  },
-  input: {
-    borderWidth: 1.5,
-    borderColor: PALETTE.border.default,
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: PALETTE.text.body,
-    backgroundColor: PALETTE.input.background,
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: PALETTE.border.default,
-    borderRadius: 24,
-    backgroundColor: PALETTE.input.background,
-    paddingRight: 8,
-  },
-  passwordInput: {
-    flex: 1,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: PALETTE.text.body,
-  },
   eyeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  inputError: {
-    borderColor: PALETTE.feedback.error,
-  },
-  errorText: {
-    color: PALETTE.feedback.error,
-    fontSize: 12,
-    marginLeft: 8,
+    padding: 4,
   },
   submitButton: {
-    backgroundColor: PALETTE.primary,
-    paddingVertical: 14,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 8,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  buttonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.99 }],
-  },
-  submitButtonText: {
-    color: PALETTE.text.light,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  successContainer: {
-    gap: 16,
-  },
-  successBox: {
-    backgroundColor: PALETTE.feedback.successBg,
-    borderColor: PALETTE.feedback.success,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    gap: 6,
-  },
-  successBoxTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: PALETTE.feedback.success,
-  },
-  successBoxText: {
-    fontSize: 13,
-    color: PALETTE.text.body,
-    lineHeight: 19,
   },
   footerRow: {
     alignItems: 'center',
-    marginTop: 8,
-  },
-  footerLink: {
-    fontSize: 14,
-    color: PALETTE.primary,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
+    marginTop: 4,
   },
 });
