@@ -114,8 +114,6 @@ export default function CaregiverTabsLayout() {
           title: 'Consentimiento',
           headerTitle: 'Consentimiento Informado',
           tabBarStyle: { display: 'none' },
-          tabBarItemStyle: { display: 'none' },
-          tabBarButton: () => null,
         }}
       />
     </Tabs>
