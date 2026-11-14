@@ -36,8 +36,6 @@ export const DEMO_CHILDREN: DemoChild[] = [
 
 export const DEMO_ACTIVE_CHILD: DemoChild = DEMO_CHILDREN[0]!;
 
-export const DEMO_CAREGIVER_NAME = 'Andrea';
-
 export const DEMO_NEW_CHECKUP = {
   measuredAt: '2026-10-18',
   weightKg: 12.2,
@@ -63,6 +61,7 @@ export const DEMO_HOME_MESSAGE = {
 };
 
 export const DEMO_NEXT_CHECKUP = {
+  date: '2026-11-24',
   place: 'Centro de Salud La Esperanza',
   time: '09:30',
 };

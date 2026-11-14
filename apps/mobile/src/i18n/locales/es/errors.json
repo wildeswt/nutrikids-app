@@ -27,5 +27,8 @@
     "childList": "No pudimos cargar la lista de tus niños.",
     "missingChildForGrant": "Falta elegir el niño para dar el permiso.",
     "missingChildForRevoke": "Falta elegir el niño para retirar el permiso."
+  },
+  "children": {
+    "create": "No pudimos registrar al niño. Intenta de nuevo."
   }
 }

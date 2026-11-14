@@ -1,8 +1,7 @@
 {
   "screen": {
-    "title": "Consentimiento informado",
-    "registerSubtitle": "Lee esto antes de registrar a tu niño. Es tu permiso para guardar y revisar sus datos.",
-    "viewSubtitle": "Estado del permiso de {{name}}",
+    "title": "Consentimiento",
+    "registerSubtitle": "Antes de registrar a tu niño o niña necesitamos tu permiso para cuidar sus datos.",
     "childFallback": "tu niño o niña",
     "versionLabel": "Versión aceptada:",
     "grantedAtLabel": "Fecha en que aceptaste:",
@@ -10,18 +9,30 @@
     "statusActive": "ACTIVO",
     "statusRevoked": "RETIRADO",
     "revokedAtLabel": "Fecha en que lo retiraste:",
-    "accept": "Aceptar consentimiento",
+    "accept": "Acepto y continuar",
     "revoke": "Retirar mi permiso",
     "renew": "Dar mi permiso otra vez",
     "back": "Volver",
-    "documentInSpanish": "El documento legal se muestra en español mientras se revisa su traducción."
+    "documentInSpanish": "El documento legal se muestra en español mientras se revisa su traducción.",
+    "representative": "Representante legal: {{name}}",
+    "authorizeTitle": "¿Qué autorizas?",
+    "points": {
+      "store": "Guardar el peso, la estatura y la alimentación de {{name}}.",
+      "who": "Ver cómo crece, comparando con las tablas de la OMS (Organización Mundial de la Salud).",
+      "share": "Compartir estos datos solo con su equipo de salud."
+    },
+    "readFull": "Leer el texto completo",
+    "hideFull": "Ocultar el texto completo",
+    "readFullA11y": "Leer el texto completo del consentimiento",
+    "checkLegal": "Soy el representante legal de {{name}} y doy permiso para usar sus datos de salud.",
+    "checkLegalA11y": "Soy el representante legal y doy permiso para usar los datos",
+    "checkRevocation": "Entiendo que puedo retirar este permiso cuando quiera desde mi perfil.",
+    "checkRevocationA11y": "Entiendo que puedo retirar este permiso",
+    "notNow": "Ahora no"
   },
   "alerts": {
     "grantedTitle": "Permiso guardado",
-    "grantedMessage": "Diste tu permiso (versión {{version}}). ¡Gracias!",
-    "acceptedTitle": "Permiso aceptado",
-    "acceptedMessage": "Aceptaste el consentimiento (versión {{version}}). Ya puedes registrar a tu niño.",
-    "continueToRegister": "Seguir con el registro",
+    "grantedMessage": "Diste tu permiso. ¡Gracias!",
     "errorTitle": "Algo salió mal",
     "grantError": "No pudimos guardar tu permiso. Intenta de nuevo.",
     "revokeTitle": "Retirar mi permiso",

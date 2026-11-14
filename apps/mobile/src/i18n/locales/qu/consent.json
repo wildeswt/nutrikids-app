@@ -1,8 +1,7 @@
 {
   "screen": {
-    "title": "Yachashpa ari nina",
-    "registerSubtitle": "Wawata killkakatinamanta ñawpaka kayta ñawinchiy. Paypak willaykunata wakaychinkapak, rikunkapakpash ari ninami kan.",
-    "viewSubtitle": "{{name}}-pak ari nina",
+    "title": "Ari nina",
+    "registerSubtitle": "Kikinpak wawata killkakatinamanta ñawpaka, paypak willaykunata kamankapak ari ninaykitami mutsunchik.",
     "childFallback": "kikinpak wawa",
     "versionLabel": "Chaskishka killka:",
     "grantedAtLabel": "Ari nishka puncha:",
@@ -10,18 +9,30 @@
     "statusActive": "KAWSAKUN",
     "statusRevoked": "KICHUSHKA",
     "revokedAtLabel": "Kichushka puncha:",
-    "accept": "Ari ninata chaskiy",
+    "accept": "Ari nishpa katiy",
     "revoke": "Ñuka ari ninata kichuy",
     "renew": "Kutin ari niy",
     "back": "Tikray",
-    "documentInSpanish": "Kamachik killkaka ishpañol shimipimi rikurin, tikrachishkata allichikukpi."
+    "documentInSpanish": "Kamachik killkaka ishpañol shimipimi rikurin, tikrachishkata allichikukpi.",
+    "representative": "Kamachik kamak: {{name}}",
+    "authorizeTitle": "¿Imatatak ari ninki?",
+    "points": {
+      "store": "{{name}}-pak llasayta, hatunkayta, mikuytapash wakaychina.",
+      "who": "OMS-pak tupuykunawan chimpapurashpa imashina wiñakunta rikuna.",
+      "share": "Kay willaykunataka paypak hampik tantanakuywan kamanlla rikuchina."
+    },
+    "readFull": "Tukuy killkata ñawinchiy",
+    "hideFull": "Tukuy killkata pakay",
+    "readFullA11y": "Ari ninapak tukuy killkata ñawinchiy",
+    "checkLegal": "Ñukami {{name}}-pak kamachik kamak kani, paypak hampi willaykunata hapinkapak ari ninimi.",
+    "checkLegalA11y": "Ñukami kamachik kamak kani, willaykunata hapinkapak ari ninimi",
+    "checkRevocation": "Hamutanimi, kay ari ninataka ñukamanta pankamanta ima pachapash kichuy ushanimi.",
+    "checkRevocationA11y": "Kay ari ninata kichuy ushanata hamutanimi",
+    "notNow": "Kunanka mana"
   },
   "alerts": {
     "grantedTitle": "Ari ninaka wakaychishkami",
-    "grantedMessage": "Ari nirkanki ({{version}} killka). ¡Yupaychani!",
-    "acceptedTitle": "Ari ninaka chaskishkami",
-    "acceptedMessage": "Ari ninata chaskirkanki ({{version}} killka). Kunanka wawata killkakatiy ushankimi.",
-    "continueToRegister": "Killkakatinata katiy",
+    "grantedMessage": "Ari nirkanki. ¡Yupaychani!",
     "errorTitle": "Imapash pantarirkami",
     "grantError": "Ari ninata mana wakaychiy usharkanchikchu. Kutin rurapay.",
     "revokeTitle": "Ñuka ari ninata kichuy",

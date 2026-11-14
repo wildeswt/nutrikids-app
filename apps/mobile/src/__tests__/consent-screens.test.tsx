@@ -1,7 +1,9 @@
 import type { ConsentResponse } from '@nutrikids/shared';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
+import { Alert } from 'react-native';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { APP_ROUTES } from '../constants/routes.js';
 import type { ConsentStatus } from '../hooks/useConsent.js';
 import type * as ConsentApiModule from '../lib/consent-api.js';
 
@@ -43,6 +45,7 @@ vi.mock('expo-router', () => ({
     back: mocks.back,
   }),
   useLocalSearchParams: () => mocks.searchParams,
+  useFocusEffect: vi.fn(),
 }));
 
 vi.mock('@expo/vector-icons', () => ({
@@ -98,8 +101,8 @@ vi.mock('../lib/consent-api.js', async () => {
 
 import ConsentScreen from '../app/(caregiver)/consent.js';
 import CaregiverHomeScreen from '../app/(caregiver)/index.js';
-import i18n from '../i18n/index.js';
 import CaregiverProfileScreen, { ConsentChildItem } from '../app/(caregiver)/profile.js';
+import i18n from '../i18n/index.js';
 
 describe('Consent Screens & Components Rendering (NK-20)', () => {
   const mockConsentData: ConsentResponse = {
@@ -131,7 +134,6 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       expect(html).toContain('María');
       expect(html).toContain('+ Registrar nuevo niño');
       expect(html).toContain(i18n.t('caregiver:home.consentNotice'));
-      expect(html).toContain('consentimiento informado');
     });
   });
 
@@ -141,17 +143,68 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       const html = renderToString(React.createElement(ConsentScreen));
 
       // Título y encabezados
-      expect(html).toContain('Consentimiento informado');
+      expect(html).toContain('Consentimiento');
       expect(html).toContain(i18n.t('consent:screen.registerSubtitle'));
 
-      // Texto en lenguaje claro
-      expect(html).toContain('DECLARACIÓN DE CONSENTIMIENTO INFORMADO');
-      expect(html).toContain('Organización Mundial de la Salud (OMS)');
-      expect(html).toContain('Confidencialidad y Seguridad');
-      expect(html).toContain('Derecho de Revocación');
+      // Resumen en lenguaje claro: ¿Qué autorizas?
+      expect(html).toContain(i18n.t('consent:screen.authorizeTitle'));
+      expect(html).toContain('Guardar el peso, la estatura y la alimentación');
+      expect(html).toContain(i18n.t('consent:screen.points.who'));
+      expect(html).toContain(i18n.t('consent:screen.points.share'));
 
-      // Botón de aceptar consentimiento
-      expect(html).toContain('Aceptar consentimiento');
+      // El texto completo está disponible de forma desplegable
+      expect(html).toContain('Leer el texto completo');
+      expect(html).not.toContain('Versión v1 del texto');
+
+      // Confirmaciones y acciones del representante legal
+      expect(html).toContain('Soy el representante legal');
+      expect(html).toContain(i18n.t('consent:screen.checkRevocation'));
+      expect(html).toContain('Acepto y continuar');
+      expect(html).toContain('Ahora no');
+    });
+
+    it('accepting consent without childId navigates directly to ADD_CHILD without modal', async () => {
+      mocks.searchParams = { mode: 'register' };
+      const alertSpy = vi.spyOn(Alert, 'alert');
+
+      interface ElementWithProps {
+        props?: {
+          testID?: string;
+          children?: ElementWithProps | ElementWithProps[];
+          [key: string]: unknown;
+        };
+      }
+
+      function findElementByTestId(node: unknown, testId: string): ElementWithProps | null {
+        if (!node || typeof node !== 'object') return null;
+        const element = node as ElementWithProps;
+        if (element.props?.testID === testId) return element;
+        if (Array.isArray(element.props?.children)) {
+          for (const child of element.props.children) {
+            const found = findElementByTestId(child, testId);
+            if (found) return found;
+          }
+        } else if (element.props?.children) {
+          return findElementByTestId(element.props.children, testId);
+        }
+        return null;
+      }
+
+      let capturedTree: unknown = null;
+      function TestWrapper() {
+        capturedTree = ConsentScreen();
+        return null;
+      }
+
+      renderToString(React.createElement(TestWrapper));
+
+      const acceptButton = findElementByTestId(capturedTree, 'accept-consent-button');
+      expect(acceptButton).toBeDefined();
+      const onPress = acceptButton?.props?.['onPress'] as (() => void | Promise<void>) | undefined;
+      await onPress?.();
+
+      expect(alertSpy).not.toHaveBeenCalled();
+      expect(mocks.replace).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.ADD_CHILD);
     });
 
     it('muestra versión del texto aceptado y fecha en modo vista con opción de revocar', () => {
@@ -171,11 +224,11 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       // Debe mostrar la versión aceptada y la fecha
       expect(html).toContain('Versión aceptada:');
       expect(html).toContain('v1');
-      expect(html).toContain('Fecha en que aceptaste:');
+      expect(html).toContain(i18n.t('consent:screen.grantedAtLabel'));
       expect(html).toContain('ACTIVO');
 
       // Opción de revocarlo
-      expect(html).toContain('Retirar mi permiso');
+      expect(html).toContain(i18n.t('consent:screen.revoke'));
     });
 
     it('muestra estado revocado y fecha de revocación cuando el consentimiento está inactivo', () => {
@@ -195,9 +248,9 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
 
       const html = renderToString(React.createElement(ConsentScreen));
 
-      expect(html).toContain('RETIRADO');
-      expect(html).toContain('Fecha en que lo retiraste:');
-      expect(html).toContain('Dar mi permiso otra vez');
+      expect(html).toContain(i18n.t('consent:screen.statusRevoked'));
+      expect(html).toContain(i18n.t('consent:screen.revokedAtLabel'));
+      expect(html).toContain(i18n.t('consent:screen.renew'));
     });
   });
 
@@ -205,8 +258,8 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
     it('muestra sección de Consentimientos Informados en el perfil', () => {
       const html = renderToString(React.createElement(CaregiverProfileScreen));
 
-      expect(html).toContain('Mi perfil');
-      expect(html).toContain('Permisos de tus niños');
+      expect(html).toContain(i18n.t('caregiver:profile.title'));
+      expect(html).toContain(i18n.t('caregiver:profile.consentsTitle'));
       expect(html).toContain(i18n.t('caregiver:profile.consentsDescription'));
     });
 
@@ -233,7 +286,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       expect(html).toContain('Versión aceptada:');
       expect(html).toContain('v1');
       expect(html).toContain('Fecha:');
-      expect(html).toContain('Retirar permiso');
+      expect(html).toContain(i18n.t('caregiver:consentItem.revoke'));
       expect(html).toContain('Ver documento');
     });
   });

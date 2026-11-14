@@ -48,7 +48,8 @@
     "months_one": "{{count}} mes",
     "months_other": "{{count}} meses",
     "yearsAndMonths": "{{years}} y {{months}}",
-    "yearsAndMonthsShort": "{{years}} {{months}}m"
+    "yearsAndMonthsShort": "{{years}} {{months}}m",
+    "newborn": "Recién nacido"
   },
   "time": {
     "yesterday": "Ayer",
@@ -93,5 +94,10 @@
       "11": "nov",
       "12": "dic"
     }
+  },
+  "relationships": {
+    "MOTHER": "Madre",
+    "FATHER": "Padre",
+    "LEGAL_GUARDIAN": "Tutor legal"
   }
 }

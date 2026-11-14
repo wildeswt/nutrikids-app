@@ -11,21 +11,15 @@ import {
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  KeyboardAwareScrollView,
+  KeyboardAwareTextInput,
+} from '../../components/KeyboardAwareScrollView.js';
 import { PALETTE } from '../../constants/colors.js';
 import { DEMO_CHILDREN, DEMO_NEW_CHECKUP } from '../../constants/demo-data.js';
 import { APP_ROUTES } from '../../constants/routes.js';
-import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { formatAge, formatDecimal, formatLongDate } from '../../i18n/format.js';
 
 const POSITION_OPTIONS: Position[] = ['STANDING', 'RECUMBENT'];
@@ -37,7 +31,6 @@ function parseDecimalInput(raw: string): number {
 
 export default function AddCheckupScreen() {
   const router = useRouter();
-  const keyboardInset = useKeyboardBottomInset();
   const { t } = useTranslation(['caregiver', 'common']);
 
   const [selectedPatientIndex, setSelectedPatientIndex] = useState(0);
@@ -123,211 +116,198 @@ export default function AddCheckupScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingBottom: keyboardInset > 0 ? keyboardInset + 36 : 36 },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          showsVerticalScrollIndicator={false}
+      <KeyboardAwareScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Botón superior: <- Volver */}
+        <Pressable
+          style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
+          onPress={handleBack}
+          accessibilityRole="button"
+          accessibilityLabel={t('addCheckup.back')}
         >
-          {/* Botón superior: <- Volver */}
-          <Pressable
-            style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
-            onPress={handleBack}
-            accessibilityRole="button"
-            accessibilityLabel={t('addCheckup.back')}
-          >
-            <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-            <Text style={styles.backText}>{t('addCheckup.back')}</Text>
-          </Pressable>
+          <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
+          <Text style={styles.backText}>{t('addCheckup.back')}</Text>
+        </Pressable>
 
-          {/* Título principal */}
-          <Text style={styles.screenTitle}>{t('addCheckup.title')}</Text>
+        {/* Título principal */}
+        <Text style={styles.screenTitle}>{t('addCheckup.title')}</Text>
 
-          {/* Tarjeta naranja del paciente activo */}
-          <View style={styles.patientCard}>
-            <Text style={styles.patientName}>{activePatient.fullName}</Text>
-            <Text style={styles.patientSubtitle}>
-              {t('addCheckup.childSubtitle', {
-                age: formatAge(activePatient.ageMonths),
-                birthDate: formatLongDate(activePatient.birthDate),
+        {/* Tarjeta naranja del paciente activo */}
+        <View style={styles.patientCard}>
+          <Text style={styles.patientName}>{activePatient.fullName}</Text>
+          <Text style={styles.patientSubtitle}>
+            {t('addCheckup.childSubtitle', {
+              age: formatAge(activePatient.ageMonths),
+              birthDate: formatLongDate(activePatient.birthDate),
+            })}
+          </Text>
+        </View>
+
+        {/* Enlace Cambiar paciente */}
+        <Pressable
+          style={({ pressed }) => [styles.changePatientButton, pressed && styles.pressed]}
+          onPress={handleSwitchPatient}
+          accessibilityRole="button"
+          accessibilityLabel={t('addCheckup.changeChild')}
+        >
+          <Text style={styles.changePatientText}>{t('addCheckup.changeChild')}</Text>
+        </Pressable>
+
+        {/* Mensajes de error o confirmación de valor atípico */}
+        {errorMessage ? (
+          <View style={styles.errorBanner} accessibilityRole="alert">
+            <Text style={styles.errorBannerText}>{errorMessage}</Text>
+          </View>
+        ) : null}
+
+        {outlierWarning ? (
+          <View style={styles.warningBanner} accessibilityRole="alert">
+            <Text style={styles.warningBannerText}>{outlierWarning}</Text>
+          </View>
+        ) : null}
+
+        {savedSuccess ? (
+          <View style={styles.successBanner}>
+            <Text style={styles.successBannerText}>{t('addCheckup.saved')}</Text>
+          </View>
+        ) : null}
+
+        {/* Campo: Fecha del control */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>{t('addCheckup.dateLabel')}</Text>
+          <View style={styles.pillInputContainer}>
+            <KeyboardAwareTextInput
+              style={styles.pillTextInput}
+              value={measuredDateText}
+              onChangeText={setMeasuredDateText}
+              placeholder={t('addCheckup.datePlaceholder', {
+                example: formatLongDate(DEMO_NEW_CHECKUP.measuredAt),
               })}
-            </Text>
+              placeholderTextColor={PALETTE.input.placeholder}
+              accessibilityLabel={t('addCheckup.dateLabel')}
+            />
+            <Ionicons name="calendar" size={22} color="#27272A" />
           </View>
+        </View>
 
-          {/* Enlace Cambiar paciente */}
+        {/* Campo: Posición de medición */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>{t('addCheckup.positionLabel')}</Text>
           <Pressable
-            style={({ pressed }) => [styles.changePatientButton, pressed && styles.pressed]}
-            onPress={handleSwitchPatient}
+            style={({ pressed }) => [styles.pillInputContainer, pressed && styles.pressed]}
+            onPress={() => setShowPositionMenu((prev) => !prev)}
             accessibilityRole="button"
-            accessibilityLabel={t('addCheckup.changeChild')}
+            accessibilityLabel={t('addCheckup.positionLabel')}
           >
-            <Text style={styles.changePatientText}>{t('addCheckup.changeChild')}</Text>
+            <Text style={styles.selectorValueText}>{selectedPositionLabel}</Text>
+            <Ionicons
+              name={showPositionMenu ? 'chevron-up' : 'chevron-down'}
+              size={22}
+              color="#27272A"
+            />
           </Pressable>
 
-          {/* Mensajes de error o confirmación de valor atípico */}
-          {errorMessage ? (
-            <View style={styles.errorBanner} accessibilityRole="alert">
-              <Text style={styles.errorBannerText}>{errorMessage}</Text>
-            </View>
-          ) : null}
-
-          {outlierWarning ? (
-            <View style={styles.warningBanner} accessibilityRole="alert">
-              <Text style={styles.warningBannerText}>{outlierWarning}</Text>
-            </View>
-          ) : null}
-
-          {savedSuccess ? (
-            <View style={styles.successBanner}>
-              <Text style={styles.successBannerText}>{t('addCheckup.saved')}</Text>
-            </View>
-          ) : null}
-
-          {/* Campo: Fecha del control */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>{t('addCheckup.dateLabel')}</Text>
-            <View style={styles.pillInputContainer}>
-              <TextInput
-                style={styles.pillTextInput}
-                value={measuredDateText}
-                onChangeText={setMeasuredDateText}
-                placeholder={t('addCheckup.datePlaceholder', {
-                  example: formatLongDate(DEMO_NEW_CHECKUP.measuredAt),
-                })}
-                placeholderTextColor={PALETTE.input.placeholder}
-                accessibilityLabel={t('addCheckup.dateLabel')}
-              />
-              <Ionicons name="calendar" size={22} color="#27272A" />
-            </View>
-          </View>
-
-          {/* Campo: Posición de medición */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>{t('addCheckup.positionLabel')}</Text>
-            <Pressable
-              style={({ pressed }) => [styles.pillInputContainer, pressed && styles.pressed]}
-              onPress={() => setShowPositionMenu((prev) => !prev)}
-              accessibilityRole="button"
-              accessibilityLabel={t('addCheckup.positionLabel')}
-            >
-              <Text style={styles.selectorValueText}>{selectedPositionLabel}</Text>
-              <Ionicons
-                name={showPositionMenu ? 'chevron-up' : 'chevron-down'}
-                size={22}
-                color="#27272A"
-              />
-            </Pressable>
-
-            {showPositionMenu ? (
-              <View style={styles.dropdownMenu}>
-                {POSITION_OPTIONS.map((option) => {
-                  const isSelected = option === position;
-                  return (
-                    <Pressable
-                      key={option}
-                      style={[styles.dropdownOption, isSelected && styles.dropdownOptionSelected]}
-                      onPress={() => {
-                        setPosition(option);
-                        setShowPositionMenu(false);
-                      }}
+          {showPositionMenu ? (
+            <View style={styles.dropdownMenu}>
+              {POSITION_OPTIONS.map((option) => {
+                const isSelected = option === position;
+                return (
+                  <Pressable
+                    key={option}
+                    style={[styles.dropdownOption, isSelected && styles.dropdownOptionSelected]}
+                    onPress={() => {
+                      setPosition(option);
+                      setShowPositionMenu(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.dropdownOptionText,
+                        isSelected && styles.dropdownOptionTextSelected,
+                      ]}
                     >
-                      <Text
-                        style={[
-                          styles.dropdownOptionText,
-                          isSelected && styles.dropdownOptionTextSelected,
-                        ]}
-                      >
-                        {t(`addCheckup.positions.${option}`)}
-                      </Text>
-                      {isSelected ? (
-                        <Ionicons name="checkmark" size={18} color={PALETTE.primary} />
-                      ) : null}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ) : null}
-          </View>
-
-          {/* Fila doble: Peso (kg) y Talla (cm) */}
-          <View style={styles.measurementsRow}>
-            <View style={styles.measurementColumn}>
-              <Text style={styles.fieldLabel}>{t('addCheckup.weightLabel')}</Text>
-              <View style={styles.measurementBox}>
-                <TextInput
-                  style={styles.measurementInput}
-                  value={weightText}
-                  onChangeText={(val) => {
-                    setWeightText(val);
-                    setConfirmedOutlier(false);
-                    setOutlierWarning(null);
-                  }}
-                  keyboardType="decimal-pad"
-                  placeholder={t('addCheckup.decimalPlaceholder')}
-                  placeholderTextColor={PALETTE.input.placeholder}
-                  accessibilityLabel={t('addCheckup.weightA11y')}
-                />
-                <Text style={styles.measurementUnit}>{t('common:units.kg')}</Text>
-              </View>
+                      {t(`addCheckup.positions.${option}`)}
+                    </Text>
+                    {isSelected ? (
+                      <Ionicons name="checkmark" size={18} color={PALETTE.primary} />
+                    ) : null}
+                  </Pressable>
+                );
+              })}
             </View>
+          ) : null}
+        </View>
 
-            <View style={styles.measurementColumn}>
-              <Text style={styles.fieldLabel}>{t('addCheckup.heightLabel')}</Text>
-              <View style={styles.measurementBox}>
-                <TextInput
-                  style={styles.measurementInput}
-                  value={heightText}
-                  onChangeText={(val) => {
-                    setHeightText(val);
-                    setConfirmedOutlier(false);
-                    setOutlierWarning(null);
-                  }}
-                  keyboardType="decimal-pad"
-                  placeholder={t('addCheckup.decimalPlaceholder')}
-                  placeholderTextColor={PALETTE.input.placeholder}
-                  accessibilityLabel={t('addCheckup.heightA11y')}
-                />
-                <Text style={styles.measurementUnit}>{t('common:units.cm')}</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Campo: Observaciones */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>{t('addCheckup.notesLabel')}</Text>
-            <View style={styles.observationsContainer}>
-              <TextInput
-                style={styles.observationsInput}
-                value={observations}
-                onChangeText={setObservations}
-                placeholder={t('addCheckup.notesPlaceholder')}
+        {/* Fila doble: Peso (kg) y Talla (cm) */}
+        <View style={styles.measurementsRow}>
+          <View style={styles.measurementColumn}>
+            <Text style={styles.fieldLabel}>{t('addCheckup.weightLabel')}</Text>
+            <View style={styles.measurementBox}>
+              <KeyboardAwareTextInput
+                style={styles.measurementInput}
+                value={weightText}
+                onChangeText={(val) => {
+                  setWeightText(val);
+                  setConfirmedOutlier(false);
+                  setOutlierWarning(null);
+                }}
+                keyboardType="decimal-pad"
+                placeholder={t('addCheckup.decimalPlaceholder')}
                 placeholderTextColor={PALETTE.input.placeholder}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                accessibilityLabel={t('addCheckup.notesLabel')}
+                accessibilityLabel={t('addCheckup.weightA11y')}
               />
+              <Text style={styles.measurementUnit}>{t('common:units.kg')}</Text>
             </View>
           </View>
 
-          {/* Botón Guardar y calcular */}
-          <Pressable
-            style={({ pressed }) => [styles.submitButton, pressed && styles.submitButtonPressed]}
-            onPress={handleSaveAndCalculate}
-            accessibilityRole="button"
-            accessibilityLabel={t('addCheckup.submit')}
-          >
-            <Text style={styles.submitButtonText}>{t('addCheckup.submit')}</Text>
-          </Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          <View style={styles.measurementColumn}>
+            <Text style={styles.fieldLabel}>{t('addCheckup.heightLabel')}</Text>
+            <View style={styles.measurementBox}>
+              <KeyboardAwareTextInput
+                style={styles.measurementInput}
+                value={heightText}
+                onChangeText={(val) => {
+                  setHeightText(val);
+                  setConfirmedOutlier(false);
+                  setOutlierWarning(null);
+                }}
+                keyboardType="decimal-pad"
+                placeholder={t('addCheckup.decimalPlaceholder')}
+                placeholderTextColor={PALETTE.input.placeholder}
+                accessibilityLabel={t('addCheckup.heightA11y')}
+              />
+              <Text style={styles.measurementUnit}>{t('common:units.cm')}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Campo: Observaciones */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>{t('addCheckup.notesLabel')}</Text>
+          <View style={styles.observationsContainer}>
+            <KeyboardAwareTextInput
+              style={styles.observationsInput}
+              value={observations}
+              onChangeText={setObservations}
+              placeholder={t('addCheckup.notesPlaceholder')}
+              placeholderTextColor={PALETTE.input.placeholder}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              accessibilityLabel={t('addCheckup.notesLabel')}
+            />
+          </View>
+        </View>
+
+        {/* Botón Guardar y calcular */}
+        <Pressable
+          style={({ pressed }) => [styles.submitButton, pressed && styles.submitButtonPressed]}
+          onPress={handleSaveAndCalculate}
+          accessibilityRole="button"
+          accessibilityLabel={t('addCheckup.submit')}
+        >
+          <Text style={styles.submitButtonText}>{t('addCheckup.submit')}</Text>
+        </Pressable>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }
@@ -336,9 +316,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: PALETTE.background,
-  },
-  flex: {
-    flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 24,

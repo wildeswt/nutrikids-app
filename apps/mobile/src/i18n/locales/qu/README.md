@@ -1,29 +1,29 @@
 # Kichwa (`qu`)
 
-> **Estado: BORRADOR AUTOMÁTICO.** Estos archivos se generaron con traducción automática para
-> tener una base. **No están revisados por hablantes nativos** y pueden tener errores de
-> vocabulario, gramática o variante dialectal. Deben revisarse antes de publicar la app.
-> Mientras tanto, el selector de idioma muestra el aviso "traducción en revisión" al elegir Kichwa.
+> **Status: MACHINE-TRANSLATED DRAFT.** These files were produced with machine translation as a
+> starting point. **They have not been reviewed by native speakers** and may contain vocabulary,
+> grammar or dialect errors. They must be reviewed before the app is released. Meanwhile, the
+> language selector shows a "translation under review" notice when Kichwa is selected.
 
-El español (`../es`) es el idioma base: toda clave que falte aquí se muestra en español.
+Spanish (`../es`) is the base language: any key missing here is shown in Spanish.
 
-## Qué está traducido
+## What is translated
 
-- Todos los namespaces: `common`, `auth`, `caregiver`, `consent`, `professional`, `errors`.
-- **Excepción:** el documento legal del consentimiento (`consent.json` → `documents.v1`) **no**
-  se tradujo automáticamente. Se muestra en español, con un aviso, hasta que exista una
-  traducción revisada y aprobada (ver "Reglas").
-- Nombres de meses: vienen de `common.json` → `date.months` (calendario kichwa: kulla, panchi,
-  pawkar, ayriwa, aymuray, raymi, sitwa, karwa, kuski, wayru, sasi, kapak), con el formato
-  `date.long` ("18 wayru killa 2026") y `date.short` ("16 wayru"). Deben validarse con hablantes
-  de la zona: en algunas comunidades se usan los nombres de los meses en español.
-- Fechas numéricas, horas y decimales usan formato español de Ecuador (`es-EC`), porque los datos
-  de idioma del teléfono para `qu` corresponden al quechua de Perú. Ver
-  `INTL_LOCALE_BY_LANGUAGE` en `src/i18n/resources.ts`.
+- Every namespace: `common`, `auth`, `caregiver`, `consent`, `professional`, `errors`.
+- **Exception:** the consent legal document (`consent.json` → `documents.v1`) was **not**
+  machine-translated. It is shown in Spanish, with a notice, until a reviewed and approved
+  translation exists (see "Rules").
+- Month names: from `common.json` → `date.months` (Kichwa calendar: kulla, panchi, pawkar, ayriwa,
+  aymuray, raymi, sitwa, karwa, kuski, wayru, sasi, kapak), with the formats `date.long`
+  ("18 wayru killa 2026") and `date.short` ("16 wayru"). They must be validated with local
+  speakers: some communities use the Spanish month names.
+- Numeric dates, times and decimals use Spanish (Ecuador) formats (`es-EC`), because the device
+  language data for `qu` is Peruvian Quechua. See `INTL_LOCALE_BY_LANGUAGE` in
+  `src/i18n/resources.ts`.
 
-## Glosario usado en el borrador (a validar)
+## Glossary used in the draft (to be validated)
 
-| Español             | Kichwa (borrador) |
+| Spanish             | Kichwa (draft)    |
 | ------------------- | ----------------- |
 | niño / niños        | wawa / wawakuna   |
 | peso                | llasay            |
@@ -38,22 +38,24 @@ El español (`../es`) es el idioma base: toda clave que falte aquí se muestra e
 | mensajes            | willaykuna        |
 | cuidador            | wawa kamak        |
 | profesional (salud) | hampik            |
+| madre / padre       | mama / yaya       |
+| tutor legal         | kamachik kamak    |
 | volver              | tikray            |
 | guardar             | wakaychiy         |
 
-## Cómo revisar o corregir
+## How to review or fix
 
-1. Edita los valores en `qu/<namespace>.json`. No cambies las claves ni las variables entre
-   llaves (`{{name}}`, `{{count}}`, etc.).
-2. Plurales: el kichwa no marca plural después de un número ("3 wata"), por eso `_one` y
-   `_other` tienen el mismo texto.
-3. Corre `pnpm --filter mobile test`: el test `i18n.test.ts` verifica que `qu` tenga todas las
-   claves de `es` (salvo `documents.*`) y ninguna clave desconocida.
-4. Cuando la revisión esté completa, cambia `draft: true` a `false` para `qu` en
-   `LANGUAGE_OPTIONS` (`src/i18n/resources.ts`) y actualiza este README.
+1. Edit the values in `qu/<namespace>.json`. Do not change the keys or the variables in braces
+   (`{{name}}`, `{{count}}`, etc.).
+2. Plurals: Kichwa does not mark plural after a number ("3 wata"), so `_one` and `_other` have the
+   same text.
+3. Run `pnpm --filter mobile test`: `i18n.test.ts` checks that `qu` has every `es` key (except
+   `documents.*`) and no unknown key.
+4. When the review is complete, set `draft: false` for `qu` in `LANGUAGE_OPTIONS`
+   (`src/i18n/resources.ts`) and update this README.
 
-## Reglas
+## Rules
 
-- `consent.json` → `documents.<versión>` es un texto legal versionado. Agrégalo aquí solo con
-  una traducción completa, revisada por hablantes nativos y aprobada por el equipo del proyecto.
-- En las vistas del cuidador usa lenguaje sencillo: frases cortas, sin siglas sin explicar.
+- `consent.json` → `documents.<version>` is a versioned legal text. Add it here only with a
+  complete translation, reviewed by native speakers and approved by the project team.
+- Caregiver screens use plain language: short sentences, no unexplained acronyms.

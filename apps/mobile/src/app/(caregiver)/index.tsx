@@ -1,32 +1,46 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import React from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
-import {
-  DEMO_ACTIVE_CHILD,
-  DEMO_CAREGIVER_NAME,
-  DEMO_HOME_MESSAGE,
-  DEMO_NEXT_CHECKUP,
-} from '../../constants/demo-data.js';
+import { DEMO_HOME_MESSAGE, DEMO_NEXT_CHECKUP } from '../../constants/demo-data.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
-import { formatAge } from '../../i18n/format.js';
+import { useChildren } from '../../hooks/useChildren.js';
+import { formatLongDate } from '../../i18n/format.js';
+import { formatChildAge } from '../../lib/children-api.js';
 
 export default function CaregiverHomeScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const { t } = useTranslation(['caregiver', 'common']);
+  const { user } = useAuth();
+  const { status, children, error, load } = useChildren();
 
-  const caregiverName = user?.firstName || DEMO_CAREGIVER_NAME;
+  // Refresh the children list when the tab gets focus
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
+
+  const caregiverName = user?.firstName || t('home.greetingFallback');
+  const greetingText = t('home.greeting', { name: caregiverName });
 
   const handleRegisterChild = () => {
-    // Criterio NK-20: Se muestra la pantalla de consentimiento antes de registrar los datos del niño
+    // Show the consent screen (register mode) before registering the child (NK-20)
     router.push({
-      pathname: APP_ROUTES.CAREGIVER.CONSENT,
+      pathname: APP_ROUTES.CAREGIVER.CONSENT as never,
       params: { mode: 'register' },
     });
   };
@@ -56,38 +70,123 @@ export default function CaregiverHomeScreen() {
           </Pressable>
         </View>
 
-        {/* Saludo personalizado */}
-        <Text style={styles.greetingTitle}>{t('home.greeting', { name: caregiverName })}</Text>
+        {/* Saludo personalizado con el nombre del cuidador */}
+        <Text style={styles.greetingTitle}>{greetingText}</Text>
 
-        {/* Tarjeta Naranja Principal: Niño activo */}
-        <View style={styles.childCard}>
-          <View style={styles.childIconWrapper}>
-            <Ionicons name="body" size={54} color="#FFFFFF" />
+        {/* Estado de carga */}
+        {status === 'loading' && (
+          <View style={styles.loadingContainer} testID="caregiver-children-loading">
+            <ActivityIndicator size="small" color={PALETTE.primary} />
+            <Text style={styles.loadingText}>{t('home.loading')}</Text>
           </View>
+        )}
 
-          <View style={styles.childInfoWrapper}>
-            <Text style={styles.childNameTitle}>
-              {t('home.childSummary', {
-                name: DEMO_ACTIVE_CHILD.firstName,
-                age: formatAge(DEMO_ACTIVE_CHILD.ageMonths),
-              })}
-            </Text>
-            <Text style={styles.childSubtitle}>{t('home.childSubtitle')}</Text>
-
-            <View style={styles.statusPill}>
-              <Ionicons name="checkmark" size={14} color={PALETTE.primary} />
-              <Text style={styles.statusPillText}>{t('home.statusOk')}</Text>
-            </View>
-
+        {/* Estado de error */}
+        {status === 'error' && (
+          <View style={styles.errorContainer} testID="caregiver-children-error">
+            <Ionicons name="alert-circle-outline" size={24} color={PALETTE.feedback.error} />
+            <Text style={styles.errorText}>{error || t('home.loadError')}</Text>
             <Pressable
-              style={({ pressed }) => [styles.seeMoreRow, pressed && styles.buttonPressed]}
-              onPress={() => router.push(APP_ROUTES.CAREGIVER.EVOLUTION)}
+              style={({ pressed }) => [styles.retryButton, pressed && styles.buttonPressed]}
+              onPress={() => void load()}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.retryA11y')}
             >
-              <Text style={styles.seeMoreText}>{t('home.seeMore')}</Text>
-              <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+              <Text style={styles.retryButtonText}>{t('home.retry')}</Text>
             </Pressable>
           </View>
-        </View>
+        )}
+
+        {/* Estado vacío cuando no hay niños registrados */}
+        {(status === 'empty' || (status === 'ready' && children.length === 0)) && (
+          <View style={styles.emptyContainer} testID="caregiver-empty-children">
+            <View style={styles.emptyIconWrapper}>
+              <Ionicons name="people-outline" size={38} color={PALETTE.primary} />
+            </View>
+            <Text style={styles.emptyTitle}>{t('home.emptyTitle')}</Text>
+            <Text style={styles.emptySubtitle}>{t('home.emptySubtitle')}</Text>
+            <Pressable
+              style={({ pressed }) => [styles.emptyAddButton, pressed && styles.buttonPressed]}
+              onPress={handleRegisterChild}
+              testID="empty-add-child-button"
+              accessibilityRole="button"
+              accessibilityLabel={t('home.addChild')}
+            >
+              <Ionicons name="add" size={18} color={PALETTE.text.light} />
+              <Text style={styles.emptyAddButtonText}>{t('home.addChild')}</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Lista de tarjetas de niños cuando existen registros */}
+        {children.length > 0 && (
+          <View style={styles.childrenListContainer} testID="caregiver-children-list">
+            {children.map((child) => {
+              const childAge = formatChildAge(child.birthDate);
+              const isGirl = child.sex === 'FEMALE';
+
+              return (
+                <View key={child.id} style={styles.childCard} testID={`child-card-${child.id}`}>
+                  <View style={styles.childIconWrapper}>
+                    <Ionicons
+                      name={isGirl ? 'woman' : 'body'}
+                      size={50}
+                      color={PALETTE.text.light}
+                    />
+                  </View>
+
+                  <View style={styles.childInfoWrapper}>
+                    <Text style={styles.childNameTitle}>
+                      {t('home.childSummary', {
+                        name: `${child.firstName} ${child.lastName}`,
+                        age: childAge,
+                      })}
+                    </Text>
+                    <Text style={styles.childSubtitle}>{t('home.childSubtitle')}</Text>
+
+                    {/* Status is shown with short text, icon and color (never color alone); no z-scores or technical classifications */}
+                    <View style={styles.statusPill}>
+                      <Ionicons name="checkmark-circle" size={15} color={PALETTE.primary} />
+                      <Text style={styles.statusPillText}>{t('home.statusOk')}</Text>
+                    </View>
+
+                    <Pressable
+                      style={({ pressed }) => [styles.seeMoreRow, pressed && styles.buttonPressed]}
+                      onPress={() =>
+                        router.push({
+                          pathname: APP_ROUTES.CAREGIVER.EVOLUTION as never,
+                          params: { childId: child.id },
+                        })
+                      }
+                      accessibilityRole="button"
+                      accessibilityLabel={t('home.seeMoreA11y', { name: child.firstName })}
+                    >
+                      <Text style={styles.seeMoreText}>{t('home.seeMore')}</Text>
+                      <Ionicons name="arrow-forward" size={14} color={PALETTE.text.light} />
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })}
+
+            {/* Dashed "add child" card (Figma design) */}
+            <Pressable
+              style={({ pressed }) => [styles.dashedAddCard, pressed && styles.buttonPressed]}
+              onPress={handleRegisterChild}
+              testID="add-child-dashed-card"
+              accessibilityRole="button"
+              accessibilityLabel={t('home.addChild')}
+            >
+              <View style={styles.dashedAddIconCircle}>
+                <Ionicons name="add" size={22} color={PALETTE.primary} />
+              </View>
+              <Text style={styles.dashedAddText}>{t('home.addChild')}</Text>
+            </Pressable>
+
+            {/* Privacy notice (Figma design) */}
+            <Text style={styles.linkedChildrenNotice}>{t('home.linkedNotice')}</Text>
+          </View>
+        )}
 
         {/* Sección: Para ti */}
         <View style={styles.sectionHeader}>
@@ -136,9 +235,12 @@ export default function CaregiverHomeScreen() {
           onPress={() => router.push(APP_ROUTES.CAREGIVER.EVOLUTION)}
         >
           <View style={styles.controlCardRow}>
-            <Ionicons name="calendar-outline" size={40} color="#FFFFFF" />
+            <Ionicons name="calendar-outline" size={40} color={PALETTE.text.light} />
             <View style={styles.controlContent}>
               <Text style={styles.controlTitle}>{t('home.checkupTitle')}</Text>
+              <Text style={styles.controlDate}>
+                {t('home.checkupDate', { date: formatLongDate(DEMO_NEXT_CHECKUP.date) })}
+              </Text>
               <Text style={styles.controlLocation}>
                 {t('home.checkupPlace', {
                   place: DEMO_NEXT_CHECKUP.place,
@@ -147,7 +249,7 @@ export default function CaregiverHomeScreen() {
               </Text>
               <View style={styles.controlSeeMore}>
                 <Text style={styles.controlSeeMoreText}>{t('home.checkupDetails')}</Text>
-                <Ionicons name="arrow-forward" size={13} color="#FFFFFF" />
+                <Ionicons name="arrow-forward" size={13} color={PALETTE.text.light} />
               </View>
             </View>
           </View>
@@ -167,7 +269,12 @@ export default function CaregiverHomeScreen() {
             <Text style={styles.articleTitle}>{t('home.articleSnacks')}</Text>
             <View style={styles.articleFooter}>
               <Text style={styles.articleMeta}>{t('home.articleSnacksMeta')}</Text>
-              <Ionicons name="nutrition" size={38} color="#DC2626" style={styles.articleIcon} />
+              <Ionicons
+                name="nutrition"
+                size={38}
+                color={PALETTE.feedback.error}
+                style={styles.articleIcon}
+              />
             </View>
           </View>
 
@@ -186,7 +293,7 @@ export default function CaregiverHomeScreen() {
           </View>
         </View>
 
-        {/* Sección NK-20: Registro de nuevo niño con consentimiento informado */}
+        {/* Sección: Registro de nuevo niño con consentimiento informado */}
         <View style={styles.actionSection}>
           <Pressable
             style={({ pressed }) => [styles.registerButton, pressed && styles.buttonPressed]}
@@ -245,13 +352,113 @@ const styles = StyleSheet.create({
     color: PALETTE.text.title,
     marginBottom: 16,
   },
+  loadingContainer: {
+    backgroundColor: PALETTE.surface,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: PALETTE.border.default,
+    gap: 10,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: PALETTE.text.muted,
+  },
+  errorContainer: {
+    backgroundColor: PALETTE.feedback.errorBg,
+    borderRadius: 20,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: PALETTE.feedback.errorBorder,
+    gap: 8,
+  },
+  errorText: {
+    fontSize: 13,
+    color: PALETTE.feedback.error,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: PALETTE.feedback.error,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  retryButtonText: {
+    color: PALETTE.text.light,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  emptyContainer: {
+    backgroundColor: PALETTE.surface,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: PALETTE.border.default,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  emptyIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFF0ED',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: PALETTE.text.title,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: PALETTE.text.body,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  emptyAddButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: PALETTE.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
+    shadowColor: PALETTE.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  emptyAddButtonText: {
+    color: PALETTE.text.light,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  childrenListContainer: {
+    marginBottom: 12,
+  },
   childCard: {
     backgroundColor: PALETTE.secondary,
     borderRadius: 24,
     padding: 18,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 14,
     shadowColor: PALETTE.secondary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -267,12 +474,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   childNameTitle: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 16,
     fontWeight: '800',
   },
   childSubtitle: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 12,
     opacity: 0.9,
     marginTop: 2,
@@ -280,7 +487,7 @@ const styles = StyleSheet.create({
   },
   statusPill: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: PALETTE.surface,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -302,9 +509,42 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   seeMoreText: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 12,
     fontWeight: '600',
+  },
+  dashedAddCard: {
+    backgroundColor: PALETTE.surface,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: PALETTE.border.default,
+    borderStyle: 'dashed',
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  dashedAddIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: PALETTE.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dashedAddText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: PALETTE.primary,
+  },
+  linkedChildrenNotice: {
+    fontSize: 12,
+    color: PALETTE.text.muted,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -383,12 +623,18 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   controlTitle: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 15,
     fontWeight: '800',
   },
+  controlDate: {
+    color: PALETTE.text.light,
+    fontSize: 12,
+    fontWeight: '600',
+    opacity: 0.95,
+  },
   controlLocation: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 12,
     opacity: 0.9,
   },
@@ -399,7 +645,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   controlSeeMoreText: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 11,
     fontWeight: '600',
   },
@@ -461,7 +707,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   registerButtonText: {
-    color: '#FFFFFF',
+    color: PALETTE.text.light,
     fontSize: 15,
     fontWeight: '700',
   },

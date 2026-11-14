@@ -27,5 +27,8 @@
     "childList": "Kikinpak wawakunapak shutikunata mana rikuchiy usharkanchikchu.",
     "missingChildForGrant": "Ari ninkapakka wawata akllanami kan.",
     "missingChildForRevoke": "Ari ninata kichunkapakka wawata akllanami kan."
+  },
+  "children": {
+    "create": "Wawata mana killkakatiy usharkanchikchu. Kutin rurapay."
   }
 }

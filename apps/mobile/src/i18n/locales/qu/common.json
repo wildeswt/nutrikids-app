@@ -48,7 +48,8 @@
     "months_one": "{{count}} killa",
     "months_other": "{{count}} killa",
     "yearsAndMonths": "{{years}} {{months}}",
-    "yearsAndMonthsShort": "{{years}} {{months}}k"
+    "yearsAndMonthsShort": "{{years}} {{months}}k",
+    "newborn": "Mushuk wachashka"
   },
   "time": {
     "yesterday": "Kayna",
@@ -93,5 +94,10 @@
       "11": "sasi",
       "12": "kapak"
     }
+  },
+  "relationships": {
+    "MOTHER": "Mama",
+    "FATHER": "Yaya",
+    "LEGAL_GUARDIAN": "Kamachik kamak"
   }
 }

@@ -1,11 +1,8 @@
 import {
-  ChildResponseSchema,
   ConsentResponseSchema,
   GrantConsentInputSchema,
-  type ChildResponse,
   type ConsentResponse,
 } from '@nutrikids/shared';
-import { z } from 'zod';
 import i18n from '../i18n/index.js';
 import { authFetch, parseApiError } from './api.js';
 
@@ -13,11 +10,11 @@ import { authFetch, parseApiError } from './api.js';
 export const CURRENT_CONSENT_VERSION = 'v1';
 
 /**
- * Devuelve el texto del consentimiento informado para una versión, desde los archivos de
- * traducción (`consent:documents.<versión>`). Si la versión no existe, usa la versión actual.
+ * Returns the informed consent text for a version from the translation files
+ * (`consent:documents.<version>`), falling back to the current version if it does not exist.
  *
- * Importante: el texto de una versión ya publicada no debe cambiar. Para modificar el contenido
- * se debe crear una nueva versión (p. ej. `v2`) y actualizar `CURRENT_CONSENT_VERSION`.
+ * Important: the text of a published version must never change. To change the content, create
+ * a new version (e.g. `v2`) and update `CURRENT_CONSENT_VERSION`.
  */
 export function getConsentText(version: string): string {
   const key = `documents.${version}`;
@@ -93,18 +90,4 @@ export async function revokeConsentForChild(childId: string): Promise<ConsentRes
   return ConsentResponseSchema.parse(rawJson);
 }
 
-/**
- * Lista los niños asociados al cuidador autenticado para gestionar consentimientos.
- */
-export async function fetchCaregiverChildren(): Promise<ChildResponse[]> {
-  const response = await authFetch('/children');
-
-  if (!response.ok) {
-    const payload: unknown = await response.json().catch(() => ({}));
-    const parsed = parseApiError(payload, i18n.t('errors:consent.childList'));
-    throw new Error(parsed.message);
-  }
-
-  const rawJson: unknown = await response.json();
-  return z.array(ChildResponseSchema).parse(rawJson);
-}
+export { fetchCaregiverChildren } from './children-api.js';

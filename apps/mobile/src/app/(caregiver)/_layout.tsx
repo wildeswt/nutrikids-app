@@ -112,10 +112,21 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="consent"
         options={{
-          href: null,
           title: t('tabs.consent'),
           headerTitle: t('tabs.consentHeader'),
           tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="add-child"
+        options={{
+          title: t('tabs.addChild'),
+          headerTitle: t('tabs.addChildHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
         }}
       />
     </Tabs>

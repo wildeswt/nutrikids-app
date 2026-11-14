@@ -1,22 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../../constants/colors.js';
 import { DEMO_ACTIVE_CHILD, DEMO_CHAT } from '../../constants/demo-data.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { formatLongDate, formatTime } from '../../i18n/format.js';
+import { useKeyboardOverlap } from '../../hooks/useKeyboardBottomInset.js';
 
 interface ChatMessage {
   id: string;
@@ -31,8 +23,19 @@ const INITIAL_MESSAGES: ChatMessage[] = DEMO_CHAT.messages;
 export default function ChatDetailScreen() {
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'common']);
+  const containerRef = useRef<React.ComponentRef<typeof View>>(null);
+  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const { bottomOverlap, updateOverlap } = useKeyboardOverlap(containerRef);
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
+
+  useEffect(() => {
+    if (bottomOverlap > 0) {
+      requestAnimationFrame(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      });
+    }
+  }, [bottomOverlap]);
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -56,18 +59,29 @@ export default function ChatDetailScreen() {
 
     setMessages((prev) => [...prev, newMessage]);
     setInputText('');
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    });
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <View
+        ref={containerRef}
+        style={[styles.flex, { paddingBottom: bottomOverlap }]}
+        onLayout={() => {
+          if (bottomOverlap > 0) {
+            updateOverlap();
+          }
+        }}
       >
         <ScrollView
+          ref={scrollViewRef}
+          style={styles.flex}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           {/* Botón superior: ‹ Volver */}
           <Pressable
@@ -132,10 +146,10 @@ export default function ChatDetailScreen() {
               );
             })}
           </View>
+        </ScrollView>
 
-          <View style={styles.spacer} />
-
-          {/* Barra de entrada de texto e interactividad de envío */}
+        {/* Barra de entrada fija encima del teclado */}
+        <View style={styles.footerContainer}>
           <View style={styles.inputBarRow}>
             <View style={styles.textInputWrapper}>
               <TextInput
@@ -160,8 +174,8 @@ export default function ChatDetailScreen() {
 
           {/* Pie de privacidad */}
           <Text style={styles.privacyNote}>{t('chat.privacy')}</Text>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -177,8 +191,13 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 22,
     paddingTop: 10,
-    paddingBottom: 24,
-    minHeight: '100%',
+    paddingBottom: 16,
+  },
+  footerContainer: {
+    paddingHorizontal: 22,
+    paddingTop: 8,
+    paddingBottom: 16,
+    backgroundColor: PALETTE.background,
   },
   backRow: {
     flexDirection: 'row',
@@ -293,10 +312,6 @@ const styles = StyleSheet.create({
   myMetaText: {
     fontSize: 11,
     color: '#D1E0DE',
-  },
-  spacer: {
-    flex: 1,
-    minHeight: 24,
   },
   inputBarRow: {
     flexDirection: 'row',

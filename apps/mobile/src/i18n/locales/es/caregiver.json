@@ -13,7 +13,9 @@
     "profile": "Perfil",
     "profileHeader": "Mi perfil",
     "consent": "Permiso",
-    "consentHeader": "Consentimiento informado"
+    "consentHeader": "Consentimiento informado",
+    "addChild": "Registrar niño",
+    "addChildHeader": "Registrar niño"
   },
   "home": {
     "notifications": "Avisos",
@@ -39,7 +41,18 @@
     "articleFeedingMeta": "Guía práctica",
     "registerChild": "+ Registrar nuevo niño",
     "registerChildA11y": "Registrar nuevo niño",
-    "consentNotice": "Antes de anotar los datos de tu niño, te pediremos leer y aceptar el consentimiento informado (tu permiso para guardar y revisar sus datos)."
+    "consentNotice": "Antes de anotar los datos de tu niño, te pediremos leer y aceptar el consentimiento informado (tu permiso para guardar y revisar sus datos).",
+    "greetingFallback": "Familia",
+    "loading": "Cargando a tus niños...",
+    "loadError": "No pudimos cargar a tus niños.",
+    "retry": "Intentar de nuevo",
+    "retryA11y": "Volver a cargar la lista de niños",
+    "emptyTitle": "Aún no tienes niños registrados",
+    "emptySubtitle": "Registra a tu niño para seguir su crecimiento y sus controles.",
+    "addChild": "Agregar niño",
+    "seeMoreA11y": "Ver cómo crece {{name}}",
+    "linkedNotice": "Solo ves a los niños vinculados a tu cuenta",
+    "checkupDate": "Fecha: {{date}}"
   },
   "addCheckup": {
     "back": "Volver",
@@ -175,5 +188,31 @@
     "revokeSuccessMessage": "Retiraste el permiso.",
     "revokeErrorTitle": "No se pudo retirar",
     "revokeErrorMessage": "Intenta de nuevo."
+  },
+  "addChild": {
+    "title": "Registrar niño",
+    "subtitle": "Escribe los datos de tu niño para seguir su crecimiento con las tablas de la OMS.",
+    "firstNameLabel": "Nombre",
+    "firstNamePlaceholder": "Ej: Mateo",
+    "lastNameLabel": "Apellido",
+    "lastNamePlaceholder": "Ej: Rodríguez",
+    "sexLabel": "Sexo",
+    "sexMale": "Niño",
+    "sexFemale": "Niña",
+    "sexMaleA11y": "Elegir niño",
+    "sexFemaleA11y": "Elegir niña",
+    "birthDateLabel": "Fecha de nacimiento",
+    "ageRangeHelper": "Puede tener entre {{min}} y {{max}} meses (de 1 a 5 años).",
+    "day": "Día",
+    "dayPlaceholder": "DD",
+    "month": "Mes",
+    "monthPlaceholder": "MM",
+    "year": "Año",
+    "yearPlaceholder": "AAAA",
+    "calculatedAge": "Edad: {{age}} ({{months}} meses)",
+    "relationshipLabel": "¿Qué eres del niño?",
+    "legalRepA11y": "Soy el representante legal del niño",
+    "legalRepLabel": "Soy el representante legal del niño y puedo dar permiso para registrar sus datos.",
+    "submit": "Guardar niño"
   }
 }

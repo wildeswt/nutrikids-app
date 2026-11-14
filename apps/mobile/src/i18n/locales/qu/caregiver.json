@@ -13,7 +13,9 @@
     "profile": "Ñukamanta",
     "profileHeader": "Ñukamanta",
     "consent": "Ari nina",
-    "consentHeader": "Yachashpa ari nina"
+    "consentHeader": "Yachashpa ari nina",
+    "addChild": "Wawata killkakatiy",
+    "addChildHeader": "Wawata killkakatiy"
   },
   "home": {
     "notifications": "Yuyachikkuna",
@@ -39,7 +41,18 @@
     "articleFeedingMeta": "Ruranapak yachay",
     "registerChild": "+ Mushuk wawata killkakatiy",
     "registerChildA11y": "Mushuk wawata killkakatiy",
-    "consentNotice": "Kikinpak wawapak willaykunata killkanamanta ñawpaka, ari ninata ñawinchishpa chaskinatami mañashun (paypak willaykunata wakaychinkapak, rikunkapakpash ari nina)."
+    "consentNotice": "Kikinpak wawapak willaykunata killkanamanta ñawpaka, ari ninata ñawinchishpa chaskinatami mañashun (paypak willaykunata wakaychinkapak, rikunkapakpash ari nina).",
+    "greetingFallback": "Ayllu",
+    "loading": "Wawakunata rikuchikunmi...",
+    "loadError": "Wawakunata mana rikuchiy usharkanchikchu.",
+    "retry": "Kutin rurapay",
+    "retryA11y": "Wawakunapak shutikunata kutin rikuchiy",
+    "emptyTitle": "Manarakmi wawakunata killkakatishkankichu",
+    "emptySubtitle": "Kikinpak wawata killkakatiy, paypak wiñayta, kamaykunatapash katinkapak.",
+    "addChild": "Wawata yapay",
+    "seeMoreA11y": "Imashina {{name}} wiñakunta rikuy",
+    "linkedNotice": "Kikinpak kuentawan tinkishka wawakunallatami rikunki",
+    "checkupDate": "Puncha: {{date}}"
   },
   "addCheckup": {
     "back": "Tikray",
@@ -175,5 +188,31 @@
     "revokeSuccessMessage": "Ari ninata kichurkanki.",
     "revokeErrorTitle": "Mana kichuy usharkanchu",
     "revokeErrorMessage": "Kutin rurapay."
+  },
+  "addChild": {
+    "title": "Wawata killkakatiy",
+    "subtitle": "OMS-pak tupuykunawan paypak wiñayta katinkapak, kikinpak wawapak willaykunata killkay.",
+    "firstNameLabel": "Shuti",
+    "firstNamePlaceholder": "Shina: Mateo",
+    "lastNameLabel": "Ayllu shuti",
+    "lastNamePlaceholder": "Shina: Rodríguez",
+    "sexLabel": "Kari warmi",
+    "sexMale": "Kari wawa",
+    "sexFemale": "Warmi wawa",
+    "sexMaleA11y": "Kari wawata akllay",
+    "sexFemaleA11y": "Warmi wawata akllay",
+    "birthDateLabel": "Wacharishka puncha",
+    "ageRangeHelper": "{{min}} killamanta {{max}} killakaman kana (1 watamanta 5 watakaman).",
+    "day": "Puncha",
+    "dayPlaceholder": "PP",
+    "month": "Killa",
+    "monthPlaceholder": "KK",
+    "year": "Wata",
+    "yearPlaceholder": "WWWW",
+    "calculatedAge": "Watakuna: {{age}} ({{months}} killa)",
+    "relationshipLabel": "¿Wawapak imatak kanki?",
+    "legalRepA11y": "Ñukami wawapak kamachik kamak kani",
+    "legalRepLabel": "Ñukami wawapak kamachik kamak kani, paypak willaykunata killkakatinkapak ari ninata ushani.",
+    "submit": "Wawata wakaychiy"
   }
 }
