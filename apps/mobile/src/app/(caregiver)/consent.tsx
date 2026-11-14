@@ -57,8 +57,8 @@ export default function ConsentScreen() {
           {
             text: 'Continuar al registro',
             onPress: () => {
-              // Navega de regreso al inicio o al flujo de registro de niños con consentimiento aceptado
-              router.replace(APP_ROUTES.CAREGIVER.HOME);
+              // Navega a la pantalla de alta de datos del niño tras aceptar consentimiento
+              router.replace(APP_ROUTES.CAREGIVER.ADD_CHILD as never);
             },
           },
         ],
