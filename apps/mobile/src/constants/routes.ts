@@ -30,6 +30,8 @@ export const APP_ROUTES = {
     PRIVACY: '/(caregiver)/privacy' as const,
     REMINDERS: '/(caregiver)/reminders' as const,
     ADD_REMINDER: '/(caregiver)/add-reminder' as const,
+    LEARN: '/(caregiver)/learn' as const,
+    LEARN_ARTICLE: '/(caregiver)/learn-article' as const,
   },
   PROFESSIONAL: {
     GROUP: '(professional)',

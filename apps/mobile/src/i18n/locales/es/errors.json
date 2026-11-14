@@ -72,5 +72,8 @@
   },
   "followUps": {
     "create": "No pudimos guardar el seguimiento. Intenta de nuevo."
+  },
+  "education": {
+    "fetch": "No pudimos descargar los artículos. Intenta de nuevo."
   }
 }
