@@ -313,10 +313,16 @@ describe('Alerts API (/alerts)', { timeout: 60000 }, () => {
       expect(detail.status).toBe(200);
       expect(AlertDetailResponseSchema.safeParse(detail.body).success).toBe(true);
       expect(detail.body.history).toEqual([
-        { status: 'GENERATED', changedById: caregiver.userId, changedAt: expect.any(String) },
+        {
+          status: 'GENERATED',
+          changedById: caregiver.userId,
+          changedByName: expect.any(String),
+          changedAt: expect.any(String),
+        },
         {
           status: 'PENDING_REVIEW',
           changedById: professional.userId,
+          changedByName: expect.any(String),
           changedAt: expect.any(String),
         },
       ]);
@@ -398,6 +404,7 @@ describe('Alerts API (/alerts)', { timeout: 60000 }, () => {
       const history = done.body.history as {
         status: string;
         changedById: string;
+        changedByName: string;
         changedAt: string;
       }[];
       expect(history.map((h) => [h.status, h.changedById])).toEqual([
@@ -406,7 +413,10 @@ describe('Alerts API (/alerts)', { timeout: 60000 }, () => {
         ['REVIEWED', professional.userId],
         ['FOLLOW_UP_ESTABLISHED', professional.userId],
       ]);
-      for (const h of history) expect(Number.isNaN(Date.parse(h.changedAt))).toBe(false);
+      for (const h of history) {
+        expect(Number.isNaN(Date.parse(h.changedAt))).toBe(false);
+        expect(h.changedByName.trim()).not.toBe('');
+      }
     });
 
     it.each(['GENERATED', 'PENDING_REVIEW', 'REVIEWED', 'FOLLOW_UP_ESTABLISHED'])(

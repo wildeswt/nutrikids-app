@@ -13,7 +13,8 @@
     "profileTitle": "Perfil Profesional",
     "notifications": "Notificaciones",
     "notificationsTitle": "Notificaciones",
-    "alertDetailTitle": "Detalle de la Alerta"
+    "alertDetailTitle": "Detalle de la Alerta",
+    "followUpTitle": "Seguimiento clínico"
   },
   "alerts": {
     "filtersA11y": "Filtrar alertas por estado",
@@ -72,8 +73,47 @@
     "logout": "Cerrar Sesión"
   },
   "alertDetail": {
-    "title": "Detalle de la alerta",
-    "placeholder": "El detalle completo de la alerta estará disponible próximamente.",
-    "idLabel": "Alerta: {{id}}"
+    "title": "Detalle de alerta",
+    "loading": "Cargando la alerta...",
+    "retry": "Reintentar",
+    "unknownChild": "Niño sin identificar",
+    "childSubtitle": "{{age}} · {{birthDate}}",
+    "rows": {
+      "indicator": "Indicador",
+      "checkup": "Control",
+      "result": "Resultado",
+      "reason": "Motivo"
+    },
+    "checkupValue": "{{date}} · {{weight}} · {{height}}",
+    "checkupUnknown": "Control no disponible",
+    "result": {
+      "below": "Puntaje z por debajo de −{{limit}}",
+      "above": "Puntaje z por encima de +{{limit}}",
+      "value": "Puntaje z = {{z}}"
+    },
+    "chart": {
+      "title": "Evolución del indicador",
+      "subtitle": "Puntaje z de {{indicator}} (OMS)",
+      "legendAlert": "Control que originó la alerta",
+      "loadError": "No pudimos cargar los controles para la gráfica.",
+      "empty": "Aún no hay controles para graficar.",
+      "a11y": "Gráfica de {{indicator}} con {{count}} controles. El control de la alerta tiene z = {{z}}."
+    },
+    "history": {
+      "title": "Historial de estados",
+      "entry": "{{date}} · {{time}}",
+      "by": "Por {{name}}"
+    },
+    "actions": {
+      "markReviewed": "Marcar como revisada",
+      "marking": "Guardando...",
+      "followUp": "Registrar seguimiento",
+      "reviewedNote": "Ya marcaste esta alerta como revisada.",
+      "establishedNote": "Esta alerta ya tiene seguimiento establecido."
+    }
+  },
+  "followUp": {
+    "title": "Seguimiento clínico",
+    "placeholder": "El formulario de seguimiento estará disponible próximamente."
   }
 }
