@@ -120,6 +120,7 @@ model Child {
   feedingLogs          FeedingLog[]
   followUps            FollowUp[]
   reminders            Reminder[]
+  messages             Message[]
   erasureRequests      ErasureRequest[]
 
   @@map("children")
@@ -297,16 +298,22 @@ model FollowUp {
 
 model Message {
   id                   String              @id @default(uuid()) @db.Uuid
+  childId              String              @map("child_id") @db.Uuid
   senderId             String              @map("sender_id") @db.Uuid
   recipientId          String              @map("recipient_id") @db.Uuid
+  kind                 String              @default("message") @map("kind")
   body                 String              @map("body")
   sentAt               DateTime            @default(now()) @map("sent_at") @db.Timestamptz(3)
+  readAt               DateTime?           @map("read_at") @db.Timestamptz(3)
 
+  child                Child               @relation(fields: [childId], references: [id], onDelete: Restrict)
   sender               User                @relation("SentMessages", fields: [senderId], references: [id], onDelete: Restrict)
   recipient            User                @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Restrict)
 
   @@index([senderId])
   @@index([recipientId])
+  @@index([childId, senderId, recipientId, sentAt(sort: Desc)], map: "messages_thread_idx")
+  @@index([recipientId, readAt], map: "messages_recipient_unread_idx")
   @@map("messages")
 }
 
