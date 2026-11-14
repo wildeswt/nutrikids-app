@@ -110,10 +110,62 @@
       "followUp": "Registrar seguimiento",
       "reviewedNote": "Ya marcaste esta alerta como revisada.",
       "establishedNote": "Esta alerta ya tiene seguimiento establecido."
-    }
+    },
+    "pending_one": "Tienes {{count}} seguimiento guardado en este teléfono por enviar.",
+    "pending_other": "Tienes {{count}} seguimientos guardados en este teléfono por enviar."
   },
   "followUp": {
     "title": "Seguimiento clínico",
-    "placeholder": "El formulario de seguimiento estará disponible próximamente."
+    "context": "{{date}} · {{name}} · {{specialty}}",
+    "contextNoSpecialty": "{{date}} · {{name}}",
+    "childSubtitle": "{{age}}",
+    "loading": "Cargando el seguimiento...",
+    "retry": "Reintentar",
+    "missingTarget": "Abre el seguimiento desde el detalle de una alerta.",
+    "typeLabel": "Tipo de seguimiento",
+    "typePlaceholder": "Elige el tipo",
+    "types": {
+      "observation": "Observación clínica",
+      "recommendation": "Recomendación",
+      "intervention": "Intervención nutricional",
+      "referral": "Derivación"
+    },
+    "detailsLabel": "Detalle del seguimiento",
+    "detailsPlaceholder": {
+      "observation": "Escribe lo que observaste en el control y en el registro de crecimiento.",
+      "recommendation": "Escribe las recomendaciones para la familia.",
+      "intervention": "Describe la intervención que indicas.",
+      "referral": "Indica a quién se deriva al niño y por qué.",
+      "none": "Elige primero el tipo de seguimiento."
+    },
+    "nextCheckupLabel": "Próximo control",
+    "nextCheckupPlaceholder": "DD/MM/AAAA (opcional)",
+    "nextCheckupShortcuts": {
+      "7": "1 semana",
+      "14": "2 semanas",
+      "30": "1 mes",
+      "90": "3 meses"
+    },
+    "nextCheckupClear": "Quitar fecha",
+    "nextCheckupHint": "Se creará un recordatorio para esa fecha.",
+    "establishLabel": "Marcar la alerta como «seguimiento establecido» al guardar",
+    "offline": "Sin conexión · Se guardará en este teléfono y se enviará al recuperar la conexión",
+    "actions": {
+      "save": "Guardar seguimiento",
+      "saving": "Guardando...",
+      "saveDraft": "Guardar como borrador"
+    },
+    "draftSaved": "Borrador guardado en este teléfono.",
+    "draftRestored": "Recuperamos tu borrador.",
+    "rejected": "El servidor no aceptó el seguimiento que estaba guardado en este teléfono: {{reason}}",
+    "alertNotMoved": "El seguimiento se guardó, pero no pudimos actualizar la alerta: {{reason}}",
+    "errors": {
+      "typeRequired": "Elige el tipo de seguimiento.",
+      "detailsRequired": "Escribe el detalle del seguimiento.",
+      "detailsTooLong": "El detalle no puede pasar de {{max}} caracteres.",
+      "dateInvalid": "Escribe la fecha como DD/MM/AAAA.",
+      "datePast": "La fecha del próximo control no puede ser anterior a hoy.",
+      "invalid": "Revisa los datos del seguimiento."
+    }
   }
 }

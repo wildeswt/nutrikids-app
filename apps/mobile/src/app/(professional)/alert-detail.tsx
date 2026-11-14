@@ -23,6 +23,7 @@ import { ZScoreChart } from '../../components/ZScoreChart.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAlertDetail } from '../../hooks/useAlertDetail.js';
+import { usePendingFollowUps } from '../../hooks/usePendingFollowUps.js';
 import { formatDecimal, formatLongDate, formatTime } from '../../i18n/format.js';
 import { describeZResult, isWideLayout, zSeriesFor } from '../../lib/alert-detail.js';
 import { formatChildAge } from '../../lib/children-api.js';
@@ -220,11 +221,14 @@ export default function AlertDetailScreen() {
   const { alert, child, checkups, loading, error, marking, actionError, reload, markReviewed } =
     useAlertDetail(alertId);
 
-  // Reload on focus: coming back from the follow-up form shows the new status and history.
+  const { pendingCount, syncPending } = usePendingFollowUps(alertId);
+
+  // On focus, send the follow-ups saved without connection and reload: coming back from the
+  // follow-up form shows the new status and history.
   useFocusEffect(
     useCallback(() => {
-      void reload();
-    }, [reload]),
+      void syncPending().finally(() => reload());
+    }, [syncPending, reload]),
   );
 
   const goBack = () => {
@@ -295,6 +299,11 @@ export default function AlertDetailScreen() {
 
   const actions = (
     <View style={styles.actions} testID="alert-detail-actions">
+      {pendingCount > 0 && (
+        <Text style={styles.noteText} testID="alert-detail-pending">
+          {t('alertDetail.pending', { count: pendingCount })}
+        </Text>
+      )}
       {actionError && (
         <Text style={styles.actionError} testID="alert-detail-action-error">
           {actionError}

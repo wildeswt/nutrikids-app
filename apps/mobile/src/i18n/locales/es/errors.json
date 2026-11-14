@@ -49,5 +49,8 @@
     "list": "No pudimos cargar las alertas. Intenta de nuevo.",
     "detail": "No pudimos cargar la alerta. Intenta de nuevo.",
     "review": "No pudimos marcar la alerta como revisada. Intenta de nuevo."
+  },
+  "followUps": {
+    "create": "No pudimos guardar el seguimiento. Intenta de nuevo."
   }
 }
