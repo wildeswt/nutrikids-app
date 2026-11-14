@@ -22,16 +22,31 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
-import { useChildren } from '../../hooks/useChildren.js';
 import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
+import { createChild } from '../../lib/children-api.js';
+import { CURRENT_CONSENT_VERSION } from '../../lib/consent-api.js';
 
 const RELATIONSHIP_OPTIONS = ['Madre', 'Padre', 'Tutor Legal'] as const;
 
-export default function AddChildScreen() {
+export interface AddChildScreenProps {
+  initialValues?: {
+    firstName?: string;
+    lastName?: string;
+    birthDay?: string;
+    birthMonth?: string;
+    birthYear?: string;
+    sex?: Sex;
+    relationship?: string;
+    isLegalRepresentative?: boolean;
+  };
+  onSubmitForTest?: (submitFn: () => Promise<void>) => void;
+}
+
+export default function AddChildScreen(props?: AddChildScreenProps) {
+  const { initialValues, onSubmitForTest } = props ?? {};
   const router = useRouter();
   const keyboardInset = useKeyboardBottomInset();
-  const { create } = useChildren();
 
   const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const lastNameRef = useRef<React.ComponentRef<typeof TextInput>>(null);
@@ -39,14 +54,16 @@ export default function AddChildScreen() {
   const monthRef = useRef<React.ComponentRef<typeof TextInput>>(null);
   const yearRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [birthDay, setBirthDay] = useState('');
-  const [birthMonth, setBirthMonth] = useState('');
-  const [birthYear, setBirthYear] = useState('');
-  const [sex, setSex] = useState<Sex>('MALE');
-  const [relationship, setRelationship] = useState<string>('Madre');
-  const [isLegalRepresentative, setIsLegalRepresentative] = useState(true);
+  const [firstName, setFirstName] = useState(initialValues?.firstName ?? '');
+  const [lastName, setLastName] = useState(initialValues?.lastName ?? '');
+  const [birthDay, setBirthDay] = useState(initialValues?.birthDay ?? '');
+  const [birthMonth, setBirthMonth] = useState(initialValues?.birthMonth ?? '');
+  const [birthYear, setBirthYear] = useState(initialValues?.birthYear ?? '');
+  const [sex, setSex] = useState<Sex>(initialValues?.sex ?? 'MALE');
+  const [relationship, setRelationship] = useState<string>(initialValues?.relationship ?? 'Madre');
+  const [isLegalRepresentative, setIsLegalRepresentative] = useState(
+    initialValues?.isLegalRepresentative ?? true,
+  );
 
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -89,7 +106,7 @@ export default function AddChildScreen() {
       sex,
       relationship,
       isLegalRepresentative,
-      consentTextVersion: 'v1',
+      consentTextVersion: CURRENT_CONSENT_VERSION,
     };
 
     const validation = CreateChildInputSchema.safeParse(payload);
@@ -100,22 +117,19 @@ export default function AddChildScreen() {
 
     setLoading(true);
     try {
-      const createdChild = await create(validation.data);
-      // Al guardar, lleva al consentimiento informado del niño registrado
-      router.replace({
-        pathname: APP_ROUTES.CAREGIVER.CONSENT as never,
-        params: {
-          childId: createdChild.id,
-          childName: `${createdChild.firstName} ${createdChild.lastName}`,
-          mode: 'view',
-        },
-      });
+      await createChild(validation.data);
+      // Al guardar los datos del menor, redirige a la pantalla de inicio del cuidador
+      router.replace(APP_ROUTES.CAREGIVER.HOME as never);
     } catch (err) {
       setGeneralError(formatAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
+
+  if (onSubmitForTest) {
+    onSubmitForTest(handleSubmit);
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -427,12 +441,12 @@ export default function AddChildScreen() {
             onPress={() => void handleSubmit()}
             disabled={loading}
             accessibilityRole="button"
-            accessibilityLabel="Guardar y continuar al consentimiento"
+            accessibilityLabel="Guardar niño"
           >
             {loading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.submitButtonText}>Guardar y continuar al consentimiento</Text>
+              <Text style={styles.submitButtonText}>Guardar niño</Text>
             )}
           </Pressable>
         </View>
