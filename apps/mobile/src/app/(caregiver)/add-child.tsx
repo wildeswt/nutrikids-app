@@ -9,19 +9,14 @@ import {
 } from '@nutrikids/shared';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  KeyboardAwareScrollView,
+  KeyboardAwareTextInput,
+} from '../../components/KeyboardAwareScrollView.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
-import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
 import { buildCreateChildPayload } from '../../lib/child-form.js';
 import { createChild } from '../../lib/children-api.js';
@@ -30,13 +25,11 @@ const RELATIONSHIP_OPTIONS = ['Madre', 'Padre', 'Tutor Legal'] as const;
 
 export default function AddChildScreen() {
   const router = useRouter();
-  const keyboardInset = useKeyboardBottomInset();
 
-  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
-  const lastNameRef = useRef<React.ComponentRef<typeof TextInput>>(null);
-  const dayRef = useRef<React.ComponentRef<typeof TextInput>>(null);
-  const monthRef = useRef<React.ComponentRef<typeof TextInput>>(null);
-  const yearRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const lastNameRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
+  const dayRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
+  const monthRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
+  const yearRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -126,16 +119,9 @@ export default function AddChildScreen() {
         </Pressable>
       </View>
 
-      <ScrollView
-        ref={scrollViewRef}
+      <KeyboardAwareScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: keyboardInset > 0 ? keyboardInset + 40 : 48 },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
         <Text style={styles.screenTitle}>Registrar niño</Text>
         <Text style={styles.screenSubtitle}>
@@ -154,7 +140,7 @@ export default function AddChildScreen() {
           {/* Nombre */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Nombre</Text>
-            <TextInput
+            <KeyboardAwareTextInput
               style={[styles.input, fieldErrors['firstName'] ? styles.inputError : undefined]}
               value={firstName}
               onChangeText={(text) => {
@@ -179,7 +165,7 @@ export default function AddChildScreen() {
           {/* Apellido */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Apellido</Text>
-            <TextInput
+            <KeyboardAwareTextInput
               ref={lastNameRef}
               style={[styles.input, fieldErrors['lastName'] ? styles.inputError : undefined]}
               value={lastName}
@@ -260,7 +246,7 @@ export default function AddChildScreen() {
             <View style={styles.dateInputsRow}>
               <View style={styles.dateColSmall}>
                 <Text style={styles.subLabel}>Día</Text>
-                <TextInput
+                <KeyboardAwareTextInput
                   ref={dayRef}
                   style={[
                     styles.dateInput,
@@ -282,7 +268,7 @@ export default function AddChildScreen() {
 
               <View style={styles.dateColSmall}>
                 <Text style={styles.subLabel}>Mes</Text>
-                <TextInput
+                <KeyboardAwareTextInput
                   ref={monthRef}
                   style={[
                     styles.dateInput,
@@ -304,7 +290,7 @@ export default function AddChildScreen() {
 
               <View style={styles.dateColLarge}>
                 <Text style={styles.subLabel}>Año</Text>
-                <TextInput
+                <KeyboardAwareTextInput
                   ref={yearRef}
                   style={[
                     styles.dateInput,
@@ -429,7 +415,7 @@ export default function AddChildScreen() {
             )}
           </Pressable>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }
@@ -468,6 +454,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 12,
+    paddingBottom: 48,
   },
   screenTitle: {
     fontSize: 26,
