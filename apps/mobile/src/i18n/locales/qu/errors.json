@@ -41,6 +41,11 @@
     "create": "Kamayta mana wakaychiy usharkanchikchu. Kutin rurapay.",
     "missingChild": "Kamayta killkankapakka wawata akllana kanmi."
   },
+  "feeding": {
+    "create": "No pudimos guardar la alimentación. Intenta de nuevo.",
+    "missingChild": "Falta elegir el niño para registrar su alimentación.",
+    "network": "Necesitas conexión para guardar la alimentación. Inténtalo de nuevo cuando vuelvas a tener internet."
+  },
   "reference": {
     "fetch": "OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay."
   },

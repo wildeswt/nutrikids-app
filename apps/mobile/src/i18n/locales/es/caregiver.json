@@ -7,6 +7,8 @@
     "addCheckup": "Control",
     "addCheckupHeader": "Anotar un control",
     "checkupSaved": "Control guardado",
+    "feeding": "Alimentación",
+    "feedingHeader": "Alimentación",
     "messages": "Mensajes",
     "messagesHeader": "Mensajes y avisos",
     "chat": "Chat",
@@ -54,7 +56,9 @@
     "addChild": "Agregar niño",
     "seeMoreA11y": "Ver cómo crece {{name}}",
     "linkedNotice": "Solo ves a los niños vinculados a tu cuenta",
-    "checkupDate": "Fecha: {{date}}"
+    "checkupDate": "Fecha: {{date}}",
+    "logFeeding": "Alimentación",
+    "logFeedingA11y": "Registrar alimentación de {{name}}"
   },
   "addCheckup": {
     "back": "Volver",
@@ -95,6 +99,42 @@
     "saving": "Guardando...",
     "consentRequired": "Para anotar controles de {{name}} necesitamos su consentimiento informado vigente (tu permiso para guardar sus datos).",
     "goToConsent": "Ir al consentimiento"
+  },
+  "feeding": {
+    "back": "Volver",
+    "title": "Alimentación",
+    "childSubtitle": "Registro del {{date}}",
+    "changeChild": "Cambiar de niño",
+    "mealsTodayLabel": "Comidas de hoy",
+    "meals": {
+      "breakfast": "Desayuno",
+      "morningSnack": "Merienda am",
+      "lunch": "Almuerzo",
+      "afternoonSnack": "Merienda pm",
+      "dinner": "Cena"
+    },
+    "mealsCountLabel": "¿Cuántas veces comió?",
+    "decreaseMealsA11y": "Disminuir cantidad de comidas",
+    "increaseMealsA11y": "Aumentar cantidad de comidas",
+    "mealUnit_one": "comida",
+    "mealUnit_other": "comidas",
+    "notesLabel": "¿Qué comió?",
+    "notesPlaceholder": "Ej: arroz con pollo, ensalada y jugo de naranja…",
+    "detailsTruncatedWarning": "Con las comidas marcadas se superan los {{max}} caracteres; se recortará el texto adicional al guardar.",
+    "submit": "Guardar alimentación",
+    "saving": "Guardando...",
+    "savedSuccess": "¡Alimentación guardada!",
+    "loading": "Cargando a tus niños...",
+    "loadError": "No pudimos cargar a tus niños.",
+    "retry": "Intentar de nuevo",
+    "emptyTitle": "Aún no tienes niños registrados",
+    "emptySubtitle": "Registra a tu niño para poder anotar su alimentación.",
+    "addChild": "Agregar niño",
+    "consentRequired": "Para registrar la alimentación de {{name}} necesitamos su consentimiento informado vigente (tu permiso para guardar sus datos).",
+    "goToConsent": "Ir al consentimiento",
+    "errors": {
+      "invalid": "Revisa los datos de la alimentación e intenta de nuevo."
+    }
   },
   "checkupSaved": {
     "title": "¡Control guardado!",

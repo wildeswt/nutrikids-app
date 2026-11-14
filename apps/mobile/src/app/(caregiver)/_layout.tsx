@@ -73,6 +73,16 @@ export default function CaregiverTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="feeding"
+        options={{
+          title: t('tabs.feeding'),
+          headerTitle: t('tabs.feedingHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
         name="messages"
         options={{
           title: t('tabs.messages'),
