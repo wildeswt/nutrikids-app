@@ -4,6 +4,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
 import { prisma, withUser } from '../lib/prisma.js';
+import { encryptPii } from '../lib/pii-crypto.js';
 import {
   connectAdmin,
   createUser,
@@ -623,8 +624,8 @@ describe('Seguridad: acceso por rol y vínculo (NK-46)', { timeout: 90000 }, () 
         await tx.child.create({
           data: {
             id: newChild,
-            firstName: 'Lucia',
-            lastName: 'Sintetica',
+            firstNameEnc: encryptPii('Lucia', 'children:first_name'),
+            lastNameEnc: encryptPii('Sintetica', 'children:last_name'),
             birthDate: new Date(Date.now() - 800 * 86_400_000),
             sex: 'FEMALE',
           },
