@@ -3,18 +3,22 @@ import {
   AssignProfessionalInputSchema,
   CreateCheckupInputSchema,
   CreateChildInputSchema,
+  CreateFeedingLogInputSchema,
   CreateFollowUpInputSchema,
   EndProfessionalAssignmentInputSchema,
   GrantConsentInputSchema,
+  ListFeedingLogsQuerySchema,
   UpdateCaregiverLinkInputSchema,
   UuidSchema,
   type AssignCaregiverInput,
   type AssignProfessionalInput,
   type CreateCheckupInput,
   type CreateChildInput,
+  type CreateFeedingLogInput,
   type CreateFollowUpInput,
   type EndProfessionalAssignmentInput,
   type GrantConsentInput,
+  type ListFeedingLogsQuery,
   type UpdateCaregiverLinkInput,
 } from '@nutrikids/shared';
 import { Router } from 'express';
@@ -44,6 +48,7 @@ import {
   revokeConsent,
   updateCaregiverLink,
 } from '../services/children.service.js';
+import { createFeedingLog, listFeedingLogs } from '../services/feedingLogs.service.js';
 import { createFollowUp } from '../services/followUps.service.js';
 
 const ChildProfessionalParamsSchema = z.object({
@@ -375,6 +380,59 @@ export function createChildrenRouter(): Router {
       );
       res.locals.auditEntityId = checkup.id;
       res.status(created ? 201 : 200).json(checkup);
+    },
+  );
+
+  /**
+   * GET /children/:childId/feeding-logs?from=&to=&limit=
+   * Registros de alimentación (RF-06) del niño, del día más reciente al más antiguo.
+   * `from`/`to` (AAAA-MM-DD, inclusivos) acotan los días; `limit` por defecto 100.
+   */
+  router.get(
+    '/:childId/feeding-logs',
+    requirePermission('feedinglog:read'),
+    requireLink('childId'),
+    auditHealth({
+      action: 'READ',
+      entityType: 'feeding_logs',
+      getEntityId: (req) => req.params.childId as string,
+    }),
+    validateRequest({ query: ListFeedingLogsQuerySchema }),
+    async (req, res) => {
+      const logs = await listFeedingLogs(
+        req.auth!,
+        req.params.childId as string,
+        req.query as unknown as ListFeedingLogsQuery,
+      );
+      res.status(200).json(logs);
+    },
+  );
+
+  /**
+   * POST /children/:childId/feeding-logs
+   * Registra la alimentación de un día (comidas y detalle) con UUID generado en el cliente;
+   * reenviar el mismo id devuelve el registro existente (200) sin duplicarlo.
+   * Requiere vínculo y consentimiento informado vigente.
+   */
+  router.post(
+    '/:childId/feeding-logs',
+    requirePermission('feedinglog:create'),
+    requireLink('childId'),
+    requireActiveConsent('childId'),
+    validateRequest({ body: CreateFeedingLogInputSchema }),
+    auditHealth({
+      action: 'CREATE',
+      entityType: 'feeding_logs',
+      getEntityId: (_req, res) => res.locals.auditEntityId as string | undefined,
+    }),
+    async (req, res) => {
+      const { feedingLog, created } = await createFeedingLog(
+        req.auth!,
+        req.params.childId as string,
+        req.body as CreateFeedingLogInput,
+      );
+      res.locals.auditEntityId = feedingLog.id;
+      res.status(created ? 201 : 200).json(feedingLog);
     },
   );
 
