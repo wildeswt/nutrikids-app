@@ -9,8 +9,13 @@ import {
   KeyboardAwareScrollView,
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
+import { PillField } from '../../components/ui/PillField.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
+import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { useReminders } from '../../hooks/useReminders.js';
 import { formatDateInput } from '../../lib/checkup-form.js';
@@ -123,18 +128,13 @@ export default function AddReminderScreen() {
   };
 
   const header = (
-    <>
-      <Pressable
-        style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
-        onPress={handleBack}
-        accessibilityRole="button"
-        accessibilityLabel={t('addReminder.back')}
-      >
-        <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-        <Text style={styles.backText}>{t('addReminder.back')}</Text>
-      </Pressable>
-      <Text style={styles.screenTitle}>{t('addReminder.title')}</Text>
-    </>
+    <ScreenHeader
+      title={t('addReminder.title')}
+      backLabel={t('addReminder.back')}
+      onBack={handleBack}
+      style={styles.header}
+      testID="add-reminder-header"
+    />
   );
 
   if (!activeChild) {
@@ -273,31 +273,35 @@ export default function AddReminderScreen() {
           </View>
         </View>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>{t('addReminder.dateLabel')}</Text>
-          <View style={styles.pillInputContainer}>
-            <KeyboardAwareTextInput
-              style={styles.pillTextInput}
-              value={dateText}
-              onChangeText={(val) => {
-                setDateText(val);
-                resetAttempt();
-              }}
-              keyboardType="numbers-and-punctuation"
-              placeholder={t('addReminder.datePlaceholder', {
-                example: formatDateInput(new Date()),
-              })}
-              placeholderTextColor={PALETTE.input.placeholder}
-              accessibilityLabel={t('addReminder.dateLabel')}
-              testID="reminder-date-input"
-            />
-            <Ionicons name="calendar" size={22} color="#27272A" />
-          </View>
-        </View>
+        <PillField
+          label={t('addReminder.dateLabel')}
+          rightIcon={<Ionicons name="calendar" size={20} color={PALETTE.text.title} />}
+          style={styles.fieldGroup}
+          testID="add-reminder-date-field"
+        >
+          <KeyboardAwareTextInput
+            style={styles.pillTextInput}
+            value={dateText}
+            onChangeText={(val) => {
+              setDateText(val);
+              resetAttempt();
+            }}
+            keyboardType="numbers-and-punctuation"
+            placeholder={t('addReminder.datePlaceholder', {
+              example: formatDateInput(new Date()),
+            })}
+            placeholderTextColor={PALETTE.input.placeholder}
+            accessibilityLabel={t('addReminder.dateLabel')}
+            testID="reminder-date-input"
+          />
+        </PillField>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>{t('addReminder.timeLabel')}</Text>
-          <View style={styles.pillInputContainer}>
+          <PillField
+            label={t('addReminder.timeLabel')}
+            rightIcon={<Ionicons name="time-outline" size={20} color={PALETTE.text.title} />}
+            testID="add-reminder-time-field"
+          >
             <KeyboardAwareTextInput
               style={styles.pillTextInput}
               value={timeText}
@@ -311,24 +315,20 @@ export default function AddReminderScreen() {
               accessibilityLabel={t('addReminder.timeLabel')}
               testID="reminder-time-input"
             />
-            <Ionicons name="time-outline" size={22} color="#27272A" />
-          </View>
+          </PillField>
           <Text style={styles.hint}>{t('addReminder.timeHint')}</Text>
         </View>
 
-        <Pressable
-          style={({ pressed }) => [styles.submitButton, pressed && styles.submitButtonPressed]}
-          onPress={() => void handleSubmit()}
-          disabled={saving}
-          accessibilityRole="button"
-          accessibilityLabel={t('addReminder.submit')}
-          accessibilityState={{ busy: saving, disabled: saving }}
-          testID="submit-reminder-button"
-        >
-          <Text style={styles.submitButtonText}>
-            {saving ? t('addReminder.saving') : t('addReminder.submit')}
-          </Text>
-        </Pressable>
+        <View style={styles.submitWrapper}>
+          <PrimaryButton
+            label={saving ? t('addReminder.saving') : t('addReminder.submit')}
+            onPress={() => void handleSubmit()}
+            loading={saving}
+            disabled={saving}
+            accessibilityLabel={t('addReminder.submit')}
+            testID="submit-reminder-button"
+          />
+        </View>
       </KeyboardAwareScrollView>
     </SafeAreaView>
   );
@@ -340,27 +340,13 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.background,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 12,
     paddingBottom: 36,
   },
-  backRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 10,
-    marginBottom: 18,
-    paddingVertical: 4,
-  },
-  backText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: PALETTE.text.title,
-  },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: PALETTE.text.title,
+  header: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
     marginBottom: 18,
   },
   errorBanner: {
@@ -372,16 +358,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   errorBannerText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: PALETTE.feedback.error,
     fontSize: 13,
-    fontWeight: '600',
   },
   fieldGroup: {
     marginBottom: 22,
   },
   fieldLabel: {
+    fontFamily: font('medium'),
+    fontWeight: '500',
     fontSize: 18,
-    fontWeight: '600',
     color: PALETTE.text.title,
     marginBottom: 10,
   },
@@ -394,7 +382,7 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.input.background,
     borderWidth: 1.5,
     borderColor: PALETTE.border.checkbox,
-    borderRadius: 24,
+    borderRadius: RADIUS_PILL,
     paddingHorizontal: 18,
     paddingVertical: 11,
   },
@@ -407,58 +395,31 @@ const styles = StyleSheet.create({
     borderColor: PALETTE.secondary,
   },
   chipText: {
-    fontSize: 15,
+    fontFamily: font('semibold'),
     fontWeight: '600',
+    fontSize: 15,
     color: PALETTE.text.body,
   },
   chipTextSelected: {
     color: PALETTE.text.light,
   },
-  pillInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: PALETTE.input.background,
-    borderWidth: 1.5,
-    borderColor: PALETTE.border.checkbox,
-    borderRadius: 28,
-    paddingHorizontal: 20,
-    height: 54,
-  },
   pillTextInput: {
     flex: 1,
-    fontSize: 16,
+    fontFamily: font('regular'),
+    fontSize: 15,
     color: PALETTE.text.body,
     paddingVertical: 8,
-    marginRight: 10,
   },
   hint: {
+    fontFamily: font('regular'),
     fontSize: 12,
     color: PALETTE.text.muted,
     marginTop: 6,
     marginLeft: 8,
   },
-  submitButton: {
-    marginTop: 10,
-    backgroundColor: PALETTE.primary,
-    borderRadius: 28,
-    height: 54,
+  submitWrapper: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 18,
-    shadowColor: PALETTE.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  submitButtonPressed: {
-    backgroundColor: PALETTE.primaryPressed,
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
+    marginTop: 10,
   },
   consentButton: {
     alignSelf: 'flex-start',
@@ -469,9 +430,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   consentButtonText: {
-    color: '#FFFFFF',
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    color: PALETTE.text.light,
     fontSize: 13,
-    fontWeight: '700',
   },
   stateBox: {
     alignItems: 'center',
@@ -479,12 +441,14 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   stateTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 18,
-    fontWeight: '700',
     color: PALETTE.text.title,
     textAlign: 'center',
   },
   stateText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.body,
     textAlign: 'center',
@@ -492,14 +456,15 @@ const styles = StyleSheet.create({
   },
   stateButton: {
     backgroundColor: PALETTE.primary,
-    borderRadius: 22,
+    borderRadius: RADIUS_PILL,
     paddingHorizontal: 22,
     paddingVertical: 11,
   },
   stateButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: PALETTE.text.light,
     fontSize: 14,
-    fontWeight: '700',
   },
   pressed: {
     opacity: 0.85,

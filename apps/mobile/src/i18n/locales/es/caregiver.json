@@ -383,6 +383,7 @@
   },
   "reminders": {
     "title": "Recordatorios",
+    "subtitle": "Tus cuidados, a tiempo.",
     "tabUpcoming": "Próximos ({{count}})",
     "tabCompleted": "Completados ({{count}})",
     "todayTitle": "Para hoy",

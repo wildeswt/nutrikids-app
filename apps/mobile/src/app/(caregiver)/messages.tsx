@@ -18,7 +18,9 @@ import {
 } from 'react-native';
 import { ConversationList } from '../../components/ConversationList.js';
 import { PALETTE } from '../../constants/colors.js';
+import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import i18n from '../../i18n/index.js';
 import {
@@ -48,14 +50,6 @@ export default function MessagesScreen() {
       void loadChildren();
     }, [loadChildren]),
   );
-
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace(APP_ROUTES.CAREGIVER.HOME);
-    }
-  };
 
   const openThread = (conversation: ConversationResponse) => {
     const child = children.find((item) => item.id === conversation.childId);
@@ -272,7 +266,6 @@ export default function MessagesScreen() {
       <ConversationList
         mode="caregiver"
         childrenList={children}
-        onBack={handleBack}
         onRefreshExtra={() => void loadChildren()}
         onSelectConversation={openThread}
         onNewMessage={handleOpenNewMessage}
@@ -319,10 +312,10 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     backgroundColor: PALETTE.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 22,
-    paddingTop: 18,
+    borderTopLeftRadius: RADIUS_PILL,
+    borderTopRightRadius: RADIUS_PILL,
+    paddingHorizontal: SCREEN_MARGIN,
+    paddingTop: 20,
     paddingBottom: 28,
     maxHeight: '75%',
   },
@@ -333,8 +326,9 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   modalTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 20,
-    fontWeight: '800',
     color: PALETTE.text.title,
   },
   modalBody: {
@@ -344,8 +338,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   modalSectionTitle: {
+    fontFamily: font('medium'),
+    fontWeight: '500',
     fontSize: 14,
-    fontWeight: '600',
     color: PALETTE.text.muted,
     marginBottom: 4,
   },
@@ -366,11 +361,13 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   pickerTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 16,
-    fontWeight: '700',
     color: PALETTE.text.title,
   },
   pickerSubtitle: {
+    fontFamily: font('regular'),
     fontSize: 13,
     color: PALETTE.text.muted,
   },
@@ -382,8 +379,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   changeChildText: {
-    fontSize: 13,
+    fontFamily: font('semibold'),
     fontWeight: '600',
+    fontSize: 13,
     color: PALETTE.primary,
   },
   modalCenter: {
@@ -392,32 +390,36 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   modalEmptyTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 15,
-    fontWeight: '700',
     color: PALETTE.text.title,
     textAlign: 'center',
   },
   modalInfoText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.muted,
     textAlign: 'center',
     lineHeight: 20,
   },
   modalErrorText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.feedback.error,
     textAlign: 'center',
   },
   modalRetryBtn: {
     backgroundColor: PALETTE.primary,
-    borderRadius: 20,
+    borderRadius: RADIUS_PILL,
     paddingHorizontal: 18,
     paddingVertical: 9,
   },
   modalRetryText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: LOCAL_COLORS.white,
     fontSize: 14,
-    fontWeight: '700',
   },
   pressed: {
     opacity: 0.75,

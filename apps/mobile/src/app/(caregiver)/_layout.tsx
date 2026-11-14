@@ -154,7 +154,6 @@ export default function CaregiverTabsLayout() {
         options={{
           title: t('tabs.reminders'),
           headerTitle: t('tabs.remindersHeader'),
-          tabBarStyle: { display: 'none' },
           tabBarItemStyle: { display: 'none' },
           tabBarButton: () => null,
         }}
