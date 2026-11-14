@@ -149,6 +149,13 @@ describe(
           childId,
           origin: 'CAREGIVER',
           recordedById: caregiver.userId,
+          recordedBy: {
+            userId: caregiver.userId,
+            firstName: 'Test',
+            lastName: 'User',
+            role: 'CAREGIVER',
+            specialty: null,
+          },
           correctedCheckupId: null,
           isCurrent: true,
           notes: null,
@@ -221,6 +228,13 @@ describe(
         expect(CheckupResponseSchema.safeParse(res.body).success).toBe(true);
         expect(res.body.origin).toBe('PROFESSIONAL');
         expect(res.body.recordedById).toBe(pro.userId);
+        expect(res.body.recordedBy).toEqual({
+          userId: pro.userId,
+          firstName: 'Test',
+          lastName: 'User',
+          role: 'PROFESSIONAL',
+          specialty: 'pediatrics',
+        });
         const indicators = (res.body.results as { indicator: string }[]).map((r) => r.indicator);
         expect(indicators.sort()).toEqual([
           'BMI_FOR_AGE',
@@ -536,6 +550,75 @@ describe(
         expect(asPro.status).toBe(200);
         expect(asPro.body[0].results).toHaveLength(4);
         expect(asStranger.status).toBe(403);
+      });
+
+      it('returns recordedBy: null when recorder user is anonymized or inactive', async () => {
+        const { caregiver, childId } = await setup();
+        const payload = body();
+        await request(app)
+          .post(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token)
+          .send(payload)
+          .expect(201);
+
+        // Deactivate recorder (suspended account)
+        await admin.query(`UPDATE users SET status = 'suspended' WHERE id = $1`, [
+          caregiver.userId,
+        ]);
+
+        const res = await request(app)
+          .get(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token);
+
+        expect(res.status).toBe(200);
+        expect(res.body[0].recordedBy).toBeNull();
+      });
+
+      it('does not leak professional sensitive fields (email, phone, license) to caregiver', async () => {
+        const { caregiver, childId } = await setup();
+        const pro = await createUser('PROFESSIONAL');
+        await linkProfessional(childId, pro.userId);
+
+        const checkupPayload = body();
+        await request(app)
+          .post(`/children/${childId}/checkups`)
+          .set('Authorization', pro.token)
+          .send(checkupPayload)
+          .expect(201);
+
+        const res = await request(app)
+          .get(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token);
+
+        expect(res.status).toBe(200);
+        const checkup = res.body.find((c: { id: string }) => c.id === checkupPayload.id);
+        expect(checkup).toBeDefined();
+        expect(checkup.recordedBy).toEqual({
+          userId: pro.userId,
+          firstName: 'Test',
+          lastName: 'User',
+          role: 'PROFESSIONAL',
+          specialty: 'pediatrics',
+        });
+        // Verify absence of sensitive professional fields
+        expect(checkup.recordedBy).not.toHaveProperty('email');
+        expect(checkup.recordedBy).not.toHaveProperty('phone');
+        expect(checkup.recordedBy).not.toHaveProperty('licenseNumber');
+        expect(checkup.recordedBy).not.toHaveProperty('license_number');
+        expect(checkup.recordedBy).not.toHaveProperty('document');
+        expect(checkup.recordedBy).not.toHaveProperty('passwordHash');
+        expect(checkup.recordedBy).not.toHaveProperty('password_hash');
+      });
+
+      it('unlinked professional receives 403 when trying to list child checkups', async () => {
+        const { childId } = await setup();
+        const unlinkedPro = await createUser('PROFESSIONAL');
+
+        const res = await request(app)
+          .get(`/children/${childId}/checkups`)
+          .set('Authorization', unlinkedPro.token);
+
+        expect(res.status).toBe(403);
       });
     });
   },

@@ -167,6 +167,7 @@ const baseCheckup: CaregiverCheckupResponse = {
   position: 'STANDING',
   origin: 'CAREGIVER',
   recordedById: '33333333-3333-4333-8333-333333333333',
+  recordedBy: null,
   correctedCheckupId: null,
   isCurrent: true,
   notes: null,

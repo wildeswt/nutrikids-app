@@ -59,6 +59,7 @@ export function makeCheckup(overrides: Partial<CheckupResponse> = {}, z = -1): C
     position: 'STANDING',
     origin: 'PROFESSIONAL',
     recordedById: '66666666-6666-4666-8666-666666666666',
+    recordedBy: overrides.recordedBy ?? null,
     correctedCheckupId: null,
     isCurrent: true,
     notes: null,

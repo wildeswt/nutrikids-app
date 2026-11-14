@@ -28,10 +28,12 @@ import { PALETTE } from '../../constants/colors.js';
 import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
+import { useOptionalAuth } from '../../context/auth-context.js';
 import { useAlertDetail } from '../../hooks/useAlertDetail.js';
 import { usePendingFollowUps } from '../../hooks/usePendingFollowUps.js';
 import { formatDecimal, formatLongDate, formatTime } from '../../i18n/format.js';
 import { describeZResult, isWideLayout, zSeriesFor } from '../../lib/alert-detail.js';
+import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
 import { formatChildAge } from '../../lib/children-api.js';
 
 const MAX_CONTENT_WIDTH = 960;
@@ -52,7 +54,9 @@ function AlertCard({
   alert: AlertDetailResponse;
   checkup: CheckupResponse | undefined;
 }) {
-  const { t } = useTranslation(['professional', 'common']);
+  const { t } = useTranslation(['professional', 'caregiver', 'common']);
+  const auth = useOptionalAuth();
+  const user = auth?.user ?? null;
   const indicator = t(`alerts.indicator.${alert.indicator}`);
   const result = describeZResult(alert.zScore);
   const resultText =
@@ -96,6 +100,18 @@ function AlertCard({
               })
             : t('alertDetail.checkupUnknown')}
         </Text>
+        {checkup ? (
+          <Text style={styles.checkupRecordedBy} testID="alert-detail-checkup-recorded-by">
+            {t('alertDetail.checkupRecordedBy', {
+              name: formatCheckupRecorder({
+                recorder: checkup.recordedBy,
+                origin: checkup.origin,
+                currentUserId: user?.id,
+                t,
+              }),
+            })}
+          </Text>
+        ) : null}
         {checkup?.notes ? (
           <Text style={styles.checkupNotes}>
             {t('alertDetail.checkupNotes', { notes: checkup.notes })}
@@ -484,6 +500,12 @@ const styles = StyleSheet.create({
     color: PALETTE.text.body,
   },
   checkupNotes: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    color: PALETTE.text.muted,
+    marginTop: 4,
+  },
+  checkupRecordedBy: {
     fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.muted,

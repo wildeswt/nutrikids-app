@@ -30,6 +30,7 @@ const makeCheckup = (measuredAt: string, weightKg: number, lengthHeightCm: numbe
   position: 'STANDING' as const,
   origin: 'CAREGIVER' as const,
   recordedById: 'u',
+  recordedBy: null,
   correctedCheckupId: null,
   isCurrent: true,
   notes: null,

@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import type {
   CaregiverCheckupResponse,
   CaregiverIndicatorResult,
+  CheckupRecorder,
   CheckupResponse,
   CorrectCheckupInput,
   CreateCheckupInput,
@@ -39,7 +40,24 @@ export interface CheckupWriteResult {
   created: boolean;
 }
 
-type CheckupRow = Prisma.CheckupGetPayload<{ include: { results: true } }>;
+export const checkupInclude = {
+  results: true,
+  recordedBy: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      status: true,
+      professional: {
+        select: {
+          specialty: true,
+        },
+      },
+    },
+  },
+} as const satisfies Prisma.CheckupInclude;
+
+type CheckupRow = Prisma.CheckupGetPayload<{ include: typeof checkupInclude }>;
 type IndicatorResultRow = CheckupRow['results'][number];
 
 const round2 = (v: number): number => Math.round(v * 100) / 100;
@@ -70,6 +88,25 @@ function formatCaregiverIndicatorResult(r: IndicatorResultRow): CaregiverIndicat
   };
 }
 
+/** Resolves recorder identity for checkup responses without leaking sensitive fields (NK-73). */
+function formatCheckupRecorder(
+  user: CheckupRow['recordedBy'] | null | undefined,
+  origin: 'CAREGIVER' | 'PROFESSIONAL',
+): CheckupRecorder | null {
+  if (!user || user.status !== 'active') {
+    return null;
+  }
+  const specialty = user.professional?.specialty ?? null;
+  const role: 'CAREGIVER' | 'PROFESSIONAL' = specialty ? 'PROFESSIONAL' : origin;
+  return {
+    userId: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role,
+    specialty,
+  };
+}
+
 function formatCheckupResponse(
   row: CheckupRow,
   isCurrent: boolean,
@@ -84,6 +121,7 @@ function formatCheckupResponse(
     position: row.position,
     origin: row.origin,
     recordedById: row.recordedById,
+    recordedBy: formatCheckupRecorder(row.recordedBy, row.origin),
     correctedCheckupId: row.correctedCheckupId,
     isCurrent,
     notes: row.notes ?? null,
@@ -220,7 +258,7 @@ async function loadExistingCheckup(
 ): Promise<CheckupInsertResult | null> {
   const existing = await tx.checkup.findUnique({
     where: { id: params.id },
-    include: { results: true },
+    include: checkupInclude,
   });
   if (!existing) {
     return null;
@@ -336,7 +374,7 @@ export async function insertCheckup(
   });
   const created = await tx.checkup.findUniqueOrThrow({
     where: { id: input.id },
-    include: { results: true },
+    include: checkupInclude,
   });
   // RF-11: each result with a risk condition raises an alert in this same transaction.
   const alertIds = await createAlertsForResults(tx, created.results, auth.userId);
@@ -452,7 +490,7 @@ export async function listChildCheckups(
   return withUser(auth.userId, async (tx) => {
     const rows = await tx.checkup.findMany({
       where: { childId },
-      include: { results: true },
+      include: checkupInclude,
       orderBy: [{ measuredAt: 'desc' }, { createdAt: 'desc' }],
     });
 

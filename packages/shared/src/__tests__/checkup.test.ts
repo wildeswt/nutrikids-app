@@ -187,6 +187,7 @@ describe('IndicatorResultSchema y respuestas de control (profesional vs cuidador
     childId: '4a2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c',
     origin: 'CAREGIVER',
     recordedById: '6c2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c',
+    recordedBy: null,
     correctedCheckupId: null,
     isCurrent: true,
     notes: null,

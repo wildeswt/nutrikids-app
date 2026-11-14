@@ -58,6 +58,10 @@ Common rules:
 
 - Checkup requests (`POST` and corrections) accept optional `notes` (1-500 trimmed chars, stored as `null` when omitted) and return `notes` in `GET`/`POST` responses.
 - When `notes` is present, audit logs store `{ hasNotes: true }` in `details` and never copy the note text.
+- Checkup responses (`GET` and `POST`) return `recordedBy: CheckupRecorder | null` (`{ userId, firstName, lastName, role, specialty }`, NK-73):
+  - Exposes only first name, last name, role (`CAREGIVER` or `PROFESSIONAL`), and specialty (`pediatrics`, `nutrition`, `nursing`, or `null`).
+  - Never exposes sensitive attributes: email, phone, license number, document, or passwords.
+  - If the user was deleted, anonymized, or is inactive, `recordedBy` resolves to `null`.
 
 ## Alerts and follow-ups (professionals)
 

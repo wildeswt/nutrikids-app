@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { IsoDateTimeSchema, UuidSchema, requiredText } from './common.js';
 import { IndicatorSchema, OriginSchema, PositionSchema } from './enums.js';
+import { MessageParticipantSchema, type MessageParticipant } from './message.js';
 
 /**
  * Controles antropométricos y resultados de indicadores OMS.
@@ -160,6 +161,13 @@ export const CaregiverIndicatorResultSchema = z.object({
   referenceVersion: requiredText(50),
 });
 
+/**
+ * Persona que registró un control antropométrico (NK-73).
+ * Mismos datos mínimos que un participante de mensaje: nunca expone email, teléfono ni documento.
+ */
+export const CheckupRecorderSchema = MessageParticipantSchema;
+export type CheckupRecorder = MessageParticipant;
+
 const BaseCheckupResponseShape = {
   id: UuidSchema,
   childId: UuidSchema,
@@ -169,6 +177,7 @@ const BaseCheckupResponseShape = {
   position: PositionSchema,
   origin: OriginSchema,
   recordedById: UuidSchema,
+  recordedBy: CheckupRecorderSchema.nullable(),
   /** Control original al que este control corrige (null si no es una corrección). */
   correctedCheckupId: UuidSchema.nullable(),
   /** Derivado: `true` si ningún otro control lo corrige (es el que cuenta para gráficas y alertas). */

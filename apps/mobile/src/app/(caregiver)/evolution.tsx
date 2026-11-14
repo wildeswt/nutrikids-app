@@ -21,10 +21,12 @@ import { PALETTE } from '../../constants/colors.js';
 import { CARD_SHADOW, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
+import { useOptionalAuth } from '../../context/auth-context.js';
 import { useCheckups } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { useReferenceCurves } from '../../hooks/useReferenceCurves.js';
 import { formatAgeShort, formatDecimal, formatLongDate } from '../../i18n/format.js';
+import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
 import { formatChildAge } from '../../lib/children-api.js';
 import {
   INDICATORS,
@@ -36,6 +38,8 @@ import {
 
 export default function EvolutionScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
+  const auth = useOptionalAuth();
+  const user = auth?.user ?? null;
   const router = useRouter();
   const params = useLocalSearchParams<{ childId?: string }>();
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PE');
@@ -327,7 +331,12 @@ export default function EvolutionScreen() {
             <Ionicons name="person" size={18} color={PALETTE.secondary} />
             <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>
             <Text style={styles.recordedByValue} numberOfLines={1}>
-              {t(`evolution.origin.${latest.origin}`)}
+              {formatCheckupRecorder({
+                recorder: latest.recordedBy,
+                origin: latest.origin,
+                currentUserId: user?.id,
+                t,
+              })}
             </Text>
           </View>
 

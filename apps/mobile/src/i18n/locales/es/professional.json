@@ -94,6 +94,7 @@
       "reason": "Motivo"
     },
     "checkupValue": "{{date}} · {{weight}} · {{height}}",
+    "checkupRecordedBy": "Registrado por {{name}}",
     "checkupNotes": "Observaciones: {{notes}}",
     "checkupUnknown": "Control no disponible",
     "result": {
