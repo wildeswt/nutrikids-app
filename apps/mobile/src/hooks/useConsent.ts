@@ -6,6 +6,7 @@ import {
   grantConsentForChild,
   revokeConsentForChild,
 } from '../lib/consent-api.js';
+import i18n from '../i18n/index.js';
 
 export type ConsentStatus = 'idle' | 'loading' | 'active' | 'revoked' | 'none' | 'error';
 
@@ -43,7 +44,7 @@ export function useConsent(childId: string | null) {
       setState({
         status: 'error',
         consent: null,
-        error: err instanceof Error ? err.message : 'Error desconocido al cargar consentimiento',
+        error: err instanceof Error ? err.message : i18n.t('errors:consent.load'),
       });
     }
   }, [childId]);
@@ -51,7 +52,7 @@ export function useConsent(childId: string | null) {
   const grant = useCallback(
     async (textVersion: string = CURRENT_CONSENT_VERSION) => {
       if (!childId) {
-        throw new Error('Se requiere un identificador de niño para otorgar consentimiento');
+        throw new Error(i18n.t('errors:consent.missingChildForGrant'));
       }
 
       setState((prev) => ({ ...prev, status: 'loading', error: null }));
@@ -61,7 +62,7 @@ export function useConsent(childId: string | null) {
         setState({ status: 'active', consent, error: null });
         return consent;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Error al registrar el consentimiento';
+        const message = err instanceof Error ? err.message : i18n.t('errors:consent.grant');
         setState((prev) => ({ ...prev, status: 'error', error: message }));
         throw err;
       }
@@ -71,7 +72,7 @@ export function useConsent(childId: string | null) {
 
   const revoke = useCallback(async () => {
     if (!childId) {
-      throw new Error('Se requiere un identificador de niño para revocar consentimiento');
+      throw new Error(i18n.t('errors:consent.missingChildForRevoke'));
     }
 
     setState((prev) => ({ ...prev, status: 'loading', error: null }));
@@ -81,8 +82,7 @@ export function useConsent(childId: string | null) {
       setState({ status: 'revoked', consent, error: null });
       return consent;
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Error al revocar el consentimiento informado';
+      const message = err instanceof Error ? err.message : i18n.t('errors:consent.revoke');
       setState((prev) => ({ ...prev, status: 'error', error: message }));
       throw err;
     }

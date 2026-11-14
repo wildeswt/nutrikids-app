@@ -1,0 +1,97 @@
+{
+  "appName": "NutriKids",
+  "brand": {
+    "slogan": "Paykunapak wiñayta, tukuylla kamashun.",
+    "logoLabel": "NutriKids unancha",
+    "copyright": "NutriKids © {{year}}"
+  },
+  "actions": {
+    "back": "Tikray",
+    "goBack": "Ñawpa pankaman tikray",
+    "cancel": "Sakiy",
+    "accept": "Chaskiy",
+    "continue": "Katiy",
+    "understood": "Hamutashkanimi",
+    "send": "Kachay",
+    "seeAll": "Tukuyta rikuy",
+    "logout": "Llukshiy",
+    "login": "Yaykuy",
+    "register": "Killkakatiy"
+  },
+  "password": {
+    "show": "Pakalla shimita rikuchiy",
+    "hide": "Pakalla shimita pakay",
+    "showConfirmation": "Kutin killkashkata rikuchiy",
+    "hideConfirmation": "Kutin killkashkata pakay"
+  },
+  "roles": {
+    "CAREGIVER": "Wawa kamak",
+    "PROFESSIONAL": "Hampik"
+  },
+  "specialties": {
+    "pediatrics": "Wawa hampi",
+    "nutrition": "Mikuy hampi",
+    "nursing": "Unkuk kamay"
+  },
+  "units": {
+    "kg": "kg",
+    "cm": "cm",
+    "weightValue": "{{value}} kg",
+    "heightValue": "{{value}} cm"
+  },
+  "status": {
+    "error": "Pantay"
+  },
+  "age": {
+    "years_one": "{{count}} wata",
+    "years_other": "{{count}} wata",
+    "months_one": "{{count}} killa",
+    "months_other": "{{count}} killa",
+    "yearsAndMonths": "{{years}} {{months}}",
+    "yearsAndMonthsShort": "{{years}} {{months}}k"
+  },
+  "time": {
+    "yesterday": "Kayna",
+    "daysAgo_one": "{{count}} puncha ñawpa",
+    "daysAgo_other": "{{count}} puncha ñawpa",
+    "dateAtTime": "{{date}}, {{time}} pachapi"
+  },
+  "language": {
+    "title": "Shimi",
+    "description": "Ima shimipi app-ta rikunata munanki, akllay.",
+    "selectA11y": "Shimita {{language}} shimiman tikrachiy",
+    "draftNotice": "Kay tikrachishkaka kunanrak allichikun."
+  },
+  "date": {
+    "long": "{{day}} {{month}} killa {{year}}",
+    "short": "{{day}} {{month}}",
+    "months": {
+      "1": "kulla",
+      "2": "panchi",
+      "3": "pawkar",
+      "4": "ayriwa",
+      "5": "aymuray",
+      "6": "raymi",
+      "7": "sitwa",
+      "8": "karwa",
+      "9": "kuski",
+      "10": "wayru",
+      "11": "sasi",
+      "12": "kapak"
+    },
+    "monthsShort": {
+      "1": "kulla",
+      "2": "panchi",
+      "3": "pawkar",
+      "4": "ayriwa",
+      "5": "aymuray",
+      "6": "raymi",
+      "7": "sitwa",
+      "8": "karwa",
+      "9": "kuski",
+      "10": "wayru",
+      "11": "sasi",
+      "12": "kapak"
+    }
+  }
+}

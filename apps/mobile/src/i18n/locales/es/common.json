@@ -1,0 +1,97 @@
+{
+  "appName": "NutriKids",
+  "brand": {
+    "slogan": "Cuidar su crecimiento, juntos.",
+    "logoLabel": "Logo de NutriKids",
+    "copyright": "NutriKids © {{year}}"
+  },
+  "actions": {
+    "back": "Volver",
+    "goBack": "Volver a la pantalla anterior",
+    "cancel": "Cancelar",
+    "accept": "Aceptar",
+    "continue": "Continuar",
+    "understood": "Entendido",
+    "send": "Enviar",
+    "seeAll": "Ver todo",
+    "logout": "Cerrar sesión",
+    "login": "Iniciar Sesión",
+    "register": "Registrarse"
+  },
+  "password": {
+    "show": "Mostrar contraseña",
+    "hide": "Ocultar contraseña",
+    "showConfirmation": "Mostrar confirmación",
+    "hideConfirmation": "Ocultar confirmación"
+  },
+  "roles": {
+    "CAREGIVER": "Cuidador",
+    "PROFESSIONAL": "Profesional de Salud"
+  },
+  "specialties": {
+    "pediatrics": "Pediatría",
+    "nutrition": "Nutrición",
+    "nursing": "Enfermería"
+  },
+  "units": {
+    "kg": "kg",
+    "cm": "cm",
+    "weightValue": "{{value}} kg",
+    "heightValue": "{{value}} cm"
+  },
+  "status": {
+    "error": "Error"
+  },
+  "age": {
+    "years_one": "{{count}} año",
+    "years_other": "{{count}} años",
+    "months_one": "{{count}} mes",
+    "months_other": "{{count}} meses",
+    "yearsAndMonths": "{{years}} y {{months}}",
+    "yearsAndMonthsShort": "{{years}} {{months}}m"
+  },
+  "time": {
+    "yesterday": "Ayer",
+    "daysAgo_one": "Hace {{count}} día",
+    "daysAgo_other": "Hace {{count}} días",
+    "dateAtTime": "{{date}} a las {{time}}"
+  },
+  "language": {
+    "title": "Idioma",
+    "description": "Elige en qué idioma quieres ver la app.",
+    "selectA11y": "Cambiar el idioma a {{language}}",
+    "draftNotice": "Esta traducción todavía está en revisión."
+  },
+  "date": {
+    "long": "{{day}} de {{month}} de {{year}}",
+    "short": "{{day}} {{month}}",
+    "months": {
+      "1": "enero",
+      "2": "febrero",
+      "3": "marzo",
+      "4": "abril",
+      "5": "mayo",
+      "6": "junio",
+      "7": "julio",
+      "8": "agosto",
+      "9": "septiembre",
+      "10": "octubre",
+      "11": "noviembre",
+      "12": "diciembre"
+    },
+    "monthsShort": {
+      "1": "ene",
+      "2": "feb",
+      "3": "mar",
+      "4": "abr",
+      "5": "may",
+      "6": "jun",
+      "7": "jul",
+      "8": "ago",
+      "9": "sept",
+      "10": "oct",
+      "11": "nov",
+      "12": "dic"
+    }
+  }
+}

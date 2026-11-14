@@ -1,14 +1,14 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 export default function ProfessionalMessagesScreen() {
+  const { t } = useTranslation(['professional', 'common']);
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Mensajes y Seguimientos</Text>
-        <Text style={styles.description}>
-          Comunicación asistencial con cuidadores y registro de planes de seguimiento nutricional.
-        </Text>
+        <Text style={styles.title}>{t('messages.title')}</Text>
+        <Text style={styles.description}>{t('messages.description')}</Text>
       </View>
     </View>
   );

@@ -1,9 +1,12 @@
 import { USER_ROLES } from '@nutrikids/shared';
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { LanguageSelector } from '../../components/LanguageSelector.js';
 import { useAuth } from '../../context/auth-context.js';
 
 export default function ProfessionalProfileScreen() {
+  const { t } = useTranslation(['professional', 'common']);
   const { user, activeRole, switchRole, signOut } = useAuth();
 
   const hasDualRole =
@@ -12,28 +15,30 @@ export default function ProfessionalProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Perfil Profesional</Text>
+        <Text style={styles.title}>{t('profile.title')}</Text>
 
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Nombre:</Text>
+          <Text style={styles.label}>{t('profile.name')}</Text>
           <Text style={styles.value}>
             {user?.firstName} {user?.lastName}
           </Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Correo:</Text>
+          <Text style={styles.label}>{t('profile.email')}</Text>
           <Text style={styles.value}>{user?.email}</Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Especialidad:</Text>
-          <Text style={styles.value}>{user?.specialty ?? 'No asignada'}</Text>
+          <Text style={styles.label}>{t('profile.specialty')}</Text>
+          <Text style={styles.value}>
+            {user?.specialty ? t(`common:specialties.${user.specialty}`) : t('profile.noSpecialty')}
+          </Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Perfil activo:</Text>
-          <Text style={styles.badge}>{activeRole}</Text>
+          <Text style={styles.label}>{t('profile.activeRole')}</Text>
+          <Text style={styles.badge}>{activeRole ? t(`common:roles.${activeRole}`) : '-'}</Text>
         </View>
 
         {hasDualRole && (
@@ -41,15 +46,17 @@ export default function ProfessionalProfileScreen() {
             style={({ pressed }) => [styles.switchButton, pressed && styles.buttonPressed]}
             onPress={() => void switchRole(USER_ROLES.CAREGIVER)}
           >
-            <Text style={styles.switchButtonText}>Cambiar a vista Cuidador</Text>
+            <Text style={styles.switchButtonText}>{t('profile.switchToCaregiver')}</Text>
           </Pressable>
         )}
+
+        <LanguageSelector />
 
         <Pressable
           style={({ pressed }) => [styles.logoutButton, pressed && styles.buttonPressed]}
           onPress={() => void signOut()}
         >
-          <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+          <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </Pressable>
       </View>
     </View>

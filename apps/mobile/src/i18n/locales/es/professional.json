@@ -1,0 +1,38 @@
+{
+  "drawer": {
+    "specialty": "Especialidad: {{specialty}}",
+    "switchToCaregiver": "Vista Cuidador",
+    "logout": "Cerrar Sesión",
+    "alerts": "Bandeja de alertas",
+    "alertsTitle": "Bandeja de Alertas",
+    "children": "Niños por riesgo",
+    "childrenTitle": "Pacientes por Riesgo",
+    "messages": "Mensajes y seguimientos",
+    "messagesTitle": "Mensajes y Seguimientos",
+    "profile": "Mi perfil",
+    "profileTitle": "Perfil Profesional"
+  },
+  "alerts": {
+    "title": "Bandeja de Alertas Nutricionales",
+    "welcome": "Bienvenido, Dr./a. {{firstName}} {{lastName}}",
+    "description": "Aquí verás las alertas activas de tus pacientes, ordenadas por gravedad."
+  },
+  "children": {
+    "title": "Pacientes Clasificados por Riesgo",
+    "description": "Lista de niños vinculados categorizados según el nivel de riesgo antropométrico."
+  },
+  "messages": {
+    "title": "Mensajes y Seguimientos",
+    "description": "Comunicación asistencial con cuidadores y registro de planes de seguimiento nutricional."
+  },
+  "profile": {
+    "title": "Perfil Profesional",
+    "name": "Nombre:",
+    "email": "Correo:",
+    "specialty": "Especialidad:",
+    "noSpecialty": "No asignada",
+    "activeRole": "Perfil activo:",
+    "switchToCaregiver": "Cambiar a vista Cuidador",
+    "logout": "Cerrar Sesión"
+  }
+}

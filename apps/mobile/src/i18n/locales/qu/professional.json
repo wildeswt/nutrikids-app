@@ -1,0 +1,38 @@
+{
+  "drawer": {
+    "specialty": "Hampi yachay: {{specialty}}",
+    "switchToCaregiver": "Wawa kamak rikuchik",
+    "logout": "Llukshiy",
+    "alerts": "Yuyachikkuna",
+    "alertsTitle": "Yuyachikkuna",
+    "children": "Llakipi kak wawakuna",
+    "childrenTitle": "Llakipi kak wawakuna",
+    "messages": "Willaykuna, katinakunapash",
+    "messagesTitle": "Willaykuna, katinakunapash",
+    "profile": "Ñukamanta",
+    "profileTitle": "Hampikmanta"
+  },
+  "alerts": {
+    "title": "Mikuymanta yuyachikkuna",
+    "welcome": "Alli shamushka kapay, hampik {{firstName}} {{lastName}}",
+    "description": "Kaypimi kikinpak wawakunapak kawsak yuyachikkunata rikunki, ashtawan llakimanta kallarishpa."
+  },
+  "children": {
+    "title": "Llakipi kak wawakuna",
+    "description": "Kikinwan tinkishka wawakuna, wiñay tupuypi ima llaki kashkamanta ñankuna."
+  },
+  "messages": {
+    "title": "Willaykuna, katinakunapash",
+    "description": "Wawa kamakkunawan rimanakuy, mikuymanta katina yuyaykunatapash killkana."
+  },
+  "profile": {
+    "title": "Hampikmanta",
+    "name": "Shuti:",
+    "email": "Correo:",
+    "specialty": "Hampi yachay:",
+    "noSpecialty": "Mana churashkachu",
+    "activeRole": "Kunan ruray:",
+    "switchToCaregiver": "Wawa kamak rikuchikman tikray",
+    "logout": "Llukshiy"
+  }
+}

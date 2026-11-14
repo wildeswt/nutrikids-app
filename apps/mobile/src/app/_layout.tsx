@@ -6,6 +6,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AUTH_STATUS } from '../constants/routes.js';
 import { AuthProvider, useAuth } from '../context/auth-context.js';
+import '../i18n/index.js';
+import { restoreLanguagePreference } from '../i18n/language.js';
 import { resolveGuardRedirect } from '../lib/navigation-guard.js';
 
 export function NavigationGuard() {
@@ -46,6 +48,11 @@ export function NavigationGuard() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    // Apply the language the user picked in the app (Español / Kichwa), if any.
+    void restoreLanguagePreference();
+  }, []);
+
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>

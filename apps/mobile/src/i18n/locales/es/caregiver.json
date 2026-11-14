@@ -1,0 +1,179 @@
+{
+  "tabs": {
+    "home": "Inicio",
+    "homeHeader": "Mis niños",
+    "evolution": "Evolución",
+    "evolutionHeader": "Cómo va creciendo",
+    "addCheckup": "Control",
+    "addCheckupHeader": "Anotar un control",
+    "checkupSaved": "Control guardado",
+    "messages": "Mensajes",
+    "messagesHeader": "Mensajes y avisos",
+    "chat": "Chat",
+    "profile": "Perfil",
+    "profileHeader": "Mi perfil",
+    "consent": "Permiso",
+    "consentHeader": "Consentimiento informado"
+  },
+  "home": {
+    "notifications": "Avisos",
+    "greeting": "¡Hola, {{name}}!",
+    "childSummary": "{{name}} - {{age}}",
+    "childSubtitle": "Tu niño está creciendo",
+    "statusOk": "Todo va bien",
+    "seeMore": "Ver cómo va creciendo",
+    "forYou": "Para ti",
+    "seeAll": "Ver todo",
+    "messageTitle": "Mensaje de tu equipo de salud",
+    "messageQuote": "“{{text}}”",
+    "messageMeta": "{{when}} - {{author}}",
+    "nextCheckup": "Próximo control",
+    "schedule": "Agendar",
+    "checkupTitle": "Control de crecimiento",
+    "checkupPlace": "{{place}} - {{time}}",
+    "checkupDetails": "Ver detalles",
+    "learnAtHome": "Aprende en casa",
+    "articleSnacks": "Ideas de\nmeriendas\nnutritivas",
+    "articleSnacksMeta": "Se lee en\n3 minutos",
+    "articleFeeding": "Alimentación\na los 3 años",
+    "articleFeedingMeta": "Guía práctica",
+    "registerChild": "+ Registrar nuevo niño",
+    "registerChildA11y": "Registrar nuevo niño",
+    "consentNotice": "Antes de anotar los datos de tu niño, te pediremos leer y aceptar el consentimiento informado (tu permiso para guardar y revisar sus datos)."
+  },
+  "addCheckup": {
+    "back": "Volver",
+    "title": "Anotar un nuevo control",
+    "childSubtitle": "{{age}} - nació el {{birthDate}}",
+    "changeChild": "Cambiar de niño",
+    "saved": "Control guardado.",
+    "dateLabel": "Fecha del control",
+    "datePlaceholder": "Ej. {{example}}",
+    "positionLabel": "¿Cómo lo mediste?",
+    "positions": {
+      "STANDING": "De pie",
+      "RECUMBENT": "Acostado"
+    },
+    "weightLabel": "Peso (kg)",
+    "weightA11y": "Peso en kilos",
+    "heightLabel": "Estatura (cm)",
+    "heightA11y": "Estatura en centímetros",
+    "decimalPlaceholder": "0,0",
+    "notesLabel": "Notas",
+    "notesPlaceholder": "Ejemplo: qué comió hoy...",
+    "submit": "Guardar y ver resultado",
+    "errors": {
+      "dateRequired": "Escribe la fecha del control.",
+      "weightRange": "El peso debe estar entre {{min}} y {{max}} kg.",
+      "heightRange": "La estatura debe estar entre {{min}} y {{max}} cm.",
+      "outlier": "El peso o la estatura parece poco común para su edad. Revisa la medida. Si está bien, toca otra vez «Guardar y ver resultado»."
+    }
+  },
+  "checkupSaved": {
+    "title": "¡Control guardado!",
+    "subtitle": "{{name}} - {{age}}",
+    "lastRecord": "Último control · {{date}}",
+    "weight": "Peso",
+    "height": "Estatura",
+    "position": "Posición",
+    "teamNote": "Tu equipo de salud revisará este control. Te avisaremos si necesitan algo más.",
+    "offline": "Sin internet · se enviará cuando vuelva la conexión",
+    "seeEvolution": "Ver cómo va creciendo",
+    "goHome": "Volver al inicio"
+  },
+  "evolution": {
+    "title": "Cómo crece {{name}}",
+    "childSubtitle": "{{age}} - nació el {{birthDate}}",
+    "chartInfo": "Qué muestra esta gráfica",
+    "chartSubtitle": "Comparado con lo esperado por la OMS",
+    "indicators": {
+      "PE": {
+        "short": "Peso",
+        "name": "¿Su peso va bien para su edad?"
+      },
+      "TE": {
+        "short": "Estatura",
+        "name": "¿Su estatura va bien para su edad?"
+      },
+      "PT": {
+        "short": "Peso/Estatura",
+        "name": "¿Su peso va bien para su estatura?"
+      },
+      "IMCE": {
+        "short": "IMC",
+        "name": "¿Su IMC (peso y estatura juntos) va bien para su edad?"
+      }
+    },
+    "status": {
+      "ok": "Va bien",
+      "improving": "Va mejorando"
+    },
+    "legendReference": "Lo esperado (OMS)",
+    "lastRecord": "Último control - {{date}}",
+    "weight": "Peso",
+    "height": "Estatura",
+    "recordedBy": "Lo anotó",
+    "unitKgM2": "kg/m²"
+  },
+  "messages": {
+    "back": "Volver",
+    "title": "Mensajes",
+    "banner": "Escribe a tu equipo de salud.",
+    "filterAll": "Todos",
+    "filterAllA11y": "Ver todos los mensajes",
+    "filterUnread": "Sin leer ({{count}})",
+    "filterUnreadA11y": "Ver mensajes sin leer",
+    "childTeam": "Equipo de {{name}}",
+    "teamSubtitle": "{{specialty}} · {{professional}}",
+    "healthCenter": "Centro de salud",
+    "healthCenterSubtitle": "Atención al usuario",
+    "threadA11y": "Mensaje de {{title}}",
+    "emergencyNotice": "Aquí no se atienden urgencias. Si tu niño necesita ayuda ya, ve a tu centro de salud.",
+    "newMessage": "Nuevo mensaje"
+  },
+  "chat": {
+    "back": "Volver",
+    "title": "Equipo de {{name}}",
+    "professional": "{{name}} · {{specialty}}",
+    "about": "Sobre {{name}}",
+    "me": "Tú",
+    "status": {
+      "read": "Leído",
+      "sent": "Enviado"
+    },
+    "inputPlaceholder": "Escribe un mensaje...",
+    "inputA11y": "Escribe un mensaje",
+    "send": "Enviar",
+    "sendA11y": "Enviar mensaje",
+    "privacy": "Solo tú y tu equipo de salud pueden ver esta conversación."
+  },
+  "profile": {
+    "title": "Mi perfil",
+    "name": "Nombre:",
+    "email": "Correo:",
+    "activeRole": "Perfil activo:",
+    "switchToProfessional": "Cambiar a vista Profesional",
+    "consentsTitle": "Permisos de tus niños",
+    "consentsDescription": "Aquí ves y cambias el permiso que diste para guardar y revisar los datos de crecimiento de tus niños.",
+    "noChildren": "Aún no tienes niños registrados. Cuando registres uno, te pediremos tu permiso primero.",
+    "dataNote": "Pronto podrás descargar o borrar tus datos desde aquí.",
+    "logout": "Cerrar sesión"
+  },
+  "consentItem": {
+    "badgeActive": "ACTIVO",
+    "badgeRevoked": "RETIRADO",
+    "badgeNone": "SIN PERMISO",
+    "version": "Versión aceptada: ",
+    "date": "Fecha: ",
+    "revokedOn": "Retirado el: ",
+    "viewDocument": "Ver documento",
+    "revoke": "Retirar permiso",
+    "revokeTitle": "Retirar permiso",
+    "revokeMessage": "¿Quieres retirar tu permiso para {{name}}? Mientras no lo vuelvas a dar, no se podrán anotar nuevos controles.",
+    "revokeConfirm": "Retirar",
+    "revokeSuccessTitle": "Listo",
+    "revokeSuccessMessage": "Retiraste el permiso.",
+    "revokeErrorTitle": "No se pudo retirar",
+    "revokeErrorMessage": "Intenta de nuevo."
+  }
+}

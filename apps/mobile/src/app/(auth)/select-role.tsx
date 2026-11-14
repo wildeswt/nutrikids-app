@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { USER_ROLES, type UserRole } from '@nutrikids/shared';
 import { Link, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +11,7 @@ import { APP_ROUTES } from '../../constants/routes.js';
 
 export default function SelectRoleScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['auth', 'common']);
 
   const handleSelectRole = (role: UserRole) => {
     router.push({
@@ -27,7 +29,7 @@ export default function SelectRoleScreen() {
           onPress={() => router.back()}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Volver a la pantalla anterior"
+          accessibilityLabel={t('common:actions.goBack')}
         >
           <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
         </Pressable>
@@ -41,18 +43,16 @@ export default function SelectRoleScreen() {
               source={APP_ASSETS.LOGO}
               style={styles.logo}
               resizeMode="contain"
-              accessibilityLabel="NutriKids Logo"
+              accessibilityLabel={t('common:brand.logoLabel')}
             />
-            <Text style={styles.slogan}>Cuidar su crecimiento, juntos.</Text>
+            <Text style={styles.slogan}>{t('common:brand.slogan')}</Text>
             <View style={styles.orangeDivider} />
           </View>
 
           {/* Pregunta de selección de perfil */}
           <View style={styles.questionContainer}>
-            <Text style={styles.title}>¿Con qué perfil deseas registrarte?</Text>
-            <Text style={styles.subtitle}>
-              Selecciona el tipo de cuenta para adaptar tu experiencia en NutriKids.
-            </Text>
+            <Text style={styles.title}>{t('selectRole.title')}</Text>
+            <Text style={styles.subtitle}>{t('selectRole.subtitle')}</Text>
 
             <View style={styles.optionsGroup}>
               {/* Opción 1: Cuidador / Representante */}
@@ -60,17 +60,14 @@ export default function SelectRoleScreen() {
                 style={({ pressed }) => [styles.roleCard, pressed && styles.buttonPressed]}
                 onPress={() => handleSelectRole(USER_ROLES.CAREGIVER)}
                 accessibilityRole="button"
-                accessibilityLabel="Soy Cuidador o Representante"
+                accessibilityLabel={t('selectRole.caregiverA11y')}
               >
                 <View style={styles.iconCircle}>
                   <Ionicons name="people-outline" size={26} color={PALETTE.primary} />
                 </View>
                 <View style={styles.roleTextContainer}>
-                  <Text style={styles.roleTitle}>Soy Cuidador</Text>
-                  <Text style={styles.roleDescription}>
-                    Madre, padre o representante legal para registrar y consultar el crecimiento de
-                    mis niños.
-                  </Text>
+                  <Text style={styles.roleTitle}>{t('selectRole.caregiverTitle')}</Text>
+                  <Text style={styles.roleDescription}>{t('selectRole.caregiverDescription')}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={22} color={PALETTE.primary} />
               </Pressable>
@@ -80,15 +77,15 @@ export default function SelectRoleScreen() {
                 style={({ pressed }) => [styles.roleCard, pressed && styles.buttonPressed]}
                 onPress={() => handleSelectRole(USER_ROLES.PROFESSIONAL)}
                 accessibilityRole="button"
-                accessibilityLabel="Soy Profesional de Salud"
+                accessibilityLabel={t('selectRole.professionalTitle')}
               >
                 <View style={styles.iconCircle}>
                   <Ionicons name="medkit-outline" size={26} color={PALETTE.primary} />
                 </View>
                 <View style={styles.roleTextContainer}>
-                  <Text style={styles.roleTitle}>Soy Profesional de Salud</Text>
+                  <Text style={styles.roleTitle}>{t('selectRole.professionalTitle')}</Text>
                   <Text style={styles.roleDescription}>
-                    Pediatría, nutrición o enfermería para seguimiento clínico y gestión de alertas.
+                    {t('selectRole.professionalDescription')}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={22} color={PALETTE.primary} />
@@ -97,10 +94,10 @@ export default function SelectRoleScreen() {
 
             {/* Enlace a Iniciar Sesión */}
             <View style={styles.loginContainer}>
-              <Text style={styles.loginPrompt}>¿Ya tienes una cuenta?</Text>
+              <Text style={styles.loginPrompt}>{t('selectRole.haveAccount')}</Text>
               <Link href={APP_ROUTES.AUTH.LOGIN} asChild>
                 <Pressable hitSlop={6}>
-                  <Text style={styles.loginLink}>Iniciar Sesión</Text>
+                  <Text style={styles.loginLink}>{t('common:actions.login')}</Text>
                 </Pressable>
               </Link>
             </View>

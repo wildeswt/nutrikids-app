@@ -1,76 +1,64 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../../constants/colors.js';
+import {
+  DEMO_ACTIVE_CHILD,
+  DEMO_AXIS_AGES_MONTHS,
+  DEMO_AXIS_HEIGHTS_CM,
+  DEMO_LAST_EVOLUTION_RECORD,
+} from '../../constants/demo-data.js';
+import { formatAge, formatAgeShort, formatDecimal, formatLongDate } from '../../i18n/format.js';
 
 type IndicatorKey = 'PE' | 'TE' | 'PT' | 'IMCE';
 
+type IndicatorStatus = 'ok' | 'improving';
+
 interface IndicatorInfo {
   key: IndicatorKey;
-  label: string;
-  fullName: string;
-  subtitle: string;
-  xLabels: string[];
-  yRangeLabel: string;
-  activeStatus: string;
+  /** X axis: by age (months) or by height (cm) for weight-for-height. */
+  xAxis: 'age' | 'height';
+  activeStatus: IndicatorStatus;
 }
 
 const INDICATORS: IndicatorInfo[] = [
-  {
-    key: 'PE',
-    label: 'P/E',
-    fullName: 'Peso para la Edad',
-    subtitle: 'Curva de crecimiento OMS',
-    xLabels: ['3 años', '3 años 3m', '3 años 5m'],
-    yRangeLabel: 'kg',
-    activeStatus: 'Adecuado',
-  },
-  {
-    key: 'TE',
-    label: 'T/E',
-    fullName: 'Talla para la Edad',
-    subtitle: 'Curva de crecimiento OMS',
-    xLabels: ['3 años', '3 años 3m', '3 años 5m'],
-    yRangeLabel: 'cm',
-    activeStatus: 'Adecuado',
-  },
-  {
-    key: 'PT',
-    label: 'P/T',
-    fullName: 'Peso para la Talla',
-    subtitle: 'Curva de crecimiento OMS',
-    xLabels: ['92 cm', '94 cm', '96 cm'],
-    yRangeLabel: 'kg',
-    activeStatus: 'Tendencia Favorable',
-  },
-  {
-    key: 'IMCE',
-    label: 'IMC/E',
-    fullName: 'IMC para la Edad',
-    subtitle: 'Curva de crecimiento OMS',
-    xLabels: ['3 años', '3 años 3m', '3 años 5m'],
-    yRangeLabel: 'kg/m²',
-    activeStatus: 'Adecuado',
-  },
+  { key: 'PE', xAxis: 'age', activeStatus: 'ok' },
+  { key: 'TE', xAxis: 'age', activeStatus: 'ok' },
+  { key: 'PT', xAxis: 'height', activeStatus: 'improving' },
+  { key: 'IMCE', xAxis: 'age', activeStatus: 'ok' },
 ];
 
 export default function EvolutionScreen() {
+  const { t } = useTranslation(['caregiver', 'common']);
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PT');
 
   const activeIndicator =
-    INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[2];
+    INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[2]!;
+
+  const xLabels =
+    activeIndicator.xAxis === 'height'
+      ? DEMO_AXIS_HEIGHTS_CM.map((cm) => t('common:units.heightValue', { value: cm }))
+      : DEMO_AXIS_AGES_MONTHS.map((months) => formatAgeShort(months));
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Título de la pantalla */}
-        <Text style={styles.screenTitle}>Evolución de Mateo</Text>
+        <Text style={styles.screenTitle}>
+          {t('evolution.title', { name: DEMO_ACTIVE_CHILD.firstName })}
+        </Text>
 
         {/* Tarjeta Naranja Superior: Datos del niño */}
         <View style={styles.childHeaderCard}>
-          <Text style={styles.childNameTitle}>Mateo José Rodríguez</Text>
-          <Text style={styles.childSubtitle}>3 años y 5 meses - 12 de mayo de 2023</Text>
+          <Text style={styles.childNameTitle}>{DEMO_ACTIVE_CHILD.fullName}</Text>
+          <Text style={styles.childSubtitle}>
+            {t('evolution.childSubtitle', {
+              age: formatAge(DEMO_ACTIVE_CHILD.ageMonths),
+              birthDate: formatLongDate(DEMO_ACTIVE_CHILD.birthDate),
+            })}
+          </Text>
         </View>
 
         {/* Selector de Indicadores Antropométricos: P/E, T/E, P/T, IMC/E */}
@@ -83,12 +71,12 @@ export default function EvolutionScreen() {
                 style={[styles.indicatorTab, isSelected && styles.indicatorTabActive]}
                 onPress={() => setSelectedIndicator(indicator.key)}
                 accessibilityRole="button"
-                accessibilityLabel={indicator.fullName}
+                accessibilityLabel={t(`evolution.indicators.${indicator.key}.name`)}
               >
                 <Text
                   style={[styles.indicatorTabText, isSelected && styles.indicatorTabTextActive]}
                 >
-                  {indicator.label}
+                  {t(`evolution.indicators.${indicator.key}.short`)}
                 </Text>
               </Pressable>
             );
@@ -100,13 +88,15 @@ export default function EvolutionScreen() {
           {/* Cabecera del gráfico */}
           <View style={styles.chartHeader}>
             <View style={styles.chartTitleWrapper}>
-              <Text style={styles.chartTitleText}>{activeIndicator.fullName}</Text>
-              <Text style={styles.chartSubtitleText}>{activeIndicator.subtitle}</Text>
+              <Text style={styles.chartTitleText}>
+                {t(`evolution.indicators.${activeIndicator.key}.name`)}
+              </Text>
+              <Text style={styles.chartSubtitleText}>{t('evolution.chartSubtitle')}</Text>
             </View>
             <Pressable
               style={({ pressed }) => [styles.infoIconWrapper, pressed && styles.pressed]}
               accessibilityRole="button"
-              accessibilityLabel="Información sobre la curva"
+              accessibilityLabel={t('evolution.chartInfo')}
             >
               <Ionicons name="information-circle-outline" size={26} color="#2D5F5A" />
             </Pressable>
@@ -143,7 +133,7 @@ export default function EvolutionScreen() {
 
             {/* Eje X con etiquetas de referencia */}
             <View style={styles.xAxisRow}>
-              {activeIndicator.xLabels.map((lbl, idx) => (
+              {xLabels.map((lbl, idx) => (
                 <Text key={idx} style={styles.xAxisLabel}>
                   {lbl}
                 </Text>
@@ -155,21 +145,27 @@ export default function EvolutionScreen() {
           <View style={styles.legendRow}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, styles.legendDotChild]} />
-              <Text style={styles.legendText}>Mateo</Text>
+              <Text style={styles.legendText}>{DEMO_ACTIVE_CHILD.firstName}</Text>
             </View>
 
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, styles.legendDotOms]} />
-              <Text style={styles.legendText}>Referencia OMS</Text>
+              <Text style={styles.legendText}>{t('evolution.legendReference')}</Text>
             </View>
 
-            <Text style={styles.statusLegendText}>{activeIndicator.activeStatus}</Text>
+            <Text style={styles.statusLegendText}>
+              {t(`evolution.status.${activeIndicator.activeStatus}`)}
+            </Text>
           </View>
         </View>
 
         {/* Tarjeta Inferior de Último Registro */}
         <View style={styles.lastRecordCard}>
-          <Text style={styles.lastRecordTitle}>Último Registro - 18 de agosto de 2026</Text>
+          <Text style={styles.lastRecordTitle}>
+            {t('evolution.lastRecord', {
+              date: formatLongDate(DEMO_LAST_EVOLUTION_RECORD.measuredAt),
+            })}
+          </Text>
 
           <View style={styles.lastRecordDetailsRow}>
             {/* Peso */}
@@ -178,8 +174,12 @@ export default function EvolutionScreen() {
                 <Ionicons name="scale-outline" size={20} color="#C2410C" />
               </View>
               <View>
-                <Text style={styles.recordDetailLabel}>Peso</Text>
-                <Text style={styles.recordDetailValue}>13,8kg</Text>
+                <Text style={styles.recordDetailLabel}>{t('evolution.weight')}</Text>
+                <Text style={styles.recordDetailValue}>
+                  {t('common:units.weightValue', {
+                    value: formatDecimal(DEMO_LAST_EVOLUTION_RECORD.weightKg),
+                  })}
+                </Text>
               </View>
             </View>
 
@@ -189,8 +189,12 @@ export default function EvolutionScreen() {
                 <Ionicons name="resize-outline" size={20} color="#C2410C" />
               </View>
               <View>
-                <Text style={styles.recordDetailLabel}>Talla</Text>
-                <Text style={styles.recordDetailValue}>95,0cm</Text>
+                <Text style={styles.recordDetailLabel}>{t('evolution.height')}</Text>
+                <Text style={styles.recordDetailValue}>
+                  {t('common:units.heightValue', {
+                    value: formatDecimal(DEMO_LAST_EVOLUTION_RECORD.heightCm),
+                  })}
+                </Text>
               </View>
             </View>
 
@@ -200,9 +204,9 @@ export default function EvolutionScreen() {
                 <Ionicons name="person-outline" size={20} color="#C2410C" />
               </View>
               <View>
-                <Text style={styles.recordDetailLabel}>Registró</Text>
+                <Text style={styles.recordDetailLabel}>{t('evolution.recordedBy')}</Text>
                 <Text style={styles.recordDetailValue} numberOfLines={1}>
-                  Dra. Ana Juarez
+                  {DEMO_LAST_EVOLUTION_RECORD.recordedBy}
                 </Text>
               </View>
             </View>

@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React, { useEffect } from 'react';
 import {
   ActivityIndicator,
@@ -11,10 +12,12 @@ import {
 } from 'react-native';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useConsent } from '../../hooks/useConsent.js';
-import { CONSENT_TEXT, CURRENT_CONSENT_VERSION } from '../../lib/consent-api.js';
+import { formatNumericDate, formatTime } from '../../i18n/format.js';
+import { CURRENT_CONSENT_VERSION, getConsentText } from '../../lib/consent-api.js';
 
 export default function ConsentScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation(['consent', 'common']);
   const params = useLocalSearchParams<{
     childId?: string;
     childName?: string;
@@ -22,7 +25,7 @@ export default function ConsentScreen() {
   }>();
 
   const childId = params.childId ?? null;
-  const childName = params.childName ?? 'el niño/a';
+  const childName = params.childName ?? t('screen.childFallback');
   const mode = params.mode ?? (childId ? 'view' : 'register');
 
   const { status, consent, error, load, grant, revoke } = useConsent(childId);
@@ -38,24 +41,29 @@ export default function ConsentScreen() {
       try {
         await grant(CURRENT_CONSENT_VERSION);
         Alert.alert(
-          'Consentimiento registrado',
-          `Has otorgado el consentimiento informado (versión ${CURRENT_CONSENT_VERSION}) exitosamente.`,
-          [{ text: 'Aceptar', onPress: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE) }],
+          t('alerts.grantedTitle'),
+          t('alerts.grantedMessage', { version: CURRENT_CONSENT_VERSION }),
+          [
+            {
+              text: t('common:actions.accept'),
+              onPress: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE),
+            },
+          ],
         );
       } catch (err) {
         Alert.alert(
-          'Error',
-          err instanceof Error ? err.message : 'No se pudo registrar el consentimiento.',
+          t('alerts.errorTitle'),
+          err instanceof Error ? err.message : t('alerts.grantError'),
         );
       }
     } else {
       // Flujo pre-registro: Se acepta el consentimiento antes de ingresar los datos del niño
       Alert.alert(
-        'Consentimiento aceptado',
-        `Has aceptado el consentimiento informado (versión ${CURRENT_CONSENT_VERSION}). Ahora puedes continuar con el registro del niño.`,
+        t('alerts.acceptedTitle'),
+        t('alerts.acceptedMessage', { version: CURRENT_CONSENT_VERSION }),
         [
           {
-            text: 'Continuar al registro',
+            text: t('alerts.continueToRegister'),
             onPress: () => {
               // Navega de regreso al inicio o al flujo de registro de niños con consentimiento aceptado
               router.replace(APP_ROUTES.CAREGIVER.HOME);
@@ -69,49 +77,43 @@ export default function ConsentScreen() {
   const handleRevokeConsent = () => {
     if (!childId) return;
 
-    Alert.alert(
-      'Revocar consentimiento',
-      `¿Estás seguro de que deseas revocar el consentimiento para ${childName}? No se podrán registrar nuevos controles de crecimiento hasta que otorgues un nuevo consentimiento.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sí, revocar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await revoke();
-              Alert.alert(
-                'Consentimiento revocado',
-                'El consentimiento ha sido revocado. El historial previo se mantiene para fines de auditoría.',
-                [
-                  {
-                    text: 'Entendido',
-                    onPress: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE),
-                  },
-                ],
-              );
-            } catch (err) {
-              Alert.alert(
-                'Error al revocar',
-                err instanceof Error ? err.message : 'No se pudo revocar el consentimiento.',
-              );
-            }
-          },
+    Alert.alert(t('alerts.revokeTitle'), t('alerts.revokeMessage', { name: childName }), [
+      { text: t('common:actions.cancel'), style: 'cancel' },
+      {
+        text: t('alerts.revokeConfirm'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await revoke();
+            Alert.alert(t('alerts.revokedTitle'), t('alerts.revokedMessage'), [
+              {
+                text: t('common:actions.understood'),
+                onPress: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE),
+              },
+            ]);
+          } catch (err) {
+            Alert.alert(
+              t('alerts.revokeErrorTitle'),
+              err instanceof Error ? err.message : t('alerts.revokeError'),
+            );
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const displayedVersion = consent?.textVersion ?? CURRENT_CONSENT_VERSION;
-  const textBody = CONSENT_TEXT[displayedVersion] ?? CONSENT_TEXT[CURRENT_CONSENT_VERSION];
+  const textBody = getConsentText(displayedVersion);
+  // The legal text is only published in the languages where it was reviewed; otherwise it is
+  // shown in Spanish and the caregiver is told so.
+  const isDocumentTranslated = Boolean(
+    i18n.getResource(i18n.language, 'consent', `documents.${displayedVersion}`),
+  );
 
   const formatDate = (isoString?: string | null) => {
     if (!isoString) return '-';
     const d = new Date(isoString);
-    return `${d.toLocaleDateString('es-CL')} a las ${d.toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })}`;
+    return t('common:time.dateAtTime', { date: formatNumericDate(d), time: formatTime(d) });
   };
 
   const isActionLoading = status === 'loading';
@@ -120,11 +122,11 @@ export default function ConsentScreen() {
     <ScrollView contentContainerStyle={styles.scrollContainer} testID="consent-screen">
       <View style={styles.card}>
         <View style={styles.header}>
-          <Text style={styles.title}>Consentimiento Informado</Text>
+          <Text style={styles.title}>{t('screen.title')}</Text>
           <Text style={styles.subtitle}>
             {mode === 'register'
-              ? 'Términos y condiciones para el registro del niño'
-              : `Estado del consentimiento de ${childName}`}
+              ? t('screen.registerSubtitle')
+              : t('screen.viewSubtitle', { name: childName })}
           </Text>
         </View>
 
@@ -132,30 +134,30 @@ export default function ConsentScreen() {
         {consent && (
           <View style={styles.metaContainer} testID="consent-metadata">
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Versión aceptada:</Text>
+              <Text style={styles.metaLabel}>{t('screen.versionLabel')}</Text>
               <Text style={styles.versionBadge}>{consent.textVersion}</Text>
             </View>
 
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Fecha de otorgamiento:</Text>
+              <Text style={styles.metaLabel}>{t('screen.grantedAtLabel')}</Text>
               <Text style={styles.metaValue}>{formatDate(consent.grantedAt)}</Text>
             </View>
 
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Estado actual:</Text>
+              <Text style={styles.metaLabel}>{t('screen.statusLabel')}</Text>
               <Text
                 style={[
                   styles.statusBadge,
                   consent.revokedAt ? styles.statusRevoked : styles.statusActive,
                 ]}
               >
-                {consent.revokedAt ? 'REVOCADO' : 'VIGENTE'}
+                {consent.revokedAt ? t('screen.statusRevoked') : t('screen.statusActive')}
               </Text>
             </View>
 
             {consent.revokedAt && (
               <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Fecha de revocación:</Text>
+                <Text style={styles.metaLabel}>{t('screen.revokedAtLabel')}</Text>
                 <Text style={styles.metaValue}>{formatDate(consent.revokedAt)}</Text>
               </View>
             )}
@@ -171,6 +173,9 @@ export default function ConsentScreen() {
 
         {/* Texto del consentimiento en lenguaje claro */}
         <View style={styles.textContainer}>
+          {!isDocumentTranslated && (
+            <Text style={styles.documentLanguageNotice}>{t('screen.documentInSpanish')}</Text>
+          )}
           <Text style={styles.textBody}>{textBody}</Text>
         </View>
 
@@ -190,7 +195,7 @@ export default function ConsentScreen() {
               {isActionLoading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.primaryButtonText}>Aceptar consentimiento</Text>
+                <Text style={styles.primaryButtonText}>{t('screen.accept')}</Text>
               )}
             </Pressable>
           )}
@@ -209,7 +214,7 @@ export default function ConsentScreen() {
               {isActionLoading ? (
                 <ActivityIndicator color="#DC2626" />
               ) : (
-                <Text style={styles.revokeButtonText}>Revocar consentimiento</Text>
+                <Text style={styles.revokeButtonText}>{t('screen.revoke')}</Text>
               )}
             </Pressable>
           )}
@@ -228,7 +233,7 @@ export default function ConsentScreen() {
               {isActionLoading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.primaryButtonText}>Otorgar consentimiento nuevamente</Text>
+                <Text style={styles.primaryButtonText}>{t('screen.renew')}</Text>
               )}
             </Pressable>
           )}
@@ -238,7 +243,7 @@ export default function ConsentScreen() {
             onPress={() => router.back()}
             testID="back-button"
           >
-            <Text style={styles.secondaryButtonText}>Volver</Text>
+            <Text style={styles.secondaryButtonText}>{t('screen.back')}</Text>
           </Pressable>
         </View>
       </View>
@@ -329,6 +334,12 @@ const styles = StyleSheet.create({
   statusRevoked: {
     backgroundColor: '#FEE2E2',
     color: '#DC2626',
+  },
+  documentLanguageNotice: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    color: '#B45309',
+    marginBottom: 8,
   },
   textContainer: {
     backgroundColor: '#F8FAFC',

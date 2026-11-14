@@ -1,13 +1,16 @@
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LanguageSelector } from '../../components/LanguageSelector.js';
 import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['auth', 'common']);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -19,9 +22,9 @@ export default function WelcomeScreen() {
               source={APP_ASSETS.LOGO}
               style={styles.logo}
               resizeMode="contain"
-              accessibilityLabel="NutriKids Logo"
+              accessibilityLabel={t('common:brand.logoLabel')}
             />
-            <Text style={styles.slogan}>Cuidar su crecimiento, juntos.</Text>
+            <Text style={styles.slogan}>{t('common:brand.slogan')}</Text>
             <View style={styles.orangeDivider} />
           </View>
 
@@ -33,9 +36,9 @@ export default function WelcomeScreen() {
                 style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
                 onPress={() => router.push(APP_ROUTES.AUTH.LOGIN as never)}
                 accessibilityRole="button"
-                accessibilityLabel="Iniciar Sesión"
+                accessibilityLabel={t('common:actions.login')}
               >
-                <Text style={styles.primaryButtonText}>Iniciar Sesión</Text>
+                <Text style={styles.primaryButtonText}>{t('common:actions.login')}</Text>
               </Pressable>
 
               {/* Botón Secundario: Registrarse */}
@@ -43,16 +46,23 @@ export default function WelcomeScreen() {
                 style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
                 onPress={() => router.push(APP_ROUTES.AUTH.SELECT_ROLE as never)}
                 accessibilityRole="button"
-                accessibilityLabel="Registrarse"
+                accessibilityLabel={t('common:actions.register')}
               >
-                <Text style={styles.secondaryButtonText}>Registrarse</Text>
+                <Text style={styles.secondaryButtonText}>{t('common:actions.register')}</Text>
               </Pressable>
+            </View>
+
+            {/* Selector de idioma (Español / Kichwa) visible antes de iniciar sesión */}
+            <View style={styles.languageContainer}>
+              <LanguageSelector showHeader={false} />
             </View>
           </View>
 
           {/* Footer discreto */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>NutriKids © {new Date().getFullYear()}</Text>
+            <Text style={styles.footerText}>
+              {t('common:brand.copyright', { year: new Date().getFullYear() })}
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -101,6 +111,9 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.secondary,
     borderRadius: 2,
     marginTop: 20,
+  },
+  languageContainer: {
+    marginTop: 24,
   },
   actionsContainer: {
     width: '100%',

@@ -1,0 +1,35 @@
+{
+  "screen": {
+    "title": "Yachashpa ari nina",
+    "registerSubtitle": "Wawata killkakatinamanta ñawpaka kayta ñawinchiy. Paypak willaykunata wakaychinkapak, rikunkapakpash ari ninami kan.",
+    "viewSubtitle": "{{name}}-pak ari nina",
+    "childFallback": "kikinpak wawa",
+    "versionLabel": "Chaskishka killka:",
+    "grantedAtLabel": "Ari nishka puncha:",
+    "statusLabel": "Imashina kan:",
+    "statusActive": "KAWSAKUN",
+    "statusRevoked": "KICHUSHKA",
+    "revokedAtLabel": "Kichushka puncha:",
+    "accept": "Ari ninata chaskiy",
+    "revoke": "Ñuka ari ninata kichuy",
+    "renew": "Kutin ari niy",
+    "back": "Tikray",
+    "documentInSpanish": "Kamachik killkaka ishpañol shimipimi rikurin, tikrachishkata allichikukpi."
+  },
+  "alerts": {
+    "grantedTitle": "Ari ninaka wakaychishkami",
+    "grantedMessage": "Ari nirkanki ({{version}} killka). ¡Yupaychani!",
+    "acceptedTitle": "Ari ninaka chaskishkami",
+    "acceptedMessage": "Ari ninata chaskirkanki ({{version}} killka). Kunanka wawata killkakatiy ushankimi.",
+    "continueToRegister": "Killkakatinata katiy",
+    "errorTitle": "Imapash pantarirkami",
+    "grantError": "Ari ninata mana wakaychiy usharkanchikchu. Kutin rurapay.",
+    "revokeTitle": "Ñuka ari ninata kichuy",
+    "revokeMessage": "¿{{name}}-pak ari ninata kichunata munankichu? Kutin ari nishkakaman, mushuk wiñay kamaykunataka mana killkay ushankichu.",
+    "revokeConfirm": "Ari, kichuy",
+    "revokedTitle": "Ari ninaka kichushkami",
+    "revokedMessage": "Ari ninata kichurkanki. Ñawpa kamaykunaka kamachik nishka shinami alli wakaychishka sakirin.",
+    "revokeErrorTitle": "Mana kichuy usharkanchu",
+    "revokeError": "Ari ninata mana kichuy usharkanchikchu. Kutin rurapay."
+  }
+}

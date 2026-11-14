@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ResetPasswordInputSchema } from '@nutrikids/shared';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -22,6 +23,7 @@ import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-er
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['auth', 'common']);
   const params = useLocalSearchParams<{ token?: string }>();
   const keyboardInset = useKeyboardBottomInset();
 
@@ -47,7 +49,7 @@ export default function ResetPasswordScreen() {
 
     // Client-side confirmation check
     if (newPassword !== confirmPassword) {
-      setFieldErrors({ confirmPassword: 'Las contraseñas no coinciden' });
+      setFieldErrors({ confirmPassword: t('resetPassword.passwordsMismatch') });
       return;
     }
 
@@ -64,9 +66,7 @@ export default function ResetPasswordScreen() {
     setLoading(true);
     try {
       await resetPasswordRequest(validation.data);
-      setSuccessMessage(
-        'Tu contraseña ha sido restablecida exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.',
-      );
+      setSuccessMessage(t('resetPassword.successMessage'));
     } catch (err) {
       setGeneralError(formatAuthErrorMessage(err));
     } finally {
@@ -83,7 +83,7 @@ export default function ResetPasswordScreen() {
           onPress={() => router.back()}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Volver a la pantalla anterior"
+          accessibilityLabel={t('common:actions.goBack')}
         >
           <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
         </Pressable>
@@ -106,14 +106,14 @@ export default function ResetPasswordScreen() {
             source={APP_ASSETS.LOGO}
             style={styles.logo}
             resizeMode="contain"
-            accessibilityLabel="NutriKids Logo"
+            accessibilityLabel={t('common:brand.logoLabel')}
           />
-          <Text style={styles.slogan}>Cuidar su crecimiento, juntos.</Text>
+          <Text style={styles.slogan}>{t('common:brand.slogan')}</Text>
           <View style={styles.orangeDivider} />
         </View>
 
         <View style={styles.formContainer}>
-          <Text style={styles.title}>Nueva Contraseña</Text>
+          <Text style={styles.title}>{t('resetPassword.title')}</Text>
           {generalError && (
             <View style={styles.errorBox}>
               <Text style={styles.errorBoxText}>{generalError}</Text>
@@ -123,7 +123,7 @@ export default function ResetPasswordScreen() {
           {successMessage ? (
             <View style={styles.successContainer}>
               <View style={styles.successBox}>
-                <Text style={styles.successBoxTitle}>Contraseña Restablecida</Text>
+                <Text style={styles.successBoxTitle}>{t('resetPassword.successTitle')}</Text>
                 <Text style={styles.successBoxText}>{successMessage}</Text>
               </View>
 
@@ -131,18 +131,16 @@ export default function ResetPasswordScreen() {
                 style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
                 onPress={() => router.replace(APP_ROUTES.AUTH.LOGIN)}
               >
-                <Text style={styles.submitButtonText}>Iniciar Sesión</Text>
+                <Text style={styles.submitButtonText}>{t('common:actions.login')}</Text>
               </Pressable>
             </View>
           ) : (
             <>
-              <Text style={styles.instructions}>
-                Ingresa el token de recuperación recibido por correo y tu nueva contraseña.
-              </Text>
+              <Text style={styles.instructions}>{t('resetPassword.instructions')}</Text>
 
               {/* Token */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Token de recuperación</Text>
+                <Text style={styles.label}>{t('resetPassword.tokenLabel')}</Text>
                 <TextInput
                   style={[styles.input, fieldErrors['token'] ? styles.inputError : undefined]}
                   value={token}
@@ -152,7 +150,7 @@ export default function ResetPasswordScreen() {
                       setFieldErrors((prev) => ({ ...prev, token: '' }));
                     }
                   }}
-                  placeholder="Pega el código recibido"
+                  placeholder={t('resetPassword.tokenPlaceholder')}
                   placeholderTextColor="#9CA3AF"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -168,7 +166,7 @@ export default function ResetPasswordScreen() {
 
               {/* New Password */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nueva contraseña</Text>
+                <Text style={styles.label}>{t('resetPassword.newPasswordLabel')}</Text>
                 <View style={styles.passwordContainer}>
                   <TextInput
                     ref={newPasswordRef}
@@ -183,7 +181,7 @@ export default function ResetPasswordScreen() {
                         setFieldErrors((prev) => ({ ...prev, newPassword: '' }));
                       }
                     }}
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder={t('resetPassword.newPasswordPlaceholder')}
                     placeholderTextColor="#9CA3AF"
                     secureTextEntry={!showNewPassword}
                     autoCapitalize="none"
@@ -203,7 +201,9 @@ export default function ResetPasswordScreen() {
                     onPress={() => setShowNewPassword((prev) => !prev)}
                     hitSlop={8}
                     accessibilityLabel={
-                      showNewPassword ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'
+                      showNewPassword
+                        ? t('resetPassword.hideNewPassword')
+                        : t('resetPassword.showNewPassword')
                     }
                   >
                     <Ionicons
@@ -220,7 +220,7 @@ export default function ResetPasswordScreen() {
 
               {/* Confirm Password */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Confirmar nueva contraseña</Text>
+                <Text style={styles.label}>{t('resetPassword.confirmPasswordLabel')}</Text>
                 <View style={styles.passwordContainer}>
                   <TextInput
                     ref={confirmPasswordRef}
@@ -235,7 +235,7 @@ export default function ResetPasswordScreen() {
                         setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }));
                       }
                     }}
-                    placeholder="Repite la nueva contraseña"
+                    placeholder={t('resetPassword.confirmPasswordPlaceholder')}
                     placeholderTextColor="#9CA3AF"
                     secureTextEntry={!showConfirmPassword}
                     autoCapitalize="none"
@@ -254,7 +254,9 @@ export default function ResetPasswordScreen() {
                     onPress={() => setShowConfirmPassword((prev) => !prev)}
                     hitSlop={8}
                     accessibilityLabel={
-                      showConfirmPassword ? 'Ocultar confirmación' : 'Mostrar confirmación'
+                      showConfirmPassword
+                        ? t('common:password.hideConfirmation')
+                        : t('common:password.showConfirmation')
                     }
                   >
                     <Ionicons
@@ -277,14 +279,14 @@ export default function ResetPasswordScreen() {
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Actualizar Contraseña</Text>
+                  <Text style={styles.submitButtonText}>{t('resetPassword.submit')}</Text>
                 )}
               </Pressable>
 
               <View style={styles.footerRow}>
                 <Link href={APP_ROUTES.AUTH.LOGIN} asChild>
                   <Pressable hitSlop={6}>
-                    <Text style={styles.footerLink}>Volver al inicio de sesión</Text>
+                    <Text style={styles.footerLink}>{t('resetPassword.backToLogin')}</Text>
                   </Pressable>
                 </Link>
               </View>

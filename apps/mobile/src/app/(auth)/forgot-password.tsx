@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ForgotPasswordInputSchema } from '@nutrikids/shared';
 import { Link, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -22,6 +23,7 @@ import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-er
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['auth', 'common']);
   const keyboardInset = useKeyboardBottomInset();
   const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
 
@@ -62,7 +64,7 @@ export default function ForgotPasswordScreen() {
           onPress={() => router.back()}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Volver a la pantalla anterior"
+          accessibilityLabel={t('common:actions.goBack')}
         >
           <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
         </Pressable>
@@ -85,14 +87,14 @@ export default function ForgotPasswordScreen() {
             source={APP_ASSETS.LOGO}
             style={styles.logo}
             resizeMode="contain"
-            accessibilityLabel="NutriKids Logo"
+            accessibilityLabel={t('common:brand.logoLabel')}
           />
-          <Text style={styles.slogan}>Cuidar su crecimiento, juntos.</Text>
+          <Text style={styles.slogan}>{t('common:brand.slogan')}</Text>
           <View style={styles.orangeDivider} />
         </View>
 
         <View style={styles.formContainer}>
-          <Text style={styles.title}>Recuperar Contraseña</Text>
+          <Text style={styles.title}>{t('forgotPassword.title')}</Text>
           {generalError && (
             <View style={styles.errorBox}>
               <Text style={styles.errorBoxText}>{generalError}</Text>
@@ -102,7 +104,7 @@ export default function ForgotPasswordScreen() {
           {successMessage ? (
             <View style={styles.successContainer}>
               <View style={styles.successBox}>
-                <Text style={styles.successBoxTitle}>Solicitud Enviada</Text>
+                <Text style={styles.successBoxTitle}>{t('forgotPassword.successTitle')}</Text>
                 <Text style={styles.successBoxText}>{successMessage}</Text>
               </View>
 
@@ -110,24 +112,21 @@ export default function ForgotPasswordScreen() {
                 style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
                 onPress={() => router.push(APP_ROUTES.AUTH.RESET_PASSWORD)}
               >
-                <Text style={styles.submitButtonText}>Ingresar Token de Recuperación</Text>
+                <Text style={styles.submitButtonText}>{t('forgotPassword.enterToken')}</Text>
               </Pressable>
 
               <Link href={APP_ROUTES.AUTH.LOGIN} asChild>
                 <Pressable style={styles.backButton}>
-                  <Text style={styles.backButtonText}>Volver al inicio de sesión</Text>
+                  <Text style={styles.backButtonText}>{t('forgotPassword.backToLogin')}</Text>
                 </Pressable>
               </Link>
             </View>
           ) : (
             <>
-              <Text style={styles.instructions}>
-                Ingresa el correo electrónico asociado a tu cuenta y te enviaremos las instrucciones
-                y el token para restablecer tu contraseña.
-              </Text>
+              <Text style={styles.instructions}>{t('forgotPassword.instructions')}</Text>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Correo electrónico</Text>
+                <Text style={styles.label}>{t('forgotPassword.emailLabel')}</Text>
                 <TextInput
                   style={[styles.input, fieldErrors['email'] ? styles.inputError : undefined]}
                   value={email}
@@ -137,7 +136,7 @@ export default function ForgotPasswordScreen() {
                       setFieldErrors((prev) => ({ ...prev, email: '' }));
                     }
                   }}
-                  placeholder="ejemplo@correo.com"
+                  placeholder={t('forgotPassword.emailPlaceholder')}
                   placeholderTextColor="#9CA3AF"
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -159,14 +158,14 @@ export default function ForgotPasswordScreen() {
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Enviar Instrucciones</Text>
+                  <Text style={styles.submitButtonText}>{t('forgotPassword.submit')}</Text>
                 )}
               </Pressable>
 
               <View style={styles.footerRow}>
                 <Link href={APP_ROUTES.AUTH.LOGIN} asChild>
                   <Pressable hitSlop={6}>
-                    <Text style={styles.footerLink}>Volver al inicio de sesión</Text>
+                    <Text style={styles.footerLink}>{t('forgotPassword.backToLogin')}</Text>
                   </Pressable>
                 </Link>
               </View>

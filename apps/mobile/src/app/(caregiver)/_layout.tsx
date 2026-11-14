@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { PALETTE } from '../../constants/colors.js';
 
 export default function CaregiverTabsLayout() {
+  const { t } = useTranslation('caregiver');
   return (
     <Tabs
       screenOptions={{
@@ -20,8 +22,8 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Inicio',
-          headerTitle: 'Mis Niños',
+          title: t('tabs.home'),
+          headerTitle: t('tabs.homeHeader'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'home' : 'home-outline'}
@@ -34,8 +36,8 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="evolution"
         options={{
-          title: 'Evolución',
-          headerTitle: 'Evolución y Curvas OMS',
+          title: t('tabs.evolution'),
+          headerTitle: t('tabs.evolutionHeader'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'trending-up' : 'trending-up-outline'}
@@ -48,8 +50,8 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="add-checkup"
         options={{
-          title: 'Control',
-          headerTitle: 'Registrar Control',
+          title: t('tabs.addCheckup'),
+          headerTitle: t('tabs.addCheckupHeader'),
           tabBarStyle: { display: 'none' },
           tabBarLabel: () => null,
           tabBarIcon: () => (
@@ -64,7 +66,7 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="checkup-saved"
         options={{
-          title: 'Control Guardado',
+          title: t('tabs.checkupSaved'),
           tabBarStyle: { display: 'none' },
           tabBarItemStyle: { display: 'none' },
           tabBarButton: () => null,
@@ -73,8 +75,8 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="messages"
         options={{
-          title: 'Mensajes',
-          headerTitle: 'Mensajes y Recordatorios',
+          title: t('tabs.messages'),
+          headerTitle: t('tabs.messagesHeader'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'chatbox-ellipses' : 'chatbox-ellipses-outline'}
@@ -87,7 +89,7 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="chat-detail"
         options={{
-          title: 'Chat',
+          title: t('tabs.chat'),
           tabBarStyle: { display: 'none' },
           tabBarItemStyle: { display: 'none' },
           tabBarButton: () => null,
@@ -96,8 +98,8 @@ export default function CaregiverTabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Perfil',
-          headerTitle: 'Mi Perfil',
+          title: t('tabs.profile'),
+          headerTitle: t('tabs.profileHeader'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'person-circle' : 'person-circle-outline'}
@@ -111,8 +113,8 @@ export default function CaregiverTabsLayout() {
         name="consent"
         options={{
           href: null,
-          title: 'Consentimiento',
-          headerTitle: 'Consentimiento Informado',
+          title: t('tabs.consent'),
+          headerTitle: t('tabs.consentHeader'),
           tabBarStyle: { display: 'none' },
         }}
       />
