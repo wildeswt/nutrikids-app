@@ -116,6 +116,21 @@ describe('Caregiver Screens (NK-21)', () => {
   });
 
   describe('CaregiverHomeScreen («Mis niños» - Figura 6a)', () => {
+    it('navigates to messages when bell button is pressed', () => {
+      let capturedTree: unknown = null;
+      function TestWrapper() {
+        capturedTree = CaregiverHomeScreen();
+        return null;
+      }
+      renderToString(React.createElement(TestWrapper));
+
+      const bellButton = findElementByTestId(capturedTree, 'caregiver-notifications-bell');
+      expect(bellButton).toBeDefined();
+      const onPress = bellButton?.props?.['onPress'] as (() => void) | undefined;
+      onPress?.();
+      expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.MESSAGES);
+    });
+
     it('renders personalized greeting with caregiver name', () => {
       const html = renderToString(React.createElement(CaregiverHomeScreen));
       expect(html).toContain('¡Hola, Andrea!');

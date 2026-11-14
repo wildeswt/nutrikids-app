@@ -30,5 +30,10 @@
   },
   "children": {
     "create": "No pudimos registrar al niño. Intenta de nuevo."
+  },
+  "notifications": {
+    "registerDevice": "No se pudo registrar el dispositivo para notificaciones.",
+    "unregisterDevice": "No se pudo desregistrar el dispositivo.",
+    "markRead": "No se pudo marcar la notificación como leída."
   }
 }

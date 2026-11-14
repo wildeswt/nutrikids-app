@@ -99,5 +99,19 @@
     "MOTHER": "Mama",
     "FATHER": "Yaya",
     "LEGAL_GUARDIAN": "Kamachik kamak"
+  },
+  "notifications": {
+    "title": "Willaykuna",
+    "empty": "Kunan pachapi mana willaykuna kanchu",
+    "emptyDescription": "Kaypi wiñaymanta willaykunata chaskinki.",
+    "loading": "Willaykunata kargachkan...",
+    "errorLoading": "Manam willaykunata kargayta atikurchu",
+    "unreadBadge": "Mana ñawinchasqa",
+    "retry": "Kutichiy",
+    "types": {
+      "alert_new": "Wiñaymanta musuq willay",
+      "alert_pending_review": "Qawanapaq willay",
+      "alert_overdue": "Pacha yallisqa willay"
+    }
   }
 }

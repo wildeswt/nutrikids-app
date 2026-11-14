@@ -65,6 +65,7 @@ export default function CaregiverHomeScreen() {
             onPress={() => router.push(APP_ROUTES.CAREGIVER.MESSAGES)}
             accessibilityRole="button"
             accessibilityLabel={t('home.notifications')}
+            testID="caregiver-notifications-bell"
           >
             <Ionicons name="notifications" size={22} color={PALETTE.secondary} />
           </Pressable>

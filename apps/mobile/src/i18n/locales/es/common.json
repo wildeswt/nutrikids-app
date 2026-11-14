@@ -99,5 +99,19 @@
     "MOTHER": "Madre",
     "FATHER": "Padre",
     "LEGAL_GUARDIAN": "Tutor legal"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "empty": "No tienes notificaciones por el momento",
+    "emptyDescription": "Aquí recibirás avisos sobre alertas de crecimiento y recordatorios.",
+    "loading": "Cargando notificaciones...",
+    "errorLoading": "No se pudieron cargar las notificaciones",
+    "unreadBadge": "No leída",
+    "retry": "Reintentar",
+    "types": {
+      "alert_new": "Nueva alerta de crecimiento",
+      "alert_pending_review": "Alerta pendiente de revisión",
+      "alert_overdue": "Alerta vencida sin revisar"
+    }
   }
 }

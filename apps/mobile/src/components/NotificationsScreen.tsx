@@ -1,0 +1,330 @@
+import { Ionicons } from '@expo/vector-icons';
+import type { NotificationResponse } from '@nutrikids/shared';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { PALETTE } from '../constants/colors.js';
+import { useNotifications } from '../hooks/useNotifications.js';
+import { formatShortDate } from '../i18n/format.js';
+
+export function NotificationsScreen() {
+  const { t } = useTranslation('common');
+  const router = useRouter();
+  const { notifications, loading, refreshing, error, refresh, reload, markAsRead } =
+    useNotifications();
+
+  // Recarga notificaciones al enfocar o volver a la pantalla (NK-36)
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/' as never);
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    if (type === 'alert_overdue') {
+      return { name: 'time' as const, color: PALETTE.feedback.error, bg: PALETTE.feedback.errorBg };
+    }
+    if (type === 'alert_new' || type === 'alert_pending_review') {
+      return { name: 'warning' as const, color: PALETTE.secondary, bg: PALETTE.secondaryLight };
+    }
+    return { name: 'notifications' as const, color: PALETTE.primary, bg: PALETTE.primaryLight };
+  };
+
+  const formatNotificationTime = (isoString: string) => {
+    try {
+      const date = new Date(isoString);
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${formatShortDate(date)}, ${hours}:${minutes}`;
+    } catch {
+      return isoString;
+    }
+  };
+
+  const renderItem = ({ item }: { item: NotificationResponse }) => {
+    const isUnread = !item.readAt;
+    const icon = getNotificationIcon(item.type);
+    const typeLabel = t(`notifications.types.${item.type}`, {
+      defaultValue: item.type,
+    });
+
+    return (
+      <Pressable
+        style={({ pressed }) => [
+          styles.notificationCard,
+          isUnread && styles.notificationCardUnread,
+          pressed && styles.cardPressed,
+        ]}
+        onPress={() => {
+          if (isUnread) {
+            void markAsRead(item.id);
+          }
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`${typeLabel}${isUnread ? ` - ${t('notifications.unreadBadge')}` : ''}`}
+        testID={`notification-item-${item.id}`}
+      >
+        <View style={[styles.iconContainer, { backgroundColor: icon.bg }]}>
+          <Ionicons name={icon.name} size={22} color={icon.color} />
+        </View>
+
+        <View style={styles.contentContainer}>
+          <View style={styles.cardHeader}>
+            <Text style={[styles.typeTitle, isUnread && styles.typeTitleUnread]}>{typeLabel}</Text>
+            {isUnread && (
+              <View
+                style={styles.unreadDot}
+                testID={`notification-unread-dot-${item.id}`}
+                accessibilityLabel={t('notifications.unreadBadge')}
+              />
+            )}
+          </View>
+
+          <Text style={styles.timestampText}>{formatNotificationTime(item.sentAt)}</Text>
+        </View>
+      </Pressable>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      {/* Boton superior Volver */}
+      <View style={styles.topBar}>
+        <Pressable
+          style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
+          onPress={handleBack}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('actions.goBack')}
+          testID="notifications-back-button"
+        >
+          <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
+          <Text style={styles.backButtonText}>{t('actions.back')}</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.header}>
+        <Text style={styles.screenTitle}>{t('notifications.title')}</Text>
+      </View>
+
+      {loading && !refreshing ? (
+        <View style={styles.centerContainer} testID="notifications-loading">
+          <ActivityIndicator size="large" color={PALETTE.primary} />
+          <Text style={styles.loadingText}>{t('notifications.loading')}</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.centerContainer} testID="notifications-error">
+          <Ionicons name="alert-circle" size={48} color={PALETTE.feedback.error} />
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable
+            style={({ pressed }) => [styles.retryButton, pressed && styles.buttonPressed]}
+            onPress={() => void reload()}
+            accessibilityRole="button"
+          >
+            <Text style={styles.retryButtonText}>{t('notifications.retry')}</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <FlatList
+          data={notifications}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={
+            notifications.length === 0 ? styles.emptyListContainer : styles.listContent
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => void refresh()}
+              colors={[PALETTE.primary]}
+              tintColor={PALETTE.primary}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer} testID="notifications-empty">
+              <View style={styles.emptyIconCircle}>
+                <Ionicons name="notifications-outline" size={44} color={PALETTE.text.muted} />
+              </View>
+              <Text style={styles.emptyTitle}>{t('notifications.empty')}</Text>
+              <Text style={styles.emptySubtitle}>{t('notifications.emptyDescription')}</Text>
+            </View>
+          }
+        />
+      )}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: PALETTE.background,
+  },
+  topBar: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+  },
+  buttonPressed: {
+    opacity: 0.75,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  screenTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: PALETTE.text.title,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    gap: 12,
+  },
+  emptyListContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  notificationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: PALETTE.surface,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: PALETTE.border.default,
+    gap: 14,
+  },
+  notificationCardUnread: {
+    borderColor: PALETTE.primary,
+    backgroundColor: '#FAFCFC',
+  },
+  cardPressed: {
+    opacity: 0.8,
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contentContainer: {
+    flex: 1,
+    gap: 4,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  typeTitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: PALETTE.text.body,
+    flex: 1,
+  },
+  typeTitleUnread: {
+    fontWeight: '700',
+    color: PALETTE.text.title,
+  },
+  unreadDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: PALETTE.primary,
+    marginLeft: 8,
+  },
+  timestampText: {
+    fontSize: 13,
+    color: PALETTE.text.muted,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 15,
+    color: PALETTE.text.muted,
+  },
+  errorText: {
+    fontSize: 15,
+    color: PALETTE.feedback.error,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: PALETTE.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  retryButtonText: {
+    color: PALETTE.text.light,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: PALETTE.border.subtle,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: PALETTE.text.muted,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+});

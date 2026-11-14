@@ -35,7 +35,7 @@ nutrikids-app/
 
 ## Prerequisites
 
-- **Node.js** `>= 22.0.0`
+- **Node.js** `>= 22.12.0`
 - **pnpm** `>= 10.0.0`
 - **Docker Desktop** (running, to spin up PostgreSQL)
 - **Expo Go** on your physical device (optional)
@@ -342,3 +342,60 @@ The navigation guard in `apps/mobile/src/app/_layout.tsx` inspects auth status a
 - **Password Recovery (`apps/mobile/src/app/(auth)/forgot-password.tsx` and `reset-password.tsx`):**
   - Request form taking email (`POST /auth/forgot-password`).
   - Reset form taking reset token and new password (`POST /auth/reset-password`).
+
+## Push Notifications (Android / FCM / EAS — NK-36)
+
+The application supports real-time push alerts and in-app notifications for health professionals upon risk detection or overdue reviews (RF-13, RT-09). Detailed architecture is available in [docs/notifications.md](docs/notifications.md).
+
+### 1. Requirements for Real Android Push (Expo Go Limitations)
+
+Starting with Expo SDK 53+, remote push notifications on Android via Firebase Cloud Messaging (FCM) are **not supported in standard Expo Go**. To test and receive remote push notifications on physical devices:
+
+- A **Development Build** (`expo-dev-client`) or production APK/AAB is required.
+- Emulators and simulators cannot receive native remote push notifications (`Device.isDevice === false`).
+- Web runtime safely bypasses push registration (`Platform.OS === 'web'`).
+
+### 2. Generating Android Development Build
+
+```bash
+# 1. Install EAS CLI globally
+pnpm add -g eas-cli
+
+# 2. Log in with your Expo account
+eas login
+
+# 3. Ensure dependencies are installed (expo-dev-client is included in apps/mobile/package.json)
+pnpm install
+
+# 4. Initialize EAS project (sets expo.extra.eas.projectId in app.json)
+cd apps/mobile
+eas init
+
+# 5. Configure build profiles (generates eas.json)
+eas build:configure
+
+# 6. Verify that eas.json contains "developmentClient": true and "distribution": "internal"
+#    under the "development" build profile:
+#    "development": {
+#      "developmentClient": true,
+#      "distribution": "internal"
+#    }
+
+# 7. Create development build
+eas build --profile development --platform android
+```
+
+### 3. Firebase Cloud Messaging (FCM v1) Setup
+
+1. **Firebase Console:** Create a Firebase project and add an Android application with package name `com.nutrikids.app`.
+2. **Configuration File:** Download `google-services.json` and place it in `apps/mobile/google-services.json`.
+3. **App Manifest:** In `apps/mobile/app.json`, enable the Google Services configuration under `"android"`:
+   ```json
+   "android": {
+     "package": "com.nutrikids.app",
+     "googleServicesFile": "./google-services.json"
+   }
+   ```
+   > Note: Do not add `googleServicesFile` to `app.json` before placing the physical file in `apps/mobile/`, otherwise builds will fail.
+4. **Service Account Credentials:** In Google Cloud Console, generate a service account private key (JSON) with the **Firebase Cloud Messaging API (V1)** role.
+5. **Upload to EAS:** Run `eas credentials` and configure the Google Service Account Key for FCM v1 under Android build credentials.

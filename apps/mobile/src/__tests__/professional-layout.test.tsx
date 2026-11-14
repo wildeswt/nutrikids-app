@@ -83,11 +83,11 @@ describe('ProfessionalDrawerLayout', () => {
     return React.Children.toArray(layout.props.children) as DrawerScreenElement[];
   }
 
-  it('configures the 4 required drawer screens with alerts inbox as first screen', () => {
+  it('configures the required drawer screens with alerts inbox as first screen', () => {
     const screens = getDrawerScreens();
     const screenNames = screens.map((s) => s.props.name);
 
-    expect(screenNames).toEqual(['index', 'children', 'messages', 'profile']);
+    expect(screenNames).toEqual(['index', 'children', 'messages', 'profile', 'notifications']);
     expect(screenNames[0]).toBe('index');
   });
 
@@ -102,6 +102,7 @@ describe('ProfessionalDrawerLayout', () => {
     expect(titlesByName['children']).toBe('Pacientes por Riesgo');
     expect(titlesByName['messages']).toBe('Mensajes y Seguimientos');
     expect(titlesByName['profile']).toBe('Perfil Profesional');
+    expect(titlesByName['notifications']).toBe('Notificaciones');
   });
 
   it('renders CustomDrawerContent with professional profile info', () => {

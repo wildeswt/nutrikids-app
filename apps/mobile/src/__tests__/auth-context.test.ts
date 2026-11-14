@@ -1,5 +1,6 @@
 import { USER_ROLES } from '@nutrikids/shared';
 import React, { act, useEffect } from 'react';
+import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockStore = new Map<string, string>();
@@ -23,6 +24,14 @@ vi.mock('expo-constants', () => ({
 }));
 
 const mockLogoutSessionRequest = vi.fn().mockResolvedValue(undefined);
+const mockRegisterPushNotifications = vi.fn().mockResolvedValue('ExponentPushToken[mock]');
+const mockUnregisterPushNotifications = vi.fn().mockResolvedValue(undefined);
+
+vi.mock('../lib/push-notifications.js', () => ({
+  initPushNotifications: vi.fn(),
+  registerPushNotifications: () => mockRegisterPushNotifications(),
+  unregisterPushNotifications: () => mockUnregisterPushNotifications(),
+}));
 
 vi.mock('../lib/api.js', () => ({
   logoutSessionRequest: (...args: unknown[]) => mockLogoutSessionRequest(...args),
@@ -134,5 +143,81 @@ describe('auth-context', () => {
     const { getStoredSession } = await import('../lib/session-storage.js');
     const stored = await getStoredSession();
     expect(stored).toBeNull();
+  });
+
+  it('registers push token when professional user signs in', async () => {
+    let authContext!: AuthContextValue;
+    function Consumer() {
+      authContext = useAuth();
+      return null;
+    }
+
+    renderToString(React.createElement(AuthProvider, null, React.createElement(Consumer)));
+
+    await act(async () => {
+      await authContext.signIn({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-123',
+        expiresIn: 3600,
+        requiresTwoFactor: false,
+        user: {
+          id: '22222222-2222-4222-8222-222222222222',
+          email: 'prof@nutrikids.local',
+          firstName: 'Juan',
+          lastName: 'Doc',
+          roles: [USER_ROLES.PROFESSIONAL],
+          specialty: 'nutrition',
+        },
+      });
+    });
+
+    expect(mockRegisterPushNotifications).toHaveBeenCalled();
+  });
+
+  it('does NOT register push token when caregiver user signs in', async () => {
+    mockRegisterPushNotifications.mockClear();
+
+    let authContext!: AuthContextValue;
+    function Consumer() {
+      authContext = useAuth();
+      return null;
+    }
+
+    renderToString(React.createElement(AuthProvider, null, React.createElement(Consumer)));
+
+    await act(async () => {
+      await authContext.signIn({
+        accessToken: 'access-123',
+        refreshToken: 'refresh-123',
+        expiresIn: 3600,
+        requiresTwoFactor: false,
+        user: {
+          id: '33333333-3333-4333-8333-333333333333',
+          email: 'caregiver@nutrikids.local',
+          firstName: 'Maria',
+          lastName: 'Mom',
+          roles: [USER_ROLES.CAREGIVER],
+          specialty: null,
+        },
+      });
+    });
+
+    expect(mockRegisterPushNotifications).not.toHaveBeenCalled();
+  });
+
+  it('calls unregisterPushNotifications during signOut before session is wiped', async () => {
+    let authContext!: AuthContextValue;
+    function Consumer() {
+      authContext = useAuth();
+      return null;
+    }
+
+    renderToString(React.createElement(AuthProvider, null, React.createElement(Consumer)));
+
+    await act(async () => {
+      await authContext.signOut();
+    });
+
+    expect(mockUnregisterPushNotifications).toHaveBeenCalled();
   });
 });

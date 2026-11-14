@@ -30,5 +30,10 @@
   },
   "children": {
     "create": "Wawata mana killkakatiy usharkanchikchu. Kutin rurapay."
+  },
+  "notifications": {
+    "registerDevice": "Manam willaykunapaq antañikikuta willayta atikurchu.",
+    "unregisterDevice": "Manam antañikikuta anchuchiyta atikurchu.",
+    "markRead": "Manam willayta ñawinchasqa nispa churayta atikurchu."
   }
 }

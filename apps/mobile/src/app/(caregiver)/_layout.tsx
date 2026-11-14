@@ -129,6 +129,16 @@ export default function CaregiverTabsLayout() {
           tabBarButton: () => null,
         }}
       />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: t('tabs.notifications'),
+          headerTitle: t('tabs.notificationsHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
     </Tabs>
   );
 }

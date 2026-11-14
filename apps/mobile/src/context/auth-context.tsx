@@ -9,6 +9,11 @@ import {
   onSessionUpdated,
 } from '../lib/api.js';
 import {
+  initPushNotifications,
+  registerPushNotifications,
+  unregisterPushNotifications,
+} from '../lib/push-notifications.js';
+import {
   clearStoredSession,
   getStoredSession,
   saveStoredSession,
@@ -45,6 +50,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     let isMounted = true;
 
+    initPushNotifications();
+
     async function initializeSession() {
       try {
         const stored = await getStoredSession();
@@ -53,6 +60,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (stored) {
           setSession(stored);
           setStatus(AUTH_STATUS.AUTHENTICATED);
+          if (stored.user.roles.includes(USER_ROLES.PROFESSIONAL)) {
+            void registerPushNotifications().catch((err) => {
+              console.warn('Could not register push notifications on session restore:', err);
+            });
+          }
         } else {
           setSession(null);
           setStatus(AUTH_STATUS.UNAUTHENTICATED);
@@ -125,11 +137,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setSession(newSession);
       setRefreshError(null);
       setStatus(AUTH_STATUS.AUTHENTICATED);
+
+      if (authResponse.user.roles.includes(USER_ROLES.PROFESSIONAL)) {
+        void registerPushNotifications().catch((err) => {
+          console.warn('Could not register push notifications on signIn:', err);
+        });
+      }
     },
     [],
   );
 
   const signOut = useCallback(async (): Promise<void> => {
+    // 1. Unregister push device token before clearing the session, while authFetch is still authenticated.
+    try {
+      await unregisterPushNotifications();
+    } catch (pushErr) {
+      console.warn('Could not unregister push device during signOut:', pushErr);
+    }
+
+    // 2. Revoke refresh token and clear storage.
     try {
       // Read latest persisted session directly to guarantee using the most recent rotated token.
       const latestSession = await getStoredSession();
