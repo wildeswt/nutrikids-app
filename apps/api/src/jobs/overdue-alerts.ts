@@ -2,6 +2,7 @@ import { env } from '../config/env.js';
 import { processOverdueAlerts } from '../services/notifications.service.js';
 
 let isRunning = false;
+let initialJobTimer: NodeJS.Timeout | null = null;
 let overdueAlertsTimer: NodeJS.Timeout | null = null;
 
 /**
@@ -31,12 +32,18 @@ export async function runOverdueAlertsJob(): Promise<{ processed: number } | nul
 
 /**
  * Inicia las tareas en segundo plano del servidor (NK-36, extensible para NK-37).
- * Utiliza un temporizador con .unref() para no bloquear la terminacion del proceso Node.
+ * Programa una pasada inicial diferida (30s tras arranque) y ejecuciones periodicas con .unref().
  */
 export function startBackgroundJobs(): void {
   if (overdueAlertsTimer) return;
 
   const intervalMs = env.OVERDUE_ALERTS_INTERVAL_MINUTES * 60 * 1000;
+
+  initialJobTimer = setTimeout(() => {
+    initialJobTimer = null;
+    void runOverdueAlertsJob();
+  }, 30 * 1000);
+  initialJobTimer.unref();
 
   overdueAlertsTimer = setInterval(() => {
     void runOverdueAlertsJob();
@@ -53,6 +60,10 @@ export function startBackgroundJobs(): void {
  * Detiene las tareas en segundo plano del servidor durante el apagado ordenado (shutdown).
  */
 export function stopBackgroundJobs(): void {
+  if (initialJobTimer) {
+    clearTimeout(initialJobTimer);
+    initialJobTimer = null;
+  }
   if (overdueAlertsTimer) {
     clearInterval(overdueAlertsTimer);
     overdueAlertsTimer = null;
