@@ -23,6 +23,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 
 interface PatientOption {
   id: string;
@@ -58,6 +59,7 @@ function parseDecimalInput(raw: string): number {
 
 export default function AddCheckupScreen() {
   const router = useRouter();
+  const keyboardInset = useKeyboardBottomInset();
 
   const [selectedPatientIndex, setSelectedPatientIndex] = useState(0);
   const [measuredDateText, setMeasuredDateText] = useState('18 de octubre de 2026');
@@ -143,8 +145,12 @@ export default function AddCheckupScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: keyboardInset > 0 ? keyboardInset + 36 : 36 },
+          ]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           {/* Botón superior: <- Volver */}
