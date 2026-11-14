@@ -202,23 +202,28 @@
     "chartSubtitle": "Comparado con lo esperado por la OMS",
     "indicators": {
       "PE": {
+        "code": "P/E",
         "short": "Peso",
         "name": "¿Su peso va bien para su edad?"
       },
       "TE": {
+        "code": "T/E",
         "short": "Estatura",
         "name": "¿Su estatura va bien para su edad?"
       },
       "PT": {
+        "code": "P/T",
         "short": "Peso/Estatura",
         "name": "¿Su peso va bien para su estatura?"
       },
       "IMCE": {
+        "code": "IMC/E",
         "short": "IMC",
         "name": "¿Su IMC (peso y estatura juntos) va bien para su edad?"
       }
     },
     "legendReference": "Lo esperado (OMS)",
+    "lastRecordTitle": "Último control",
     "lastRecord": "Último control - {{date}}",
     "weight": "Peso",
     "height": "Estatura",
@@ -236,7 +241,15 @@
       "CAREGIVER": "Tú",
       "PROFESSIONAL": "Equipo de salud"
     },
-    "chartLoading": "Cargando la gráfica..."
+    "chartLoading": "Cargando la gráfica...",
+    "infoModal": {
+      "title": "¿Qué muestra esta gráfica?",
+      "whoBandTitle": "Banda verde: lo esperado (OMS)",
+      "whoBand": "Muestra el rango esperado por la Organización Mundial de la Salud según la edad o estatura. Las líneas punteadas marcan los bordes superior e inferior.",
+      "childLineTitle": "Línea naranja: tu niño",
+      "childLine": "Cada punto es un control registrado y la línea muestra cómo va cambiando con el tiempo.",
+      "close": "Entendido"
+    }
   },
   "messages": {
     "back": "Volver",

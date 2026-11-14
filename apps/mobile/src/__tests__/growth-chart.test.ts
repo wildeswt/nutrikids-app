@@ -13,6 +13,7 @@ import {
   interpolateAt,
   latestCheckup,
   projectPoint,
+  toDashedSegments,
   toSegments,
 } from '../lib/growth-chart.js';
 
@@ -187,6 +188,24 @@ describe('growth-chart domain and projection', () => {
     expect(flat).toEqual({ centerX: 5, centerY: 10, length: 10, angle: 0 });
     expect(diagonal).toEqual({ centerX: 10, centerY: 15, length: 10, angle: 90 });
     expect(toSegments([{ left: 0, top: 0 }])).toEqual([]);
+  });
+
+  it('builds dashed segments with gaps along a polyline', () => {
+    const dashes = toDashedSegments(
+      [
+        { left: 0, top: 10 },
+        { left: 20, top: 10 },
+      ],
+      5,
+      4,
+    );
+
+    expect(dashes).toEqual([
+      { centerX: 2.5, centerY: 10, length: 5, angle: 0 },
+      { centerX: 11.5, centerY: 10, length: 5, angle: 0 },
+      { centerX: 19, centerY: 10, length: 2, angle: 0 },
+    ]);
+    expect(toDashedSegments([{ left: 0, top: 0 }])).toEqual([]);
   });
 
   it('creates evenly spaced rounded axis ticks', () => {

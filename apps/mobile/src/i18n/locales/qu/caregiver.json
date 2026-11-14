@@ -202,23 +202,28 @@
     "chartSubtitle": "OMS-pak shuyashkawan chimpapurashka",
     "indicators": {
       "PE": {
+        "code": "P/E",
         "short": "Llasay",
         "name": "¿Paypak llasayka watakunapak allichu kan?"
       },
       "TE": {
+        "code": "T/E",
         "short": "Hatunkay",
         "name": "¿Paypak hatunkayka watakunapak allichu kan?"
       },
       "PT": {
+        "code": "P/T",
         "short": "Llasay/Hatunkay",
         "name": "¿Paypak llasayka hatunkaypak allichu kan?"
       },
       "IMCE": {
+        "code": "IMC/E",
         "short": "IMC",
         "name": "¿Paypak IMC (llasaypash hatunkaypash) watakunapak allichu kan?"
       }
     },
     "legendReference": "Shuyashka (OMS)",
+    "lastRecordTitle": "Último control",
     "lastRecord": "Kipa kamay - {{date}}",
     "weight": "Llasay",
     "height": "Hatunkay",
@@ -236,7 +241,15 @@
       "CAREGIVER": "Kikin",
       "PROFESSIONAL": "Hampik tantanakuy"
     },
-    "chartLoading": "Rikuchikka shamukun..."
+    "chartLoading": "Rikuchikka shamukun...",
+    "infoModal": {
+      "title": "¿Qué muestra esta gráfica?",
+      "whoBandTitle": "Banda verde: lo esperado (OMS)",
+      "whoBand": "Muestra el rango esperado por la Organización Mundial de la Salud según la edad o estatura. Las líneas punteadas marcan los bordes superior e inferior.",
+      "childLineTitle": "Línea naranja: tu niño",
+      "childLine": "Cada punto es un control registrado y la línea muestra cómo va cambiando con el tiempo.",
+      "close": "Entendido"
+    }
   },
   "messages": {
     "back": "Tikray",

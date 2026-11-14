@@ -2,12 +2,14 @@ import type { CurvePoint, ReferenceCurvesResponse } from '@nutrikids/shared';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { PALETTE } from '../constants/colors.js';
+import { font } from '../constants/typography.js';
 import {
   axisTicks,
   clipSeries,
   computeDomain,
   downsample,
   projectPoint,
+  toDashedSegments,
   toSegments,
   type ChartDomain,
   type IndicatorInfo,
@@ -114,8 +116,18 @@ export function GrowthChart({ curves, points, xAxis, formatTick, testID }: Growt
           );
         })}
 
-        <Line segments={toSegments(upperPixels)} thickness={1.5} color={REFERENCE_COLOR} />
-        <Line segments={toSegments(lowerPixels)} thickness={1.5} color={REFERENCE_COLOR} />
+        <Line
+          segments={toDashedSegments(upperPixels)}
+          thickness={1.5}
+          color={REFERENCE_COLOR}
+          testID="growth-chart-upper-bound"
+        />
+        <Line
+          segments={toDashedSegments(lowerPixels)}
+          thickness={1.5}
+          color={REFERENCE_COLOR}
+          testID="growth-chart-lower-bound"
+        />
         <Line
           segments={toSegments(median.map(project))}
           thickness={2}
@@ -155,9 +167,6 @@ const styles = StyleSheet.create({
   plot: {
     height: PLOT_HEIGHT,
     marginHorizontal: DOT_SIZE / 2,
-    borderLeftWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#E5E7EB',
   },
   dot: {
     position: 'absolute',
@@ -178,6 +187,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   xAxisLabel: {
+    fontFamily: font('medium'),
     fontSize: 11,
     color: PALETTE.text.muted,
     fontWeight: '500',

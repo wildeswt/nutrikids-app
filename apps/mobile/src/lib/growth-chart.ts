@@ -213,6 +213,52 @@ export function toSegments(points: readonly PixelPoint[]): LineSegment[] {
   return segments;
 }
 
+/** Dashed segments along a polyline with consistent dash and gap lengths in pixels. */
+export function toDashedSegments(
+  points: readonly PixelPoint[],
+  dashLength = 5,
+  gapLength = 4,
+): LineSegment[] {
+  const segments: LineSegment[] = [];
+  const cycle = dashLength + gapLength;
+  let phase = 0;
+
+  for (let i = 1; i < points.length; i += 1) {
+    const from = points[i - 1]!;
+    const to = points[i]!;
+    const dx = to.left - from.left;
+    const dy = to.top - from.top;
+    const segLen = Math.hypot(dx, dy);
+    if (segLen === 0) continue;
+
+    const ux = dx / segLen;
+    const uy = dy / segLen;
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+    let pos = 0;
+
+    while (pos < segLen) {
+      if (phase < dashLength) {
+        const step = Math.min(dashLength - phase, segLen - pos);
+        const mid = pos + step / 2;
+        segments.push({
+          centerX: from.left + ux * mid,
+          centerY: from.top + uy * mid,
+          length: step,
+          angle,
+        });
+        pos += step;
+        phase = (phase + step) % cycle;
+      } else {
+        const step = Math.min(cycle - phase, segLen - pos);
+        pos += step;
+        phase = (phase + step) % cycle;
+      }
+    }
+  }
+
+  return segments;
+}
+
 /** Evenly spaced X axis values (rounded) for the labels below the plot. */
 export function axisTicks(domain: ChartDomain, count = 3): number[] {
   return Array.from({ length: count }, (_, index) =>

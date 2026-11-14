@@ -1,4 +1,5 @@
 import React from 'react';
+import type * as ReactTypes from 'react';
 import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_ROUTES } from '../constants/routes.js';
@@ -55,6 +56,42 @@ const CURVES = {
     '+3': series(12, 0.24),
   },
 };
+
+const hookStore = vi.hoisted(() => ({
+  enabled: false,
+  states: [] as unknown[],
+  cursor: 0,
+  reset() {
+    this.enabled = false;
+    this.states = [];
+    this.cursor = 0;
+  },
+  rewind() {
+    this.cursor = 0;
+  },
+}));
+
+vi.mock('react', async (importOriginal) => {
+  const actual = await importOriginal<typeof ReactTypes>();
+  return {
+    ...actual,
+    useState<T>(initial: T | (() => T)) {
+      if (!hookStore.enabled) {
+        return actual.useState(initial);
+      }
+      const idx = hookStore.cursor++;
+      if (!(idx in hookStore.states)) {
+        hookStore.states[idx] = typeof initial === 'function' ? (initial as () => T)() : initial;
+      }
+      const setState = (updater: T | ((prev: T) => T)) => {
+        const prev = hookStore.states[idx] as T;
+        hookStore.states[idx] =
+          typeof updater === 'function' ? (updater as (prev: T) => T)(prev) : updater;
+      };
+      return [hookStore.states[idx] as T, setState] as const;
+    },
+  };
+});
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
@@ -165,7 +202,17 @@ function findElementByTestId(node: unknown, testId: string): ElementWithProps | 
   return findElementByTestId(element.props?.children, testId);
 }
 
+function textContent(node: unknown): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(textContent).join('');
+  if (node && typeof node === 'object') {
+    return textContent((node as ElementWithProps).props?.children);
+  }
+  return '';
+}
+
 function renderTree(Screen: () => unknown): unknown {
+  hookStore.rewind();
   let tree: unknown = null;
   function Wrapper() {
     tree = Screen();
@@ -181,10 +228,14 @@ function press(tree: unknown, testId: string) {
   onPress!();
 }
 
-const render = (Screen: () => React.ReactNode) => renderToString(React.createElement(Screen));
+const render = (Screen: () => React.ReactNode) => {
+  hookStore.rewind();
+  return renderToString(React.createElement(Screen));
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
+  hookStore.reset();
   mocks.params = {};
   mocks.children = { status: 'ready', children: [MATEO], error: null };
   mocks.checkups = { status: 'ready', checkups: CHECKUPS, error: null, saving: false };
@@ -315,26 +366,48 @@ describe('CheckupSavedScreen («¡Control guardado!»)', () => {
 });
 
 describe('EvolutionScreen («Cómo crece»)', () => {
-  it('shows the last real checkup and the 4 indicators', () => {
+  it('shows the last real checkup card with date, measurements, origin and the 4 indicator codes', () => {
     const html = render(EvolutionScreen);
+    const tree = renderTree(EvolutionScreen as () => unknown);
 
     expect(html).toContain(i18n.t('caregiver:evolution.title', { name: 'Mateo' }));
+    expect(html).toContain(i18n.t('caregiver:evolution.lastRecordTitle'));
     expect(html).toContain('14,6 kg');
     expect(html).toContain('96,2 cm');
     expect(html).toContain('10 de noviembre de 2026');
+    expect(html).toContain(i18n.t('caregiver:evolution.recordedBy'));
+    expect(html).toContain(i18n.t('caregiver:evolution.origin.CAREGIVER'));
     expect(html).not.toContain('13,8 kg');
     expect(html).not.toContain('Dra. Ana Juarez');
+    expect(html).not.toContain('Tendencia');
+
+    const lastCard = findElementByTestId(tree, 'evolution-last-record-card');
+    expect(lastCard).not.toBeNull();
+    expect(textContent(lastCard)).toContain('14,6 kg');
+    expect(textContent(lastCard)).toContain('96,2 cm');
+    expect(textContent(lastCard)).toContain('10 de noviembre de 2026');
+    expect(textContent(lastCard)).toContain(i18n.t('caregiver:evolution.origin.CAREGIVER'));
+
     for (const key of ['PE', 'TE', 'PT', 'IMCE'] as const) {
-      expect(html).toContain(i18n.t(`caregiver:evolution.indicators.${key}.short`));
+      const tab = findElementByTestId(tree, `evolution-indicator-${key}`);
+      expect(tab).not.toBeNull();
+      expect(textContent(tab)).toBe(i18n.t(`caregiver:evolution.indicators.${key}.code`));
+      expect(tab?.props?.['accessibilityLabel']).toBe(
+        i18n.t(`caregiver:evolution.indicators.${key}.name`),
+      );
     }
   });
 
-  it('draws one point per real checkup, positioned by its data', () => {
+  it('draws one point per real checkup, dashed WHO bounds and no axis borders', () => {
     const html = render(EvolutionScreen);
 
     expect(html.match(/data-testid="growth-chart-point"/g)).toHaveLength(CHECKUPS.length);
     expect(html).toContain('data-testid="growth-chart-band"');
     expect(html).toContain('data-testid="growth-chart-median"');
+    expect(html).toContain('data-testid="growth-chart-upper-bound"');
+    expect(html).toContain('data-testid="growth-chart-lower-bound"');
+    expect(html).not.toContain('border-left-width:1px');
+    expect(html).not.toContain('border-bottom-width:1px');
 
     // The latest point sits to the right of and above the oldest one.
     const positions = [...html.matchAll(/style="([^"]*)" data-testid="growth-chart-point"/g)].map(
@@ -351,6 +424,25 @@ describe('EvolutionScreen («Cómo crece»)', () => {
     ];
     expect(latest.left).toBeGreaterThan(oldest.left);
     expect(latest.top).toBeLessThan(oldest.top);
+  });
+
+  it('opens the WHO chart info modal when pressing (i) and closes it on «Entendido»', () => {
+    hookStore.enabled = true;
+    let tree = renderTree(EvolutionScreen as () => unknown);
+
+    expect(findElementByTestId(tree, 'evolution-chart-info-modal')?.props?.['visible']).toBe(false);
+
+    press(tree, 'evolution-chart-info-button');
+    tree = renderTree(EvolutionScreen as () => unknown);
+
+    const modal = findElementByTestId(tree, 'evolution-chart-info-modal');
+    expect(modal?.props?.['visible']).toBe(true);
+    expect(textContent(modal)).toContain(i18n.t('caregiver:evolution.infoModal.whoBand'));
+    expect(textContent(modal)).toContain(i18n.t('caregiver:evolution.infoModal.childLine'));
+
+    press(tree, 'evolution-chart-info-close');
+    tree = renderTree(EvolutionScreen as () => unknown);
+    expect(findElementByTestId(tree, 'evolution-chart-info-modal')?.props?.['visible']).toBe(false);
   });
 
   it('requests the curves of the child sex and indicator (position only for P/T)', () => {
