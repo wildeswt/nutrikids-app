@@ -1,5 +1,5 @@
 import type { ChildResponse, CreateChildInput } from '@nutrikids/shared';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { createChild, fetchCaregiverChildren } from '../lib/children-api.js';
 
 export type ChildrenStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
@@ -17,8 +17,12 @@ export function useChildren() {
     error: null,
   });
 
-  const load = useCallback(async () => {
-    setState((prev) => ({ ...prev, status: 'loading', error: null }));
+  const load = useCallback(async (): Promise<ChildResponse[]> => {
+    setState((prev) => ({
+      ...prev,
+      status: prev.children.length === 0 ? 'loading' : prev.status,
+      error: null,
+    }));
 
     try {
       const children = await fetchCaregiverChildren();
@@ -27,12 +31,16 @@ export function useChildren() {
       } else {
         setState({ status: 'ready', children, error: null });
       }
+      return children;
     } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Error desconocido al cargar la lista de niños';
       setState({
         status: 'error',
         children: [],
-        error: err instanceof Error ? err.message : 'Error desconocido al cargar la lista de niños',
+        error: message,
       });
+      throw err;
     }
   }, []);
 
@@ -56,10 +64,6 @@ export function useChildren() {
       throw err;
     }
   }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   return {
     ...state,
