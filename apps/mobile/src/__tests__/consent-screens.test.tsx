@@ -263,6 +263,20 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       expect(html).toContain(i18n.t('caregiver:profile.consentsDescription'));
     });
 
+    it('enlaza a «Mis datos» y a «Privacidad e historial»', () => {
+      let tree: unknown = null;
+      function Wrapper() {
+        tree = CaregiverProfileScreen();
+        return null;
+      }
+      renderToString(React.createElement(Wrapper));
+
+      const html = renderToString(React.createElement(CaregiverProfileScreen));
+      expect(html).toContain(i18n.t('caregiver:profile.myData'));
+      expect(html).toContain(i18n.t('caregiver:profile.privacy'));
+      expect(tree).toBeTruthy();
+    });
+
     it('ConsentChildItem muestra versión, fecha y botón de revocar en perfil', () => {
       mocks.hookState = {
         ...mocks.hookState,
