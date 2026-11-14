@@ -15,7 +15,8 @@
     "notificationsTitle": "Willaykuna",
     "alertDetailTitle": "Yuyachikkunamanta",
     "followUpTitle": "Seguimiento clínico",
-    "referralTitle": "Interconsulta"
+    "referralTitle": "Interconsulta",
+    "chatTitle": "Conversación"
   },
   "alerts": {
     "title": "Yuyachikkuna",
@@ -63,7 +64,12 @@
   },
   "messages": {
     "title": "Willaykuna, katinakunapash",
-    "description": "Wawa kamakkunawan rimanakuy, mikuymanta katina yuyaykunatapash killkana."
+    "description": "Wawa kamakkunawan rimanakuy, mikuymanta katina yuyaykunatapash killkana.",
+    "banner": "Conversa con cuidadores y otros profesionales vinculados.",
+    "emergencyNotice": "Este canal no atiende urgencias. Si el niño requiere atención inmediata, acude a un centro de salud.",
+    "emptySubtitle": "Cuando inicies o recibas mensajes sobre un niño vinculado, aparecerán aquí.",
+    "chatTitleFallback": "Conversación",
+    "chatPrivacy": "Solo tú y los participantes vinculados al niño pueden ver esta conversación."
   },
   "profile": {
     "title": "Hampikmanta",

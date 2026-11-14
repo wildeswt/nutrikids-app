@@ -42,6 +42,7 @@ export const APP_ROUTES = {
     REFERRAL: '/(professional)/referral' as const,
     CHILDREN: '/(professional)/children' as const,
     MESSAGES: '/(professional)/messages' as const,
+    CHAT_DETAIL: '/(professional)/chat-detail' as const,
     PROFILE: '/(professional)/profile' as const,
     NOTIFICATIONS: '/(professional)/notifications' as const,
   },
