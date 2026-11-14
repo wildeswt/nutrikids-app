@@ -282,6 +282,7 @@ model FollowUp {
   child                Child               @relation(fields: [childId], references: [id], onDelete: Cascade)
   alert                Alert?              @relation(fields: [alertId], references: [id], onDelete: SetNull)
   professional         Professional        @relation(fields: [professionalId], references: [userId], onDelete: Restrict)
+  reminder             Reminder?
 
   @@index([childId])
   @@index([alertId])
@@ -314,8 +315,10 @@ model Reminder {
   type                 String              @map("type")
   scheduledFor         DateTime            @map("scheduled_for") @db.Timestamptz(3)
   status               String              @default("pending") @map("status")
+  followUpId           String?             @unique @map("follow_up_id") @db.Uuid
 
   child                Child               @relation(fields: [childId], references: [id], onDelete: Cascade)
+  followUp             FollowUp?           @relation(fields: [followUpId], references: [id], onDelete: Cascade)
 
   @@index([childId])
   @@map("reminders")
