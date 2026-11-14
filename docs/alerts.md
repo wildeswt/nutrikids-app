@@ -46,12 +46,16 @@ Every change appends a row to `alert_history` (immutable) with `changedById` and
 
 An alert in `GENERATED` or `PENDING_REVIEW` must be reviewed within:
 
-| Variable                             | Default | Applies to               |
-| ------------------------------------ | :-----: | ------------------------ |
-| `ALERT_REVIEW_DEADLINE_HOURS`        |   72    | normal alerts            |
-| `ALERT_REVIEW_DEADLINE_SEVERE_HOURS` |   24    | severe alerts (`z < −3`) |
+| Variable                             | Default | Applies to                                         |
+| ------------------------------------ | :-----: | -------------------------------------------------- |
+| `ALERT_REVIEW_DEADLINE_HOURS`        |   72    | normal alerts                                      |
+| `ALERT_REVIEW_DEADLINE_SEVERE_HOURS` |   24    | severe alerts (`z < −3`)                           |
+| `OVERDUE_ALERTS_INTERVAL_MINUTES`    |   60    | periodic background job execution interval (NK-36) |
+| `OVERDUE_ALERT_RENOTIFY_HOURS`       |   24    | minimum interval to re-notify same professional    |
 
 Counted from `createdAt`. The API returns `reviewDueAt` and `isOverdue`. Being overdue is only a flag (used by the alerts tray NK-32 and notifications NK-36); it never changes the status.
+
+The server runs a periodic background job (`runOverdueAlertsJob`) managed in `apps/api/src/jobs/overdue-alerts.ts` and initialized on server start (`apps/api/src/index.ts`). It executes the SQL `SECURITY DEFINER` function `find_overdue_alert_recipients(...)`, creating `alert_overdue` notifications and dispatching push notifications without modifying `alerts.status`. Re-notifications to the same professional for the same alert are suppressed within the `OVERDUE_ALERT_RENOTIFY_HOURS` window.
 
 ## 4. Endpoints
 

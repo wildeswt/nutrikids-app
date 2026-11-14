@@ -71,6 +71,10 @@ const EnvSchema = z
     ALERT_REVIEW_DEADLINE_HOURS: z.coerce.number().int().positive().default(72),
     /** Plazo (horas) para alertas de riesgo grave (z < −3). */
     ALERT_REVIEW_DEADLINE_SEVERE_HOURS: z.coerce.number().int().positive().default(24),
+    /** Intervalo (minutos) entre ejecuciones del job de alertas vencidas (NK-36). */
+    OVERDUE_ALERTS_INTERVAL_MINUTES: z.coerce.number().int().positive().default(60),
+    /** Intervalo mínimo (horas) antes de volver a notificar una alerta vencida al mismo profesional (NK-36). */
+    OVERDUE_ALERT_RENOTIFY_HOURS: z.coerce.number().int().positive().default(24),
     ...cutoffEnvShape,
     OVERWEIGHT_CRITERION: z.preprocess(
       (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
@@ -147,6 +151,8 @@ const EnvSchema = z
       CLASSIFICATION_CUTOFFS: Object.freeze(cutoffs) as Readonly<Cutoffs>,
       ALERT_REVIEW_DEADLINE_HOURS: raw.ALERT_REVIEW_DEADLINE_HOURS,
       ALERT_REVIEW_DEADLINE_SEVERE_HOURS: raw.ALERT_REVIEW_DEADLINE_SEVERE_HOURS,
+      OVERDUE_ALERTS_INTERVAL_MINUTES: raw.OVERDUE_ALERTS_INTERVAL_MINUTES,
+      OVERDUE_ALERT_RENOTIFY_HOURS: raw.OVERDUE_ALERT_RENOTIFY_HOURS,
     };
   });
 
