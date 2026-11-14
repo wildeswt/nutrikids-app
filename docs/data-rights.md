@@ -57,3 +57,14 @@ Since the grace period is shorter than the legal deadline, every request is exec
 - Once the links with caregivers are deleted, the completed request can no longer be read through the API (RLS needs a link to the child). The record stays in `erasure_requests` and in the audit log.
 - Anonymised data is not re-identifiable from the database, but a child's checkups still describe a real measurement history. Whether that is enough anonymisation for the law has to be confirmed with legal advice, together with the retention periods in [backups.md](backups.md).
 - A professional's own copy of a child (for example a message sent outside the app) is out of scope.
+
+## Account (NK-55)
+
+The representative can also see and edit their own account data (name, email, contact phone) on the "Mis datos" screen.
+
+| Method and path  | Description                                                                                                                                        | Audit (`action` / `entity_type`)             |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `GET /account`   | Name, email and contact phone (phone only for caregivers).                                                                                         | -                                            |
+| `PATCH /account` | Body (strict, at least one field): `firstName`, `lastName`, `phone` (empty string clears it), `email`. Changing the email needs `currentPassword`. | `UPDATE` / `users` (field names, not values) |
+
+A wrong `currentPassword` answers `403` and a registered email answers `409`; nothing changes in either case. Professionals can edit their name and email too (they have no phone).
