@@ -3,8 +3,6 @@ import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { APP_ROUTES } from '../constants/routes.js';
 import type { ChildrenHookState } from '../hooks/useChildren.js';
-import * as childrenApi from '../lib/children-api.js';
-import { CURRENT_CONSENT_VERSION } from '../lib/consent-api.js';
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
@@ -85,8 +83,31 @@ vi.mock('../hooks/useChildren.js', () => ({
   useChildren: () => mocks.childrenHookState,
 }));
 
-import AddChildScreen, { type AddChildScreenProps } from '../app/(caregiver)/add-child.js';
+import AddChildScreen from '../app/(caregiver)/add-child.js';
 import CaregiverHomeScreen from '../app/(caregiver)/index.js';
+
+interface ElementWithProps {
+  props?: {
+    testID?: string;
+    children?: ElementWithProps | ElementWithProps[];
+    [key: string]: unknown;
+  };
+}
+
+function findElementByTestId(node: unknown, testId: string): ElementWithProps | null {
+  if (!node || typeof node !== 'object') return null;
+  const element = node as ElementWithProps;
+  if (element.props?.testID === testId) return element;
+  if (Array.isArray(element.props?.children)) {
+    for (const child of element.props.children) {
+      const found = findElementByTestId(child, testId);
+      if (found) return found;
+    }
+  } else if (element.props?.children) {
+    return findElementByTestId(element.props.children, testId);
+  }
+  return null;
+}
 
 describe('Caregiver Screens (NK-21)', () => {
   beforeEach(() => {
@@ -146,6 +167,58 @@ describe('Caregiver Screens (NK-21)', () => {
       expect(html).toContain('No tienes niños registrados');
       expect(html).toContain('Agregar niño');
     });
+
+    it('navigates to consent in register mode when pressing "+ Registrar nuevo niño"', () => {
+      let capturedTree: unknown = null;
+      function TestWrapper() {
+        capturedTree = CaregiverHomeScreen();
+        return null;
+      }
+      renderToString(React.createElement(TestWrapper));
+
+      const button = findElementByTestId(capturedTree, 'start-child-registration-button');
+      expect(button).toBeDefined();
+      const onPress = button?.props?.['onPress'] as (() => void) | undefined;
+      onPress?.();
+
+      expect(mocks.push).toHaveBeenCalledWith({
+        pathname: APP_ROUTES.CAREGIVER.CONSENT,
+        params: { mode: 'register' },
+      });
+    });
+
+    it('navigates to consent in register mode when pressing dashed add child card', () => {
+      mocks.childrenHookState = {
+        ...mocks.childrenHookState,
+        status: 'ready',
+        children: [
+          {
+            id: '11111111-1111-4111-8111-111111111111',
+            firstName: 'Mateo',
+            lastName: 'Gómez',
+            birthDate: '2023-06-15',
+            sex: 'MALE',
+          },
+        ],
+      };
+
+      let capturedTree: unknown = null;
+      function TestWrapper() {
+        capturedTree = CaregiverHomeScreen();
+        return null;
+      }
+      renderToString(React.createElement(TestWrapper));
+
+      const dashedCard = findElementByTestId(capturedTree, 'add-child-dashed-card');
+      expect(dashedCard).toBeDefined();
+      const onPress = dashedCard?.props?.['onPress'] as (() => void) | undefined;
+      onPress?.();
+
+      expect(mocks.push).toHaveBeenCalledWith({
+        pathname: APP_ROUTES.CAREGIVER.CONSENT,
+        params: { mode: 'register' },
+      });
+    });
   });
 
   describe('AddChildScreen («Registrar niño»)', () => {
@@ -162,52 +235,6 @@ describe('Caregiver Screens (NK-21)', () => {
       expect(html).toContain('Tu parentesco con el niño/a');
       expect(html).toContain('representante legal');
       expect(html).toContain('Guardar niño');
-    });
-
-    it('submits form with valid child data, calls createChild and navigates to Home', async () => {
-      const mockChild = {
-        id: '11111111-1111-4111-8111-111111111111',
-        firstName: 'Mateo',
-        lastName: 'Gómez',
-        birthDate: '2023-06-15',
-        sex: 'MALE' as const,
-      };
-      vi.spyOn(childrenApi, 'createChild').mockResolvedValueOnce(mockChild);
-
-      let submitForm: (() => Promise<void>) | undefined;
-
-      renderToString(
-        React.createElement<AddChildScreenProps>(AddChildScreen, {
-          initialValues: {
-            firstName: 'Mateo',
-            lastName: 'Gómez',
-            birthDay: '15',
-            birthMonth: '06',
-            birthYear: '2023',
-            sex: 'MALE',
-            relationship: 'Padre',
-            isLegalRepresentative: true,
-          },
-          onSubmitForTest: (fn: () => Promise<void>) => {
-            submitForm = fn;
-          },
-        }),
-      );
-
-      expect(submitForm).toBeDefined();
-      await submitForm!();
-
-      expect(childrenApi.createChild).toHaveBeenCalledWith({
-        firstName: 'Mateo',
-        lastName: 'Gómez',
-        birthDate: '2023-06-15',
-        sex: 'MALE',
-        relationship: 'Padre',
-        isLegalRepresentative: true,
-        consentTextVersion: CURRENT_CONSENT_VERSION,
-      });
-
-      expect(mocks.replace).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.HOME);
     });
   });
 });

@@ -1,7 +1,9 @@
 import type { ConsentResponse } from '@nutrikids/shared';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
+import { Alert } from 'react-native';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { APP_ROUTES } from '../constants/routes.js';
 import type { ConsentStatus } from '../hooks/useConsent.js';
 import type * as ConsentApiModule from '../lib/consent-api.js';
 
@@ -153,6 +155,61 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
 
       // Botón de aceptar consentimiento
       expect(html).toContain('Aceptar consentimiento');
+    });
+
+    it('accepting consent without childId displays alert and clicking "Continuar al registro" redirects to ADD_CHILD', async () => {
+      mocks.searchParams = { mode: 'register' };
+      const alertSpy = vi.spyOn(Alert, 'alert');
+
+      interface ElementWithProps {
+        props?: {
+          testID?: string;
+          children?: ElementWithProps | ElementWithProps[];
+          [key: string]: unknown;
+        };
+      }
+
+      function findElementByTestId(node: unknown, testId: string): ElementWithProps | null {
+        if (!node || typeof node !== 'object') return null;
+        const element = node as ElementWithProps;
+        if (element.props?.testID === testId) return element;
+        if (Array.isArray(element.props?.children)) {
+          for (const child of element.props.children) {
+            const found = findElementByTestId(child, testId);
+            if (found) return found;
+          }
+        } else if (element.props?.children) {
+          return findElementByTestId(element.props.children, testId);
+        }
+        return null;
+      }
+
+      let capturedTree: unknown = null;
+      function TestWrapper() {
+        capturedTree = ConsentScreen();
+        return null;
+      }
+
+      renderToString(React.createElement(TestWrapper));
+
+      const acceptButton = findElementByTestId(capturedTree, 'accept-consent-button');
+      expect(acceptButton).toBeDefined();
+      const onPress = acceptButton?.props?.['onPress'] as (() => void | Promise<void>) | undefined;
+      await onPress?.();
+
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Consentimiento aceptado',
+        expect.stringContaining('v1'),
+        expect.any(Array),
+      );
+
+      const buttons = alertSpy.mock.calls[0]?.[2] as Array<{ text: string; onPress?: () => void }>;
+      expect(buttons).toBeDefined();
+      const continueButton = buttons.find((b) => b.text === 'Continuar al registro');
+      expect(continueButton).toBeDefined();
+
+      continueButton?.onPress?.();
+      expect(mocks.replace).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.ADD_CHILD);
     });
 
     it('muestra versión del texto aceptado y fecha en modo vista con opción de revocar', () => {
