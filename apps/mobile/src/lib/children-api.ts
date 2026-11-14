@@ -61,3 +61,16 @@ export async function createChild(input: CreateChildInput): Promise<ChildRespons
   const rawJson: unknown = await response.json();
   return ChildResponseSchema.parse(rawJson);
 }
+
+/** One linked child (`GET /children/:childId`): name, birth date and sex. */
+export async function fetchChild(childId: string): Promise<ChildResponse> {
+  const response = await authFetch(`/children/${childId}`);
+
+  if (!response.ok) {
+    const payload: unknown = await response.json().catch(() => ({}));
+    throw new Error(parseApiError(payload, i18n.t('errors:children.fetch')).message);
+  }
+
+  const rawJson: unknown = await response.json();
+  return ChildResponseSchema.parse(rawJson);
+}

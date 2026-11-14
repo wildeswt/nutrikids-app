@@ -1,7 +1,9 @@
 import {
   CaregiverCheckupResponseSchema,
+  CheckupResponseSchema,
   CreateCheckupInputSchema,
   type CaregiverCheckupResponse,
+  type CheckupResponse,
   type CreateCheckupInput,
 } from '@nutrikids/shared';
 import { z } from 'zod';
@@ -48,6 +50,22 @@ export async function fetchChildCheckups(childId: string): Promise<CaregiverChec
 
   const rawJson: unknown = await response.json();
   return z.array(CaregiverCheckupResponseSchema).parse(rawJson);
+}
+
+/**
+ * Full checkup history of a child for the professional view, newest first, with the 4 technical
+ * results of each checkup (z-score, percentile, classification). Corrected checkups are included
+ * so an alert raised by one of them can still be located.
+ */
+export async function fetchProfessionalCheckups(childId: string): Promise<CheckupResponse[]> {
+  const response = await authFetch(`/children/${childId}/checkups`);
+
+  if (!response.ok) {
+    throw await toApiError(response, i18n.t('errors:checkups.fetch'));
+  }
+
+  const rawJson: unknown = await response.json();
+  return z.array(CheckupResponseSchema).parse(rawJson);
 }
 
 /**

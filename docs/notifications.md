@@ -141,9 +141,10 @@ The in-app notifications screen (`apps/mobile/src/components/NotificationsScreen
 
 The following functional constraints are explicitly scoped for follow-up tickets:
 
-1. **Tap Action and Cold-Start Push Response (Deferred to NK-33):**
-   - In this stage, tapping an in-app notification marks the item as read on the backend; it does not open the alert detail screen.
-   - Responding to a push notification tap while the app is closed (`Notifications.getLastNotificationResponseAsync()`) and deep-linking into the alert details is deferred to NK-33 (Alert Detail view).
+1. **Tap Action and Cold-Start Push Response (done in NK-33):**
+   - Tapping an in-app notification whose `entityType` is `alert` marks it as read and opens the alert detail (`NotificationsScreen`).
+   - A tapped push is handled by `usePushNavigation` (mounted in the root `NavigationGuard`): `addNotificationResponseReceivedListener` with the app open and `getLastNotificationResponseAsync()` when the push launched the app. The `alertId` comes from the push `data` and is validated as a UUID. The tap waits until the session is authenticated; a user with both roles who is in the caregiver view is switched to the professional one first, and a user without the professional role ignores it.
+   - Opening the alert from a push does not mark the notification as read (only the in-app list does).
 2. **Offline Sign-Out Token State:**
    - If a professional user logs out while the device is offline, `unregisterPushNotifications()` cannot reach the server (`DELETE /notifications/devices/:token`).
    - The device token remains registered in the database until another user signs in on that physical device, or until Expo returns an invalid ticket (`details.error === 'DeviceNotRegistered'`), which the backend cleans up automatically during push dispatch.

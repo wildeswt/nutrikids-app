@@ -63,13 +63,23 @@ describe('CaregiverTabsLayout', () => {
       'consent',
       'add-child',
       'notifications',
+      'reminders',
+      'add-reminder',
       'learn',
       'learn-article',
     ]);
 
     // Auxiliary screens are hidden with `tabBarButton` (not `href: null`, which makes the route
     // unreachable by router.push in expo-router 58).
-    for (const name of ['consent', 'add-child', 'notifications', 'learn', 'learn-article']) {
+    for (const name of [
+      'consent',
+      'add-child',
+      'notifications',
+      'reminders',
+      'add-reminder',
+      'learn',
+      'learn-article',
+    ]) {
       const screen = screens.find((s) => s.props.name === name);
       expect(screen).toBeDefined();
       expect(screen?.props.options?.href).toBeUndefined();
