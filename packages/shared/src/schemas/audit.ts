@@ -5,7 +5,16 @@ import { IsoDateTimeSchema, UuidSchema } from './common.js';
  * Acciones registradas en la auditoría de accesos y modificaciones (NK-21).
  * `DISCREPANCY`: el resultado calculado por el celular difiere del recalculado por el servidor (RT-02).
  */
-export const AuditActionSchema = z.enum(['CREATE', 'READ', 'REVIEW', 'REVOKE', 'DISCREPANCY']);
+export const AuditActionSchema = z.enum([
+  'CREATE',
+  'READ',
+  'REVIEW',
+  'REVOKE',
+  'DISCREPANCY',
+  'UPDATE',
+  'EXPORT',
+  'ERASE',
+]);
 
 /** Detalle estructurado opcional de un evento de auditoría (JSON). */
 export const AuditDetailsSchema = z.record(z.string(), z.unknown());
@@ -19,6 +28,7 @@ export const AuditEntityTypeSchema = z.enum([
   'follow_ups',
   'alerts',
   'consents',
+  'erasure_requests',
 ]);
 
 /** Parámetros internos para registrar auditoría. */
