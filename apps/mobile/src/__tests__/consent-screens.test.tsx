@@ -144,17 +144,24 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       const html = renderToString(React.createElement(ConsentScreen));
 
       // Título y encabezados
-      expect(html).toContain('Consentimiento Informado');
-      expect(html).toContain('Términos y condiciones para el registro del niño');
+      expect(html).toContain('Consentimiento');
+      expect(html).toContain('Antes de registrar a tu hijo o hija necesitamos tu autorización');
 
-      // Texto en lenguaje claro
-      expect(html).toContain('DECLARACIÓN DE CONSENTIMIENTO INFORMADO');
-      expect(html).toContain('Organización Mundial de la Salud (OMS)');
-      expect(html).toContain('Confidencialidad y Seguridad');
-      expect(html).toContain('Derecho de Revocación');
+      // Resumen en lenguaje claro: ¿Qué autorizas?
+      expect(html).toContain('¿Qué autorizas?');
+      expect(html).toContain('Guardar el peso, la talla y la alimentación');
+      expect(html).toContain('estándares de la OMS');
+      expect(html).toContain('equipo de salud asignado');
 
-      // Botón de aceptar consentimiento
-      expect(html).toContain('Aceptar consentimiento');
+      // El texto completo está disponible de forma desplegable
+      expect(html).toContain('Leer el texto completo');
+      expect(html).not.toContain('Versión v1 del texto');
+
+      // Confirmaciones y acciones del representante legal
+      expect(html).toContain('Soy el representante legal');
+      expect(html).toContain('Entiendo que puedo revocar este consentimiento');
+      expect(html).toContain('Acepto y continuar');
+      expect(html).toContain('Ahora no');
     });
 
     it('accepting consent without childId displays alert and clicking "Continuar al registro" redirects to ADD_CHILD', async () => {
