@@ -61,6 +61,43 @@ export function requirePermission(permission: Permission): RequestHandler {
 
 export type ChildIdSource = string | ((req: Request) => unknown);
 
+/** Profile under which the user is linked to a child. */
+export type ChildLink = 'CAREGIVER' | 'PROFESSIONAL';
+
+/**
+ * Resolves the user's link to a child: caregivers via `caregiver_children`, professionals via
+ * an active `professional_children` assignment (today between startDate and endDate).
+ * Returns `null` if there is no link or the child does not exist (indistinguishable).
+ */
+export async function resolveChildLink(
+  auth: AuthContext,
+  childId: string,
+): Promise<ChildLink | null> {
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  return withUser(auth.userId, async (tx) => {
+    if (auth.roles.includes('CAREGIVER')) {
+      const caregiverLink = await tx.caregiverChild.findUnique({
+        where: { caregiverId_childId: { caregiverId: auth.userId, childId } },
+      });
+      if (caregiverLink) return 'CAREGIVER' as const;
+    }
+    if (auth.roles.includes('PROFESSIONAL')) {
+      const professionalLink = await tx.professionalChild.findFirst({
+        where: {
+          childId,
+          professionalId: auth.userId,
+          startDate: { lte: today },
+          OR: [{ endDate: null }, { endDate: { gte: today } }],
+        },
+      });
+      if (professionalLink) return 'PROFESSIONAL' as const;
+    }
+    return null;
+  });
+}
+
 /**
  * Requires link to the child: caregivers only access children they care for,
  * and professionals only access children they attend with an active link
@@ -76,30 +113,7 @@ export function requireLink(source: ChildIdSource = 'childId'): RequestHandler {
       if (!parsed.success) {
         throw HttpError.badRequest('Identificador de niño inválido');
       }
-      const childId = parsed.data;
-      const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
-
-      const link = await withUser(auth.userId, async (tx) => {
-        if (auth.roles.includes('CAREGIVER')) {
-          const caregiverLink = await tx.caregiverChild.findUnique({
-            where: { caregiverId_childId: { caregiverId: auth.userId, childId } },
-          });
-          if (caregiverLink) return 'CAREGIVER' as const;
-        }
-        if (auth.roles.includes('PROFESSIONAL')) {
-          const professionalLink = await tx.professionalChild.findFirst({
-            where: {
-              childId,
-              professionalId: auth.userId,
-              startDate: { lte: today },
-              OR: [{ endDate: null }, { endDate: { gte: today } }],
-            },
-          });
-          if (professionalLink) return 'PROFESSIONAL' as const;
-        }
-        return null;
-      });
+      const link = await resolveChildLink(auth, parsed.data);
 
       if (!link) {
         throw HttpError.forbidden('No tienes acceso a este niño');

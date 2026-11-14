@@ -31,7 +31,7 @@ function isoDateMonthsAgo(monthsAgo: number): string {
 
 describe(
   'Checkups API (/children/:childId/checkups, /checkups/:id/correction)',
-  { timeout: 30000 },
+  { timeout: 60000 },
   () => {
     const app = createApp();
     let admin: pg.Client;

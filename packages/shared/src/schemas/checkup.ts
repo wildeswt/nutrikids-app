@@ -47,7 +47,7 @@ const LengthHeightCmSchema = z
     error: `La longitud o talla debe estar entre ${LENGTH_HEIGHT_MIN_CM} y ${LENGTH_HEIGHT_MAX_CM} cm`,
   });
 
-function validateOutlierConfirmation(
+export function validateOutlierConfirmation(
   value: { weightKg: number; lengthHeightCm: number; confirmOutlier?: boolean | undefined },
   ctx: z.RefinementCtx,
 ) {
@@ -73,7 +73,7 @@ function validateOutlierConfirmation(
  * Resultados que el celular pudo haber calculado sin conexión. Se aceptan para no rechazar
  * el envío, pero el servidor los **ignora** y siempre recalcula (es la fuente de verdad, RF-07).
  */
-const ClientComputedResultsSchema = z
+export const ClientComputedResultsSchema = z
   .array(
     z.looseObject({
       indicator: IndicatorSchema,
@@ -84,7 +84,7 @@ const ClientComputedResultsSchema = z
   )
   .max(4, { error: 'Se esperan como máximo 4 resultados de indicadores' });
 
-const BaseCheckupInputObject = z.strictObject({
+export const BaseCheckupInputObject = z.strictObject({
   /** UUID generado en el cliente para garantizar idempotencia sin conexión. */
   id: UuidSchema,
   measuredAt: IsoDateTimeSchema,
@@ -187,6 +187,7 @@ export const CheckupResponseSchema = z.object({
  */
 export const CaregiverCheckupResponseSchema = z.object(BaseCheckupResponseShape);
 
+export type ClientComputedResult = z.infer<typeof ClientComputedResultsSchema>[number];
 export type CreateCheckupInput = z.infer<typeof CreateCheckupInputSchema>;
 export type CorrectCheckupInput = z.infer<typeof CorrectCheckupInputSchema>;
 export type IndicatorResult = z.infer<typeof IndicatorResultSchema>;

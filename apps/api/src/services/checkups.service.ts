@@ -199,11 +199,49 @@ async function isCheckupCurrent(tx: Prisma.TransactionClient, checkupId: string)
   return correction === null;
 }
 
+/** Checkup write result including the server-side indicator result rows (for internal comparison). */
+export interface CheckupInsertResult extends CheckupWriteResult {
+  results: IndicatorResultRow[];
+}
+
+/**
+ * Returns the already-stored checkup for an idempotent resend, or `null` if none is visible.
+ * A stored checkup with the same id but a different child or correction target is a conflict.
+ */
+async function loadExistingCheckup(
+  tx: Prisma.TransactionClient,
+  params: { id: string; childId: string; correctedCheckupId: string | null; viewer: CheckupViewer },
+): Promise<CheckupInsertResult | null> {
+  const existing = await tx.checkup.findUnique({
+    where: { id: params.id },
+    include: { results: true },
+  });
+  if (!existing) {
+    return null;
+  }
+  if (
+    existing.childId !== params.childId ||
+    existing.correctedCheckupId !== params.correctedCheckupId
+  ) {
+    throw HttpError.conflict('Ya existe un control con ese identificador');
+  }
+  return {
+    checkup: formatCheckupResponse(
+      existing,
+      await isCheckupCurrent(tx, existing.id),
+      params.viewer,
+    ),
+    created: false,
+    results: existing.results,
+  };
+}
+
 /**
  * Inserts checkup and its 4 computed indicator results after validating consent, WHO age, and date.
- * Idempotent by client-generated `id`: resending the same id returns the existing checkup.
+ * Idempotent by client-generated `id`: the insert uses `ON CONFLICT (id) DO NOTHING`, so resending
+ * the same id (even concurrently) never duplicates and returns the existing checkup.
  */
-async function insertCheckup(
+export async function insertCheckup(
   tx: Prisma.TransactionClient,
   params: {
     auth: AuthContext;
@@ -212,21 +250,18 @@ async function insertCheckup(
     input: CreateCheckupInput | CorrectCheckupInput;
     correctedCheckupId: string | null;
   },
-): Promise<CheckupWriteResult> {
+): Promise<CheckupInsertResult> {
   const { auth, viewer, childId, input, correctedCheckupId } = params;
 
-  const existing = await tx.checkup.findUnique({
-    where: { id: input.id },
-    include: { results: true },
+  // Fast path for resends: return the stored checkup even if consent was revoked since then.
+  const existing = await loadExistingCheckup(tx, {
+    id: input.id,
+    childId,
+    correctedCheckupId,
+    viewer,
   });
   if (existing) {
-    if (existing.childId !== childId || existing.correctedCheckupId !== correctedCheckupId) {
-      throw HttpError.conflict('Ya existe un control con ese identificador');
-    }
-    return {
-      checkup: formatCheckupResponse(existing, await isCheckupCurrent(tx, existing.id), viewer),
-      created: false,
-    };
+    return existing;
   }
 
   await assertActiveConsent(tx, childId);
@@ -257,30 +292,51 @@ async function insertCheckup(
     position: input.position,
   });
 
+  let inserted: number;
   try {
-    const created = await tx.checkup.create({
-      data: {
-        id: input.id,
-        childId,
-        measuredAt,
-        weightKg: input.weightKg,
-        lengthHeightCm: input.lengthHeightCm,
-        position: input.position,
-        origin: viewer,
-        recordedById: auth.userId,
-        correctedCheckupId,
-        results: {
-          create: results,
-        },
-      },
-      include: { results: true },
-    });
-    // RF-11: each result with a risk condition raises an alert in this same transaction.
-    await createAlertsForResults(tx, created.results, auth.userId);
-    return { checkup: formatCheckupResponse(created, true, viewer), created: true };
+    inserted = await tx.$executeRaw`
+      INSERT INTO checkups (
+        id, child_id, measured_at, weight_kg, length_height_cm,
+        position, origin, recorded_by_id, corrected_checkup_id
+      ) VALUES (
+        ${input.id}::uuid, ${childId}::uuid, ${measuredAt}, ${input.weightKg}, ${input.lengthHeightCm},
+        ${input.position}::"Position", ${viewer}::"Origin", ${auth.userId}::uuid,
+        ${correctedCheckupId}::uuid
+      )
+      ON CONFLICT (id) DO NOTHING`;
   } catch (err) {
     return mapCheckupDbError(err);
   }
+
+  if (inserted === 0) {
+    // Lost a race with a concurrent resend of the same id (or the id belongs to a checkup this
+    // user cannot see): never duplicate, return the stored one or report the conflict.
+    const stored = await loadExistingCheckup(tx, {
+      id: input.id,
+      childId,
+      correctedCheckupId,
+      viewer,
+    });
+    if (!stored) {
+      throw HttpError.conflict('Ya existe un control con ese identificador');
+    }
+    return stored;
+  }
+
+  await tx.indicatorResult.createMany({
+    data: results.map((r) => ({ ...r, checkupId: input.id })),
+  });
+  const created = await tx.checkup.findUniqueOrThrow({
+    where: { id: input.id },
+    include: { results: true },
+  });
+  // RF-11: each result with a risk condition raises an alert in this same transaction.
+  await createAlertsForResults(tx, created.results, auth.userId);
+  return {
+    checkup: formatCheckupResponse(created, true, viewer),
+    created: true,
+    results: created.results,
+  };
 }
 
 /** Records a new checkup for a child (RF-04, RF-05). */
@@ -290,9 +346,10 @@ export async function createCheckup(
   childId: string,
   input: CreateCheckupInput,
 ): Promise<CheckupWriteResult> {
-  return withUser(auth.userId, (tx) =>
+  const { checkup, created } = await withUser(auth.userId, (tx) =>
     insertCheckup(tx, { auth, viewer, childId, input, correctedCheckupId: null }),
   );
+  return { checkup, created };
 }
 
 /**
@@ -356,13 +413,14 @@ export async function correctCheckup(
       throw HttpError.conflict('Este control ya fue corregido; corrige el control vigente');
     }
 
-    return insertCheckup(tx, {
+    const { checkup, created } = await insertCheckup(tx, {
       auth,
       viewer,
       childId: original.childId,
       input,
       correctedCheckupId: checkupId,
     });
+    return { checkup, created };
   });
 }
 

@@ -10,6 +10,7 @@ import { createCheckupsRouter } from './routes/checkups.routes.js';
 import { createChildrenRouter } from './routes/children.routes.js';
 import { healthRouter } from './routes/health.routes.js';
 import { referenceRouter } from './routes/reference.routes.js';
+import { createSyncRouter } from './routes/sync.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -29,6 +30,7 @@ export function createApp(): Express {
   app.use('/reference', referenceRouter);
   app.use('/audit', createAuditRouter());
   app.use('/alerts', createAlertsRouter());
+  app.use('/sync', createSyncRouter());
 
   app.use(notFoundHandler);
   app.use(errorHandler);

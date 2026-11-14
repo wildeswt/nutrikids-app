@@ -1,5 +1,6 @@
 import type {
   AuditAction,
+  AuditDetails,
   AuditEntityType,
   AuditListResponse,
   AuditLogResponse,
@@ -14,6 +15,8 @@ export interface AuditParams {
   action: AuditAction;
   entityType: AuditEntityType;
   entityId?: string | null;
+  /** Contexto estructurado opcional (p. ej. valores en discrepancia al sincronizar, RT-02). */
+  details?: AuditDetails | null;
 }
 
 export function formatAuditLogResponse(row: {
@@ -22,6 +25,7 @@ export function formatAuditLogResponse(row: {
   action: string;
   entityType: string;
   entityId: string | null;
+  details?: unknown;
   occurredAt: Date;
 }): AuditLogResponse {
   return {
@@ -30,6 +34,7 @@ export function formatAuditLogResponse(row: {
     action: row.action as AuditAction,
     entityType: row.entityType as AuditEntityType,
     entityId: row.entityId,
+    details: (row.details as AuditDetails | null | undefined) ?? null,
     occurredAt: row.occurredAt.toISOString(),
   };
 }
@@ -45,6 +50,7 @@ export async function logAuditEvent(params: AuditParams): Promise<void> {
       action: params.action,
       entityType: params.entityType,
       entityId: params.entityId ?? null,
+      ...(params.details ? { details: params.details as Prisma.InputJsonObject } : {}),
     },
   });
 }
