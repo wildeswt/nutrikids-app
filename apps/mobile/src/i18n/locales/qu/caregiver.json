@@ -18,6 +18,10 @@
     "addChildHeader": "Wawata killkakatiy",
     "notifications": "Willaykuna",
     "notificationsHeader": "Willaykuna",
+    "reminders": "Recordatorios",
+    "remindersHeader": "Recordatorios",
+    "addReminder": "Nuevo recordatorio",
+    "addReminderHeader": "Nuevo recordatorio",
     "myData": "Mis datos",
     "myDataHeader": "Mis datos",
     "editChild": "Corregir datos",
@@ -60,7 +64,15 @@
     "addChild": "Wawata yapay",
     "seeMoreA11y": "Imashina {{name}} wiñakunta rikuy",
     "linkedNotice": "Kikinpak kuentawan tinkishka wawakunallatami rikunki",
-    "checkupDate": "Puncha: {{date}}"
+    "checkupDate": "Puncha: {{date}}",
+    "growth": {
+      "reviewedPill": "Revisado por tu profesional",
+      "below": "Tu profesional revisó los últimos controles de {{name}}: su crecimiento está por debajo de lo esperado para su edad.",
+      "above": "Tu profesional revisó los últimos controles de {{name}}: su crecimiento está por encima de lo esperado para su edad.",
+      "reviewed": "Tu profesional revisó los últimos controles de {{name}}.",
+      "recommendation": "Recomendación: {{text}}",
+      "nextCheckup": "Próximo control: {{date}}"
+    }
   },
   "addCheckup": {
     "back": "Tikray",
@@ -198,6 +210,7 @@
     "consentsTitle": "Wawakunapak ari ninakuna",
     "consentsDescription": "Kaypimi wawakunapak wiñay willaykunata wakaychinkapak, rikunkapakpash kushka ari ninata rikunki, tikrachinkipash.",
     "noChildren": "Manarakmi wawakunata killkakatishkankichu. Shukta killkakatishpaka, ñawpaka ari ninatami mañashun.",
+    "dataNote": "Shamuk punchakunapika kikinpak willaykunata kaymanta urayachiy, anchuchiypash ushankimi.",
     "logout": "Llukshiy",
     "myData": "Mis datos",
     "myDataDescription": "Tu cuenta y los niños vinculados",
@@ -246,6 +259,79 @@
     "legalRepA11y": "Ñukami wawapak kamachik kamak kani",
     "legalRepLabel": "Ñukami wawapak kamachik kamak kani, paypak willaykunata killkakatinkapak ari ninata ushani.",
     "submit": "Wawata wakaychiy"
+  },
+  "reminders": {
+    "title": "Recordatorios",
+    "tabUpcoming": "Próximos ({{count}})",
+    "tabCompleted": "Completados ({{count}})",
+    "todayTitle": "Para hoy",
+    "todayOverdue": "Quedó pendiente",
+    "markDone": "Marcar como realizado",
+    "markDoneA11y": "Marcar como realizado: {{title}}",
+    "marking": "Guardando...",
+    "markError": "No pudimos marcar el recordatorio. Intenta de nuevo.",
+    "upcomingTitle": "Próximas citas",
+    "viewAppointment": "Ver cita",
+    "hideAppointment": "Ocultar",
+    "viewAppointmentA11y": "Ver la cita: {{title}}",
+    "forChild": "Para {{name}}",
+    "types": {
+      "checkup": "Control de crecimiento",
+      "activity": "Actividad",
+      "next_checkup": "Próximo control",
+      "other": "Recordatorio"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "sent": "Te avisamos",
+      "completed": "Realizado"
+    },
+    "notifications": {
+      "enabled": "Notificaciones activadas",
+      "enabledHint": "Te avisaremos antes de cada cita.",
+      "disabled": "Notificaciones desactivadas",
+      "disabledHint": "Actívalas para que te avisemos antes de cada cita.",
+      "unavailable": "En este dispositivo no podemos revisar las notificaciones.",
+      "enable": "Activar notificaciones"
+    },
+    "create": "Crear recordatorio",
+    "emptyUpcomingTitle": "No tienes citas próximas",
+    "emptyUpcomingSubtitle": "Crea un recordatorio para no olvidar el próximo control de tu niño.",
+    "emptyCompletedTitle": "Aún no has completado recordatorios",
+    "emptyCompletedSubtitle": "Cuando marques uno como realizado, lo verás aquí.",
+    "loading": "Cargando tus recordatorios...",
+    "loadError": "No pudimos cargar tus recordatorios.",
+    "retry": "Intentar de nuevo"
+  },
+  "addReminder": {
+    "back": "Volver",
+    "title": "Crear un recordatorio",
+    "childLabel": "¿Para qué niño?",
+    "typeLabel": "¿Qué quieres recordar?",
+    "dateLabel": "Fecha",
+    "datePlaceholder": "Ej. {{example}}",
+    "timeLabel": "Hora",
+    "timePlaceholder": "Ej. {{example}}",
+    "timeHint": "Escribe la hora de 0 a 23, por ejemplo 15:30.",
+    "submit": "Guardar recordatorio",
+    "saving": "Guardando...",
+    "loading": "Cargando a tus niños...",
+    "loadError": "No pudimos cargar a tus niños.",
+    "retry": "Intentar de nuevo",
+    "emptyTitle": "Aún no tienes niños registrados",
+    "emptySubtitle": "Registra a tu niño para poder crear recordatorios.",
+    "addChild": "Agregar niño",
+    "consentRequired": "Para crear recordatorios de {{name}} necesitamos su consentimiento informado vigente (tu permiso para guardar sus datos).",
+    "goToConsent": "Ir al consentimiento",
+    "errors": {
+      "childRequired": "Elige el niño del recordatorio.",
+      "dateRequired": "Escribe la fecha del recordatorio.",
+      "dateInvalid": "Escribe la fecha como día/mes/año. Ejemplo: {{example}}.",
+      "timeRequired": "Escribe la hora del recordatorio.",
+      "timeInvalid": "Escribe la hora así: 09:30.",
+      "pastDate": "Elige una fecha y una hora que aún no hayan pasado.",
+      "invalid": "Revisa los datos del recordatorio e intenta de nuevo."
+    }
   },
   "myData": {
     "back": "Volver",

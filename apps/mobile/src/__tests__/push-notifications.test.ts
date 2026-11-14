@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('expo-constants', () => ({
@@ -33,6 +33,8 @@ import * as Notifications from 'expo-notifications';
 import * as notifApi from '../lib/notifications-api.js';
 import {
   clearStoredPushToken,
+  enableNotifications,
+  getNotificationsPermission,
   getStoredPushToken,
   initPushNotifications,
   registerPushNotifications,
@@ -190,6 +192,64 @@ describe('Push Notifications Utilities (NK-36)', () => {
       await unregisterPushNotifications();
 
       expect(unregisterApiSpy).not.toHaveBeenCalled();
+
+      Platform.OS = originalOS;
+    });
+  });
+
+  describe('getNotificationsPermission / enableNotifications (NK-52)', () => {
+    it('reports granted, denied and unavailable (web)', async () => {
+      const originalOS = Platform.OS;
+      Platform.OS = 'android';
+      const permissions = vi.spyOn(Notifications, 'getPermissionsAsync');
+
+      permissions.mockResolvedValueOnce({ status: 'granted' } as never);
+      await expect(getNotificationsPermission()).resolves.toBe('granted');
+
+      permissions.mockResolvedValueOnce({ status: 'undetermined' } as never);
+      await expect(getNotificationsPermission()).resolves.toBe('denied');
+
+      permissions.mockRejectedValueOnce(new Error('native module missing'));
+      await expect(getNotificationsPermission()).resolves.toBe('unavailable');
+
+      Platform.OS = 'web';
+      await expect(getNotificationsPermission()).resolves.toBe('unavailable');
+      await expect(enableNotifications()).resolves.toBe('unavailable');
+
+      Platform.OS = originalOS;
+    });
+
+    it('asks for the permission and registers the device when it can still ask', async () => {
+      const originalOS = Platform.OS;
+      Platform.OS = 'android';
+      const permissions = vi.spyOn(Notifications, 'getPermissionsAsync');
+      permissions.mockResolvedValueOnce({ status: 'undetermined', canAskAgain: true } as never);
+      permissions.mockResolvedValue({ status: 'granted' } as never);
+      vi.spyOn(Notifications, 'getExpoPushTokenAsync').mockResolvedValue({
+        data: 'ExponentPushToken[enable-token]',
+      } as never);
+      const registerApiSpy = vi
+        .spyOn(notifApi, 'registerPushDeviceApi')
+        .mockResolvedValue({} as never);
+
+      await expect(enableNotifications()).resolves.toBe('granted');
+      expect(registerApiSpy).toHaveBeenCalled();
+
+      Platform.OS = originalOS;
+    });
+
+    it('opens the phone settings when the permission cannot be asked again', async () => {
+      const originalOS = Platform.OS;
+      Platform.OS = 'android';
+      const openSettings = vi.fn(async () => {});
+      (Linking as { openSettings: () => Promise<void> }).openSettings = openSettings;
+      vi.spyOn(Notifications, 'getPermissionsAsync').mockResolvedValue({
+        status: 'denied',
+        canAskAgain: false,
+      } as never);
+
+      await expect(enableNotifications()).resolves.toBe('denied');
+      expect(openSettings).toHaveBeenCalledTimes(1);
 
       Platform.OS = originalOS;
     });

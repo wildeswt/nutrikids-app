@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChildGrowthStatus } from '../../components/ChildGrowthStatus.js';
 import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
 import { DEMO_HOME_MESSAGE, DEMO_NEXT_CHECKUP } from '../../constants/demo-data.js';
@@ -146,10 +147,7 @@ export default function CaregiverHomeScreen() {
                     <Text style={styles.childSubtitle}>{t('home.childSubtitle')}</Text>
 
                     {/* Status is shown with short text, icon and color (never color alone); no z-scores or technical classifications */}
-                    <View style={styles.statusPill}>
-                      <Ionicons name="checkmark-circle" size={15} color={PALETTE.primary} />
-                      <Text style={styles.statusPillText}>{t('home.statusOk')}</Text>
-                    </View>
+                    <ChildGrowthStatus childId={child.id} childName={child.firstName} />
 
                     <Pressable
                       style={({ pressed }) => [styles.seeMoreRow, pressed && styles.buttonPressed]}
@@ -226,14 +224,14 @@ export default function CaregiverHomeScreen() {
         {/* Sección: Próximo control */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('home.nextCheckup')}</Text>
-          <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.ADD_CHECKUP)}>
+          <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.REMINDERS)}>
             <Text style={styles.sectionLink}>{t('home.schedule')}</Text>
           </Pressable>
         </View>
 
         <Pressable
           style={({ pressed }) => [styles.controlCard, pressed && styles.buttonPressed]}
-          onPress={() => router.push(APP_ROUTES.CAREGIVER.EVOLUTION)}
+          onPress={() => router.push(APP_ROUTES.CAREGIVER.REMINDERS)}
         >
           <View style={styles.controlCardRow}>
             <Ionicons name="calendar-outline" size={40} color={PALETTE.text.light} />
@@ -485,22 +483,6 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     marginTop: 2,
     marginBottom: 8,
-  },
-  statusPill: {
-    alignSelf: 'flex-start',
-    backgroundColor: PALETTE.surface,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 14,
-    marginBottom: 8,
-  },
-  statusPillText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: PALETTE.primary,
   },
   seeMoreRow: {
     flexDirection: 'row',

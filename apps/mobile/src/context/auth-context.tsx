@@ -8,6 +8,7 @@ import {
   onSessionRefreshError,
   onSessionUpdated,
 } from '../lib/api.js';
+import { clearDrafts } from '../lib/follow-up-storage.js';
 import {
   initPushNotifications,
   registerPushNotifications,
@@ -166,6 +167,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await logoutSessionRequest(tokenToRevoke);
       }
     } finally {
+      // Clinical drafts do not stay on the phone after sign-out (follow-ups still waiting to be
+      // sent are kept, scoped to their user, so they are not lost).
+      await clearDrafts().catch(() => {});
       await clearStoredSession();
       setSession(null);
       setRefreshError(null);

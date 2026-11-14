@@ -31,6 +31,8 @@ vi.mock('expo-notifications', () => ({
     HIGH: 'high',
   },
   setNotificationHandler: vi.fn(),
+  addNotificationResponseReceivedListener: vi.fn(() => ({ remove: vi.fn() })),
+  getLastNotificationResponseAsync: vi.fn(async () => null),
   getPermissionsAsync: vi.fn(async () => ({ status: 'granted' })),
   requestPermissionsAsync: vi.fn(async () => ({ status: 'granted' })),
   setNotificationChannelAsync: vi.fn(async () => null),

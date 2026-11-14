@@ -293,12 +293,14 @@ async function toDetail(tx: Prisma.TransactionClient, row: AlertRow): Promise<Al
   const history = await tx.alertHistory.findMany({
     where: { alertId: row.id },
     orderBy: [{ changedAt: 'asc' }],
+    include: { changedBy: { select: { firstName: true, lastName: true } } },
   });
   return {
     ...formatAlert(row, new Date()),
     history: history.map((h) => ({
       status: h.status,
       changedById: h.changedById,
+      changedByName: `${h.changedBy.firstName} ${h.changedBy.lastName}`,
       changedAt: h.changedAt.toISOString(),
     })),
   };

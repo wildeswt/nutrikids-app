@@ -8,10 +8,12 @@ import { AUTH_STATUS } from '../constants/routes.js';
 import { AuthProvider, useAuth } from '../context/auth-context.js';
 import '../i18n/index.js';
 import { restoreLanguagePreference } from '../i18n/language.js';
+import { usePushNavigation } from '../hooks/usePushNavigation.js';
 import { resolveGuardRedirect } from '../lib/navigation-guard.js';
 
 export function NavigationGuard() {
   const { status, activeRole } = useAuth();
+  usePushNavigation();
   const segments = useSegments();
   const router = useRouter();
 
