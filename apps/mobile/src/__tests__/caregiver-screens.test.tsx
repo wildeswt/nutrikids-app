@@ -483,16 +483,24 @@ describe('Caregiver Screens (NK-21 / NK-66)', () => {
   });
 
   describe('AddChildScreen («Registrar niño»)', () => {
-    it('renders child registration form fields and legal representative check', () => {
+    it('renders shared Figma form fields, linked account notice, and no subtitle', () => {
       const html = renderToString(React.createElement(AddChildScreen));
 
       expect(html).toContain(i18n.t('caregiver:addChild.title'));
+      expect(html).not.toContain(i18n.t('caregiver:addChild.subtitle'));
       expect(html).toContain(i18n.t('caregiver:addChild.firstNameLabel'));
       expect(html).toContain(i18n.t('caregiver:addChild.lastNameLabel'));
       expect(html).toContain(i18n.t('caregiver:addChild.birthDateLabel'));
+      expect(html).toContain('add-child-birth-date-picker-button');
       expect(html).toContain(i18n.t('caregiver:addChild.sexLabel'));
       expect(html).toContain(i18n.t('caregiver:addChild.sexMale'));
       expect(html).toContain(i18n.t('caregiver:addChild.sexFemale'));
+      expect(html.indexOf(i18n.t('caregiver:addChild.sexFemale'))).toBeLessThan(
+        html.indexOf(i18n.t('caregiver:addChild.sexMale')),
+      );
+      expect(html).toContain(
+        i18n.t('caregiver:addChild.linkedAccountNotice', { name: 'Andrea Silva' }),
+      );
       expect(html).toContain(i18n.t('caregiver:addChild.relationshipLabel'));
       expect(html).toContain(i18n.t('common:relationships.LEGAL_GUARDIAN'));
       expect(html).toContain('representante legal');

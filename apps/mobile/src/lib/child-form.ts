@@ -1,5 +1,13 @@
-import type { CreateChildInput, Sex } from '@nutrikids/shared';
+import {
+  MAX_CHILD_AGE_MONTHS,
+  MIN_CHILD_AGE_MONTHS,
+  completedMonths,
+  todayIsoDate,
+  type CreateChildInput,
+  type Sex,
+} from '@nutrikids/shared';
 import i18n from '../i18n/index.js';
+import { parseDateInput } from './checkup-form.js';
 import { CURRENT_CONSENT_VERSION } from './consent-api.js';
 
 /**
@@ -35,24 +43,61 @@ export function relationshipLabel(value: string): string {
 export interface ChildFormData {
   firstName: string;
   lastName: string;
-  birthDay: string;
-  birthMonth: string;
-  birthYear: string;
+  /** Date typed or picked as `DD/MM/AAAA`. */
+  birthDateText: string;
   sex: Sex;
   relationship: Relationship;
   isLegalRepresentative: boolean;
 }
 
+export type ChildBirthDateStatus =
+  | { kind: 'empty' }
+  | { kind: 'invalid' }
+  | { kind: 'future'; isoDate: string }
+  | { kind: 'outOfRange'; isoDate: string; months: number }
+  | { kind: 'valid'; isoDate: string; months: number };
+
+/** Parses `YYYY-MM-DD` as a local calendar date so the native picker opens on the right day. */
+export function isoToLocalDate(iso: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+  return date;
+}
+
+/** Evaluates a `DD/MM/AAAA` birth date string against validity, future date, and OMS age range. */
+export function evaluateChildBirthDate(
+  birthDateText: string,
+  referenceDateIso: string = todayIsoDate(),
+): ChildBirthDateStatus {
+  const trimmed = birthDateText.trim();
+  if (!trimmed) return { kind: 'empty' };
+
+  const isoDate = parseDateInput(trimmed);
+  if (!isoDate) return { kind: 'invalid' };
+  if (isoDate > referenceDateIso) return { kind: 'future', isoDate };
+
+  const months = completedMonths(isoDate, referenceDateIso);
+  if (months < MIN_CHILD_AGE_MONTHS || months > MAX_CHILD_AGE_MONTHS) {
+    return { kind: 'outOfRange', isoDate, months };
+  }
+
+  return { kind: 'valid', isoDate, months };
+}
+
 /**
  * Builds the CreateChildInput payload from registration form inputs,
- * assembling the date parts into an ISO `YYYY-MM-DD` string and attaching
+ * parsing `DD/MM/AAAA` into an ISO `YYYY-MM-DD` string and attaching
  * the active informed consent version (NK-20 / NK-21).
  */
 export function buildCreateChildPayload(formData: ChildFormData): CreateChildInput {
-  const formattedDay = formData.birthDay.trim().padStart(2, '0');
-  const formattedMonth = formData.birthMonth.trim().padStart(2, '0');
-  const birthYear = formData.birthYear.trim();
-  const birthDateIso = `${birthYear}-${formattedMonth}-${formattedDay}`;
+  const birthDateIso = parseDateInput(formData.birthDateText) ?? '';
 
   return {
     firstName: formData.firstName.trim(),

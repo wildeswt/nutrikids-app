@@ -1,28 +1,32 @@
 import { Ionicons } from '@expo/vector-icons';
-import {
-  CreateChildInputSchema,
-  MAX_CHILD_AGE_MONTHS,
-  MIN_CHILD_AGE_MONTHS,
-  completedMonths,
-  todayIsoDate,
-  type Sex,
-} from '@nutrikids/shared';
+import { CreateChildInputSchema, type Sex } from '@nutrikids/shared';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   KeyboardAwareScrollView,
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
+import { AgeNotice } from '../../components/child-form/AgeNotice.js';
+import { BirthDateField } from '../../components/child-form/BirthDateField.js';
+import { LinkedAccountNotice } from '../../components/child-form/LinkedAccountNotice.js';
+import { SexSelector } from '../../components/child-form/SexSelector.js';
+import { PillField } from '../../components/ui/PillField.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
+import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
-import { formatAge } from '../../i18n/format.js';
+import { font } from '../../constants/typography.js';
+import { useAuth } from '../../context/auth-context.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
+import { formatDateInput } from '../../lib/checkup-form.js';
 import {
   RELATIONSHIP_OPTIONS,
   buildCreateChildPayload,
+  evaluateChildBirthDate,
   type Relationship,
 } from '../../lib/child-form.js';
 import { createChild } from '../../lib/children-api.js';
@@ -30,17 +34,13 @@ import { createChild } from '../../lib/children-api.js';
 export default function AddChildScreen() {
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'common']);
+  const { user } = useAuth();
 
   const lastNameRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
-  const dayRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
-  const monthRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
-  const yearRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [birthDay, setBirthDay] = useState('');
-  const [birthMonth, setBirthMonth] = useState('');
-  const [birthYear, setBirthYear] = useState('');
+  const [birthDateText, setBirthDateText] = useState('');
   const [sex, setSex] = useState<Sex>('MALE');
   const [relationship, setRelationship] = useState<Relationship>('MOTHER');
   const [isLegalRepresentative, setIsLegalRepresentative] = useState(true);
@@ -49,23 +49,14 @@ export default function AddChildScreen() {
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Build the ISO YYYY-MM-DD date once the 3 fields are filled in
-  const formattedDay = birthDay.padStart(2, '0');
-  const formattedMonth = birthMonth.padStart(2, '0');
-  const birthDateIso =
-    birthYear.length === 4 && birthMonth.length > 0 && birthDay.length > 0
-      ? `${birthYear}-${formattedMonth}-${formattedDay}`
-      : '';
+  const birthDateStatus = evaluateChildBirthDate(birthDateText);
+  const caregiverName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
 
-  // Preliminary age in months for real-time feedback
-  let calculatedMonths: number | null = null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(birthDateIso)) {
-    try {
-      calculatedMonths = completedMonths(birthDateIso, todayIsoDate());
-    } catch {
-      calculatedMonths = null;
+  const clearFieldError = (field: string) => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: '' }));
     }
-  }
+  };
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -76,15 +67,14 @@ export default function AddChildScreen() {
   };
 
   const handleSubmit = async () => {
+    if (loading) return;
     setGeneralError(null);
     setFieldErrors({});
 
     const payload = buildCreateChildPayload({
       firstName,
       lastName,
-      birthDay,
-      birthMonth,
-      birthYear,
+      birthDateText,
       sex,
       relationship,
       isLegalRepresentative,
@@ -92,14 +82,20 @@ export default function AddChildScreen() {
 
     const validation = CreateChildInputSchema.safeParse(payload);
     if (!validation.success) {
-      setFieldErrors(extractZodFieldErrors(validation.error));
+      const errors = extractZodFieldErrors(validation.error);
+      if (errors['birthDate'] && birthDateStatus.kind === 'invalid') {
+        errors['birthDate'] = t('addChild.birthDateInvalid', {
+          example: formatDateInput(new Date()),
+        });
+      }
+      setFieldErrors(errors);
       return;
     }
 
     setLoading(true);
     try {
       await createChild(validation.data);
-      // After saving the child, go back to the caregiver home
+      // Después de guardar el niño, volver al inicio del cuidador.
       router.replace(APP_ROUTES.CAREGIVER.HOME as never);
     } catch (err) {
       setGeneralError(formatAuthErrorMessage(err));
@@ -109,47 +105,39 @@ export default function AddChildScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      {/* Botón superior Volver */}
-      <View style={styles.topBar}>
-        <Pressable
-          style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
-          onPress={handleBack}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={t('common:actions.goBack')}
-        >
-          <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-          <Text style={styles.backButtonText}>{t('common:actions.back')}</Text>
-        </Pressable>
-      </View>
-
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAwareScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
-        <Text style={styles.screenTitle}>{t('addChild.title')}</Text>
-        <Text style={styles.screenSubtitle}>{t('addChild.subtitle')}</Text>
+        <ScreenHeader
+          title={t('addChild.title')}
+          backLabel={t('common:actions.back')}
+          onBack={handleBack}
+          style={styles.header}
+          testID="add-child-header"
+        />
 
-        {generalError && (
-          <View style={styles.errorBox}>
+        {generalError ? (
+          <View style={styles.errorBox} accessibilityRole="alert">
             <Ionicons name="alert-circle" size={20} color={PALETTE.feedback.error} />
             <Text style={styles.errorBoxText}>{generalError}</Text>
           </View>
-        )}
+        ) : null}
 
         <View style={styles.formContainer}>
           {/* Nombre */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('addChild.firstNameLabel')}</Text>
+          <PillField
+            label={t('addChild.firstNameLabel')}
+            error={fieldErrors['firstName']}
+            testID="add-child-first-name-field"
+          >
             <KeyboardAwareTextInput
-              style={[styles.input, fieldErrors['firstName'] ? styles.inputError : undefined]}
+              style={styles.pillTextInput}
               value={firstName}
               onChangeText={(text) => {
                 setFirstName(text);
-                if (fieldErrors['firstName']) {
-                  setFieldErrors((prev) => ({ ...prev, firstName: '' }));
-                }
+                clearFieldError('firstName');
               }}
               placeholder={t('addChild.firstNamePlaceholder')}
               placeholderTextColor={PALETTE.input.placeholder}
@@ -158,266 +146,152 @@ export default function AddChildScreen() {
               onSubmitEditing={() => lastNameRef.current?.focus()}
               blurOnSubmit={false}
               editable={!loading}
+              accessibilityLabel={t('addChild.firstNameLabel')}
+              testID="add-child-first-name"
             />
-            {fieldErrors['firstName'] ? (
-              <Text style={styles.errorText}>{fieldErrors['firstName']}</Text>
-            ) : null}
-          </View>
+          </PillField>
 
           {/* Apellido */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('addChild.lastNameLabel')}</Text>
+          <PillField
+            label={t('addChild.lastNameLabel')}
+            error={fieldErrors['lastName']}
+            testID="add-child-last-name-field"
+          >
             <KeyboardAwareTextInput
               ref={lastNameRef}
-              style={[styles.input, fieldErrors['lastName'] ? styles.inputError : undefined]}
+              style={styles.pillTextInput}
               value={lastName}
               onChangeText={(text) => {
                 setLastName(text);
-                if (fieldErrors['lastName']) {
-                  setFieldErrors((prev) => ({ ...prev, lastName: '' }));
-                }
+                clearFieldError('lastName');
               }}
               placeholder={t('addChild.lastNamePlaceholder')}
               placeholderTextColor={PALETTE.input.placeholder}
               autoCapitalize="words"
               returnKeyType="next"
-              onSubmitEditing={() => dayRef.current?.focus()}
-              blurOnSubmit={false}
               editable={!loading}
+              accessibilityLabel={t('addChild.lastNameLabel')}
+              testID="add-child-last-name"
             />
-            {fieldErrors['lastName'] ? (
-              <Text style={styles.errorText}>{fieldErrors['lastName']}</Text>
-            ) : null}
-          </View>
-
-          {/* Sexo */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('addChild.sexLabel')}</Text>
-            <View style={styles.sexRow}>
-              <Pressable
-                style={[styles.sexChip, sex === 'MALE' ? styles.sexChipSelected : undefined]}
-                onPress={() => setSex('MALE')}
-                accessibilityRole="button"
-                accessibilityLabel={t('addChild.sexMaleA11y')}
-              >
-                <Ionicons
-                  name="male"
-                  size={18}
-                  color={sex === 'MALE' ? '#FFFFFF' : PALETTE.text.title}
-                />
-                <Text
-                  style={[
-                    styles.sexChipText,
-                    sex === 'MALE' ? styles.sexChipTextSelected : undefined,
-                  ]}
-                >
-                  {t('addChild.sexMale')}
-                </Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.sexChip, sex === 'FEMALE' ? styles.sexChipSelected : undefined]}
-                onPress={() => setSex('FEMALE')}
-                accessibilityRole="button"
-                accessibilityLabel={t('addChild.sexFemaleA11y')}
-              >
-                <Ionicons
-                  name="female"
-                  size={18}
-                  color={sex === 'FEMALE' ? '#FFFFFF' : PALETTE.text.title}
-                />
-                <Text
-                  style={[
-                    styles.sexChipText,
-                    sex === 'FEMALE' ? styles.sexChipTextSelected : undefined,
-                  ]}
-                >
-                  {t('addChild.sexFemale')}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
+          </PillField>
 
           {/* Fecha de nacimiento */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('addChild.birthDateLabel')}</Text>
-            <Text style={styles.helperText}>
-              {t('addChild.ageRangeHelper', {
-                min: MIN_CHILD_AGE_MONTHS,
-                max: MAX_CHILD_AGE_MONTHS,
-              })}
-            </Text>
+          <BirthDateField
+            label={t('addChild.birthDateLabel')}
+            value={birthDateText}
+            onChangeText={(val) => {
+              setBirthDateText(val);
+              clearFieldError('birthDate');
+            }}
+            placeholder={t('addChild.birthDatePlaceholder', {
+              example: formatDateInput(new Date()),
+            })}
+            error={fieldErrors['birthDate']}
+            editable={!loading}
+            openPickerLabel={t('addChild.openDatePicker')}
+            closePickerLabel={t('addChild.closeDatePicker')}
+            testID="add-child-birth-date"
+          />
 
-            <View style={styles.dateInputsRow}>
-              <View style={styles.dateColSmall}>
-                <Text style={styles.subLabel}>{t('addChild.day')}</Text>
-                <KeyboardAwareTextInput
-                  ref={dayRef}
-                  style={[
-                    styles.dateInput,
-                    fieldErrors['birthDate'] ? styles.inputError : undefined,
-                  ]}
-                  value={birthDay}
-                  onChangeText={(val) => {
-                    const clean = val.replace(/\D/g, '').slice(0, 2);
-                    setBirthDay(clean);
-                    if (clean.length === 2) monthRef.current?.focus();
-                  }}
-                  placeholder={t('addChild.dayPlaceholder')}
-                  placeholderTextColor={PALETTE.input.placeholder}
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  editable={!loading}
-                />
-              </View>
+          {/* Sexo */}
+          <SexSelector
+            label={t('addChild.sexLabel')}
+            value={sex}
+            onChange={setSex}
+            femaleLabel={t('addChild.sexFemale')}
+            maleLabel={t('addChild.sexMale')}
+            femaleAccessibilityLabel={t('addChild.sexFemaleA11y')}
+            maleAccessibilityLabel={t('addChild.sexMaleA11y')}
+            disabled={loading}
+            testID="add-child-sex"
+          />
 
-              <View style={styles.dateColSmall}>
-                <Text style={styles.subLabel}>{t('addChild.month')}</Text>
-                <KeyboardAwareTextInput
-                  ref={monthRef}
-                  style={[
-                    styles.dateInput,
-                    fieldErrors['birthDate'] ? styles.inputError : undefined,
-                  ]}
-                  value={birthMonth}
-                  onChangeText={(val) => {
-                    const clean = val.replace(/\D/g, '').slice(0, 2);
-                    setBirthMonth(clean);
-                    if (clean.length === 2) yearRef.current?.focus();
-                  }}
-                  placeholder={t('addChild.monthPlaceholder')}
-                  placeholderTextColor={PALETTE.input.placeholder}
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  editable={!loading}
-                />
-              </View>
+          {/* Edad calculada */}
+          {birthDateStatus.kind === 'valid' || birthDateStatus.kind === 'outOfRange' ? (
+            <AgeNotice birthDateIso={birthDateStatus.isoDate} testID="add-child-age-notice" />
+          ) : null}
 
-              <View style={styles.dateColLarge}>
-                <Text style={styles.subLabel}>{t('addChild.year')}</Text>
-                <KeyboardAwareTextInput
-                  ref={yearRef}
-                  style={[
-                    styles.dateInput,
-                    fieldErrors['birthDate'] ? styles.inputError : undefined,
-                  ]}
-                  value={birthYear}
-                  onChangeText={(val) => {
-                    const clean = val.replace(/\D/g, '').slice(0, 4);
-                    setBirthYear(clean);
-                  }}
-                  placeholder={t('addChild.yearPlaceholder')}
-                  placeholderTextColor={PALETTE.input.placeholder}
-                  keyboardType="number-pad"
-                  maxLength={4}
-                  editable={!loading}
-                />
-              </View>
-            </View>
-
-            {fieldErrors['birthDate'] ? (
-              <Text style={styles.errorText}>{fieldErrors['birthDate']}</Text>
-            ) : null}
-
-            {calculatedMonths !== null && calculatedMonths >= 0 && (
-              <View
-                style={[
-                  styles.ageBadge,
-                  calculatedMonths >= MIN_CHILD_AGE_MONTHS &&
-                  calculatedMonths <= MAX_CHILD_AGE_MONTHS
-                    ? styles.ageBadgeValid
-                    : styles.ageBadgeWarning,
-                ]}
-              >
-                <Ionicons
-                  name={
-                    calculatedMonths >= MIN_CHILD_AGE_MONTHS &&
-                    calculatedMonths <= MAX_CHILD_AGE_MONTHS
-                      ? 'checkmark-circle'
-                      : 'alert-circle'
-                  }
-                  size={16}
-                  color={
-                    calculatedMonths >= MIN_CHILD_AGE_MONTHS &&
-                    calculatedMonths <= MAX_CHILD_AGE_MONTHS
-                      ? PALETTE.primary
-                      : PALETTE.feedback.warning
-                  }
-                />
-                <Text style={styles.ageBadgeText}>
-                  {t('addChild.calculatedAge', {
-                    months: calculatedMonths,
-                    age: formatAge(calculatedMonths),
-                  })}
-                </Text>
-              </View>
-            )}
-          </View>
+          {/* Aviso de cuenta vinculada */}
+          <LinkedAccountNotice
+            accountName={caregiverName}
+            testID="add-child-linked-account-notice"
+          />
 
           {/* Parentesco */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{t('addChild.relationshipLabel')}</Text>
             <View style={styles.relationshipRow}>
-              {RELATIONSHIP_OPTIONS.map((rel) => (
-                <Pressable
-                  key={rel}
-                  style={[
-                    styles.relationshipChip,
-                    relationship === rel ? styles.relationshipChipSelected : undefined,
-                  ]}
-                  onPress={() => setRelationship(rel)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t(`common:relationships.${rel}`)}
-                >
-                  <Text
+              {RELATIONSHIP_OPTIONS.map((rel) => {
+                const isSelected = relationship === rel;
+                return (
+                  <Pressable
+                    key={rel}
                     style={[
-                      styles.relationshipChipText,
-                      relationship === rel ? styles.relationshipChipTextSelected : undefined,
+                      styles.relationshipChip,
+                      isSelected ? styles.relationshipChipSelected : undefined,
                     ]}
+                    onPress={() => setRelationship(rel)}
+                    disabled={loading}
+                    accessibilityRole="button"
+                    accessibilityLabel={t(`common:relationships.${rel}`)}
+                    accessibilityState={{ selected: isSelected, disabled: loading }}
                   >
-                    {t(`common:relationships.${rel}`)}
-                  </Text>
-                </Pressable>
-              ))}
+                    <Text
+                      style={[
+                        styles.relationshipChipText,
+                        isSelected ? styles.relationshipChipTextSelected : undefined,
+                      ]}
+                    >
+                      {t(`common:relationships.${rel}`)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
           {/* Confirmación de representante legal */}
-          <Pressable
-            style={styles.checkboxRow}
-            onPress={() => setIsLegalRepresentative((prev) => !prev)}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: isLegalRepresentative }}
-            accessibilityLabel={t('addChild.legalRepA11y')}
-          >
-            <View
-              style={[
-                styles.checkboxBox,
-                isLegalRepresentative ? styles.checkboxBoxChecked : undefined,
-              ]}
+          <View style={styles.checkboxGroup}>
+            <Pressable
+              style={styles.checkboxRow}
+              onPress={() => {
+                setIsLegalRepresentative((prev) => !prev);
+                clearFieldError('isLegalRepresentative');
+              }}
+              disabled={loading}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: isLegalRepresentative }}
+              accessibilityLabel={t('addChild.legalRepA11y')}
             >
-              {isLegalRepresentative && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
-            </View>
-            <Text style={styles.checkboxLabel}>{t('addChild.legalRepLabel')}</Text>
-          </Pressable>
-          {fieldErrors['isLegalRepresentative'] ? (
-            <Text style={styles.errorText}>{fieldErrors['isLegalRepresentative']}</Text>
-          ) : null}
+              <View
+                style={[
+                  styles.checkboxBox,
+                  isLegalRepresentative ? styles.checkboxBoxChecked : undefined,
+                ]}
+              >
+                {isLegalRepresentative ? (
+                  <Ionicons name="checkmark" size={16} color={PALETTE.text.light} />
+                ) : null}
+              </View>
+              <Text style={styles.checkboxLabel}>{t('addChild.legalRepLabel')}</Text>
+            </Pressable>
+            {fieldErrors['isLegalRepresentative'] ? (
+              <Text style={styles.errorText} accessibilityRole="alert">
+                {fieldErrors['isLegalRepresentative']}
+              </Text>
+            ) : null}
+          </View>
+        </View>
 
-          {/* Botón Guardar */}
-          <Pressable
-            style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
+        <View style={styles.footer}>
+          <PrimaryButton
+            label={t('addChild.submit')}
             onPress={() => void handleSubmit()}
+            loading={loading}
             disabled={loading}
-            accessibilityRole="button"
             accessibilityLabel={t('addChild.submit')}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Text style={styles.submitButtonText}>{t('addChild.submit')}</Text>
-            )}
-          </Pressable>
+            testID="add-child-submit"
+          />
         </View>
       </KeyboardAwareScrollView>
     </SafeAreaView>
@@ -429,48 +303,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PALETTE.background,
   },
-  topBar: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-  },
-  buttonPressed: {
-    opacity: 0.75,
-  },
   scrollView: {
     flex: 1,
     width: '100%',
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    flexGrow: 1,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 12,
-    paddingBottom: 48,
+    paddingBottom: 36,
   },
-  screenTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: PALETTE.text.title,
-    marginBottom: 6,
-  },
-  screenSubtitle: {
-    fontSize: 14,
-    color: PALETTE.text.body,
-    lineHeight: 20,
-    marginBottom: 20,
+  header: {
+    marginBottom: 22,
   },
   errorBox: {
     flexDirection: 'row',
@@ -479,125 +323,34 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.feedback.errorBg,
     borderColor: PALETTE.feedback.errorBorder,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 18,
   },
   errorBoxText: {
     flex: 1,
+    fontFamily: font('medium'),
     color: PALETTE.feedback.error,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '500',
   },
   formContainer: {
-    gap: 18,
+    gap: 20,
+  },
+  pillTextInput: {
+    fontFamily: font('regular'),
+    fontSize: 16,
+    color: PALETTE.text.body,
+    paddingVertical: 0,
   },
   inputGroup: {
-    gap: 6,
+    gap: 8,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: PALETTE.text.title,
-  },
-  subLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: PALETTE.text.body,
-    marginBottom: 4,
-  },
-  helperText: {
-    fontSize: 12,
-    color: PALETTE.text.body,
-    marginBottom: 4,
-  },
-  input: {
-    height: 50,
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1.5,
-    borderColor: PALETTE.border.default,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    color: PALETTE.text.title,
-  },
-  inputError: {
-    borderColor: PALETTE.feedback.error,
-  },
-  errorText: {
-    fontSize: 12,
-    color: PALETTE.feedback.error,
+    fontFamily: font('medium'),
+    fontSize: 18,
     fontWeight: '500',
-    marginTop: 2,
-  },
-  sexRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  sexChip: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1.5,
-    borderColor: PALETTE.border.default,
-  },
-  sexChipSelected: {
-    backgroundColor: PALETTE.primary,
-    borderColor: PALETTE.primary,
-  },
-  sexChipText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-  },
-  sexChipTextSelected: {
-    color: '#FFFFFF',
-  },
-  dateInputsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  dateColSmall: {
-    flex: 1,
-  },
-  dateColLarge: {
-    flex: 1.5,
-  },
-  dateInput: {
-    height: 50,
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1.5,
-    borderColor: PALETTE.border.default,
-    borderRadius: 14,
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-  },
-  ageBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    marginTop: 4,
-  },
-  ageBadgeValid: {
-    backgroundColor: PALETTE.primaryLight,
-  },
-  ageBadgeWarning: {
-    backgroundColor: PALETTE.feedback.warningBg,
-  },
-  ageBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
     color: PALETTE.text.title,
   },
   relationshipRow: {
@@ -608,37 +361,45 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1.5,
-    borderColor: PALETTE.border.default,
+    height: 46,
+    borderRadius: RADIUS_PILL,
+    backgroundColor: PALETTE.input.background,
+    borderWidth: 1,
+    borderColor: PALETTE.border.input,
+    paddingHorizontal: 8,
   },
   relationshipChipSelected: {
-    backgroundColor: PALETTE.secondary,
-    borderColor: PALETTE.secondary,
+    backgroundColor: PALETTE.primary,
+    borderColor: PALETTE.primary,
   },
   relationshipChipText: {
+    fontFamily: font('medium'),
     fontSize: 13,
-    fontWeight: '600',
-    color: PALETTE.text.title,
+    fontWeight: '500',
+    color: PALETTE.text.body,
+    textAlign: 'center',
   },
   relationshipChipTextSelected: {
-    color: '#FFFFFF',
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    color: PALETTE.text.light,
+  },
+  checkboxGroup: {
+    gap: 4,
   },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   checkboxBox: {
     width: 22,
     height: 22,
     borderRadius: 6,
-    borderWidth: 2,
-    borderColor: PALETTE.border.default,
-    backgroundColor: PALETTE.surface,
+    borderWidth: 1.5,
+    borderColor: PALETTE.border.checkbox,
+    backgroundColor: PALETTE.input.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
@@ -649,26 +410,18 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     flex: 1,
+    fontFamily: font('regular'),
     fontSize: 13,
     color: PALETTE.text.body,
     lineHeight: 18,
   },
-  submitButton: {
-    height: 52,
-    backgroundColor: PALETTE.primary,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-    shadowColor: PALETTE.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+  errorText: {
+    fontFamily: font('regular'),
+    fontSize: 13,
+    color: PALETTE.feedback.error,
   },
-  submitButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
+  footer: {
+    marginTop: 'auto',
+    paddingTop: 24,
   },
 });

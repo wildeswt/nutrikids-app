@@ -281,6 +281,11 @@ describe('EditChildScreen («Corregir datos»)', () => {
     expect(html).toContain('value="Mateo"');
     expect(html).toContain('value="Gómez"');
     expect(html).toContain('value="05/06/2023"');
+    expect(html.indexOf(i18n.t('caregiver:addChild.sexFemale'))).toBeLessThan(
+      html.indexOf(i18n.t('caregiver:addChild.sexMale')),
+    );
+    expect(html).toContain('edit-child-sex-MALE-check');
+    expect(html).toContain('edit-child-age-notice');
   });
 
   it('lets the birth date and sex change while the child has no checkups', () => {
