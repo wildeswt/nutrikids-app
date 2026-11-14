@@ -43,5 +43,8 @@
   },
   "reference": {
     "fetch": "OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay."
+  },
+  "alerts": {
+    "list": "Mana yuyachikkunata apamunkapak ushashkanchu. Kutin yachay."
   }
 }

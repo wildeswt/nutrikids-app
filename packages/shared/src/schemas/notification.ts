@@ -9,21 +9,27 @@ export const NOTIFICATION_TYPES = {
   ALERT_NEW: 'alert_new',
   ALERT_OVERDUE: 'alert_overdue',
   ALERT_PENDING_REVIEW: 'alert_pending_review',
+  REMINDER_DUE: 'reminder_due',
 } as const;
 
 export const NotificationTypeSchema = z.enum([
   NOTIFICATION_TYPES.ALERT_NEW,
   NOTIFICATION_TYPES.ALERT_OVERDUE,
   NOTIFICATION_TYPES.ALERT_PENDING_REVIEW,
+  NOTIFICATION_TYPES.REMINDER_DUE,
 ]);
 
 export type NotificationType = z.infer<typeof NotificationTypeSchema>;
 
 export const NOTIFICATION_ENTITY_TYPES = {
   ALERT: 'alert',
+  REMINDER: 'reminder',
 } as const;
 
-export const NotificationEntityTypeSchema = z.enum([NOTIFICATION_ENTITY_TYPES.ALERT]);
+export const NotificationEntityTypeSchema = z.enum([
+  NOTIFICATION_ENTITY_TYPES.ALERT,
+  NOTIFICATION_ENTITY_TYPES.REMINDER,
+]);
 
 export type NotificationEntityType = z.infer<typeof NotificationEntityTypeSchema>;
 

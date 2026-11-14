@@ -28,6 +28,7 @@ Role first, link second: possessing the correct role is never sufficient to view
 | ---------------------------------------------------------------------------------------------------- | :------------------------------: | :-----: | :-------: | :--------: |
 | View child, checkups, curves, and alerts (`child:read`, `checkup:read`, `curves:read`, `alert:read`) |               Yes                |   Yes   |    Yes    |    Yes     |
 | View feeding logs (`feedinglog:read`)                                                                |               Yes                |   Yes   |    Yes    |    Yes     |
+| Record feeding logs (`feedinglog:create`)                                                            |               Yes                |   Yes   |    Yes    |    Yes     |
 | Record anthropometric checkup (`checkup:create`)                                                     |               Yes                |   Yes   |    Yes    |    Yes     |
 | Review alerts (`alert:review`)                                                                       |                No                |   Yes   |    Yes    |    Yes     |
 | Create clinical follow-ups (`followup:create`)                                                       |                No                |   No    |    Yes    |    Yes     |

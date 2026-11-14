@@ -43,5 +43,8 @@
   },
   "reference": {
     "fetch": "No pudimos cargar las curvas de referencia. Intenta de nuevo."
+  },
+  "alerts": {
+    "list": "No pudimos cargar las alertas. Intenta de nuevo."
   }
 }
