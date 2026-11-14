@@ -1,4 +1,5 @@
 import React from 'react';
+import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('expo-router', () => ({
@@ -33,7 +34,12 @@ interface TabScreenElement {
 
 describe('CaregiverTabsLayout', () => {
   function getTabScreens(): TabScreenElement[] {
-    const layout = CaregiverTabsLayout();
+    let layout!: ReturnType<typeof CaregiverTabsLayout>;
+    function Capture() {
+      layout = CaregiverTabsLayout();
+      return null;
+    }
+    renderToString(React.createElement(Capture));
     return React.Children.toArray(layout.props.children) as TabScreenElement[];
   }
 

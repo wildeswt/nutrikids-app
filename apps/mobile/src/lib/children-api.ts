@@ -7,35 +7,29 @@ import {
   type CreateChildInput,
 } from '@nutrikids/shared';
 import { z } from 'zod';
+import { formatAge } from '../i18n/format.js';
+import i18n from '../i18n/index.js';
 import { authFetch, parseApiError } from './api.js';
 
 /**
- * Formatea la edad del niño en años y meses en lenguaje claro para el cuidador.
+ * Child age in years and months in plain language for the caregiver (e.g. "3 años y 5 meses").
+ * Delegates to the shared i18n `formatAge` so the text follows the active language.
  */
 export function formatChildAge(birthDate: string): string {
   const totalMonths = completedMonths(birthDate, todayIsoDate());
-  if (totalMonths < 0) return 'Recién nacido';
-  const years = Math.floor(totalMonths / 12);
-  const remainingMonths = totalMonths % 12;
-
-  if (years === 0) {
-    return `${totalMonths} ${totalMonths === 1 ? 'mes' : 'meses'}`;
-  }
-  if (remainingMonths === 0) {
-    return `${years} ${years === 1 ? 'año' : 'años'}`;
-  }
-  return `${years} ${years === 1 ? 'año' : 'años'} y ${remainingMonths} ${remainingMonths === 1 ? 'mes' : 'meses'}`;
+  if (totalMonths < 0) return i18n.t('common:age.newborn');
+  return formatAge(totalMonths);
 }
 
 /**
- * Consulta la lista de niños asociados al cuidador autenticado.
+ * Fetches the children linked to the authenticated caregiver.
  */
 export async function fetchCaregiverChildren(): Promise<ChildResponse[]> {
   const response = await authFetch('/children');
 
   if (!response.ok) {
     const payload: unknown = await response.json().catch(() => ({}));
-    const parsed = parseApiError(payload, 'No se pudo obtener la lista de niños');
+    const parsed = parseApiError(payload, i18n.t('errors:consent.childList'));
     throw new Error(parsed.message);
   }
 
@@ -44,8 +38,8 @@ export async function fetchCaregiverChildren(): Promise<ChildResponse[]> {
 }
 
 /**
- * Registra un nuevo niño asociado al cuidador autenticado (RF-03, RF-14).
- * Valida los datos de entrada con CreateChildInputSchema de @nutrikids/shared.
+ * Registers a new child linked to the authenticated caregiver (RF-03, RF-14).
+ * Validates the input with CreateChildInputSchema from @nutrikids/shared.
  */
 export async function createChild(input: CreateChildInput): Promise<ChildResponse> {
   const validatedBody = CreateChildInputSchema.parse(input);
@@ -60,7 +54,7 @@ export async function createChild(input: CreateChildInput): Promise<ChildRespons
 
   if (!response.ok) {
     const payload: unknown = await response.json().catch(() => ({}));
-    const parsed = parseApiError(payload, 'No se pudo registrar al niño');
+    const parsed = parseApiError(payload, i18n.t('errors:children.create'));
     throw new Error(parsed.message);
   }
 

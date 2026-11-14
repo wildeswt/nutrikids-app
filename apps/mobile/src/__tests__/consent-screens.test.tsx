@@ -102,6 +102,7 @@ vi.mock('../lib/consent-api.js', async () => {
 import ConsentScreen from '../app/(caregiver)/consent.js';
 import CaregiverHomeScreen from '../app/(caregiver)/index.js';
 import CaregiverProfileScreen, { ConsentChildItem } from '../app/(caregiver)/profile.js';
+import i18n from '../i18n/index.js';
 
 describe('Consent Screens & Components Rendering (NK-20)', () => {
   const mockConsentData: ConsentResponse = {
@@ -132,9 +133,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
 
       expect(html).toContain('María');
       expect(html).toContain('+ Registrar nuevo niño');
-      expect(html).toContain(
-        'Antes de ingresar los datos del niño, te solicitaremos la lectura y aceptación del consentimiento informado',
-      );
+      expect(html).toContain(i18n.t('caregiver:home.consentNotice'));
     });
   });
 
@@ -145,13 +144,13 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
 
       // Título y encabezados
       expect(html).toContain('Consentimiento');
-      expect(html).toContain('Antes de registrar a tu hijo o hija necesitamos tu autorización');
+      expect(html).toContain(i18n.t('consent:screen.registerSubtitle'));
 
       // Resumen en lenguaje claro: ¿Qué autorizas?
-      expect(html).toContain('¿Qué autorizas?');
-      expect(html).toContain('Guardar el peso, la talla y la alimentación');
-      expect(html).toContain('estándares de la OMS');
-      expect(html).toContain('equipo de salud asignado');
+      expect(html).toContain(i18n.t('consent:screen.authorizeTitle'));
+      expect(html).toContain('Guardar el peso, la estatura y la alimentación');
+      expect(html).toContain(i18n.t('consent:screen.points.who'));
+      expect(html).toContain(i18n.t('consent:screen.points.share'));
 
       // El texto completo está disponible de forma desplegable
       expect(html).toContain('Leer el texto completo');
@@ -159,7 +158,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
 
       // Confirmaciones y acciones del representante legal
       expect(html).toContain('Soy el representante legal');
-      expect(html).toContain('Entiendo que puedo revocar este consentimiento');
+      expect(html).toContain(i18n.t('consent:screen.checkRevocation'));
       expect(html).toContain('Acepto y continuar');
       expect(html).toContain('Ahora no');
     });
@@ -225,11 +224,11 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       // Debe mostrar la versión aceptada y la fecha
       expect(html).toContain('Versión aceptada:');
       expect(html).toContain('v1');
-      expect(html).toContain('Fecha de otorgamiento:');
-      expect(html).toContain('VIGENTE');
+      expect(html).toContain(i18n.t('consent:screen.grantedAtLabel'));
+      expect(html).toContain('ACTIVO');
 
       // Opción de revocarlo
-      expect(html).toContain('Revocar consentimiento');
+      expect(html).toContain(i18n.t('consent:screen.revoke'));
     });
 
     it('muestra estado revocado y fecha de revocación cuando el consentimiento está inactivo', () => {
@@ -249,9 +248,9 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
 
       const html = renderToString(React.createElement(ConsentScreen));
 
-      expect(html).toContain('REVOCADO');
-      expect(html).toContain('Fecha de revocación:');
-      expect(html).toContain('Otorgar consentimiento nuevamente');
+      expect(html).toContain(i18n.t('consent:screen.statusRevoked'));
+      expect(html).toContain(i18n.t('consent:screen.revokedAtLabel'));
+      expect(html).toContain(i18n.t('consent:screen.renew'));
     });
   });
 
@@ -259,11 +258,9 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
     it('muestra sección de Consentimientos Informados en el perfil', () => {
       const html = renderToString(React.createElement(CaregiverProfileScreen));
 
-      expect(html).toContain('Mi Perfil');
-      expect(html).toContain('Consentimientos Informados');
-      expect(html).toContain(
-        'Gestiona la autorización de tratamiento de datos y seguimiento nutricional de tus hijos/as.',
-      );
+      expect(html).toContain(i18n.t('caregiver:profile.title'));
+      expect(html).toContain(i18n.t('caregiver:profile.consentsTitle'));
+      expect(html).toContain(i18n.t('caregiver:profile.consentsDescription'));
     });
 
     it('ConsentChildItem muestra versión, fecha y botón de revocar en perfil', () => {
@@ -285,11 +282,11 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
 
       expect(html).toContain('Sofía');
       expect(html).toContain('Morales');
-      expect(html).toContain('VIGENTE');
+      expect(html).toContain('ACTIVO');
       expect(html).toContain('Versión aceptada:');
       expect(html).toContain('v1');
       expect(html).toContain('Fecha:');
-      expect(html).toContain('Revocar');
+      expect(html).toContain(i18n.t('caregiver:consentItem.revoke'));
       expect(html).toContain('Ver documento');
     });
   });

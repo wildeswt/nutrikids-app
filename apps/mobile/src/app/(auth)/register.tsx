@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { RegisterInputSchema, USER_ROLES, type Specialty, type UserRole } from '@nutrikids/shared';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,14 +16,11 @@ import { useAuth } from '../../context/auth-context.js';
 import { registerRequest } from '../../lib/api.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
 
-const SPECIALTIES: Array<{ value: Specialty; label: string }> = [
-  { value: 'pediatrics', label: 'Pediatría' },
-  { value: 'nutrition', label: 'Nutrición' },
-  { value: 'nursing', label: 'Enfermería' },
-];
+const SPECIALTIES: Specialty[] = ['pediatrics', 'nutrition', 'nursing'];
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['auth', 'common']);
   const params = useLocalSearchParams<{ role?: string }>();
   const { signIn } = useAuth();
 
@@ -59,7 +57,7 @@ export default function RegisterScreen() {
     setFieldErrors({});
 
     if (password !== confirmPassword) {
-      setFieldErrors({ confirmPassword: 'Las contraseñas no coinciden' });
+      setFieldErrors({ confirmPassword: t('register.passwordsMismatch') });
       return;
     }
 
@@ -108,7 +106,7 @@ export default function RegisterScreen() {
           onPress={() => router.back()}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Volver a la pantalla anterior"
+          accessibilityLabel={t('common:actions.goBack')}
         >
           <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
         </Pressable>
@@ -124,24 +122,24 @@ export default function RegisterScreen() {
             source={APP_ASSETS.LOGO}
             style={styles.logo}
             resizeMode="contain"
-            accessibilityLabel="NutriKids Logo"
+            accessibilityLabel={t('common:brand.logoLabel')}
           />
-          <Text style={styles.slogan}>Cuidar su crecimiento, juntos.</Text>
+          <Text style={styles.slogan}>{t('common:brand.slogan')}</Text>
           <View style={styles.orangeDivider} />
         </View>
 
         {/* Formulario */}
         <View style={styles.formContainer}>
-          <Text style={styles.title}>Crear Cuenta</Text>
+          <Text style={styles.title}>{t('register.title')}</Text>
 
           {/* Indicador del perfil elegido con opción de cambiar */}
           <View style={styles.roleBadgeRow}>
             <Text style={styles.roleBadgeText}>
-              Perfil: {isProfessional ? 'Profesional de Salud' : 'Cuidador'}
+              {t('register.roleBadge', { role: t(`common:roles.${selectedRole}`) })}
             </Text>
             <Link href={APP_ROUTES.AUTH.SELECT_ROLE} asChild>
               <Pressable hitSlop={6}>
-                <Text style={styles.changeRoleLink}>Cambiar perfil</Text>
+                <Text style={styles.changeRoleLink}>{t('register.changeRole')}</Text>
               </Pressable>
             </Link>
           </View>
@@ -154,7 +152,7 @@ export default function RegisterScreen() {
 
           {/* Nombre */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nombre</Text>
+            <Text style={styles.label}>{t('register.firstNameLabel')}</Text>
             <KeyboardAwareTextInput
               style={[styles.input, fieldErrors['firstName'] ? styles.inputError : undefined]}
               value={firstName}
@@ -164,7 +162,7 @@ export default function RegisterScreen() {
                   setFieldErrors((prev) => ({ ...prev, firstName: '' }));
                 }
               }}
-              placeholder="Ingrese su nombre"
+              placeholder={t('register.firstNamePlaceholder')}
               placeholderTextColor={PALETTE.input.placeholder}
               autoCapitalize="words"
               returnKeyType="next"
@@ -179,7 +177,7 @@ export default function RegisterScreen() {
 
           {/* Apellido */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Apellido</Text>
+            <Text style={styles.label}>{t('register.lastNameLabel')}</Text>
             <KeyboardAwareTextInput
               ref={lastNameRef}
               style={[styles.input, fieldErrors['lastName'] ? styles.inputError : undefined]}
@@ -190,7 +188,7 @@ export default function RegisterScreen() {
                   setFieldErrors((prev) => ({ ...prev, lastName: '' }));
                 }
               }}
-              placeholder="Ingrese su apellido"
+              placeholder={t('register.lastNamePlaceholder')}
               placeholderTextColor={PALETTE.input.placeholder}
               autoCapitalize="words"
               returnKeyType="next"
@@ -205,7 +203,7 @@ export default function RegisterScreen() {
 
           {/* Correo Electrónico */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Correo Electrónico</Text>
+            <Text style={styles.label}>{t('register.emailLabel')}</Text>
             <KeyboardAwareTextInput
               ref={emailRef}
               style={[styles.input, fieldErrors['email'] ? styles.inputError : undefined]}
@@ -216,7 +214,7 @@ export default function RegisterScreen() {
                   setFieldErrors((prev) => ({ ...prev, email: '' }));
                 }
               }}
-              placeholder="Ingrese su correo"
+              placeholder={t('register.emailPlaceholder')}
               placeholderTextColor={PALETTE.input.placeholder}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -241,17 +239,17 @@ export default function RegisterScreen() {
           {isProfessional && (
             <>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Especialidad</Text>
+                <Text style={styles.label}>{t('register.specialtyLabel')}</Text>
                 <View style={styles.specialtiesRow}>
                   {SPECIALTIES.map((spec) => (
                     <Pressable
-                      key={spec.value}
+                      key={spec}
                       style={[
                         styles.specialtyChip,
-                        specialty === spec.value ? styles.specialtyChipActive : undefined,
+                        specialty === spec ? styles.specialtyChipActive : undefined,
                       ]}
                       onPress={() => {
-                        setSpecialty(spec.value);
+                        setSpecialty(spec);
                         if (fieldErrors['specialty']) {
                           setFieldErrors((prev) => ({ ...prev, specialty: '' }));
                         }
@@ -260,10 +258,10 @@ export default function RegisterScreen() {
                       <Text
                         style={[
                           styles.specialtyChipText,
-                          specialty === spec.value ? styles.specialtyChipTextActive : undefined,
+                          specialty === spec ? styles.specialtyChipTextActive : undefined,
                         ]}
                       >
-                        {spec.label}
+                        {t(`common:specialties.${spec}`)}
                       </Text>
                     </Pressable>
                   ))}
@@ -274,7 +272,7 @@ export default function RegisterScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Número de Licencia / Matrícula</Text>
+                <Text style={styles.label}>{t('register.licenseLabel')}</Text>
                 <KeyboardAwareTextInput
                   ref={licenseNumberRef}
                   style={[
@@ -288,7 +286,7 @@ export default function RegisterScreen() {
                       setFieldErrors((prev) => ({ ...prev, licenseNumber: '' }));
                     }
                   }}
-                  placeholder="Ej: MED-12345"
+                  placeholder={t('register.licensePlaceholder')}
                   placeholderTextColor={PALETTE.input.placeholder}
                   returnKeyType="next"
                   onSubmitEditing={() => invitationCodeRef.current?.focus()}
@@ -301,7 +299,7 @@ export default function RegisterScreen() {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Código de Invitación Profesional</Text>
+                <Text style={styles.label}>{t('register.invitationLabel')}</Text>
                 <KeyboardAwareTextInput
                   ref={invitationCodeRef}
                   style={[
@@ -315,7 +313,7 @@ export default function RegisterScreen() {
                       setFieldErrors((prev) => ({ ...prev, invitationCode: '' }));
                     }
                   }}
-                  placeholder="Código provisto por su institución"
+                  placeholder={t('register.invitationPlaceholder')}
                   placeholderTextColor={PALETTE.input.placeholder}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -333,7 +331,7 @@ export default function RegisterScreen() {
 
           {/* Contraseña */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Contraseña</Text>
+            <Text style={styles.label}>{t('register.passwordLabel')}</Text>
             <View
               style={[
                 styles.passwordContainer,
@@ -350,7 +348,7 @@ export default function RegisterScreen() {
                     setFieldErrors((prev) => ({ ...prev, password: '' }));
                   }
                 }}
-                placeholder="Ingrese su contraseña"
+                placeholder={t('register.passwordPlaceholder')}
                 placeholderTextColor={PALETTE.input.placeholder}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
@@ -364,7 +362,9 @@ export default function RegisterScreen() {
                 style={styles.eyeButton}
                 onPress={() => setShowPassword((prev) => !prev)}
                 hitSlop={8}
-                accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                accessibilityLabel={
+                  showPassword ? t('common:password.hide') : t('common:password.show')
+                }
               >
                 <Ionicons
                   name={showPassword ? 'eye-off' : 'eye'}
@@ -380,7 +380,7 @@ export default function RegisterScreen() {
 
           {/* Confirmar Contraseña */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Confirmar Contraseña</Text>
+            <Text style={styles.label}>{t('register.confirmPasswordLabel')}</Text>
             <View
               style={[
                 styles.passwordContainer,
@@ -397,7 +397,7 @@ export default function RegisterScreen() {
                     setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }));
                   }
                 }}
-                placeholder="Ingrese nuevamente su contraseña"
+                placeholder={t('register.confirmPasswordPlaceholder')}
                 placeholderTextColor={PALETTE.input.placeholder}
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
@@ -411,7 +411,9 @@ export default function RegisterScreen() {
                 onPress={() => setShowConfirmPassword((prev) => !prev)}
                 hitSlop={8}
                 accessibilityLabel={
-                  showConfirmPassword ? 'Ocultar confirmación' : 'Mostrar confirmación'
+                  showConfirmPassword
+                    ? t('common:password.hideConfirmation')
+                    : t('common:password.showConfirmation')
                 }
               >
                 <Ionicons
@@ -435,16 +437,16 @@ export default function RegisterScreen() {
             {loading ? (
               <ActivityIndicator color={PALETTE.text.light} size="small" />
             ) : (
-              <Text style={styles.submitButtonText}>Crear Cuenta</Text>
+              <Text style={styles.submitButtonText}>{t('register.submit')}</Text>
             )}
           </Pressable>
 
           {/* Login Link */}
           <View style={styles.loginContainer}>
-            <Text style={styles.loginPrompt}>¿Ya tienes una cuenta?</Text>
+            <Text style={styles.loginPrompt}>{t('register.haveAccount')}</Text>
             <Link href={APP_ROUTES.AUTH.LOGIN} asChild>
               <Pressable hitSlop={6}>
-                <Text style={styles.loginLink}>Iniciar Sesión</Text>
+                <Text style={styles.loginLink}>{t('common:actions.login')}</Text>
               </Pressable>
             </Link>
           </View>

@@ -18,6 +18,7 @@ import {
 } from '@nutrikids/shared';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import i18n from '../i18n/index.js';
 import { AuthApiError, resolveHttpAuthError } from './auth-errors.js';
 import {
   clearStoredSession,
@@ -215,13 +216,13 @@ export async function logoutSessionRequest(refreshToken: string): Promise<void> 
 /**
  * Generic helper for dispatching JSON POST requests to auth endpoints.
  * Consolidates fetch execution, network error mapping, HTTP error resolution,
- * and validates response payloads with Zod returning human-friendly Spanish errors on schema mismatch.
+ * and validates response payloads with Zod returning human-friendly translated errors on schema mismatch.
  */
 async function postAuth<T>(
   path: string,
   body: unknown,
   schema?: { safeParse: (data: unknown) => { success: true; data: T } | { success: false } },
-  defaultErrorMessage = 'Error al procesar la solicitud.',
+  defaultErrorMessage: string = i18n.t('errors:requestFailed'),
 ): Promise<T> {
   let response: Response;
   try {
@@ -236,12 +237,7 @@ async function postAuth<T>(
   } catch (err) {
     if (err instanceof Error) {
       const isNetwork = err.name === 'AbortError' || err.message.toLowerCase().includes('network');
-      throw new AuthApiError(
-        isNetwork
-          ? 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
-          : err.message,
-        { cause: err },
-      );
+      throw new AuthApiError(isNetwork ? i18n.t('errors:network') : err.message, { cause: err });
     }
     throw new AuthApiError(defaultErrorMessage);
   }
@@ -270,7 +266,7 @@ async function postAuth<T>(
 
   const parsed = schema.safeParse(data);
   if (!parsed.success) {
-    throw new AuthApiError('La respuesta del servidor no tiene el formato esperado.');
+    throw new AuthApiError(i18n.t('errors:invalidResponse'));
   }
 
   return parsed.data;
@@ -282,12 +278,7 @@ async function postAuth<T>(
  */
 export async function loginRequest(input: LoginInput): Promise<AuthResponse> {
   const validated = LoginInputSchema.parse(input);
-  return postAuth(
-    '/auth/login',
-    validated,
-    AuthResponseSchema,
-    'Error inesperado al iniciar sesión.',
-  );
+  return postAuth('/auth/login', validated, AuthResponseSchema, i18n.t('errors:auth.login'));
 }
 
 /**
@@ -296,12 +287,7 @@ export async function loginRequest(input: LoginInput): Promise<AuthResponse> {
  */
 export async function registerRequest(input: RegisterInput): Promise<AuthResponse> {
   const validated = RegisterInputSchema.parse(input);
-  return postAuth(
-    '/auth/register',
-    validated,
-    AuthResponseSchema,
-    'Error inesperado al registrar la cuenta.',
-  );
+  return postAuth('/auth/register', validated, AuthResponseSchema, i18n.t('errors:auth.register'));
 }
 
 /**
@@ -316,7 +302,7 @@ export async function forgotPasswordRequest(
     '/auth/forgot-password',
     validated,
     ForgotPasswordResponseSchema,
-    'Error inesperado al solicitar restablecimiento de contraseña.',
+    i18n.t('errors:auth.forgotPassword'),
   );
 }
 
@@ -326,12 +312,7 @@ export async function forgotPasswordRequest(
  */
 export async function resetPasswordRequest(input: ResetPasswordInput): Promise<void> {
   const validated = ResetPasswordInputSchema.parse(input);
-  await postAuth(
-    '/auth/reset-password',
-    validated,
-    undefined,
-    'Error inesperado al restablecer la contraseña.',
-  );
+  await postAuth('/auth/reset-password', validated, undefined, i18n.t('errors:auth.resetPassword'));
 }
 
 /**
@@ -339,7 +320,7 @@ export async function resetPasswordRequest(input: ResetPasswordInput): Promise<v
  */
 export function parseApiError(
   payload: unknown,
-  fallbackMessage = 'Error al procesar la solicitud',
+  fallbackMessage: string = i18n.t('errors:requestFailed'),
 ): ErrorResponse {
   const parsed = ErrorResponseSchema.safeParse(payload);
   if (parsed.success) {
@@ -372,7 +353,7 @@ export async function fetchHealth(): Promise<HealthResponse> {
     return HealthResponseSchema.parse(data);
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
-      throw new Error(`Tiempo agotado conectando a ${API_BASE_URL}`, { cause: err });
+      throw new Error(i18n.t('errors:timeout', { url: API_BASE_URL }), { cause: err });
     }
     throw err;
   } finally {

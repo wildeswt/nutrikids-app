@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LoginInputSchema } from '@nutrikids/shared';
 import { Link, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +22,7 @@ import {
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['auth', 'common']);
   const { signIn } = useAuth();
 
   const passwordRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
@@ -67,7 +69,7 @@ export default function LoginScreen() {
       }
     } catch (err) {
       if (requiresTwoFactor && err instanceof AuthApiError && err.status === 401) {
-        setGeneralError('Código incorrecto o vencido. Inténtalo nuevamente.');
+        setGeneralError(t('login.invalidCode'));
       } else {
         setGeneralError(formatAuthErrorMessage(err));
       }
@@ -94,7 +96,7 @@ export default function LoginScreen() {
           onPress={() => router.back()}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Volver a la pantalla anterior"
+          accessibilityLabel={t('common:actions.goBack')}
         >
           <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
         </Pressable>
@@ -110,15 +112,15 @@ export default function LoginScreen() {
             source={APP_ASSETS.LOGO}
             style={styles.logo}
             resizeMode="contain"
-            accessibilityLabel="NutriKids Logo"
+            accessibilityLabel={t('common:brand.logoLabel')}
           />
-          <Text style={styles.slogan}>Cuidar su crecimiento, juntos.</Text>
+          <Text style={styles.slogan}>{t('common:brand.slogan')}</Text>
           <View style={styles.orangeDivider} />
         </View>
 
         <View style={styles.formContainer}>
           <Text style={styles.title}>
-            {requiresTwoFactor ? 'Verificación en Dos Pasos' : 'Iniciar Sesión'}
+            {requiresTwoFactor ? t('login.twoFactorTitle') : t('login.title')}
           </Text>
           {generalError && (
             <View style={styles.errorBox}>
@@ -130,7 +132,7 @@ export default function LoginScreen() {
             <>
               {/* Email Field */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Correo Electrónico</Text>
+                <Text style={styles.label}>{t('login.emailLabel')}</Text>
                 <KeyboardAwareTextInput
                   style={[styles.input, fieldErrors['email'] ? styles.inputError : undefined]}
                   value={email}
@@ -140,7 +142,7 @@ export default function LoginScreen() {
                       setFieldErrors((prev) => ({ ...prev, email: '' }));
                     }
                   }}
-                  placeholder="Ingrese su correo"
+                  placeholder={t('login.emailPlaceholder')}
                   placeholderTextColor="#9CA3AF"
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -157,7 +159,7 @@ export default function LoginScreen() {
 
               {/* Password Field */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Contraseña</Text>
+                <Text style={styles.label}>{t('login.passwordLabel')}</Text>
                 <View
                   style={[
                     styles.passwordContainer,
@@ -174,7 +176,7 @@ export default function LoginScreen() {
                         setFieldErrors((prev) => ({ ...prev, password: '' }));
                       }
                     }}
-                    placeholder="Ingrese su contraseña"
+                    placeholder={t('login.passwordPlaceholder')}
                     placeholderTextColor="#9CA3AF"
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
@@ -187,7 +189,9 @@ export default function LoginScreen() {
                     style={styles.eyeButton}
                     onPress={() => setShowPassword((prev) => !prev)}
                     hitSlop={8}
-                    accessibilityLabel={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    accessibilityLabel={
+                      showPassword ? t('common:password.hide') : t('common:password.show')
+                    }
                   >
                     <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#374151" />
                   </Pressable>
@@ -201,7 +205,7 @@ export default function LoginScreen() {
               <View style={styles.forgotPasswordContainer}>
                 <Link href={APP_ROUTES.AUTH.FORGOT_PASSWORD} asChild>
                   <Pressable hitSlop={6}>
-                    <Text style={styles.forgotPasswordText}>¿Olvidó su contraseña?</Text>
+                    <Text style={styles.forgotPasswordText}>{t('login.forgotPassword')}</Text>
                   </Pressable>
                 </Link>
               </View>
@@ -215,21 +219,18 @@ export default function LoginScreen() {
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Iniciar Sesión</Text>
+                  <Text style={styles.submitButtonText}>{t('login.submit')}</Text>
                 )}
               </Pressable>
             </>
           ) : (
             <>
               {/* Step 2: Two-Factor Code (TOTP / Recovery) */}
-              <Text style={styles.stepDescription}>
-                Tu cuenta profesional requiere verificación en dos pasos. Ingresa el código de 6
-                dígitos de tu aplicación autenticadora.
-              </Text>
+              <Text style={styles.stepDescription}>{t('login.twoFactorDescription')}</Text>
 
               {!isUsingRecoveryCode ? (
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Código de autenticación (6 dígitos)</Text>
+                  <Text style={styles.label}>{t('login.totpLabel')}</Text>
                   <KeyboardAwareTextInput
                     style={[styles.input, fieldErrors['totpCode'] ? styles.inputError : undefined]}
                     value={totpCode}
@@ -239,7 +240,7 @@ export default function LoginScreen() {
                         setFieldErrors((prev) => ({ ...prev, totpCode: '' }));
                       }
                     }}
-                    placeholder="123456"
+                    placeholder={t('login.totpPlaceholder')}
                     placeholderTextColor="#9CA3AF"
                     keyboardType="number-pad"
                     maxLength={6}
@@ -251,7 +252,7 @@ export default function LoginScreen() {
                 </View>
               ) : (
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Código de recuperación</Text>
+                  <Text style={styles.label}>{t('login.recoveryLabel')}</Text>
                   <KeyboardAwareTextInput
                     style={[
                       styles.input,
@@ -264,7 +265,7 @@ export default function LoginScreen() {
                         setFieldErrors((prev) => ({ ...prev, recoveryCode: '' }));
                       }
                     }}
-                    placeholder="Ingresa tu código de respaldo"
+                    placeholder={t('login.recoveryPlaceholder')}
                     placeholderTextColor="#9CA3AF"
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -286,9 +287,7 @@ export default function LoginScreen() {
                 style={styles.switchModeButton}
               >
                 <Text style={styles.switchModeText}>
-                  {isUsingRecoveryCode
-                    ? 'Usar código de la aplicación autenticadora'
-                    : 'No tengo acceso a mi app, usar código de recuperación'}
+                  {isUsingRecoveryCode ? t('login.useAuthenticator') : t('login.useRecovery')}
                 </Text>
               </Pressable>
 
@@ -300,12 +299,12 @@ export default function LoginScreen() {
                 {loading ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Verificar e Iniciar Sesión</Text>
+                  <Text style={styles.submitButtonText}>{t('login.verifySubmit')}</Text>
                 )}
               </Pressable>
 
               <Pressable onPress={handleResetToCredentials} style={styles.cancelTwoFactorButton}>
-                <Text style={styles.cancelTwoFactorText}>Volver al inicio de sesión</Text>
+                <Text style={styles.cancelTwoFactorText}>{t('login.backToLogin')}</Text>
               </Pressable>
             </>
           )}
@@ -313,10 +312,10 @@ export default function LoginScreen() {
           {/* Registration Link */}
           {!requiresTwoFactor && (
             <View style={styles.registerContainer}>
-              <Text style={styles.registerPrompt}>¿No tienes una cuenta?</Text>
+              <Text style={styles.registerPrompt}>{t('login.noAccount')}</Text>
               <Link href={APP_ROUTES.AUTH.SELECT_ROLE} asChild>
                 <Pressable hitSlop={6}>
-                  <Text style={styles.registerLink}>Regístrate</Text>
+                  <Text style={styles.registerLink}>{t('login.registerLink')}</Text>
                 </Pressable>
               </Link>
             </View>

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -15,10 +16,12 @@ import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
 import { useConsent } from '../../hooks/useConsent.js';
-import { CONSENT_TEXT, CURRENT_CONSENT_VERSION } from '../../lib/consent-api.js';
+import { formatNumericDate, formatTime } from '../../i18n/format.js';
+import { CURRENT_CONSENT_VERSION, getConsentText } from '../../lib/consent-api.js';
 
 export default function ConsentScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation(['consent', 'common']);
   const { user } = useAuth();
   const params = useLocalSearchParams<{
     childId?: string;
@@ -27,7 +30,7 @@ export default function ConsentScreen() {
   }>();
 
   const childId = params.childId ?? null;
-  const childName = params.childName ?? 'tu hijo o hija';
+  const childName = params.childName ?? t('screen.childFallback');
   const mode = params.mode ?? (childId ? 'view' : 'register');
 
   const { status, consent, error, load, grant, revoke } = useConsent(childId);
@@ -46,19 +49,20 @@ export default function ConsentScreen() {
     if (childId) {
       try {
         await grant(CURRENT_CONSENT_VERSION);
-        Alert.alert(
-          'Consentimiento registrado',
-          'Has otorgado el consentimiento informado exitosamente.',
-          [{ text: 'Aceptar', onPress: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE) }],
-        );
+        Alert.alert(t('alerts.grantedTitle'), t('alerts.grantedMessage'), [
+          {
+            text: t('common:actions.accept'),
+            onPress: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE),
+          },
+        ]);
       } catch (err) {
         Alert.alert(
-          'Error',
-          err instanceof Error ? err.message : 'No se pudo registrar el consentimiento.',
+          t('alerts.errorTitle'),
+          err instanceof Error ? err.message : t('alerts.grantError'),
         );
       }
     } else {
-      // Flujo pre-registro: Navega directamente a la pantalla de alta de datos del niño sin modal intermedio
+      // Pre-registration flow: go straight to the child registration screen
       router.replace(APP_ROUTES.CAREGIVER.ADD_CHILD as never);
     }
   };
@@ -66,37 +70,29 @@ export default function ConsentScreen() {
   const handleRevokeConsent = () => {
     if (!childId) return;
 
-    Alert.alert(
-      'Revocar consentimiento',
-      `¿Estás seguro de que deseas revocar el consentimiento para ${childName}? No se podrán registrar nuevos controles de crecimiento hasta que otorgues un nuevo consentimiento.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sí, revocar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await revoke();
-              Alert.alert(
-                'Consentimiento revocado',
-                'El consentimiento ha sido revocado. El historial previo se mantiene para fines de auditoría.',
-                [
-                  {
-                    text: 'Entendido',
-                    onPress: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE),
-                  },
-                ],
-              );
-            } catch (err) {
-              Alert.alert(
-                'Error al revocar',
-                err instanceof Error ? err.message : 'No se pudo revocar el consentimiento.',
-              );
-            }
-          },
+    Alert.alert(t('alerts.revokeTitle'), t('alerts.revokeMessage', { name: childName }), [
+      { text: t('common:actions.cancel'), style: 'cancel' },
+      {
+        text: t('alerts.revokeConfirm'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await revoke();
+            Alert.alert(t('alerts.revokedTitle'), t('alerts.revokedMessage'), [
+              {
+                text: t('common:actions.understood'),
+                onPress: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE),
+              },
+            ]);
+          } catch (err) {
+            Alert.alert(
+              t('alerts.revokeErrorTitle'),
+              err instanceof Error ? err.message : t('alerts.revokeError'),
+            );
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const handleBack = () => {
@@ -108,15 +104,17 @@ export default function ConsentScreen() {
   };
 
   const displayedVersion = consent?.textVersion ?? CURRENT_CONSENT_VERSION;
-  const textBody = CONSENT_TEXT[displayedVersion] ?? CONSENT_TEXT[CURRENT_CONSENT_VERSION];
+  const textBody = getConsentText(displayedVersion);
+  // The legal text is only published in languages where it was reviewed; otherwise it is shown
+  // in Spanish and the caregiver is told so.
+  const isDocumentTranslated = Boolean(
+    i18n.getResource(i18n.language, 'consent', `documents.${displayedVersion}`),
+  );
 
   const formatDate = (isoString?: string | null) => {
     if (!isoString) return '-';
     const d = new Date(isoString);
-    return `${d.toLocaleDateString('es-CL')} a las ${d.toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })}`;
+    return t('common:time.dateAtTime', { date: formatNumericDate(d), time: formatTime(d) });
   };
 
   const isActionLoading = status === 'loading';
@@ -134,25 +132,25 @@ export default function ConsentScreen() {
           hitSlop={8}
           testID="back-button"
           accessibilityRole="button"
-          accessibilityLabel="Volver a la pantalla anterior"
+          accessibilityLabel={t('common:actions.goBack')}
         >
           <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-          <Text style={styles.backButtonText}>Volver</Text>
+          <Text style={styles.backButtonText}>{t('screen.back')}</Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.screenTitle}>Consentimiento</Text>
+        <Text style={styles.screenTitle}>{t('screen.title')}</Text>
 
         {mode === 'register' ? (
-          <Text style={styles.screenSubtitle}>
-            Antes de registrar a tu hijo o hija necesitamos tu autorización para cuidar sus datos.
-          </Text>
+          <Text style={styles.screenSubtitle}>{t('screen.registerSubtitle')}</Text>
         ) : (
           <View style={styles.childBlock}>
             <Text style={styles.childName}>{childName}</Text>
             {caregiverName ? (
-              <Text style={styles.childRepresentative}>Representante legal: {caregiverName}</Text>
+              <Text style={styles.childRepresentative}>
+                {t('screen.representative', { name: caregiverName })}
+              </Text>
             ) : null}
           </View>
         )}
@@ -161,30 +159,30 @@ export default function ConsentScreen() {
         {consent && (
           <View style={styles.metaCard} testID="consent-metadata">
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Versión aceptada:</Text>
+              <Text style={styles.metaLabel}>{t('screen.versionLabel')}</Text>
               <Text style={styles.versionBadge}>{consent.textVersion}</Text>
             </View>
 
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Fecha de otorgamiento:</Text>
+              <Text style={styles.metaLabel}>{t('screen.grantedAtLabel')}</Text>
               <Text style={styles.metaValue}>{formatDate(consent.grantedAt)}</Text>
             </View>
 
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Estado actual:</Text>
+              <Text style={styles.metaLabel}>{t('screen.statusLabel')}</Text>
               <Text
                 style={[
                   styles.statusBadge,
                   consent.revokedAt ? styles.statusRevoked : styles.statusActive,
                 ]}
               >
-                {consent.revokedAt ? 'REVOCADO' : 'VIGENTE'}
+                {consent.revokedAt ? t('screen.statusRevoked') : t('screen.statusActive')}
               </Text>
             </View>
 
             {consent.revokedAt && (
               <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Fecha de revocación:</Text>
+                <Text style={styles.metaLabel}>{t('screen.revokedAtLabel')}</Text>
                 <Text style={styles.metaValue}>{formatDate(consent.revokedAt)}</Text>
               </View>
             )}
@@ -204,7 +202,7 @@ export default function ConsentScreen() {
           <View style={styles.shieldCircle}>
             <Ionicons name="shield-checkmark" size={22} color={PALETTE.secondary} />
           </View>
-          <Text style={styles.sectionTitle}>¿Qué autorizas?</Text>
+          <Text style={styles.sectionTitle}>{t('screen.authorizeTitle')}</Text>
         </View>
 
         <View style={styles.bulletList}>
@@ -212,25 +210,19 @@ export default function ConsentScreen() {
             <View style={styles.bulletIcon}>
               <Ionicons name="checkmark" size={14} color={PALETTE.primary} />
             </View>
-            <Text style={styles.bulletText}>
-              Guardar el peso, la talla y la alimentación de {childName}.
-            </Text>
+            <Text style={styles.bulletText}>{t('screen.points.store', { name: childName })}</Text>
           </View>
           <View style={styles.bulletRow}>
             <View style={styles.bulletIcon}>
               <Ionicons name="checkmark" size={14} color={PALETTE.primary} />
             </View>
-            <Text style={styles.bulletText}>
-              Calcular su crecimiento con los estándares de la OMS.
-            </Text>
+            <Text style={styles.bulletText}>{t('screen.points.who')}</Text>
           </View>
           <View style={styles.bulletRow}>
             <View style={styles.bulletIcon}>
               <Ionicons name="checkmark" size={14} color={PALETTE.primary} />
             </View>
-            <Text style={styles.bulletText}>
-              Compartir estos datos solo con su equipo de salud asignado.
-            </Text>
+            <Text style={styles.bulletText}>{t('screen.points.share')}</Text>
           </View>
         </View>
 
@@ -241,10 +233,10 @@ export default function ConsentScreen() {
           testID="toggle-consent-text"
           accessibilityRole="button"
           accessibilityState={{ expanded: showFullText }}
-          accessibilityLabel="Leer el texto completo del consentimiento"
+          accessibilityLabel={t('screen.readFullA11y')}
         >
           <Text style={styles.readMoreText}>
-            {showFullText ? 'Ocultar el texto completo' : 'Leer el texto completo'}
+            {showFullText ? t('screen.hideFull') : t('screen.readFull')}
           </Text>
           <Ionicons
             name={showFullText ? 'chevron-up' : 'chevron-down'}
@@ -255,6 +247,9 @@ export default function ConsentScreen() {
 
         {showFullText && (
           <View style={styles.fullTextCard} testID="consent-full-text">
+            {!isDocumentTranslated && (
+              <Text style={styles.documentLanguageNotice}>{t('screen.documentInSpanish')}</Text>
+            )}
             <Text style={styles.fullTextBody}>{textBody}</Text>
           </View>
         )}
@@ -270,7 +265,7 @@ export default function ConsentScreen() {
               testID="legal-representative-checkbox"
               accessibilityRole="checkbox"
               accessibilityState={{ checked: isLegalRepresentative }}
-              accessibilityLabel="Soy el representante legal y autorizo el tratamiento de datos"
+              accessibilityLabel={t('screen.checkLegalA11y')}
             >
               <View
                 style={[styles.checkboxBox, isLegalRepresentative && styles.checkboxBoxChecked]}
@@ -280,8 +275,7 @@ export default function ConsentScreen() {
                 )}
               </View>
               <Text style={styles.checkboxLabel}>
-                Soy el representante legal de {childName} y autorizo el tratamiento de sus datos de
-                salud.
+                {t('screen.checkLegal', { name: childName })}
               </Text>
             </Pressable>
 
@@ -291,7 +285,7 @@ export default function ConsentScreen() {
               testID="understands-revocation-checkbox"
               accessibilityRole="checkbox"
               accessibilityState={{ checked: understandsRevocation }}
-              accessibilityLabel="Entiendo que puedo revocar este consentimiento"
+              accessibilityLabel={t('screen.checkRevocationA11y')}
             >
               <View
                 style={[styles.checkboxBox, understandsRevocation && styles.checkboxBoxChecked]}
@@ -300,9 +294,7 @@ export default function ConsentScreen() {
                   <Ionicons name="checkmark" size={16} color={PALETTE.text.light} />
                 )}
               </View>
-              <Text style={styles.checkboxLabel}>
-                Entiendo que puedo revocar este consentimiento cuando quiera desde mi perfil.
-              </Text>
+              <Text style={styles.checkboxLabel}>{t('screen.checkRevocation')}</Text>
             </Pressable>
           </View>
         )}
@@ -320,12 +312,12 @@ export default function ConsentScreen() {
               disabled={isActionLoading || !canGrant}
               testID="accept-consent-button"
               accessibilityRole="button"
-              accessibilityLabel="Acepto y continuar"
+              accessibilityLabel={t('screen.accept')}
             >
               {isActionLoading ? (
                 <ActivityIndicator color={PALETTE.text.light} />
               ) : (
-                <Text style={styles.primaryButtonText}>Acepto y continuar</Text>
+                <Text style={styles.primaryButtonText}>{t('screen.accept')}</Text>
               )}
             </Pressable>
           )}
@@ -341,12 +333,12 @@ export default function ConsentScreen() {
               disabled={isActionLoading}
               testID="revoke-consent-button"
               accessibilityRole="button"
-              accessibilityLabel="Revocar consentimiento"
+              accessibilityLabel={t('screen.revoke')}
             >
               {isActionLoading ? (
                 <ActivityIndicator color={PALETTE.feedback.error} />
               ) : (
-                <Text style={styles.revokeButtonText}>Revocar consentimiento</Text>
+                <Text style={styles.revokeButtonText}>{t('screen.revoke')}</Text>
               )}
             </Pressable>
           )}
@@ -362,12 +354,12 @@ export default function ConsentScreen() {
               disabled={isActionLoading || !canGrant}
               testID="renew-consent-button"
               accessibilityRole="button"
-              accessibilityLabel="Otorgar consentimiento nuevamente"
+              accessibilityLabel={t('screen.renew')}
             >
               {isActionLoading ? (
                 <ActivityIndicator color={PALETTE.text.light} />
               ) : (
-                <Text style={styles.primaryButtonText}>Otorgar consentimiento nuevamente</Text>
+                <Text style={styles.primaryButtonText}>{t('screen.renew')}</Text>
               )}
             </Pressable>
           )}
@@ -378,9 +370,9 @@ export default function ConsentScreen() {
               onPress={handleBack}
               testID="decline-consent-button"
               accessibilityRole="button"
-              accessibilityLabel="Ahora no"
+              accessibilityLabel={t('screen.notNow')}
             >
-              <Text style={styles.secondaryButtonText}>Ahora no</Text>
+              <Text style={styles.secondaryButtonText}>{t('screen.notNow')}</Text>
             </Pressable>
           )}
         </View>
@@ -580,6 +572,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: PALETTE.primary,
+  },
+  documentLanguageNotice: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    color: '#B45309',
+    marginBottom: 8,
   },
   fullTextCard: {
     backgroundColor: PALETTE.surface,

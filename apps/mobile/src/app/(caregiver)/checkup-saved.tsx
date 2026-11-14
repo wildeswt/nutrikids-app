@@ -1,13 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../../constants/colors.js';
+import { DEMO_ACTIVE_CHILD, DEMO_NEW_CHECKUP } from '../../constants/demo-data.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { formatAge, formatDecimal, formatLongDate } from '../../i18n/format.js';
 
 export default function CheckupSavedScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['caregiver', 'common']);
 
   const handleGoToEvolution = () => {
     router.replace(APP_ROUTES.CAREGIVER.EVOLUTION);
@@ -26,30 +30,43 @@ export default function CheckupSavedScreen() {
         </View>
 
         {/* Título y subtítulo */}
-        <Text style={styles.title}>¡Control guardado!</Text>
-        <Text style={styles.subtitle}>Mateo - 3 años y 5 meses</Text>
+        <Text style={styles.title}>{t('checkupSaved.title')}</Text>
+        <Text style={styles.subtitle}>
+          {t('checkupSaved.subtitle', {
+            name: DEMO_ACTIVE_CHILD.firstName,
+            age: formatAge(DEMO_ACTIVE_CHILD.ageMonths),
+          })}
+        </Text>
 
         {/* Bloque resumen del registro */}
         <View style={styles.summaryContainer}>
-          <Text style={styles.metaDate}>Último registro · 18 de octubre de 2026</Text>
+          <Text style={styles.metaDate}>
+            {t('checkupSaved.lastRecord', { date: formatLongDate(DEMO_NEW_CHECKUP.measuredAt) })}
+          </Text>
 
           <View style={styles.measurementsRow}>
             {/* Peso */}
             <View style={styles.measurementItem}>
-              <Text style={styles.measurementLabel}>Peso</Text>
-              <Text style={styles.measurementValue}>12,2 kg</Text>
+              <Text style={styles.measurementLabel}>{t('checkupSaved.weight')}</Text>
+              <Text style={styles.measurementValue}>
+                {t('common:units.weightValue', { value: formatDecimal(DEMO_NEW_CHECKUP.weightKg) })}
+              </Text>
             </View>
 
             {/* Talla */}
             <View style={styles.measurementItem}>
-              <Text style={styles.measurementLabel}>Talla</Text>
-              <Text style={styles.measurementValue}>97,0 cm</Text>
+              <Text style={styles.measurementLabel}>{t('checkupSaved.height')}</Text>
+              <Text style={styles.measurementValue}>
+                {t('common:units.heightValue', { value: formatDecimal(DEMO_NEW_CHECKUP.heightCm) })}
+              </Text>
             </View>
 
             {/* Posición */}
             <View style={styles.measurementItem}>
-              <Text style={styles.measurementLabel}>Posición</Text>
-              <Text style={styles.measurementValue}>De pie</Text>
+              <Text style={styles.measurementLabel}>{t('checkupSaved.position')}</Text>
+              <Text style={styles.measurementValue}>
+                {t(`addCheckup.positions.${DEMO_NEW_CHECKUP.position}`)}
+              </Text>
             </View>
           </View>
 
@@ -63,16 +80,14 @@ export default function CheckupSavedScreen() {
               color={PALETTE.secondary}
               style={styles.noteIcon}
             />
-            <Text style={styles.noteText}>
-              Tu equipo de salud revisará este control. Te avisaremos si necesitan algo más.
-            </Text>
+            <Text style={styles.noteText}>{t('checkupSaved.teamNote')}</Text>
           </View>
         </View>
 
         {/* Banner de sin conexión / guardado local */}
         <View style={styles.offlineBanner}>
           <Ionicons name="cloud-offline-outline" size={20} color="#C2410C" />
-          <Text style={styles.offlineBannerText}>Sin conexión · se enviará al reconectar</Text>
+          <Text style={styles.offlineBannerText}>{t('checkupSaved.offline')}</Text>
         </View>
 
         <View style={styles.spacer} />
@@ -84,9 +99,9 @@ export default function CheckupSavedScreen() {
             style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]}
             onPress={handleGoToEvolution}
             accessibilityRole="button"
-            accessibilityLabel="Ver evolución"
+            accessibilityLabel={t('checkupSaved.seeEvolution')}
           >
-            <Text style={styles.primaryButtonText}>Ver evolución</Text>
+            <Text style={styles.primaryButtonText}>{t('checkupSaved.seeEvolution')}</Text>
           </Pressable>
 
           {/* Botón secundario: Volver al inicio */}
@@ -97,9 +112,9 @@ export default function CheckupSavedScreen() {
             ]}
             onPress={handleGoToHome}
             accessibilityRole="button"
-            accessibilityLabel="Volver al inicio"
+            accessibilityLabel={t('checkupSaved.goHome')}
           >
-            <Text style={styles.secondaryButtonText}>Volver al inicio</Text>
+            <Text style={styles.secondaryButtonText}>{t('checkupSaved.goHome')}</Text>
           </Pressable>
         </View>
       </View>

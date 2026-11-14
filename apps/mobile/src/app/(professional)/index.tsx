@@ -1,22 +1,23 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../context/auth-context.js';
 
 export default function AlertsInboxScreen() {
+  const { t } = useTranslation(['professional', 'common']);
   const { user } = useAuth();
 
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Bandeja de Alertas Nutricionales</Text>
+        <Text style={styles.title}>{t('alerts.title')}</Text>
         <Text style={styles.subtitle}>
-          Bienvenido, Dr./a. {user?.firstName} {user?.lastName}
+          {t('alerts.welcome', {
+            firstName: user?.firstName ?? '',
+            lastName: user?.lastName ?? '',
+          })}
         </Text>
-        <Text style={styles.description}>
-          Pantalla de inicio del Profesional de Salud. Aquí se listarán las alertas activas
-          (PENDING_REVIEW y GENERATED) priorizadas por gravedad. La vista interactiva se implementa
-          en NK-32.
-        </Text>
+        <Text style={styles.description}>{t('alerts.description')}</Text>
       </View>
     </View>
   );

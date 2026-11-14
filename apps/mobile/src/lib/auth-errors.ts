@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import i18n from '../i18n/index.js';
 
 export interface FieldIssue {
   field?: string;
@@ -24,11 +25,11 @@ export class AuthApiError extends Error {
 }
 
 /**
- * Maps HTTP status codes, network errors, and API error payloads to clear Spanish messages.
+ * Maps HTTP status codes, network errors, and API error payloads to clear, translated messages.
  */
 export function formatAuthErrorMessage(
   error: unknown,
-  fallback = 'Error al procesar la solicitud. Intenta nuevamente.',
+  fallback: string = i18n.t('errors:generic'),
 ): string {
   if (error instanceof AuthApiError) {
     return error.message;
@@ -36,7 +37,7 @@ export function formatAuthErrorMessage(
 
   if (error instanceof Error) {
     if (error.name === 'AbortError' || error.message.toLowerCase().includes('network')) {
-      return 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+      return i18n.t('errors:network');
     }
     return error.message;
   }
@@ -68,21 +69,21 @@ export function resolveHttpAuthError(
 
   switch (status) {
     case 401:
-      return 'Correo o contraseña incorrectos. Verifica tus credenciales.';
+      return i18n.t('errors:http.401');
     case 403:
-      return 'Acceso denegado o código de invitación profesional inválido.';
+      return i18n.t('errors:http.403');
     case 404:
-      return 'El recurso solicitado no fue encontrado.';
+      return i18n.t('errors:http.404');
     case 409:
-      return 'El correo electrónico o número de licencia ya se encuentra registrado.';
+      return i18n.t('errors:http.409');
     case 429:
-      return 'Demasiados intentos fallidos. Por seguridad, espera unos minutos antes de volver a intentar.';
+      return i18n.t('errors:http.429');
     case 500:
     case 502:
     case 503:
-      return 'El servidor no se encuentra disponible. Por favor, intenta de nuevo más tarde.';
+      return i18n.t('errors:http.5xx');
     default:
-      return 'Error al procesar la solicitud. Intenta nuevamente.';
+      return i18n.t('errors:generic');
   }
 }
 

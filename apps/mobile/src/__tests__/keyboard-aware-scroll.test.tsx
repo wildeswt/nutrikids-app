@@ -26,6 +26,7 @@ import {
   KeyboardAwareScrollView,
   KeyboardAwareTextInput,
 } from '../components/KeyboardAwareScrollView.js';
+import i18n from '../i18n/index.js';
 
 describe('KeyboardAwareScrollView & Keyboard-Avoiding Screens', () => {
   it('renders KeyboardAwareScrollView with KeyboardAwareTextInput children', () => {
@@ -47,19 +48,19 @@ describe('KeyboardAwareScrollView & Keyboard-Avoiding Screens', () => {
   it('renders AddCheckupScreen with all numeric and multiline inputs inside KeyboardAwareScrollView', () => {
     const html = renderToString(React.createElement(AddCheckupScreen));
 
-    expect(html).toContain('Agregar nuevo control');
-    expect(html).toContain('Fecha del control');
-    expect(html).toContain('Peso (kg)');
-    expect(html).toContain('Talla (cm)');
-    expect(html).toContain('Observaciones');
-    expect(html).toContain('Guardar y calcular');
+    expect(html).toContain(i18n.t('caregiver:addCheckup.title'));
+    expect(html).toContain(i18n.t('caregiver:addCheckup.dateLabel'));
+    expect(html).toContain(i18n.t('caregiver:addCheckup.weightLabel'));
+    expect(html).toContain(i18n.t('caregiver:addCheckup.heightLabel'));
+    expect(html).toContain(i18n.t('caregiver:addCheckup.notesLabel'));
+    expect(html).toContain(i18n.t('caregiver:addCheckup.submit'));
   });
 
   it('renders ChatDetailScreen with message list and bottom input bar', () => {
     const html = renderToString(React.createElement(ChatDetailScreen));
 
     expect(html).toContain('Equipo de Mateo');
-    expect(html).toContain('Escribe un mensaje...');
+    expect(html).toContain(i18n.t('caregiver:chat.inputPlaceholder'));
     expect(html).toContain('Enviar');
   });
 });

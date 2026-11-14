@@ -9,6 +9,7 @@ import {
 } from '@nutrikids/shared';
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -17,14 +18,18 @@ import {
 } from '../../components/KeyboardAwareScrollView.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { formatAge } from '../../i18n/format.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
-import { buildCreateChildPayload } from '../../lib/child-form.js';
+import {
+  RELATIONSHIP_OPTIONS,
+  buildCreateChildPayload,
+  type Relationship,
+} from '../../lib/child-form.js';
 import { createChild } from '../../lib/children-api.js';
-
-const RELATIONSHIP_OPTIONS = ['Madre', 'Padre', 'Tutor Legal'] as const;
 
 export default function AddChildScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['caregiver', 'common']);
 
   const lastNameRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
   const dayRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
@@ -37,14 +42,14 @@ export default function AddChildScreen() {
   const [birthMonth, setBirthMonth] = useState('');
   const [birthYear, setBirthYear] = useState('');
   const [sex, setSex] = useState<Sex>('MALE');
-  const [relationship, setRelationship] = useState<string>('Madre');
+  const [relationship, setRelationship] = useState<Relationship>('MOTHER');
   const [isLegalRepresentative, setIsLegalRepresentative] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Construir fecha ISO YYYY-MM-DD si los 3 campos están completos
+  // Build the ISO YYYY-MM-DD date once the 3 fields are filled in
   const formattedDay = birthDay.padStart(2, '0');
   const formattedMonth = birthMonth.padStart(2, '0');
   const birthDateIso =
@@ -52,7 +57,7 @@ export default function AddChildScreen() {
       ? `${birthYear}-${formattedMonth}-${formattedDay}`
       : '';
 
-  // Cálculo de edad preliminar en meses para feedback en tiempo real
+  // Preliminary age in months for real-time feedback
   let calculatedMonths: number | null = null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(birthDateIso)) {
     try {
@@ -94,7 +99,7 @@ export default function AddChildScreen() {
     setLoading(true);
     try {
       await createChild(validation.data);
-      // Al guardar los datos del menor, redirige a la pantalla de inicio del cuidador
+      // After saving the child, go back to the caregiver home
       router.replace(APP_ROUTES.CAREGIVER.HOME as never);
     } catch (err) {
       setGeneralError(formatAuthErrorMessage(err));
@@ -112,10 +117,10 @@ export default function AddChildScreen() {
           onPress={handleBack}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Volver a la pantalla anterior"
+          accessibilityLabel={t('common:actions.goBack')}
         >
           <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-          <Text style={styles.backButtonText}>Volver</Text>
+          <Text style={styles.backButtonText}>{t('common:actions.back')}</Text>
         </Pressable>
       </View>
 
@@ -123,11 +128,8 @@ export default function AddChildScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
-        <Text style={styles.screenTitle}>Registrar niño</Text>
-        <Text style={styles.screenSubtitle}>
-          Ingresa los datos de tu hijo o hija para realizar el seguimiento de su crecimiento con los
-          patrones oficiales de la OMS.
-        </Text>
+        <Text style={styles.screenTitle}>{t('addChild.title')}</Text>
+        <Text style={styles.screenSubtitle}>{t('addChild.subtitle')}</Text>
 
         {generalError && (
           <View style={styles.errorBox}>
@@ -139,7 +141,7 @@ export default function AddChildScreen() {
         <View style={styles.formContainer}>
           {/* Nombre */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nombre</Text>
+            <Text style={styles.label}>{t('addChild.firstNameLabel')}</Text>
             <KeyboardAwareTextInput
               style={[styles.input, fieldErrors['firstName'] ? styles.inputError : undefined]}
               value={firstName}
@@ -149,7 +151,7 @@ export default function AddChildScreen() {
                   setFieldErrors((prev) => ({ ...prev, firstName: '' }));
                 }
               }}
-              placeholder="Ej: Mateo"
+              placeholder={t('addChild.firstNamePlaceholder')}
               placeholderTextColor={PALETTE.input.placeholder}
               autoCapitalize="words"
               returnKeyType="next"
@@ -164,7 +166,7 @@ export default function AddChildScreen() {
 
           {/* Apellido */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Apellido</Text>
+            <Text style={styles.label}>{t('addChild.lastNameLabel')}</Text>
             <KeyboardAwareTextInput
               ref={lastNameRef}
               style={[styles.input, fieldErrors['lastName'] ? styles.inputError : undefined]}
@@ -175,7 +177,7 @@ export default function AddChildScreen() {
                   setFieldErrors((prev) => ({ ...prev, lastName: '' }));
                 }
               }}
-              placeholder="Ej: Rodríguez"
+              placeholder={t('addChild.lastNamePlaceholder')}
               placeholderTextColor={PALETTE.input.placeholder}
               autoCapitalize="words"
               returnKeyType="next"
@@ -190,13 +192,13 @@ export default function AddChildScreen() {
 
           {/* Sexo */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Sexo biológico</Text>
+            <Text style={styles.label}>{t('addChild.sexLabel')}</Text>
             <View style={styles.sexRow}>
               <Pressable
                 style={[styles.sexChip, sex === 'MALE' ? styles.sexChipSelected : undefined]}
                 onPress={() => setSex('MALE')}
                 accessibilityRole="button"
-                accessibilityLabel="Seleccionar sexo niño"
+                accessibilityLabel={t('addChild.sexMaleA11y')}
               >
                 <Ionicons
                   name="male"
@@ -209,7 +211,7 @@ export default function AddChildScreen() {
                     sex === 'MALE' ? styles.sexChipTextSelected : undefined,
                   ]}
                 >
-                  Niño
+                  {t('addChild.sexMale')}
                 </Text>
               </Pressable>
 
@@ -217,7 +219,7 @@ export default function AddChildScreen() {
                 style={[styles.sexChip, sex === 'FEMALE' ? styles.sexChipSelected : undefined]}
                 onPress={() => setSex('FEMALE')}
                 accessibilityRole="button"
-                accessibilityLabel="Seleccionar sexo niña"
+                accessibilityLabel={t('addChild.sexFemaleA11y')}
               >
                 <Ionicons
                   name="female"
@@ -230,7 +232,7 @@ export default function AddChildScreen() {
                     sex === 'FEMALE' ? styles.sexChipTextSelected : undefined,
                   ]}
                 >
-                  Niña
+                  {t('addChild.sexFemale')}
                 </Text>
               </Pressable>
             </View>
@@ -238,14 +240,17 @@ export default function AddChildScreen() {
 
           {/* Fecha de nacimiento */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Fecha de nacimiento</Text>
+            <Text style={styles.label}>{t('addChild.birthDateLabel')}</Text>
             <Text style={styles.helperText}>
-              Acepta niños de {MIN_CHILD_AGE_MONTHS} a {MAX_CHILD_AGE_MONTHS} meses (1 a 5 años).
+              {t('addChild.ageRangeHelper', {
+                min: MIN_CHILD_AGE_MONTHS,
+                max: MAX_CHILD_AGE_MONTHS,
+              })}
             </Text>
 
             <View style={styles.dateInputsRow}>
               <View style={styles.dateColSmall}>
-                <Text style={styles.subLabel}>Día</Text>
+                <Text style={styles.subLabel}>{t('addChild.day')}</Text>
                 <KeyboardAwareTextInput
                   ref={dayRef}
                   style={[
@@ -258,7 +263,7 @@ export default function AddChildScreen() {
                     setBirthDay(clean);
                     if (clean.length === 2) monthRef.current?.focus();
                   }}
-                  placeholder="DD"
+                  placeholder={t('addChild.dayPlaceholder')}
                   placeholderTextColor={PALETTE.input.placeholder}
                   keyboardType="number-pad"
                   maxLength={2}
@@ -267,7 +272,7 @@ export default function AddChildScreen() {
               </View>
 
               <View style={styles.dateColSmall}>
-                <Text style={styles.subLabel}>Mes</Text>
+                <Text style={styles.subLabel}>{t('addChild.month')}</Text>
                 <KeyboardAwareTextInput
                   ref={monthRef}
                   style={[
@@ -280,7 +285,7 @@ export default function AddChildScreen() {
                     setBirthMonth(clean);
                     if (clean.length === 2) yearRef.current?.focus();
                   }}
-                  placeholder="MM"
+                  placeholder={t('addChild.monthPlaceholder')}
                   placeholderTextColor={PALETTE.input.placeholder}
                   keyboardType="number-pad"
                   maxLength={2}
@@ -289,7 +294,7 @@ export default function AddChildScreen() {
               </View>
 
               <View style={styles.dateColLarge}>
-                <Text style={styles.subLabel}>Año</Text>
+                <Text style={styles.subLabel}>{t('addChild.year')}</Text>
                 <KeyboardAwareTextInput
                   ref={yearRef}
                   style={[
@@ -301,7 +306,7 @@ export default function AddChildScreen() {
                     const clean = val.replace(/\D/g, '').slice(0, 4);
                     setBirthYear(clean);
                   }}
-                  placeholder="AAAA"
+                  placeholder={t('addChild.yearPlaceholder')}
                   placeholderTextColor={PALETTE.input.placeholder}
                   keyboardType="number-pad"
                   maxLength={4}
@@ -340,8 +345,10 @@ export default function AddChildScreen() {
                   }
                 />
                 <Text style={styles.ageBadgeText}>
-                  Edad calculada: {calculatedMonths} meses ({Math.floor(calculatedMonths / 12)} años
-                  y {calculatedMonths % 12} meses)
+                  {t('addChild.calculatedAge', {
+                    months: calculatedMonths,
+                    age: formatAge(calculatedMonths),
+                  })}
                 </Text>
               </View>
             )}
@@ -349,7 +356,7 @@ export default function AddChildScreen() {
 
           {/* Parentesco */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Tu parentesco con el niño/a</Text>
+            <Text style={styles.label}>{t('addChild.relationshipLabel')}</Text>
             <View style={styles.relationshipRow}>
               {RELATIONSHIP_OPTIONS.map((rel) => (
                 <Pressable
@@ -360,7 +367,7 @@ export default function AddChildScreen() {
                   ]}
                   onPress={() => setRelationship(rel)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Parentesco ${rel}`}
+                  accessibilityLabel={t(`common:relationships.${rel}`)}
                 >
                   <Text
                     style={[
@@ -368,7 +375,7 @@ export default function AddChildScreen() {
                       relationship === rel ? styles.relationshipChipTextSelected : undefined,
                     ]}
                   >
-                    {rel}
+                    {t(`common:relationships.${rel}`)}
                   </Text>
                 </Pressable>
               ))}
@@ -381,7 +388,7 @@ export default function AddChildScreen() {
             onPress={() => setIsLegalRepresentative((prev) => !prev)}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: isLegalRepresentative }}
-            accessibilityLabel="Soy el representante legal del niño"
+            accessibilityLabel={t('addChild.legalRepA11y')}
           >
             <View
               style={[
@@ -391,10 +398,7 @@ export default function AddChildScreen() {
             >
               {isLegalRepresentative && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
             </View>
-            <Text style={styles.checkboxLabel}>
-              Declaro que soy el representante legal del niño/a para autorizar su registro y
-              tratamiento de datos nutricionales.
-            </Text>
+            <Text style={styles.checkboxLabel}>{t('addChild.legalRepLabel')}</Text>
           </Pressable>
           {fieldErrors['isLegalRepresentative'] ? (
             <Text style={styles.errorText}>{fieldErrors['isLegalRepresentative']}</Text>
@@ -406,12 +410,12 @@ export default function AddChildScreen() {
             onPress={() => void handleSubmit()}
             disabled={loading}
             accessibilityRole="button"
-            accessibilityLabel="Guardar niño"
+            accessibilityLabel={t('addChild.submit')}
           >
             {loading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.submitButtonText}>Guardar niño</Text>
+              <Text style={styles.submitButtonText}>{t('addChild.submit')}</Text>
             )}
           </Pressable>
         </View>

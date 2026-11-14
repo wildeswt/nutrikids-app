@@ -1,14 +1,14 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 export default function ProfessionalChildrenScreen() {
+  const { t } = useTranslation(['professional', 'common']);
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Pacientes Clasificados por Riesgo</Text>
-        <Text style={styles.description}>
-          Lista de niños vinculados categorizados según el nivel de riesgo antropométrico.
-        </Text>
+        <Text style={styles.title}>{t('children.title')}</Text>
+        <Text style={styles.description}>{t('children.description')}</Text>
       </View>
     </View>
   );

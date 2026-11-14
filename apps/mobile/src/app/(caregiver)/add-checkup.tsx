@@ -9,6 +9,7 @@ import {
   type Position,
 } from '@nutrikids/shared';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,34 +18,11 @@ import {
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
 import { PALETTE } from '../../constants/colors.js';
+import { DEMO_CHILDREN, DEMO_NEW_CHECKUP } from '../../constants/demo-data.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { formatAge, formatDecimal, formatLongDate } from '../../i18n/format.js';
 
-interface PatientOption {
-  id: string;
-  fullName: string;
-  ageLabel: string;
-  birthDateLabel: string;
-}
-
-const SAMPLE_PATIENTS: PatientOption[] = [
-  {
-    id: 'mateo-1',
-    fullName: 'Mateo José Rodríguez',
-    ageLabel: '3 años y 5 meses',
-    birthDateLabel: '12 de mayo de 2023',
-  },
-  {
-    id: 'sofia-2',
-    fullName: 'Sofía Valentina Rodríguez',
-    ageLabel: '1 año y 8 meses',
-    birthDateLabel: '14 de febrero de 2025',
-  },
-];
-
-const POSITION_OPTIONS: { value: Position; label: string }[] = [
-  { value: 'STANDING', label: 'De pie' },
-  { value: 'RECUMBENT', label: 'Acostado' },
-];
+const POSITION_OPTIONS: Position[] = ['STANDING', 'RECUMBENT'];
 
 function parseDecimalInput(raw: string): number {
   const normalized = raw.trim().replace(',', '.');
@@ -53,22 +31,24 @@ function parseDecimalInput(raw: string): number {
 
 export default function AddCheckupScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['caregiver', 'common']);
 
   const [selectedPatientIndex, setSelectedPatientIndex] = useState(0);
-  const [measuredDateText, setMeasuredDateText] = useState('18 de octubre de 2026');
-  const [position, setPosition] = useState<Position>('STANDING');
+  const [measuredDateText, setMeasuredDateText] = useState(() =>
+    formatLongDate(DEMO_NEW_CHECKUP.measuredAt),
+  );
+  const [position, setPosition] = useState<Position>(DEMO_NEW_CHECKUP.position);
   const [showPositionMenu, setShowPositionMenu] = useState(false);
-  const [weightText, setWeightText] = useState('12,2');
-  const [heightText, setHeightText] = useState('97,0');
+  const [weightText, setWeightText] = useState(() => formatDecimal(DEMO_NEW_CHECKUP.weightKg));
+  const [heightText, setHeightText] = useState(() => formatDecimal(DEMO_NEW_CHECKUP.heightCm));
   const [observations, setObservations] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [outlierWarning, setOutlierWarning] = useState<string | null>(null);
   const [confirmedOutlier, setConfirmedOutlier] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  const activePatient = SAMPLE_PATIENTS[selectedPatientIndex] ?? SAMPLE_PATIENTS[0];
-  const selectedPositionLabel =
-    POSITION_OPTIONS.find((opt) => opt.value === position)?.label ?? 'De pie';
+  const activePatient = DEMO_CHILDREN[selectedPatientIndex] ?? DEMO_CHILDREN[0]!;
+  const selectedPositionLabel = t(`addCheckup.positions.${position}`);
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -79,7 +59,7 @@ export default function AddCheckupScreen() {
   };
 
   const handleSwitchPatient = () => {
-    setSelectedPatientIndex((prev) => (prev + 1) % SAMPLE_PATIENTS.length);
+    setSelectedPatientIndex((prev) => (prev + 1) % DEMO_CHILDREN.length);
     setErrorMessage(null);
     setOutlierWarning(null);
     setConfirmedOutlier(false);
@@ -94,12 +74,14 @@ export default function AddCheckupScreen() {
     const lengthHeightCm = parseDecimalInput(heightText);
 
     if (!measuredDateText.trim()) {
-      setErrorMessage('Ingresa la fecha del control.');
+      setErrorMessage(t('addCheckup.errors.dateRequired'));
       return;
     }
 
     if (Number.isNaN(weightKg) || weightKg < WEIGHT_MIN_KG || weightKg > WEIGHT_MAX_KG) {
-      setErrorMessage(`El peso debe estar entre ${WEIGHT_MIN_KG} y ${WEIGHT_MAX_KG} kg.`);
+      setErrorMessage(
+        t('addCheckup.errors.weightRange', { min: WEIGHT_MIN_KG, max: WEIGHT_MAX_KG }),
+      );
       return;
     }
 
@@ -109,7 +91,10 @@ export default function AddCheckupScreen() {
       lengthHeightCm > LENGTH_HEIGHT_MAX_CM
     ) {
       setErrorMessage(
-        `La talla debe estar entre ${LENGTH_HEIGHT_MIN_CM} y ${LENGTH_HEIGHT_MAX_CM} cm.`,
+        t('addCheckup.errors.heightRange', {
+          min: LENGTH_HEIGHT_MIN_CM,
+          max: LENGTH_HEIGHT_MAX_CM,
+        }),
       );
       return;
     }
@@ -118,9 +103,7 @@ export default function AddCheckupScreen() {
     const heightPlausible = isPlausibleLengthHeight(lengthHeightCm);
 
     if ((!weightPlausible || !heightPlausible) && !confirmedOutlier) {
-      setOutlierWarning(
-        'Uno de los valores ingresados es atípico para la edad. Pulsa nuevamente "Guardar y calcular" para confirmar la medida.',
-      );
+      setOutlierWarning(t('addCheckup.errors.outlier'));
       setConfirmedOutlier(true);
       return;
     }
@@ -139,20 +122,23 @@ export default function AddCheckupScreen() {
           style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
           onPress={handleBack}
           accessibilityRole="button"
-          accessibilityLabel="Volver"
+          accessibilityLabel={t('addCheckup.back')}
         >
           <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-          <Text style={styles.backText}>Volver</Text>
+          <Text style={styles.backText}>{t('addCheckup.back')}</Text>
         </Pressable>
 
         {/* Título principal */}
-        <Text style={styles.screenTitle}>Agregar nuevo control</Text>
+        <Text style={styles.screenTitle}>{t('addCheckup.title')}</Text>
 
         {/* Tarjeta naranja del paciente activo */}
         <View style={styles.patientCard}>
           <Text style={styles.patientName}>{activePatient.fullName}</Text>
           <Text style={styles.patientSubtitle}>
-            {activePatient.ageLabel} - {activePatient.birthDateLabel}
+            {t('addCheckup.childSubtitle', {
+              age: formatAge(activePatient.ageMonths),
+              birthDate: formatLongDate(activePatient.birthDate),
+            })}
           </Text>
         </View>
 
@@ -161,9 +147,9 @@ export default function AddCheckupScreen() {
           style={({ pressed }) => [styles.changePatientButton, pressed && styles.pressed]}
           onPress={handleSwitchPatient}
           accessibilityRole="button"
-          accessibilityLabel="Cambiar paciente"
+          accessibilityLabel={t('addCheckup.changeChild')}
         >
-          <Text style={styles.changePatientText}>Cambiar paciente</Text>
+          <Text style={styles.changePatientText}>{t('addCheckup.changeChild')}</Text>
         </Pressable>
 
         {/* Mensajes de error o confirmación de valor atípico */}
@@ -181,21 +167,23 @@ export default function AddCheckupScreen() {
 
         {savedSuccess ? (
           <View style={styles.successBanner}>
-            <Text style={styles.successBannerText}>Control guardado correctamente.</Text>
+            <Text style={styles.successBannerText}>{t('addCheckup.saved')}</Text>
           </View>
         ) : null}
 
         {/* Campo: Fecha del control */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Fecha del control</Text>
+          <Text style={styles.fieldLabel}>{t('addCheckup.dateLabel')}</Text>
           <View style={styles.pillInputContainer}>
             <KeyboardAwareTextInput
               style={styles.pillTextInput}
               value={measuredDateText}
               onChangeText={setMeasuredDateText}
-              placeholder="Ej. 18 de octubre de 2026"
+              placeholder={t('addCheckup.datePlaceholder', {
+                example: formatLongDate(DEMO_NEW_CHECKUP.measuredAt),
+              })}
               placeholderTextColor={PALETTE.input.placeholder}
-              accessibilityLabel="Fecha del control"
+              accessibilityLabel={t('addCheckup.dateLabel')}
             />
             <Ionicons name="calendar" size={22} color="#27272A" />
           </View>
@@ -203,12 +191,12 @@ export default function AddCheckupScreen() {
 
         {/* Campo: Posición de medición */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Posición de medición</Text>
+          <Text style={styles.fieldLabel}>{t('addCheckup.positionLabel')}</Text>
           <Pressable
             style={({ pressed }) => [styles.pillInputContainer, pressed && styles.pressed]}
             onPress={() => setShowPositionMenu((prev) => !prev)}
             accessibilityRole="button"
-            accessibilityLabel="Posición de medición"
+            accessibilityLabel={t('addCheckup.positionLabel')}
           >
             <Text style={styles.selectorValueText}>{selectedPositionLabel}</Text>
             <Ionicons
@@ -221,13 +209,13 @@ export default function AddCheckupScreen() {
           {showPositionMenu ? (
             <View style={styles.dropdownMenu}>
               {POSITION_OPTIONS.map((option) => {
-                const isSelected = option.value === position;
+                const isSelected = option === position;
                 return (
                   <Pressable
-                    key={option.value}
+                    key={option}
                     style={[styles.dropdownOption, isSelected && styles.dropdownOptionSelected]}
                     onPress={() => {
-                      setPosition(option.value);
+                      setPosition(option);
                       setShowPositionMenu(false);
                     }}
                   >
@@ -237,7 +225,7 @@ export default function AddCheckupScreen() {
                         isSelected && styles.dropdownOptionTextSelected,
                       ]}
                     >
-                      {option.label}
+                      {t(`addCheckup.positions.${option}`)}
                     </Text>
                     {isSelected ? (
                       <Ionicons name="checkmark" size={18} color={PALETTE.primary} />
@@ -252,7 +240,7 @@ export default function AddCheckupScreen() {
         {/* Fila doble: Peso (kg) y Talla (cm) */}
         <View style={styles.measurementsRow}>
           <View style={styles.measurementColumn}>
-            <Text style={styles.fieldLabel}>Peso (kg)</Text>
+            <Text style={styles.fieldLabel}>{t('addCheckup.weightLabel')}</Text>
             <View style={styles.measurementBox}>
               <KeyboardAwareTextInput
                 style={styles.measurementInput}
@@ -263,16 +251,16 @@ export default function AddCheckupScreen() {
                   setOutlierWarning(null);
                 }}
                 keyboardType="decimal-pad"
-                placeholder="0,0"
+                placeholder={t('addCheckup.decimalPlaceholder')}
                 placeholderTextColor={PALETTE.input.placeholder}
-                accessibilityLabel="Peso en kilogramos"
+                accessibilityLabel={t('addCheckup.weightA11y')}
               />
-              <Text style={styles.measurementUnit}>kg</Text>
+              <Text style={styles.measurementUnit}>{t('common:units.kg')}</Text>
             </View>
           </View>
 
           <View style={styles.measurementColumn}>
-            <Text style={styles.fieldLabel}>Talla (cm)</Text>
+            <Text style={styles.fieldLabel}>{t('addCheckup.heightLabel')}</Text>
             <View style={styles.measurementBox}>
               <KeyboardAwareTextInput
                 style={styles.measurementInput}
@@ -283,29 +271,29 @@ export default function AddCheckupScreen() {
                   setOutlierWarning(null);
                 }}
                 keyboardType="decimal-pad"
-                placeholder="0,0"
+                placeholder={t('addCheckup.decimalPlaceholder')}
                 placeholderTextColor={PALETTE.input.placeholder}
-                accessibilityLabel="Talla en centímetros"
+                accessibilityLabel={t('addCheckup.heightA11y')}
               />
-              <Text style={styles.measurementUnit}>cm</Text>
+              <Text style={styles.measurementUnit}>{t('common:units.cm')}</Text>
             </View>
           </View>
         </View>
 
         {/* Campo: Observaciones */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>Observaciones</Text>
+          <Text style={styles.fieldLabel}>{t('addCheckup.notesLabel')}</Text>
           <View style={styles.observationsContainer}>
             <KeyboardAwareTextInput
               style={styles.observationsInput}
               value={observations}
               onChangeText={setObservations}
-              placeholder="Ejemplo: alimentación de hoy...."
+              placeholder={t('addCheckup.notesPlaceholder')}
               placeholderTextColor={PALETTE.input.placeholder}
               multiline
               numberOfLines={4}
               textAlignVertical="top"
-              accessibilityLabel="Observaciones"
+              accessibilityLabel={t('addCheckup.notesLabel')}
             />
           </View>
         </View>
@@ -315,9 +303,9 @@ export default function AddCheckupScreen() {
           style={({ pressed }) => [styles.submitButton, pressed && styles.submitButtonPressed]}
           onPress={handleSaveAndCalculate}
           accessibilityRole="button"
-          accessibilityLabel="Guardar y calcular"
+          accessibilityLabel={t('addCheckup.submit')}
         >
-          <Text style={styles.submitButtonText}>Guardar y calcular</Text>
+          <Text style={styles.submitButtonText}>{t('addCheckup.submit')}</Text>
         </Pressable>
       </KeyboardAwareScrollView>
     </SafeAreaView>

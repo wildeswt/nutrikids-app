@@ -1,6 +1,7 @@
 import type { ChildResponse, CreateChildInput } from '@nutrikids/shared';
 import { useCallback, useState } from 'react';
 import { createChild, fetchCaregiverChildren } from '../lib/children-api.js';
+import i18n from '../i18n/index.js';
 
 export type ChildrenStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 
@@ -33,8 +34,7 @@ export function useChildren() {
       }
       return children;
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Error desconocido al cargar la lista de niños';
+      const message = err instanceof Error ? err.message : i18n.t('errors:consent.childList');
       setState((prev) => ({
         ...prev,
         status: 'error',
@@ -56,7 +56,7 @@ export function useChildren() {
       });
       return newChild;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al registrar al niño';
+      const message = err instanceof Error ? err.message : i18n.t('errors:children.create');
       setState((prev) => ({
         ...prev,
         status: prev.children.length === 0 ? 'empty' : 'ready',

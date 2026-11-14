@@ -1,5 +1,6 @@
 import { USER_ROLES } from '@nutrikids/shared';
 import React from 'react';
+import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mocks for expo-router/drawer and react-navigation
@@ -73,7 +74,12 @@ describe('ProfessionalDrawerLayout', () => {
   });
 
   function getDrawerScreens(): DrawerScreenElement[] {
-    const layout = ProfessionalDrawerLayout();
+    let layout!: ReturnType<typeof ProfessionalDrawerLayout>;
+    function Capture() {
+      layout = ProfessionalDrawerLayout();
+      return null;
+    }
+    renderToString(React.createElement(Capture));
     return React.Children.toArray(layout.props.children) as DrawerScreenElement[];
   }
 
@@ -99,7 +105,12 @@ describe('ProfessionalDrawerLayout', () => {
   });
 
   it('renders CustomDrawerContent with professional profile info', () => {
-    const content = CustomDrawerContent({} as never);
+    let content: ReturnType<typeof CustomDrawerContent> | null = null;
+    function Capture() {
+      content = CustomDrawerContent({} as never);
+      return null;
+    }
+    renderToString(React.createElement(Capture));
     expect(content).not.toBeNull();
   });
 });

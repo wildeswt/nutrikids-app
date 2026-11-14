@@ -1,11 +1,13 @@
 import { Redirect, Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AUTH_STATUS } from '../constants/routes.js';
 import { AuthProvider, useAuth } from '../context/auth-context.js';
+import '../i18n/index.js';
+import { restoreLanguagePreference } from '../i18n/language.js';
 import { resolveGuardRedirect } from '../lib/navigation-guard.js';
 
 export function NavigationGuard() {
@@ -46,6 +48,22 @@ export function NavigationGuard() {
 }
 
 export default function RootLayout() {
+  // Wait for the language saved in the app (Español / Kichwa) before showing any screen, so a
+  // user who picked Kichwa on a Spanish phone never sees a flash of Spanish.
+  const [isLanguageReady, setIsLanguageReady] = useState(false);
+
+  useEffect(() => {
+    void restoreLanguagePreference().finally(() => setIsLanguageReady(true));
+  }, []);
+
+  if (!isLanguageReady) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#16A34A" />
+      </View>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>

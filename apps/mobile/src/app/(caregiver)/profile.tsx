@@ -1,5 +1,6 @@
 import { USER_ROLES, type ChildResponse } from '@nutrikids/shared';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -10,9 +11,11 @@ import {
   Text,
   View,
 } from 'react-native';
+import { LanguageSelector } from '../../components/LanguageSelector.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
 import { useConsent } from '../../hooks/useConsent.js';
+import { formatNumericDate } from '../../i18n/format.js';
 import { fetchCaregiverChildren } from '../../lib/consent-api.js';
 
 interface ConsentChildItemProps {
@@ -21,31 +24,34 @@ interface ConsentChildItemProps {
 
 export function ConsentChildItem({ child }: ConsentChildItemProps) {
   const router = useRouter();
+  const { t } = useTranslation(['caregiver', 'common']);
   const { status, consent, error, revoke } = useConsent(child.id);
 
   const formatDate = (isoString?: string | null) => {
     if (!isoString) return '-';
-    const d = new Date(isoString);
-    return d.toLocaleDateString('es-CL');
+    return formatNumericDate(new Date(isoString));
   };
 
   const handleRevoke = () => {
     Alert.alert(
-      'Revocar consentimiento',
-      `¿Deseas revocar el consentimiento informado de ${child.firstName} ${child.lastName}? No se podrán ingresar nuevos controles de salud hasta renovarlo.`,
+      t('consentItem.revokeTitle'),
+      t('consentItem.revokeMessage', { name: `${child.firstName} ${child.lastName}` }),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('common:actions.cancel'), style: 'cancel' },
         {
-          text: 'Revocar',
+          text: t('consentItem.revokeConfirm'),
           style: 'destructive',
           onPress: async () => {
             try {
               await revoke();
-              Alert.alert('Éxito', 'El consentimiento ha sido revocado correctamente.');
+              Alert.alert(
+                t('consentItem.revokeSuccessTitle'),
+                t('consentItem.revokeSuccessMessage'),
+              );
             } catch (err) {
               Alert.alert(
-                'Error al revocar',
-                err instanceof Error ? err.message : 'No se pudo revocar.',
+                t('consentItem.revokeErrorTitle'),
+                err instanceof Error ? err.message : t('consentItem.revokeErrorMessage'),
               );
             }
           },
@@ -74,11 +80,13 @@ export function ConsentChildItem({ child }: ConsentChildItemProps) {
         {status === 'loading' ? (
           <ActivityIndicator size="small" color="#16A34A" />
         ) : consent && !consent.revokedAt ? (
-          <Text style={[styles.badgeBase, styles.badgeActive]}>VIGENTE</Text>
+          <Text style={[styles.badgeBase, styles.badgeActive]}>{t('consentItem.badgeActive')}</Text>
         ) : consent?.revokedAt ? (
-          <Text style={[styles.badgeBase, styles.badgeRevoked]}>REVOCADO</Text>
+          <Text style={[styles.badgeBase, styles.badgeRevoked]}>
+            {t('consentItem.badgeRevoked')}
+          </Text>
         ) : (
-          <Text style={[styles.badgeBase, styles.badgeNone]}>SIN CONSENTIMIENTO</Text>
+          <Text style={[styles.badgeBase, styles.badgeNone]}>{t('consentItem.badgeNone')}</Text>
         )}
       </View>
 
@@ -87,11 +95,11 @@ export function ConsentChildItem({ child }: ConsentChildItemProps) {
       {consent && !consent.revokedAt && (
         <View style={styles.consentDetails}>
           <Text style={styles.consentDetailText}>
-            <Text style={styles.detailLabel}>Versión aceptada: </Text>
+            <Text style={styles.detailLabel}>{t('consentItem.version')}</Text>
             {consent.textVersion}
           </Text>
           <Text style={styles.consentDetailText}>
-            <Text style={styles.detailLabel}>Fecha: </Text>
+            <Text style={styles.detailLabel}>{t('consentItem.date')}</Text>
             {formatDate(consent.grantedAt)}
           </Text>
         </View>
@@ -100,7 +108,7 @@ export function ConsentChildItem({ child }: ConsentChildItemProps) {
       {consent?.revokedAt && (
         <View style={styles.consentDetails}>
           <Text style={styles.consentDetailText}>
-            <Text style={styles.detailLabel}>Revocado el: </Text>
+            <Text style={styles.detailLabel}>{t('consentItem.revokedOn')}</Text>
             {formatDate(consent.revokedAt)}
           </Text>
         </View>
@@ -112,7 +120,7 @@ export function ConsentChildItem({ child }: ConsentChildItemProps) {
           onPress={handleView}
           testID={`view-consent-${child.id}`}
         >
-          <Text style={styles.actionButtonOutlineText}>Ver documento</Text>
+          <Text style={styles.actionButtonOutlineText}>{t('consentItem.viewDocument')}</Text>
         </Pressable>
 
         {consent && !consent.revokedAt && (
@@ -121,7 +129,7 @@ export function ConsentChildItem({ child }: ConsentChildItemProps) {
             onPress={handleRevoke}
             testID={`revoke-consent-${child.id}`}
           >
-            <Text style={styles.actionButtonRevokeText}>Revocar</Text>
+            <Text style={styles.actionButtonRevokeText}>{t('consentItem.revoke')}</Text>
           </Pressable>
         )}
       </View>
@@ -130,6 +138,7 @@ export function ConsentChildItem({ child }: ConsentChildItemProps) {
 }
 
 export default function CaregiverProfileScreen() {
+  const { t } = useTranslation(['caregiver', 'common']);
   const { user, activeRole, switchRole, signOut } = useAuth();
   const [children, setChildren] = useState<ChildResponse[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
@@ -158,23 +167,23 @@ export default function CaregiverProfileScreen() {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} testID="caregiver-profile-screen">
       <View style={styles.card}>
-        <Text style={styles.title}>Mi Perfil</Text>
+        <Text style={styles.title}>{t('profile.title')}</Text>
 
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Nombre:</Text>
+          <Text style={styles.label}>{t('profile.name')}</Text>
           <Text style={styles.value}>
             {user?.firstName} {user?.lastName}
           </Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Correo:</Text>
+          <Text style={styles.label}>{t('profile.email')}</Text>
           <Text style={styles.value}>{user?.email}</Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.label}>Perfil activo:</Text>
-          <Text style={styles.badge}>{activeRole}</Text>
+          <Text style={styles.label}>{t('profile.activeRole')}</Text>
+          <Text style={styles.badge}>{activeRole ? t(`common:roles.${activeRole}`) : '-'}</Text>
         </View>
 
         {hasDualRole && (
@@ -182,17 +191,14 @@ export default function CaregiverProfileScreen() {
             style={({ pressed }) => [styles.switchButton, pressed && styles.buttonPressed]}
             onPress={() => void switchRole(USER_ROLES.PROFESSIONAL)}
           >
-            <Text style={styles.switchButtonText}>Cambiar a vista Profesional</Text>
+            <Text style={styles.switchButtonText}>{t('profile.switchToProfessional')}</Text>
           </Pressable>
         )}
 
         {/* Sección de consentimientos informados por niño (Criterios NK-20) */}
         <View style={styles.sectionContainer} testID="consents-section">
-          <Text style={styles.sectionTitle}>Consentimientos Informados</Text>
-          <Text style={styles.sectionDescription}>
-            Gestiona la autorización de tratamiento de datos y seguimiento nutricional de tus
-            hijos/as.
-          </Text>
+          <Text style={styles.sectionTitle}>{t('profile.consentsTitle')}</Text>
+          <Text style={styles.sectionDescription}>{t('profile.consentsDescription')}</Text>
 
           {loadingChildren ? (
             <ActivityIndicator size="small" color="#16A34A" style={styles.loader} />
@@ -200,25 +206,24 @@ export default function CaregiverProfileScreen() {
             children.map((child) => <ConsentChildItem key={child.id} child={child} />)
           ) : (
             <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>
-                No tienes niños registrados actualmente. Al registrar un niño se solicitará el
-                consentimiento informado previo.
-              </Text>
+              <Text style={styles.emptyText}>{t('profile.noChildren')}</Text>
             </View>
           )}
         </View>
 
+        <View style={styles.sectionContainer}>
+          <LanguageSelector />
+        </View>
+
         <View style={styles.noteBox}>
-          <Text style={styles.noteText}>
-            Nota: La gestión de datos personales y portabilidad se integrará en NK-41.
-          </Text>
+          <Text style={styles.noteText}>{t('profile.dataNote')}</Text>
         </View>
 
         <Pressable
           style={({ pressed }) => [styles.logoutButton, pressed && styles.buttonPressed]}
           onPress={() => void signOut()}
         >
-          <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+          <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </Pressable>
       </View>
     </ScrollView>

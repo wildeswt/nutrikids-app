@@ -1,0 +1,34 @@
+{
+  "generic": "Error al procesar la solicitud. Intenta nuevamente.",
+  "requestFailed": "Error al procesar la solicitud.",
+  "network": "No se pudo conectar con el servidor. Verifica tu conexión a internet.",
+  "timeout": "Tiempo agotado conectando a {{url}}",
+  "invalidResponse": "La respuesta del servidor no tiene el formato esperado.",
+  "sessionRefreshNetwork": "Error de red al renovar la sesión. Verifica tu conexión.",
+  "http": {
+    "401": "Correo o contraseña incorrectos. Verifica tus credenciales.",
+    "403": "Acceso denegado o código de invitación profesional inválido.",
+    "404": "El recurso solicitado no fue encontrado.",
+    "409": "El correo electrónico o número de licencia ya se encuentra registrado.",
+    "429": "Demasiados intentos fallidos. Por seguridad, espera unos minutos antes de volver a intentar.",
+    "5xx": "El servidor no se encuentra disponible. Por favor, intenta de nuevo más tarde."
+  },
+  "auth": {
+    "login": "Error inesperado al iniciar sesión.",
+    "register": "Error inesperado al registrar la cuenta.",
+    "forgotPassword": "Error inesperado al solicitar restablecimiento de contraseña.",
+    "resetPassword": "Error inesperado al restablecer la contraseña."
+  },
+  "consent": {
+    "fetch": "No pudimos ver el permiso de este niño. Intenta de nuevo.",
+    "grant": "No pudimos guardar tu permiso. Intenta de nuevo.",
+    "revoke": "No pudimos retirar el permiso. Intenta de nuevo.",
+    "load": "No pudimos cargar el permiso. Intenta de nuevo.",
+    "childList": "No pudimos cargar la lista de tus niños.",
+    "missingChildForGrant": "Falta elegir el niño para dar el permiso.",
+    "missingChildForRevoke": "Falta elegir el niño para retirar el permiso."
+  },
+  "children": {
+    "create": "No pudimos registrar al niño. Intenta de nuevo."
+  }
+}

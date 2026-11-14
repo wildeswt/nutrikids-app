@@ -1,48 +1,28 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../../constants/colors.js';
+import { DEMO_ACTIVE_CHILD, DEMO_CHAT } from '../../constants/demo-data.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { formatLongDate, formatTime } from '../../i18n/format.js';
 import { useKeyboardOverlap } from '../../hooks/useKeyboardBottomInset.js';
 
 interface ChatMessage {
   id: string;
-  senderName: string;
   isMe: boolean;
   content: string;
   time: string;
-  statusText?: string;
+  status?: 'read' | 'sent';
 }
 
-const INITIAL_MESSAGES: ChatMessage[] = [
-  {
-    id: 'msg-1',
-    senderName: 'Dra. Laura Pérez',
-    isMe: false,
-    content: 'Hola, Andrea. ¿Cómo ha estado la alimentación de Mateo esta semana?',
-    time: '09:32',
-  },
-  {
-    id: 'msg-2',
-    senderName: 'Tú',
-    isMe: true,
-    content: 'Hoy registré sus comidas. Ha comido mejor y tomó agua durante el día.',
-    time: '09:35',
-    statusText: 'Leído',
-  },
-  {
-    id: 'msg-3',
-    senderName: 'Dra. Laura Pérez',
-    isMe: false,
-    content: 'Gracias. Revisaremos el registro en el control del 25 de octubre.',
-    time: '09:40',
-  },
-];
+const INITIAL_MESSAGES: ChatMessage[] = DEMO_CHAT.messages;
 
 export default function ChatDetailScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['caregiver', 'common']);
   const containerRef = useRef<React.ComponentRef<typeof View>>(null);
   const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const { bottomOverlap, updateOverlap } = useKeyboardOverlap(containerRef);
@@ -71,11 +51,10 @@ export default function ChatDetailScreen() {
 
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
-      senderName: 'Tú',
       isMe: true,
       content: trimmed,
-      time: '09:42',
-      statusText: 'Enviado',
+      time: formatTime(new Date()),
+      status: 'sent',
     };
 
     setMessages((prev) => [...prev, newMessage]);
@@ -109,23 +88,32 @@ export default function ChatDetailScreen() {
             style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
             onPress={handleBack}
             accessibilityRole="button"
-            accessibilityLabel="Volver"
+            accessibilityLabel={t('chat.back')}
           >
             <Ionicons name="chevron-back" size={20} color={PALETTE.text.title} />
-            <Text style={styles.backText}>Volver</Text>
+            <Text style={styles.backText}>{t('chat.back')}</Text>
           </Pressable>
 
           {/* Título de la conversación */}
-          <Text style={styles.chatTitle}>Equipo de Mateo</Text>
+          <Text style={styles.chatTitle}>
+            {t('chat.title', { name: DEMO_ACTIVE_CHILD.firstName })}
+          </Text>
 
           {/* Tarjeta Naranja Superior */}
           <View style={styles.headerCard}>
-            <Text style={styles.headerDoctorTitle}>Dra. Laura Pérez · Nutrición</Text>
-            <Text style={styles.headerChildSubtitle}>Sobre Mateo José Rodríguez</Text>
+            <Text style={styles.headerDoctorTitle}>
+              {t('chat.professional', {
+                name: DEMO_CHAT.professionalName,
+                specialty: t(`common:specialties.${DEMO_CHAT.specialty}`),
+              })}
+            </Text>
+            <Text style={styles.headerChildSubtitle}>
+              {t('chat.about', { name: DEMO_ACTIVE_CHILD.fullName })}
+            </Text>
           </View>
 
           {/* Separador de fecha */}
-          <Text style={styles.dateSeparator}>18 de octubre de 2026</Text>
+          <Text style={styles.dateSeparator}>{formatLongDate(DEMO_CHAT.date)}</Text>
 
           {/* Lista de burbujas de chat */}
           <View style={styles.chatContainer}>
@@ -134,12 +122,12 @@ export default function ChatDetailScreen() {
                 return (
                   <View key={item.id} style={styles.myMessageWrapper}>
                     <View style={styles.myMessageBubble}>
-                      <Text style={styles.mySenderName}>{item.senderName}</Text>
+                      <Text style={styles.mySenderName}>{t('chat.me')}</Text>
                       <Text style={styles.myMessageText}>{item.content}</Text>
                       <View style={styles.myMetaRow}>
                         <Text style={styles.myMetaText}>
                           {item.time}
-                          {item.statusText ? ` · ${item.statusText}` : ''}
+                          {item.status ? ` · ${t(`chat.status.${item.status}`)}` : ''}
                         </Text>
                       </View>
                     </View>
@@ -150,7 +138,7 @@ export default function ChatDetailScreen() {
               return (
                 <View key={item.id} style={styles.otherMessageWrapper}>
                   <View style={styles.otherMessageBubble}>
-                    <Text style={styles.otherSenderName}>{item.senderName}</Text>
+                    <Text style={styles.otherSenderName}>{DEMO_CHAT.professionalName}</Text>
                     <Text style={styles.otherMessageText}>{item.content}</Text>
                     <Text style={styles.otherTimeText}>{item.time}</Text>
                   </View>
@@ -168,9 +156,9 @@ export default function ChatDetailScreen() {
                 style={styles.textInput}
                 value={inputText}
                 onChangeText={setInputText}
-                placeholder="Escribe un mensaje..."
+                placeholder={t('chat.inputPlaceholder')}
                 placeholderTextColor={PALETTE.input.placeholder}
-                accessibilityLabel="Escribe un mensaje"
+                accessibilityLabel={t('chat.inputA11y')}
               />
             </View>
 
@@ -178,16 +166,14 @@ export default function ChatDetailScreen() {
               style={({ pressed }) => [styles.sendButton, pressed && styles.sendButtonPressed]}
               onPress={handleSendMessage}
               accessibilityRole="button"
-              accessibilityLabel="Enviar mensaje"
+              accessibilityLabel={t('chat.sendA11y')}
             >
-              <Text style={styles.sendButtonText}>Enviar</Text>
+              <Text style={styles.sendButtonText}>{t('chat.send')}</Text>
             </Pressable>
           </View>
 
           {/* Pie de privacidad */}
-          <Text style={styles.privacyNote}>
-            Solo tú y el equipo asignado pueden ver esta conversación.
-          </Text>
+          <Text style={styles.privacyNote}>{t('chat.privacy')}</Text>
         </View>
       </View>
     </SafeAreaView>

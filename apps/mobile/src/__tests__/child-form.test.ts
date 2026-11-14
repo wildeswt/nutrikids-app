@@ -15,7 +15,11 @@ vi.mock('expo-secure-store', () => ({
   WHEN_UNLOCKED_THIS_DEVICE_ONLY: 1,
 }));
 
-import { buildCreateChildPayload } from '../lib/child-form.js';
+import {
+  buildCreateChildPayload,
+  relationshipLabel,
+  toRelationshipCode,
+} from '../lib/child-form.js';
 import { CURRENT_CONSENT_VERSION } from '../lib/consent-api.js';
 
 describe('child-form helper', () => {
@@ -31,7 +35,7 @@ describe('child-form helper', () => {
       birthMonth: '6',
       birthYear: year,
       sex: 'MALE' as const,
-      relationship: 'Padre',
+      relationship: 'FATHER' as const,
       isLegalRepresentative: true,
     };
 
@@ -42,7 +46,7 @@ describe('child-form helper', () => {
       lastName: 'Gómez',
       birthDate: `${year}-06-05`,
       sex: 'MALE',
-      relationship: 'Padre',
+      relationship: 'FATHER',
       isLegalRepresentative: true,
       consentTextVersion: CURRENT_CONSENT_VERSION,
     });
@@ -50,5 +54,17 @@ describe('child-form helper', () => {
     // Validates successfully against the official schema
     const parsed = CreateChildInputSchema.safeParse(payload);
     expect(parsed.success).toBe(true);
+  });
+
+  it('maps relationship codes and legacy Spanish values to a translated label', () => {
+    expect(toRelationshipCode('MOTHER')).toBe('MOTHER');
+    expect(toRelationshipCode('madre')).toBe('MOTHER');
+    expect(toRelationshipCode('Padre')).toBe('FATHER');
+    expect(toRelationshipCode(' Tutor Legal ')).toBe('LEGAL_GUARDIAN');
+    expect(toRelationshipCode('Abuela')).toBeNull();
+
+    expect(relationshipLabel('LEGAL_GUARDIAN')).toBe('Tutor legal');
+    expect(relationshipLabel('madre')).toBe('Madre');
+    expect(relationshipLabel('Abuela')).toBe('Abuela');
   });
 });

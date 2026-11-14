@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Image,
@@ -13,28 +14,31 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
+import { DEMO_HOME_MESSAGE, DEMO_NEXT_CHECKUP } from '../../constants/demo-data.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
 import { useChildren } from '../../hooks/useChildren.js';
+import { formatLongDate } from '../../i18n/format.js';
 import { formatChildAge } from '../../lib/children-api.js';
 
 export default function CaregiverHomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['caregiver', 'common']);
   const { user } = useAuth();
   const { status, children, error, load } = useChildren();
 
-  // Refresca la lista de niños al enfocar la pestaña
+  // Refresh the children list when the tab gets focus
   useFocusEffect(
     useCallback(() => {
       void load();
     }, [load]),
   );
 
-  const caregiverName = user?.firstName || 'Familia';
-  const greetingText = `¡Hola, ${caregiverName}!`;
+  const caregiverName = user?.firstName || t('home.greetingFallback');
+  const greetingText = t('home.greeting', { name: caregiverName });
 
   const handleRegisterChild = () => {
-    // Redirige al consentimiento en modo registro antes de dar de alta al menor (NK-20)
+    // Show the consent screen (register mode) before registering the child (NK-20)
     router.push({
       pathname: APP_ROUTES.CAREGIVER.CONSENT as never,
       params: { mode: 'register' },
@@ -54,13 +58,13 @@ export default function CaregiverHomeScreen() {
             source={APP_ASSETS.LOGO}
             style={styles.logo}
             resizeMode="contain"
-            accessibilityLabel="NutriKids Logo"
+            accessibilityLabel={t('common:brand.logoLabel')}
           />
           <Pressable
             style={({ pressed }) => [styles.notificationButton, pressed && styles.buttonPressed]}
             onPress={() => router.push(APP_ROUTES.CAREGIVER.MESSAGES)}
             accessibilityRole="button"
-            accessibilityLabel="Notificaciones"
+            accessibilityLabel={t('home.notifications')}
           >
             <Ionicons name="notifications" size={22} color={PALETTE.secondary} />
           </Pressable>
@@ -73,7 +77,7 @@ export default function CaregiverHomeScreen() {
         {status === 'loading' && (
           <View style={styles.loadingContainer} testID="caregiver-children-loading">
             <ActivityIndicator size="small" color={PALETTE.primary} />
-            <Text style={styles.loadingText}>Cargando información de tus niños...</Text>
+            <Text style={styles.loadingText}>{t('home.loading')}</Text>
           </View>
         )}
 
@@ -81,14 +85,14 @@ export default function CaregiverHomeScreen() {
         {status === 'error' && (
           <View style={styles.errorContainer} testID="caregiver-children-error">
             <Ionicons name="alert-circle-outline" size={24} color={PALETTE.feedback.error} />
-            <Text style={styles.errorText}>{error || 'Error al cargar los niños'}</Text>
+            <Text style={styles.errorText}>{error || t('home.loadError')}</Text>
             <Pressable
               style={({ pressed }) => [styles.retryButton, pressed && styles.buttonPressed]}
               onPress={() => void load()}
               accessibilityRole="button"
-              accessibilityLabel="Reintentar carga"
+              accessibilityLabel={t('home.retryA11y')}
             >
-              <Text style={styles.retryButtonText}>Reintentar</Text>
+              <Text style={styles.retryButtonText}>{t('home.retry')}</Text>
             </Pressable>
           </View>
         )}
@@ -99,20 +103,17 @@ export default function CaregiverHomeScreen() {
             <View style={styles.emptyIconWrapper}>
               <Ionicons name="people-outline" size={38} color={PALETTE.primary} />
             </View>
-            <Text style={styles.emptyTitle}>No tienes niños registrados</Text>
-            <Text style={styles.emptySubtitle}>
-              Registra a tu pequeño para hacer seguimiento a su crecimiento y controles
-              nutricionales.
-            </Text>
+            <Text style={styles.emptyTitle}>{t('home.emptyTitle')}</Text>
+            <Text style={styles.emptySubtitle}>{t('home.emptySubtitle')}</Text>
             <Pressable
               style={({ pressed }) => [styles.emptyAddButton, pressed && styles.buttonPressed]}
               onPress={handleRegisterChild}
               testID="empty-add-child-button"
               accessibilityRole="button"
-              accessibilityLabel="Agregar niño"
+              accessibilityLabel={t('home.addChild')}
             >
               <Ionicons name="add" size={18} color={PALETTE.text.light} />
-              <Text style={styles.emptyAddButtonText}>Agregar niño</Text>
+              <Text style={styles.emptyAddButtonText}>{t('home.addChild')}</Text>
             </Pressable>
           </View>
         )}
@@ -136,14 +137,17 @@ export default function CaregiverHomeScreen() {
 
                   <View style={styles.childInfoWrapper}>
                     <Text style={styles.childNameTitle}>
-                      {child.firstName} {child.lastName} - {childAge}
+                      {t('home.childSummary', {
+                        name: `${child.firstName} ${child.lastName}`,
+                        age: childAge,
+                      })}
                     </Text>
-                    <Text style={styles.childSubtitle}>Tu pequeño está en crecimiento</Text>
+                    <Text style={styles.childSubtitle}>{t('home.childSubtitle')}</Text>
 
-                    {/* Criterio de aceptación: El estado se comunica con texto breve, ícono y color (nunca solo color). No se muestran puntajes z ni clasificaciones técnicas */}
+                    {/* Status is shown with short text, icon and color (never color alone); no z-scores or technical classifications */}
                     <View style={styles.statusPill}>
                       <Ionicons name="checkmark-circle" size={15} color={PALETTE.primary} />
-                      <Text style={styles.statusPillText}>Todo en orden</Text>
+                      <Text style={styles.statusPillText}>{t('home.statusOk')}</Text>
                     </View>
 
                     <Pressable
@@ -155,9 +159,9 @@ export default function CaregiverHomeScreen() {
                         })
                       }
                       accessibilityRole="button"
-                      accessibilityLabel={`Ver más información de ${child.firstName}`}
+                      accessibilityLabel={t('home.seeMoreA11y', { name: child.firstName })}
                     >
-                      <Text style={styles.seeMoreText}>Ver más información</Text>
+                      <Text style={styles.seeMoreText}>{t('home.seeMore')}</Text>
                       <Ionicons name="arrow-forward" size={14} color={PALETTE.text.light} />
                     </Pressable>
                   </View>
@@ -165,32 +169,30 @@ export default function CaregiverHomeScreen() {
               );
             })}
 
-            {/* Tarjeta punteada «Agregar niño» según diseño de Figma */}
+            {/* Dashed "add child" card (Figma design) */}
             <Pressable
               style={({ pressed }) => [styles.dashedAddCard, pressed && styles.buttonPressed]}
               onPress={handleRegisterChild}
               testID="add-child-dashed-card"
               accessibilityRole="button"
-              accessibilityLabel="Agregar niño"
+              accessibilityLabel={t('home.addChild')}
             >
               <View style={styles.dashedAddIconCircle}>
                 <Ionicons name="add" size={22} color={PALETTE.primary} />
               </View>
-              <Text style={styles.dashedAddText}>Agregar niño</Text>
+              <Text style={styles.dashedAddText}>{t('home.addChild')}</Text>
             </Pressable>
 
-            {/* Texto de privacidad según diseño de Figma */}
-            <Text style={styles.linkedChildrenNotice}>
-              Solo ves a los niños vinculados a tu cuenta
-            </Text>
+            {/* Privacy notice (Figma design) */}
+            <Text style={styles.linkedChildrenNotice}>{t('home.linkedNotice')}</Text>
           </View>
         )}
 
         {/* Sección: Para ti */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Para ti</Text>
+          <Text style={styles.sectionTitle}>{t('home.forYou')}</Text>
           <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.MESSAGES)}>
-            <Text style={styles.sectionLink}>Ver todo</Text>
+            <Text style={styles.sectionLink}>{t('home.seeAll')}</Text>
           </Pressable>
         </View>
 
@@ -206,20 +208,25 @@ export default function CaregiverHomeScreen() {
               style={styles.messageIcon}
             />
             <View style={styles.messageContent}>
-              <Text style={styles.messageTitle}>Mensaje de equipo de salud</Text>
+              <Text style={styles.messageTitle}>{t('home.messageTitle')}</Text>
               <Text style={styles.messageQuote}>
-                &ldquo;Sigamos ofreciendo agua durante el día&rdquo;
+                {t('home.messageQuote', { text: DEMO_HOME_MESSAGE.content })}
               </Text>
-              <Text style={styles.messageMeta}>Hace 2 días - Dra. Carolina Díaz</Text>
+              <Text style={styles.messageMeta}>
+                {t('home.messageMeta', {
+                  when: t('common:time.daysAgo', { count: DEMO_HOME_MESSAGE.daysAgo }),
+                  author: DEMO_HOME_MESSAGE.authorName,
+                })}
+              </Text>
             </View>
           </View>
         </Pressable>
 
         {/* Sección: Próximo control */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Próximo control</Text>
+          <Text style={styles.sectionTitle}>{t('home.nextCheckup')}</Text>
           <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.ADD_CHECKUP)}>
-            <Text style={styles.sectionLink}>Agendar</Text>
+            <Text style={styles.sectionLink}>{t('home.schedule')}</Text>
           </Pressable>
         </View>
 
@@ -230,11 +237,18 @@ export default function CaregiverHomeScreen() {
           <View style={styles.controlCardRow}>
             <Ionicons name="calendar-outline" size={40} color={PALETTE.text.light} />
             <View style={styles.controlContent}>
-              <Text style={styles.controlTitle}>Control de crecimiento</Text>
-              <Text style={styles.controlDate}>Fecha: 24 de noviembre de 2026</Text>
-              <Text style={styles.controlLocation}>Centro de Salud La Esperanza - 09:30am</Text>
+              <Text style={styles.controlTitle}>{t('home.checkupTitle')}</Text>
+              <Text style={styles.controlDate}>
+                {t('home.checkupDate', { date: formatLongDate(DEMO_NEXT_CHECKUP.date) })}
+              </Text>
+              <Text style={styles.controlLocation}>
+                {t('home.checkupPlace', {
+                  place: DEMO_NEXT_CHECKUP.place,
+                  time: DEMO_NEXT_CHECKUP.time,
+                })}
+              </Text>
               <View style={styles.controlSeeMore}>
-                <Text style={styles.controlSeeMoreText}>Ver más detalles</Text>
+                <Text style={styles.controlSeeMoreText}>{t('home.checkupDetails')}</Text>
                 <Ionicons name="arrow-forward" size={13} color={PALETTE.text.light} />
               </View>
             </View>
@@ -243,20 +257,18 @@ export default function CaregiverHomeScreen() {
 
         {/* Sección: Aprende en casa */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Aprende en casa</Text>
+          <Text style={styles.sectionTitle}>{t('home.learnAtHome')}</Text>
           <Pressable>
-            <Text style={styles.sectionLink}>Ver todo</Text>
+            <Text style={styles.sectionLink}>{t('home.seeAll')}</Text>
           </Pressable>
         </View>
 
         <View style={styles.cardsRow}>
           {/* Card 1: Ideas de meriendas nutritivas */}
           <View style={styles.articleCard}>
-            <Text style={styles.articleTitle}>
-              Ideas de{'\n'}meriendas{'\n'}nutritivas
-            </Text>
+            <Text style={styles.articleTitle}>{t('home.articleSnacks')}</Text>
             <View style={styles.articleFooter}>
-              <Text style={styles.articleMeta}>Lectura de 3{'\n'}minutos</Text>
+              <Text style={styles.articleMeta}>{t('home.articleSnacksMeta')}</Text>
               <Ionicons
                 name="nutrition"
                 size={38}
@@ -268,9 +280,9 @@ export default function CaregiverHomeScreen() {
 
           {/* Card 2: Alimentación a los 3 años */}
           <View style={styles.articleCard}>
-            <Text style={styles.articleTitle}>Alimentación{'\n'}a los 3 años</Text>
+            <Text style={styles.articleTitle}>{t('home.articleFeeding')}</Text>
             <View style={styles.articleFooter}>
-              <Text style={styles.articleMeta}>Guía práctica</Text>
+              <Text style={styles.articleMeta}>{t('home.articleFeedingMeta')}</Text>
               <Ionicons
                 name="restaurant"
                 size={34}
@@ -288,14 +300,11 @@ export default function CaregiverHomeScreen() {
             onPress={handleRegisterChild}
             testID="start-child-registration-button"
             accessibilityRole="button"
-            accessibilityLabel="Registrar nuevo niño"
+            accessibilityLabel={t('home.registerChildA11y')}
           >
-            <Text style={styles.registerButtonText}>+ Registrar nuevo niño</Text>
+            <Text style={styles.registerButtonText}>{t('home.registerChild')}</Text>
           </Pressable>
-          <Text style={styles.consentNotice}>
-            Antes de ingresar los datos del niño, te solicitaremos la lectura y aceptación del
-            consentimiento informado.
-          </Text>
+          <Text style={styles.consentNotice}>{t('home.consentNotice')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

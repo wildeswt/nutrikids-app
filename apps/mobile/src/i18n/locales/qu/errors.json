@@ -1,0 +1,34 @@
+{
+  "generic": "Mañaytaka mana rurayta usharkanchikchu. Kutin rurapay.",
+  "requestFailed": "Mañaytaka mana rurayta usharkanchikchu.",
+  "network": "Servidorwanka mana tinkiy usharkanchu. Kikinpak internetta rikuy.",
+  "timeout": "{{url}}-wan tinkinkapak pachaka tukurirkami",
+  "invalidResponse": "Servidorpak kutichikka mana shuyashka shinachu kan.",
+  "sessionRefreshNetwork": "Yaykushkata mushukyachinkapak internet pantarirkami. Kikinpak internetta rikuy.",
+  "http": {
+    "401": "Correopash pakalla shimipash pantashkami. Kutin rikuy.",
+    "403": "Mana yaykuy ushanichu, mana kashpaka hampikpak kayana yupay pantashkami.",
+    "404": "Mañashkataka mana tarirkanchikchu.",
+    "409": "Kay correo, mana kashpaka hampik killka yupayka ñami killkakatishka kan.",
+    "429": "Achka kutinmi pantarirkanki. Ashallata shuyapay, kipaka kutin rurapay.",
+    "5xx": "Servidorka kunanka mana kanchu. Kipaka kutin rurapay."
+  },
+  "auth": {
+    "login": "Yaykunapika imapash pantarirkami.",
+    "register": "Kuentata rurakpika imapash pantarirkami.",
+    "forgotPassword": "Pakalla shimita mushukyachinata mañakpika imapash pantarirkami.",
+    "resetPassword": "Pakalla shimita mushukyachikpika imapash pantarirkami."
+  },
+  "consent": {
+    "fetch": "Kay wawapak ari ninata mana rikuy usharkanchikchu. Kutin rurapay.",
+    "grant": "Kikinpak ari ninata mana wakaychiy usharkanchikchu. Kutin rurapay.",
+    "revoke": "Ari ninata mana kichuy usharkanchikchu. Kutin rurapay.",
+    "load": "Ari ninata mana rikuchiy usharkanchikchu. Kutin rurapay.",
+    "childList": "Kikinpak wawakunapak shutikunata mana rikuchiy usharkanchikchu.",
+    "missingChildForGrant": "Ari ninkapakka wawata akllanami kan.",
+    "missingChildForRevoke": "Ari ninata kichunkapakka wawata akllanami kan."
+  },
+  "children": {
+    "create": "Wawata mana killkakatiy usharkanchikchu. Kutin rurapay."
+  }
+}

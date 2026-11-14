@@ -85,6 +85,7 @@ vi.mock('../hooks/useChildren.js', () => ({
 
 import AddChildScreen from '../app/(caregiver)/add-child.js';
 import CaregiverHomeScreen from '../app/(caregiver)/index.js';
+import i18n from '../i18n/index.js';
 
 interface ElementWithProps {
   props?: {
@@ -142,10 +143,10 @@ describe('Caregiver Screens (NK-21)', () => {
       expect(html).toContain('Gómez');
 
       // Status in clear language (text + icon)
-      expect(html).toContain('Todo en orden');
+      expect(html).toContain(i18n.t('caregiver:home.statusOk'));
 
       // Dashed add child card and privacy notice
-      expect(html).toContain('Solo ves a los niños vinculados a tu cuenta');
+      expect(html).toContain(i18n.t('caregiver:home.linkedNotice'));
 
       // Acceptance criterion: No technical WHO z-scores shown to caregiver
       expect(html).not.toContain('zPE');
@@ -164,8 +165,8 @@ describe('Caregiver Screens (NK-21)', () => {
 
       const html = renderToString(React.createElement(CaregiverHomeScreen));
 
-      expect(html).toContain('No tienes niños registrados');
-      expect(html).toContain('Agregar niño');
+      expect(html).toContain(i18n.t('caregiver:home.emptyTitle'));
+      expect(html).toContain(i18n.t('caregiver:home.addChild'));
     });
 
     it('navigates to consent in register mode when pressing "+ Registrar nuevo niño"', () => {
@@ -225,16 +226,17 @@ describe('Caregiver Screens (NK-21)', () => {
     it('renders child registration form fields and legal representative check', () => {
       const html = renderToString(React.createElement(AddChildScreen));
 
-      expect(html).toContain('Registrar niño');
-      expect(html).toContain('Nombre');
-      expect(html).toContain('Apellido');
-      expect(html).toContain('Fecha de nacimiento');
-      expect(html).toContain('Sexo biológico');
-      expect(html).toContain('Niño');
-      expect(html).toContain('Niña');
-      expect(html).toContain('Tu parentesco con el niño/a');
+      expect(html).toContain(i18n.t('caregiver:addChild.title'));
+      expect(html).toContain(i18n.t('caregiver:addChild.firstNameLabel'));
+      expect(html).toContain(i18n.t('caregiver:addChild.lastNameLabel'));
+      expect(html).toContain(i18n.t('caregiver:addChild.birthDateLabel'));
+      expect(html).toContain(i18n.t('caregiver:addChild.sexLabel'));
+      expect(html).toContain(i18n.t('caregiver:addChild.sexMale'));
+      expect(html).toContain(i18n.t('caregiver:addChild.sexFemale'));
+      expect(html).toContain(i18n.t('caregiver:addChild.relationshipLabel'));
+      expect(html).toContain(i18n.t('common:relationships.LEGAL_GUARDIAN'));
       expect(html).toContain('representante legal');
-      expect(html).toContain('Guardar niño');
+      expect(html).toContain(i18n.t('caregiver:addChild.submit'));
     });
   });
 });

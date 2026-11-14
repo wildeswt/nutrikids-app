@@ -1,53 +1,43 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../../constants/colors.js';
+import { DEMO_THREADS, type DemoThread } from '../../constants/demo-data.js';
 import { APP_ROUTES } from '../../constants/routes.js';
-
-interface MessageThread {
-  id: string;
-  title: string;
-  subtitle: string;
-  preview: string;
-  time: string;
-  unreadCount?: number;
-}
-
-const ALL_MESSAGES: MessageThread[] = [
-  {
-    id: 'thread-1',
-    title: 'Equipo de Mateo',
-    subtitle: 'Nutrición · Dra. Laura Pérez',
-    preview: 'Gracias, Andrea. Revisaremos el registro.',
-    time: '09:40',
-    unreadCount: 1,
-  },
-  {
-    id: 'thread-2',
-    title: 'Equipo de Valentina',
-    subtitle: 'Enfermería · Lic. Ana Torres',
-    preview: 'Te esperamos en el próximo control.',
-    time: 'Ayer',
-    unreadCount: 1,
-  },
-  {
-    id: 'thread-3',
-    title: 'Centro de salud',
-    subtitle: 'Atención al usuario',
-    preview: 'Tu cita está confirmada para el 25 oct.',
-    time: '16 oct',
-    unreadCount: 0,
-  },
-];
+import { formatShortDate } from '../../i18n/format.js';
 
 export default function MessagesScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['caregiver', 'common']);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
+  const threads = DEMO_THREADS.map((thread: DemoThread) => ({
+    ...thread,
+    title:
+      thread.source.kind === 'childTeam'
+        ? t('messages.childTeam', { name: thread.source.childName })
+        : t('messages.healthCenter'),
+    subtitle:
+      thread.source.kind === 'childTeam'
+        ? t('messages.teamSubtitle', {
+            specialty: t(`common:specialties.${thread.source.specialty}`),
+            professional: thread.source.professionalName,
+          })
+        : t('messages.healthCenterSubtitle'),
+    timeLabel:
+      thread.time.kind === 'time'
+        ? thread.time.value
+        : thread.time.kind === 'yesterday'
+          ? t('common:time.yesterday')
+          : formatShortDate(thread.time.value),
+  }));
+  const unreadTotal = threads.filter((thread) => thread.unreadCount > 0).length;
+
   const filteredMessages =
-    filter === 'unread' ? ALL_MESSAGES.filter((msg) => (msg.unreadCount ?? 0) > 0) : ALL_MESSAGES;
+    filter === 'unread' ? threads.filter((msg) => msg.unreadCount > 0) : threads;
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -65,18 +55,18 @@ export default function MessagesScreen() {
           style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
           onPress={handleBack}
           accessibilityRole="button"
-          accessibilityLabel="Volver"
+          accessibilityLabel={t('messages.back')}
         >
           <Ionicons name="chevron-back" size={20} color={PALETTE.text.title} />
-          <Text style={styles.backText}>Volver</Text>
+          <Text style={styles.backText}>{t('messages.back')}</Text>
         </Pressable>
 
         {/* Título de la pantalla */}
-        <Text style={styles.screenTitle}>Mensajes</Text>
+        <Text style={styles.screenTitle}>{t('messages.title')}</Text>
 
         {/* Banner naranja informativo */}
         <View style={styles.bannerCard}>
-          <Text style={styles.bannerText}>Conversa con tu equipo de salud.</Text>
+          <Text style={styles.bannerText}>{t('messages.banner')}</Text>
         </View>
 
         {/* Filtro Todos / Sin leer */}
@@ -85,10 +75,10 @@ export default function MessagesScreen() {
             style={[styles.filterTab, filter === 'all' && styles.filterTabActive]}
             onPress={() => setFilter('all')}
             accessibilityRole="button"
-            accessibilityLabel="Ver todos los mensajes"
+            accessibilityLabel={t('messages.filterAllA11y')}
           >
             <Text style={[styles.filterTabText, filter === 'all' && styles.filterTabTextActive]}>
-              Todos
+              {t('messages.filterAll')}
             </Text>
           </Pressable>
 
@@ -96,10 +86,10 @@ export default function MessagesScreen() {
             style={[styles.filterTab, filter === 'unread' && styles.filterTabActive]}
             onPress={() => setFilter('unread')}
             accessibilityRole="button"
-            accessibilityLabel="Ver mensajes sin leer"
+            accessibilityLabel={t('messages.filterUnreadA11y')}
           >
             <Text style={[styles.filterTabText, filter === 'unread' && styles.filterTabTextActive]}>
-              Sin leer (2)
+              {t('messages.filterUnread', { count: unreadTotal })}
             </Text>
           </Pressable>
         </View>
@@ -112,7 +102,7 @@ export default function MessagesScreen() {
               style={({ pressed }) => [styles.threadItem, pressed && styles.pressed]}
               onPress={() => router.push(APP_ROUTES.CAREGIVER.CHAT_DETAIL)}
               accessibilityRole="button"
-              accessibilityLabel={`Mensaje de ${thread.title}`}
+              accessibilityLabel={t('messages.threadA11y', { title: thread.title })}
             >
               <View style={styles.threadMainRow}>
                 <View style={styles.threadContent}>
@@ -122,8 +112,8 @@ export default function MessagesScreen() {
                 </View>
 
                 <View style={styles.threadMetaColumn}>
-                  <Text style={styles.threadTime}>{thread.time}</Text>
-                  {thread.unreadCount && thread.unreadCount > 0 ? (
+                  <Text style={styles.threadTime}>{thread.timeLabel}</Text>
+                  {thread.unreadCount > 0 ? (
                     <View style={styles.unreadBadge}>
                       <Text style={styles.unreadBadgeText}>{thread.unreadCount}</Text>
                     </View>
@@ -139,18 +129,15 @@ export default function MessagesScreen() {
         </View>
 
         {/* Disclaimer médico / de urgencias */}
-        <Text style={styles.disclaimerText}>
-          Este canal no atiende urgencias. Si necesitas atención inmediata, acude a tu centro de
-          salud.
-        </Text>
+        <Text style={styles.disclaimerText}>{t('messages.emergencyNotice')}</Text>
 
         {/* Botón Nuevo mensaje */}
         <Pressable
           style={({ pressed }) => [styles.newMsgButton, pressed && styles.newMsgButtonPressed]}
           accessibilityRole="button"
-          accessibilityLabel="Nuevo mensaje"
+          accessibilityLabel={t('messages.newMessage')}
         >
-          <Text style={styles.newMsgButtonText}>Nuevo mensaje</Text>
+          <Text style={styles.newMsgButtonText}>{t('messages.newMessage')}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

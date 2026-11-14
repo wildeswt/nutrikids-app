@@ -1,6 +1,7 @@
 import { USER_ROLES, type AuthResponse, type AuthUser, type UserRole } from '@nutrikids/shared';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AUTH_STATUS, type AuthStatus } from '../constants/routes.js';
+import i18n from '../i18n/index.js';
 import {
   logoutSessionRequest,
   onSessionExpired,
@@ -84,10 +85,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
 
     const unsubRefreshError = onSessionRefreshError((err) => {
-      const message =
-        err instanceof Error
-          ? err.message
-          : 'Error de red al renovar la sesión. Verifica tu conexión.';
+      const message = err instanceof Error ? err.message : i18n.t('errors:sessionRefreshNetwork');
       setRefreshError(message);
     });
 

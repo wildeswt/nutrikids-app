@@ -3,6 +3,7 @@ import { USER_ROLES } from '@nutrikids/shared';
 import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { Drawer } from 'expo-router/drawer';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../context/auth-context.js';
 
@@ -11,6 +12,7 @@ type DrawerContentProps = Parameters<
 >[0];
 
 export function CustomDrawerContent(props: DrawerContentProps) {
+  const { t } = useTranslation(['professional', 'common']);
   const { user, switchRole, signOut } = useAuth();
   const hasDualRole =
     user?.roles.includes(USER_ROLES.CAREGIVER) && user?.roles.includes(USER_ROLES.PROFESSIONAL);
@@ -27,7 +29,9 @@ export function CustomDrawerContent(props: DrawerContentProps) {
           </Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
           {user?.specialty && (
-            <Text style={styles.specialtyBadge}>Especialidad: {user.specialty}</Text>
+            <Text style={styles.specialtyBadge}>
+              {t('drawer.specialty', { specialty: t(`common:specialties.${user.specialty}`) })}
+            </Text>
           )}
         </View>
 
@@ -41,7 +45,7 @@ export function CustomDrawerContent(props: DrawerContentProps) {
             onPress={() => void switchRole(USER_ROLES.CAREGIVER)}
           >
             <Ionicons name="swap-horizontal" size={18} color="#15803D" />
-            <Text style={styles.switchButtonText}>Vista Cuidador</Text>
+            <Text style={styles.switchButtonText}>{t('drawer.switchToCaregiver')}</Text>
           </Pressable>
         )}
 
@@ -50,7 +54,7 @@ export function CustomDrawerContent(props: DrawerContentProps) {
           onPress={() => void signOut()}
         >
           <Ionicons name="log-out-outline" size={18} color="#DC2626" />
-          <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+          <Text style={styles.logoutButtonText}>{t('drawer.logout')}</Text>
         </Pressable>
       </View>
     </View>
@@ -58,6 +62,7 @@ export function CustomDrawerContent(props: DrawerContentProps) {
 }
 
 export default function ProfessionalDrawerLayout() {
+  const { t } = useTranslation('professional');
   return (
     <Drawer
       defaultStatus="closed"
@@ -73,8 +78,8 @@ export default function ProfessionalDrawerLayout() {
       <Drawer.Screen
         name="index"
         options={{
-          drawerLabel: 'Bandeja de alertas',
-          title: 'Bandeja de Alertas',
+          drawerLabel: t('drawer.alerts'),
+          title: t('drawer.alertsTitle'),
           drawerIcon: ({ color, size }) => (
             <Ionicons name="warning-outline" size={size} color={color as string} />
           ),
@@ -83,8 +88,8 @@ export default function ProfessionalDrawerLayout() {
       <Drawer.Screen
         name="children"
         options={{
-          drawerLabel: 'Niños por riesgo',
-          title: 'Pacientes por Riesgo',
+          drawerLabel: t('drawer.children'),
+          title: t('drawer.childrenTitle'),
           drawerIcon: ({ color, size }) => (
             <Ionicons name="people-outline" size={size} color={color as string} />
           ),
@@ -93,8 +98,8 @@ export default function ProfessionalDrawerLayout() {
       <Drawer.Screen
         name="messages"
         options={{
-          drawerLabel: 'Mensajes y seguimientos',
-          title: 'Mensajes y Seguimientos',
+          drawerLabel: t('drawer.messages'),
+          title: t('drawer.messagesTitle'),
           drawerIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles-outline" size={size} color={color as string} />
           ),
@@ -103,8 +108,8 @@ export default function ProfessionalDrawerLayout() {
       <Drawer.Screen
         name="profile"
         options={{
-          drawerLabel: 'Mi perfil',
-          title: 'Perfil Profesional',
+          drawerLabel: t('drawer.profile'),
+          title: t('drawer.profileTitle'),
           drawerIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color as string} />
           ),
