@@ -9,7 +9,14 @@ vi.mock('expo-router', () => ({
     back: vi.fn(),
     canGoBack: () => true,
   }),
-  useLocalSearchParams: () => ({}),
+  useFocusEffect: vi.fn(),
+  useLocalSearchParams: () => ({
+    childId: '11111111-1111-4111-8111-111111111111',
+    withUserId: '33333333-3333-4333-8333-333333333333',
+    participantName: 'Dra. Laura Pérez',
+    participantRole: 'PROFESSIONAL',
+    participantSpecialty: 'nutrition',
+  }),
 }));
 
 vi.mock('expo-secure-store', () => ({
@@ -18,6 +25,52 @@ vi.mock('expo-secure-store', () => ({
   setItemAsync: vi.fn(async () => {}),
   deleteItemAsync: vi.fn(async () => {}),
   WHEN_UNLOCKED_THIS_DEVICE_ONLY: 1,
+}));
+
+vi.mock('../context/auth-context.js', () => ({
+  useAuth: () => ({
+    user: {
+      id: '22222222-2222-4222-8222-222222222222',
+      email: 'andrea@example.com',
+      firstName: 'Andrea',
+      lastName: 'Gómez',
+      roles: ['CAREGIVER'],
+      specialty: null,
+    },
+    activeRole: 'CAREGIVER',
+    status: 'authenticated',
+  }),
+}));
+
+vi.mock('../hooks/useMessageThread.js', () => ({
+  useMessageThread: () => ({
+    messages: [
+      {
+        id: '44444444-4444-4444-8444-444444444441',
+        childId: '11111111-1111-4111-8111-111111111111',
+        senderId: '33333333-3333-4333-8333-333333333333',
+        recipientId: '22222222-2222-4222-8222-222222222222',
+        kind: 'message',
+        body: 'Hola, ¿cómo ha estado Mateo?',
+        sentAt: '2026-10-18T09:32:00.000Z',
+        readAt: null,
+      },
+    ],
+    loading: false,
+    loadingMore: false,
+    refreshing: false,
+    sending: false,
+    hasMore: false,
+    error: null,
+    sendError: null,
+    clearSendError: vi.fn(),
+    reload: vi.fn(async () => {}),
+    refresh: vi.fn(async () => {}),
+    refreshSilent: vi.fn(async () => {}),
+    loadOlder: vi.fn(async () => {}),
+    send: vi.fn(async () => true),
+    retryMessage: vi.fn(async () => true),
+  }),
 }));
 
 // The checkup form only renders once the caregiver's children are loaded.
