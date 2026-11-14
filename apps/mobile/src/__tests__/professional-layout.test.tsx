@@ -94,12 +94,25 @@ describe('ProfessionalDrawerLayout', () => {
     expect(screenNames).toEqual([
       'index',
       'alert-detail',
+      'follow-up',
+      'referral',
       'children',
       'messages',
+      'chat-detail',
       'profile',
       'notifications',
     ]);
     expect(screenNames[0]).toBe('index');
+  });
+
+  it('hides alert detail, follow-up, referral, and chat detail from the drawer', () => {
+    const screens = getDrawerScreens();
+    for (const name of ['alert-detail', 'follow-up', 'referral', 'chat-detail']) {
+      const options = screens.find((s) => s.props.name === name)?.props.options as
+        { drawerItemStyle?: { display?: string }; headerShown?: boolean } | undefined;
+      expect(options?.drawerItemStyle).toEqual({ display: 'none' });
+      expect(options?.headerShown).toBe(false);
+    }
   });
 
   it('sets accurate drawer labels and titles for professional views', () => {

@@ -13,9 +13,14 @@
     "profileTitle": "Hampikmanta",
     "notifications": "Willaykuna",
     "notificationsTitle": "Willaykuna",
-    "alertDetailTitle": "Yuyachikkunamanta"
+    "alertDetailTitle": "Yuyachikkunamanta",
+    "followUpTitle": "Seguimiento clínico",
+    "referralTitle": "Interconsulta",
+    "chatTitle": "Conversación"
   },
   "alerts": {
+    "title": "Yuyachikkuna",
+    "subtitle": "Rikuyta munashka kamaykuna.",
     "filtersA11y": "Yuyachikkunata ima kashkaman akllay",
     "filters": {
       "OPEN": "Mana rikushka",
@@ -59,7 +64,12 @@
   },
   "messages": {
     "title": "Willaykuna, katinakunapash",
-    "description": "Wawa kamakkunawan rimanakuy, mikuymanta katina yuyaykunatapash killkana."
+    "description": "Wawa kamakkunawan rimanakuy, mikuymanta katina yuyaykunatapash killkana.",
+    "banner": "Conversa con cuidadores y otros profesionales vinculados.",
+    "emergencyNotice": "Este canal no atiende urgencias. Si el niño requiere atención inmediata, acude a un centro de salud.",
+    "emptySubtitle": "Cuando inicies o recibas mensajes sobre un niño vinculado, aparecerán aquí.",
+    "chatTitleFallback": "Conversación",
+    "chatPrivacy": "Solo tú y los participantes vinculados al niño pueden ver esta conversación."
   },
   "profile": {
     "title": "Hampikmanta",
@@ -72,8 +82,141 @@
     "logout": "Llukshiy"
   },
   "alertDetail": {
-    "title": "Yuyachikkunamanta",
-    "placeholder": "Yuyachikkunamanta tukuy willaykunaka mishkirak shamunka.",
-    "idLabel": "Yuyachikkuna: {{id}}"
+    "title": "Detalle de alerta",
+    "loading": "Cargando la alerta...",
+    "retry": "Reintentar",
+    "unknownChild": "Niño sin identificar",
+    "childSubtitle": "{{age}} · {{birthDate}}",
+    "rows": {
+      "indicator": "Indicador",
+      "checkup": "Control",
+      "result": "Resultado",
+      "reason": "Motivo"
+    },
+    "checkupValue": "{{date}} · {{weight}} · {{height}}",
+    "checkupUnknown": "Control no disponible",
+    "result": {
+      "below": "Puntaje z por debajo de −{{limit}}",
+      "above": "Puntaje z por encima de +{{limit}}",
+      "value": "Puntaje z = {{z}}"
+    },
+    "chart": {
+      "title": "Evolución del indicador",
+      "subtitle": "Puntaje z de {{indicator}} (OMS)",
+      "legendAlert": "Control que originó la alerta",
+      "loadError": "No pudimos cargar los controles para la gráfica.",
+      "empty": "Aún no hay controles para graficar.",
+      "a11y": "Gráfica de {{indicator}} con {{count}} controles. El control de la alerta tiene z = {{z}}."
+    },
+    "history": {
+      "title": "Historial de estados",
+      "entry": "{{date}} · {{time}}",
+      "by": "Por {{name}}"
+    },
+    "actions": {
+      "markReviewed": "Marcar como revisada",
+      "marking": "Guardando...",
+      "followUp": "Registrar seguimiento",
+      "referral": "Nueva interconsulta",
+      "reviewedNote": "Ya marcaste esta alerta como revisada.",
+      "establishedNote": "Esta alerta ya tiene seguimiento establecido."
+    },
+    "pending_one": "Tienes {{count}} seguimiento guardado en este teléfono por enviar.",
+    "pending_other": "Tienes {{count}} seguimientos guardados en este teléfono por enviar."
+  },
+  "followUp": {
+    "title": "Seguimiento clínico",
+    "context": "{{date}} · {{name}} · {{specialty}}",
+    "contextNoSpecialty": "{{date}} · {{name}}",
+    "childSubtitle": "{{age}}",
+    "loading": "Cargando el seguimiento...",
+    "retry": "Reintentar",
+    "missingTarget": "Abre el seguimiento desde el detalle de una alerta.",
+    "typeLabel": "Tipo de seguimiento",
+    "typePlaceholder": "Elige el tipo",
+    "types": {
+      "observation": "Observación clínica",
+      "recommendation": "Recomendación",
+      "intervention": "Intervención nutricional",
+      "referral": "Derivación"
+    },
+    "detailsLabel": "Detalle del seguimiento",
+    "detailsPlaceholder": {
+      "observation": "Escribe lo que observaste en el control y en el registro de crecimiento.",
+      "recommendation": "Escribe las recomendaciones para la familia.",
+      "intervention": "Describe la intervención que indicas.",
+      "referral": "Indica a quién se deriva al niño y por qué.",
+      "none": "Elige primero el tipo de seguimiento."
+    },
+    "nextCheckupLabel": "Próximo control",
+    "nextCheckupPlaceholder": "DD/MM/AAAA (opcional)",
+    "nextCheckupShortcuts": {
+      "7": "1 semana",
+      "14": "2 semanas",
+      "30": "1 mes",
+      "90": "3 meses"
+    },
+    "nextCheckupClear": "Quitar fecha",
+    "nextCheckupHint": "Se creará un recordatorio para esa fecha.",
+    "establishLabel": "Marcar la alerta como «seguimiento establecido» al guardar",
+    "offline": "Sin conexión · Se guardará en este teléfono y se enviará al recuperar la conexión",
+    "actions": {
+      "save": "Guardar seguimiento",
+      "saving": "Guardando...",
+      "saveDraft": "Guardar como borrador"
+    },
+    "draftSaved": "Borrador guardado en este teléfono.",
+    "draftRestored": "Recuperamos tu borrador.",
+    "rejected": "El servidor no aceptó el seguimiento que estaba guardado en este teléfono: {{reason}}",
+    "alertNotMoved": "El seguimiento se guardó, pero no pudimos actualizar la alerta: {{reason}}",
+    "errors": {
+      "typeRequired": "Elige el tipo de seguimiento.",
+      "detailsRequired": "Escribe el detalle del seguimiento.",
+      "detailsTooLong": "El detalle no puede pasar de {{max}} caracteres.",
+      "dateInvalid": "Escribe la fecha como DD/MM/AAAA.",
+      "datePast": "La fecha del próximo control no puede ser anterior a hoy.",
+      "invalid": "Revisa los datos del seguimiento."
+    }
+  },
+  "referral": {
+    "title": "Interconsulta",
+    "bannerTitle": "Comunicación entre profesionales",
+    "bannerSubtitle": "{{name}} · {{specialty}}",
+    "loadingChildren": "Cargando pacientes...",
+    "loadChildrenError": "No pudimos cargar tus pacientes.",
+    "retry": "Reintentar",
+    "emptyChildrenTitle": "Sin pacientes vinculados",
+    "emptyChildrenSubtitle": "Debes tener al menos un niño vinculado para enviar una interconsulta.",
+    "patientLabel": "Paciente",
+    "patientPlaceholder": "Selecciona un paciente",
+    "recipientLabel": "Dirigida a",
+    "recipientPlaceholder": "Selecciona un profesional",
+    "loadingRecipients": "Cargando profesionales vinculados...",
+    "loadRecipientsError": "No pudimos cargar los profesionales vinculados.",
+    "noRecipients": "Este niño no tiene otros profesionales vinculados",
+    "unknownProfessional": "Profesional",
+    "reasonLabel": "Motivo de la interconsulta",
+    "reasonPlaceholder": "Describe el motivo clínico de la interconsulta...",
+    "charCount": "{{count}} / {{max}}",
+    "priorityLabel": "Prioridad",
+    "priorities": {
+      "ordinary": "Ordinaria",
+      "priority": "Prioritaria"
+    },
+    "actions": {
+      "submit": "Enviar interconsulta",
+      "sending": "Enviando...",
+      "saveDraft": "Guardar borrador"
+    },
+    "draftSaved": "Borrador guardado en este dispositivo.",
+    "draftRestored": "Recuperamos tu borrador.",
+    "sentSuccess": "Interconsulta enviada.",
+    "errors": {
+      "childRequired": "Selecciona un paciente.",
+      "recipientRequired": "Selecciona el profesional destinatario.",
+      "bodyRequired": "Escribe el motivo de la interconsulta.",
+      "bodyTooLong": "El motivo no puede pasar de {{max}} caracteres.",
+      "invalid": "Revisa los datos de la interconsulta."
+    }
   }
 }

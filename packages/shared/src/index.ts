@@ -1,3 +1,4 @@
+export * from './schemas/account.js';
 export * from './schemas/alert.js';
 export * from './schemas/audit.js';
 export * from './schemas/auth.js';
@@ -9,7 +10,9 @@ export * from './schemas/education.js';
 export * from './schemas/enums.js';
 export * from './schemas/feedingLog.js';
 export * from './schemas/followUp.js';
+export * from './schemas/growthMessage.js';
 export * from './schemas/health.js';
+export * from './schemas/message.js';
 export * from './schemas/notification.js';
 export * from './schemas/reference.js';
 export * from './schemas/reminder.js';

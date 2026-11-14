@@ -149,6 +149,76 @@ export default function CaregiverTabsLayout() {
           tabBarButton: () => null,
         }}
       />
+      <Tabs.Screen
+        name="reminders"
+        options={{
+          title: t('tabs.reminders'),
+          headerTitle: t('tabs.remindersHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="add-reminder"
+        options={{
+          title: t('tabs.addReminder'),
+          headerTitle: t('tabs.addReminderHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="learn"
+        options={{
+          title: t('tabs.learn'),
+          headerTitle: t('tabs.learnHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="learn-article"
+        options={{
+          title: t('tabs.learnArticle'),
+          headerTitle: t('tabs.learnArticleHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="my-data"
+        options={{
+          title: t('tabs.myData'),
+          headerTitle: t('tabs.myDataHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="edit-child"
+        options={{
+          title: t('tabs.editChild'),
+          headerTitle: t('tabs.editChildHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="privacy"
+        options={{
+          title: t('tabs.privacy'),
+          headerTitle: t('tabs.privacyHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
     </Tabs>
   );
 }

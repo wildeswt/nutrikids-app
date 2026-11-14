@@ -88,7 +88,27 @@ export default function ProfessionalDrawerLayout() {
         name="alert-detail"
         options={{
           title: t('drawer.alertDetailTitle'),
+          // The screen draws its own back button and title.
+          headerShown: false,
           // Reachable only by tapping an alert card, so it has no drawer entry.
+          drawerItemStyle: { display: 'none' },
+        }}
+      />
+      <Drawer.Screen
+        name="follow-up"
+        options={{
+          title: t('drawer.followUpTitle'),
+          headerShown: false,
+          // Reachable only from the alert detail.
+          drawerItemStyle: { display: 'none' },
+        }}
+      />
+      <Drawer.Screen
+        name="referral"
+        options={{
+          title: t('drawer.referralTitle'),
+          headerShown: false,
+          // Reachable from the alert detail; hidden from the drawer menu.
           drawerItemStyle: { display: 'none' },
         }}
       />
@@ -110,6 +130,16 @@ export default function ProfessionalDrawerLayout() {
           drawerIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles-outline" size={size} color={color as string} />
           ),
+        }}
+      />
+      <Drawer.Screen
+        name="chat-detail"
+        options={{
+          title: t('drawer.chatTitle'),
+          // The screen draws its own back button and title.
+          headerShown: false,
+          // Reachable only by tapping a conversation, so it has no drawer entry.
+          drawerItemStyle: { display: 'none' },
         }}
       />
       <Drawer.Screen

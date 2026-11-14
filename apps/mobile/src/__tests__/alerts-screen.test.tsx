@@ -31,7 +31,6 @@ vi.mock('expo-secure-store', () => ({
   WHEN_UNLOCKED_THIS_DEVICE_ONLY: 1,
 }));
 
-import AlertDetailScreen from '../app/(professional)/alert-detail.js';
 import AlertsInboxScreen from '../app/(professional)/index.js';
 import { APP_ROUTES } from '../constants/routes.js';
 
@@ -221,13 +220,5 @@ describe('AlertsInboxScreen (NK-32)', () => {
     };
     control.props.onRefresh();
     expect(refresh).toHaveBeenCalled();
-  });
-});
-
-describe('AlertDetailScreen placeholder', () => {
-  it('shows the alert id received as route param', () => {
-    const html = renderToString(React.createElement(AlertDetailScreen));
-    expect(html).toContain('22222222-2222-4222-8222-222222222222');
-    expect(html).toContain('Detalle de la alerta');
   });
 });

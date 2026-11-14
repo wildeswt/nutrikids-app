@@ -23,7 +23,8 @@ describe('Audit Schemas (NK-21)', () => {
     expect(AuditEntityTypeSchema.safeParse('follow_ups').success).toBe(true);
     expect(AuditEntityTypeSchema.safeParse('alerts').success).toBe(true);
     expect(AuditEntityTypeSchema.safeParse('consents').success).toBe(true);
-    expect(AuditEntityTypeSchema.safeParse('users').success).toBe(false);
+    expect(AuditEntityTypeSchema.safeParse('users').success).toBe(true);
+    expect(AuditEntityTypeSchema.safeParse('tabla_inexistente').success).toBe(false);
   });
 
   it('valida query parameters para consulta de auditoría con defaults', () => {

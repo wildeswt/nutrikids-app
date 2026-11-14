@@ -3,6 +3,7 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
+import { createAccountRouter } from './routes/account.routes.js';
 import { createAlertsRouter } from './routes/alerts.routes.js';
 import { createAuditRouter } from './routes/audit.routes.js';
 import { createAuthRouter } from './routes/auth.routes.js';
@@ -10,7 +11,9 @@ import { createCheckupsRouter } from './routes/checkups.routes.js';
 import { createChildrenRouter } from './routes/children.routes.js';
 import { createDataRightsRouter } from './routes/dataRights.routes.js';
 import { createEducationRouter } from './routes/education.routes.js';
+import { createGrowthMessageRouter } from './routes/growthMessage.routes.js';
 import { healthRouter } from './routes/health.routes.js';
+import { createMessagesRouter, createReferralsRouter } from './routes/messages.routes.js';
 import { createNotificationsRouter } from './routes/notifications.routes.js';
 import { referenceRouter } from './routes/reference.routes.js';
 import { createRemindersRouter } from './routes/reminders.routes.js';
@@ -29,8 +32,10 @@ export function createApp(): Express {
 
   app.use('/health', healthRouter);
   app.use('/auth', createAuthRouter());
+  app.use('/account', createAccountRouter());
   app.use('/children', createChildrenRouter());
   app.use('/children', createDataRightsRouter());
+  app.use('/children', createGrowthMessageRouter());
   app.use('/checkups', createCheckupsRouter());
   app.use('/education', createEducationRouter());
   app.use('/reference', referenceRouter);
@@ -39,6 +44,8 @@ export function createApp(): Express {
   app.use('/sync', createSyncRouter());
   app.use('/notifications', createNotificationsRouter());
   app.use('/reminders', createRemindersRouter());
+  app.use('/messages', createMessagesRouter());
+  app.use('/referrals', createReferralsRouter());
 
   app.use(notFoundHandler);
   app.use(errorHandler);

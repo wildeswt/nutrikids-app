@@ -8,6 +8,14 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
   back: vi.fn(),
+  loadEducation: vi.fn(),
+  education: {
+    status: 'ready',
+    articles: [] as unknown[],
+    contentLanguage: 'es',
+    offline: false,
+    error: null as string | null,
+  },
   childrenHookState: {
     status: 'ready',
     children: [
@@ -83,6 +91,10 @@ vi.mock('../hooks/useChildren.js', () => ({
   useChildren: () => mocks.childrenHookState,
 }));
 
+vi.mock('../hooks/useEducation.js', () => ({
+  useEducation: () => ({ ...mocks.education, load: mocks.loadEducation }),
+}));
+
 import AddChildScreen from '../app/(caregiver)/add-child.js';
 import CaregiverHomeScreen from '../app/(caregiver)/index.js';
 import i18n from '../i18n/index.js';
@@ -113,6 +125,7 @@ function findElementByTestId(node: unknown, testId: string): ElementWithProps | 
 describe('Caregiver Screens (NK-21)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.education = { ...mocks.education, status: 'ready', articles: [] };
   });
 
   describe('CaregiverHomeScreen («Mis niños» - Figura 6a)', () => {
@@ -233,6 +246,92 @@ describe('Caregiver Screens (NK-21)', () => {
       expect(mocks.push).toHaveBeenCalledWith({
         pathname: APP_ROUTES.CAREGIVER.CONSENT,
         params: { mode: 'register' },
+      });
+    });
+
+    describe('«Aprende en casa» cards', () => {
+      const monthsAgo = (months: number) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - months, 1);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+      };
+      const article = (n: number, title: string, minAgeMonths: number, maxAgeMonths: number) => ({
+        id: `e0000000-0000-4000-8000-${String(n).padStart(12, '0')}`,
+        title,
+        body: 'Texto del artículo.',
+        minAgeMonths,
+        maxAgeMonths,
+        language: 'es',
+      });
+
+      beforeEach(() => {
+        mocks.childrenHookState = {
+          ...mocks.childrenHookState,
+          status: 'ready',
+          children: [
+            {
+              id: '11111111-1111-4111-8111-111111111111',
+              firstName: 'Mateo',
+              lastName: 'Gómez',
+              birthDate: monthsAgo(40),
+              sex: 'MALE',
+            },
+          ],
+        };
+      });
+
+      it('shows the real articles for the age of the first child, not sample ones', () => {
+        mocks.education = {
+          ...mocks.education,
+          status: 'ready',
+          articles: [
+            article(1, 'Para bebés grandes', 12, 23),
+            article(2, 'Meriendas para llevar', 36, 47),
+          ],
+        };
+
+        const html = renderToString(React.createElement(CaregiverHomeScreen));
+
+        expect(html).toContain('Meriendas para llevar');
+        expect(html).not.toContain('Para bebés grandes');
+        expect(html).not.toContain('Ideas de');
+        expect(html).not.toContain('Alimentación');
+      });
+
+      it('shows the first articles of the catalog when none matches the age', () => {
+        mocks.education = {
+          ...mocks.education,
+          status: 'ready',
+          articles: [article(1, 'Para bebés grandes', 12, 23)],
+        };
+
+        expect(renderToString(React.createElement(CaregiverHomeScreen))).toContain(
+          'Para bebés grandes',
+        );
+      });
+
+      it('asks to connect once when the catalog was never downloaded', () => {
+        mocks.education = { ...mocks.education, status: 'needs-connection', articles: [] };
+
+        expect(renderToString(React.createElement(CaregiverHomeScreen))).toContain(
+          i18n.t('caregiver:home.learnConnect'),
+        );
+      });
+
+      it('«Ver todo» opens the list of articles and the cards open their article', () => {
+        const meriendas = article(2, 'Meriendas para llevar', 36, 47);
+        mocks.education = { ...mocks.education, status: 'ready', articles: [meriendas] };
+        let capturedTree: unknown = null;
+        function TestWrapper() {
+          capturedTree = CaregiverHomeScreen();
+          return null;
+        }
+        renderToString(React.createElement(TestWrapper));
+
+        const seeAll = findElementByTestId(capturedTree, 'home-learn-see-all');
+        (seeAll?.props?.['onPress'] as (() => void) | undefined)?.();
+
+        expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.LEARN);
       });
     });
   });
