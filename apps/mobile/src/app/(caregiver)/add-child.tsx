@@ -5,7 +5,6 @@ import {
   MIN_CHILD_AGE_MONTHS,
   completedMonths,
   todayIsoDate,
-  type CreateChildInput,
   type Sex,
 } from '@nutrikids/shared';
 import { useRouter } from 'expo-router';
@@ -24,27 +23,12 @@ import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
+import { buildCreateChildPayload } from '../../lib/child-form.js';
 import { createChild } from '../../lib/children-api.js';
-import { CURRENT_CONSENT_VERSION } from '../../lib/consent-api.js';
 
 const RELATIONSHIP_OPTIONS = ['Madre', 'Padre', 'Tutor Legal'] as const;
 
-export interface AddChildScreenProps {
-  initialValues?: {
-    firstName?: string;
-    lastName?: string;
-    birthDay?: string;
-    birthMonth?: string;
-    birthYear?: string;
-    sex?: Sex;
-    relationship?: string;
-    isLegalRepresentative?: boolean;
-  };
-  onSubmitForTest?: (submitFn: () => Promise<void>) => void;
-}
-
-export default function AddChildScreen(props?: AddChildScreenProps) {
-  const { initialValues, onSubmitForTest } = props ?? {};
+export default function AddChildScreen() {
   const router = useRouter();
   const keyboardInset = useKeyboardBottomInset();
 
@@ -54,16 +38,14 @@ export default function AddChildScreen(props?: AddChildScreenProps) {
   const monthRef = useRef<React.ComponentRef<typeof TextInput>>(null);
   const yearRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
-  const [firstName, setFirstName] = useState(initialValues?.firstName ?? '');
-  const [lastName, setLastName] = useState(initialValues?.lastName ?? '');
-  const [birthDay, setBirthDay] = useState(initialValues?.birthDay ?? '');
-  const [birthMonth, setBirthMonth] = useState(initialValues?.birthMonth ?? '');
-  const [birthYear, setBirthYear] = useState(initialValues?.birthYear ?? '');
-  const [sex, setSex] = useState<Sex>(initialValues?.sex ?? 'MALE');
-  const [relationship, setRelationship] = useState<string>(initialValues?.relationship ?? 'Madre');
-  const [isLegalRepresentative, setIsLegalRepresentative] = useState(
-    initialValues?.isLegalRepresentative ?? true,
-  );
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [birthDay, setBirthDay] = useState('');
+  const [birthMonth, setBirthMonth] = useState('');
+  const [birthYear, setBirthYear] = useState('');
+  const [sex, setSex] = useState<Sex>('MALE');
+  const [relationship, setRelationship] = useState<string>('Madre');
+  const [isLegalRepresentative, setIsLegalRepresentative] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -99,15 +81,16 @@ export default function AddChildScreen(props?: AddChildScreenProps) {
     setGeneralError(null);
     setFieldErrors({});
 
-    const payload: CreateChildInput = {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      birthDate: birthDateIso,
+    const payload = buildCreateChildPayload({
+      firstName,
+      lastName,
+      birthDay,
+      birthMonth,
+      birthYear,
       sex,
       relationship,
       isLegalRepresentative,
-      consentTextVersion: CURRENT_CONSENT_VERSION,
-    };
+    });
 
     const validation = CreateChildInputSchema.safeParse(payload);
     if (!validation.success) {
@@ -126,10 +109,6 @@ export default function AddChildScreen(props?: AddChildScreenProps) {
       setLoading(false);
     }
   };
-
-  if (onSubmitForTest) {
-    onSubmitForTest(handleSubmit);
-  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
