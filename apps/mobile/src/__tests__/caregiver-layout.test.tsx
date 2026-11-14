@@ -55,11 +55,16 @@ describe('CaregiverTabsLayout', () => {
       'chat-detail',
       'profile',
       'consent',
+      'add-child',
     ]);
 
     const consentScreen = screens.find((s) => s.props.name === 'consent');
     expect(consentScreen).toBeDefined();
     expect(consentScreen?.props.options?.href).toBeNull();
+
+    const addChildScreen = screens.find((s) => s.props.name === 'add-child');
+    expect(addChildScreen).toBeDefined();
+    expect(addChildScreen?.props.options?.href).toBeNull();
   });
 
   it('assigns correct tab titles for caregiver navigation', () => {

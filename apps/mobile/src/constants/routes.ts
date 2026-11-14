@@ -23,6 +23,7 @@ export const APP_ROUTES = {
     CHAT_DETAIL: '/(caregiver)/chat-detail' as const,
     PROFILE: '/(caregiver)/profile' as const,
     CONSENT: '/(caregiver)/consent' as const,
+    ADD_CHILD: '/(caregiver)/add-child' as const,
   },
   PROFESSIONAL: {
     GROUP: '(professional)',

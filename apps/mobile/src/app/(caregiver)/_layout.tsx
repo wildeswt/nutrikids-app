@@ -116,6 +116,15 @@ export default function CaregiverTabsLayout() {
           tabBarStyle: { display: 'none' },
         }}
       />
+      <Tabs.Screen
+        name="add-child"
+        options={{
+          href: null,
+          title: 'Registrar Niño',
+          headerTitle: 'Registrar Niño',
+          tabBarStyle: { display: 'none' },
+        }}
+      />
     </Tabs>
   );
 }
