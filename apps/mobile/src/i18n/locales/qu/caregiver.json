@@ -61,7 +61,6 @@
     "title": "Mushuk kamayta killkay",
     "childSubtitle": "{{age}} - {{birthDate}} punchapi wacharirka",
     "changeChild": "Shuk wawata akllay",
-    "saved": "Kamayka wakaychishkami.",
     "dateLabel": "Kamay puncha",
     "datePlaceholder": "Shina: {{example}}",
     "positionLabel": "¿Imashinata tupurkanki?",
@@ -81,8 +80,21 @@
       "dateRequired": "Kamay punchata killkay.",
       "weightRange": "Llasayka {{min}} kg-manta {{max}} kg-kamanmi kana.",
       "heightRange": "Hatunkayka {{min}} cm-manta {{max}} cm-kamanmi kana.",
-      "outlier": "Llasaypash hatunkaypash paypak watakunapakka shuk shinami rikurin. Tupushkata kutin rikuy. Alli kashpaka, kutin «Wakaychishpa tukuchishkata rikuy» nishkata llapiy."
-    }
+      "outlier": "Llasaypash hatunkaypash paypak watakunapakka shuk shinami rikurin. Tupushkata kutin rikuy. Alli kashpaka, kutin «Wakaychishpa tukuchishkata rikuy» nishkata llapiy.",
+      "dateInvalid": "Punchata shinami killkay: punchakuna/killa/wata. Shina: {{example}}.",
+      "dateFuture": "Kamay punchaka mana shamukpi punchachu kana.",
+      "dateBeforeBirth": "Kamay punchaka wacharishka punchamanta ñawpachu kana.",
+      "invalid": "Kamaypak willaykunata kutin rikuy, shinashpa kutin rurapay."
+    },
+    "loading": "Wawakunata rikuchikunmi...",
+    "loadError": "Wawakunata mana rikuchiy usharkanchikchu.",
+    "retry": "Kutin rurapay",
+    "emptyTitle": "Manarakmi wawakunata killkakatishkankichu",
+    "emptySubtitle": "Kikinpak wawata killkakatiy, paypak kamaykunata killkankapak.",
+    "addChild": "Wawata yapay",
+    "saving": "Wakaychikunmi...",
+    "consentRequired": "{{name}}-pak kamaykunata killkankapakka, kunan ari ninata mutsunchikmi (paypak willaykunata wakaychinkapak kikinpak ari nina).",
+    "goToConsent": "Ari ninaman rina"
   },
   "checkupSaved": {
     "title": "¡Kamayka wakaychishkami!",
@@ -92,9 +104,9 @@
     "height": "Hatunkay",
     "position": "Imashina tupushka",
     "teamNote": "Kikinpak hampik tantanakuymi kay kamayta rikunka. Ima mutsushkata willashunmi.",
-    "offline": "Internet illanmi · tinkirikpika kachakunmi",
     "seeEvolution": "Imashina wiñakunta rikuy",
-    "goHome": "Kallariman tikray"
+    "goHome": "Kallariman tikray",
+    "missing": "Kunallan wakaychishka kamayta mana tarirkanchikchu."
   },
   "evolution": {
     "title": "Imashina {{name}} wiñakun",
@@ -119,16 +131,25 @@
         "name": "¿Paypak IMC (llasaypash hatunkaypash) watakunapak allichu kan?"
       }
     },
-    "status": {
-      "ok": "Allimi rin",
-      "improving": "Alliyakunmi"
-    },
     "legendReference": "Shuyashka (OMS)",
     "lastRecord": "Kipa kamay - {{date}}",
     "weight": "Llasay",
     "height": "Hatunkay",
     "recordedBy": "Killkarka",
-    "unitKgM2": "kg/m²"
+    "unitKgM2": "kg/m²",
+    "loading": "Wiñayta rikuchikunmi...",
+    "loadError": "Wiñayta mana rikuchiy usharkanchikchu.",
+    "retry": "Kutin rurapay",
+    "emptyChildrenTitle": "Manarakmi wawakunata killkakatishkankichu",
+    "emptyChildrenSubtitle": "Kikinpak wawata killkakatiy, imashina wiñakunta rikunkapak.",
+    "noCheckupsTitle": "Manarakmi {{name}}-pak kamaykuna kanchu",
+    "noCheckupsSubtitle": "Ñawpa kamayta killkay, paypak wiñayta rikunkapak.",
+    "addCheckup": "Kamayta killkay",
+    "origin": {
+      "CAREGIVER": "Kikin",
+      "PROFESSIONAL": "Hampik tantanakuy"
+    },
+    "chartLoading": "Rikuchikka shamukun..."
   },
   "messages": {
     "back": "Tikray",

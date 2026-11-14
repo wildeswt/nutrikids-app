@@ -36,6 +36,14 @@
     "unregisterDevice": "Manam antañikikuta anchuchiyta atikurchu.",
     "markRead": "Manam willayta ñawinchasqa nispa churayta atikurchu."
   },
+  "checkups": {
+    "fetch": "Kamaykunata mana rikuchiy usharkanchikchu. Kutin rurapay.",
+    "create": "Kamayta mana wakaychiy usharkanchikchu. Kutin rurapay.",
+    "missingChild": "Kamayta killkankapakka wawata akllana kanmi."
+  },
+  "reference": {
+    "fetch": "OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay."
+  },
   "alerts": {
     "list": "Mana yuyachikkunata apamunkapak ushashkanchu. Kutin yachay."
   }
