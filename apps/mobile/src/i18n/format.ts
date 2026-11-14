@@ -55,6 +55,12 @@ export function formatShortDate(value: string | Date): string {
   });
 }
 
+/** Abbreviated month with leading capital for chart X axes, e.g. "Abr" / "Wayru". */
+export function formatMonthShort(value: string | Date): string {
+  const short = monthName(toDate(value), 'monthsShort');
+  return short.charAt(0).toUpperCase() + short.slice(1);
+}
+
 /** Numeric date, e.g. "12-11-2026". */
 export function formatNumericDate(value: string | Date): string {
   return new Intl.DateTimeFormat(intlLocale(), {

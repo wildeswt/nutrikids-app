@@ -20,8 +20,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { ZScoreChart } from '../../components/ZScoreChart.js';
+import { Card } from '../../components/ui/Card.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
+import { SecondaryButton } from '../../components/ui/SecondaryButton.js';
 import { PALETTE } from '../../constants/colors.js';
+import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { useAlertDetail } from '../../hooks/useAlertDetail.js';
 import { usePendingFollowUps } from '../../hooks/usePendingFollowUps.js';
 import { formatDecimal, formatLongDate, formatTime } from '../../i18n/format.js';
@@ -29,14 +35,6 @@ import { describeZResult, isWideLayout, zSeriesFor } from '../../lib/alert-detai
 import { formatChildAge } from '../../lib/children-api.js';
 
 const MAX_CONTENT_WIDTH = 960;
-
-function Card({ children, testID }: { children: ReactNode; testID?: string }) {
-  return (
-    <View style={styles.card} testID={testID}>
-      {children}
-    </View>
-  );
-}
 
 function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -63,9 +61,9 @@ function AlertCard({
       : t(`alertDetail.result.${result.kind}`, { limit: result.limit });
 
   return (
-    <Card testID="alert-detail-card">
+    <View style={styles.section} testID="alert-detail-card">
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{indicator}</Text>
+        <Text style={styles.sectionTitle}>{indicator}</Text>
         <View style={styles.tags}>
           {alert.isSevere && (
             <View style={[styles.pill, styles.pillSevere]} testID="alert-detail-severe">
@@ -107,7 +105,7 @@ function AlertCard({
       <InfoRow label={t('alertDetail.rows.reason')}>
         <Text style={styles.infoValue}>{alert.reason}</Text>
       </InfoRow>
-    </Card>
+    </View>
   );
 }
 
@@ -127,7 +125,7 @@ function ChartCard({
   const points = checkups ? zSeriesFor(checkups, alert.indicator, alert.checkupId) : [];
 
   return (
-    <Card testID="alert-detail-chart-card">
+    <Card style={styles.chartCard} testID="alert-detail-chart-card">
       <Text style={styles.chartTitle}>{t('alertDetail.chart.title')}</Text>
       <Text style={styles.chartSubtitle}>{t('alertDetail.chart.subtitle', { indicator })}</Text>
 
@@ -177,39 +175,62 @@ function ChartCard({
 function HistoryCard({ history }: { history: AlertDetailResponse['history'] }) {
   const { t } = useTranslation('professional');
   return (
-    <Card testID="alert-detail-history">
-      <Text style={styles.cardTitle}>{t('alertDetail.history.title')}</Text>
+    <View style={styles.section} testID="alert-detail-history">
+      <Text style={styles.sectionTitle}>{t('alertDetail.history.title')}</Text>
       <View style={styles.timeline}>
-        {history.map((entry, index) => {
-          const isLast = index === history.length - 1;
-          const when = new Date(entry.changedAt);
-          return (
-            <View
-              key={`${entry.status}-${entry.changedAt}`}
-              style={styles.timelineRow}
-              testID={`alert-detail-history-entry-${index}`}
-            >
-              <View style={styles.timelineRail}>
+        <View style={styles.timelineRailRow}>
+          {history.map((entry, index) => {
+            const isLast = index === history.length - 1;
+            return (
+              <React.Fragment key={`rail-${entry.status}-${entry.changedAt}`}>
+                {index > 0 ? <View style={styles.timelineLine} /> : null}
                 <View style={[styles.timelineDot, isLast && styles.timelineDotCurrent]} />
-                {!isLast && <View style={styles.timelineLine} />}
-              </View>
-              <View style={styles.timelineBody}>
-                <Text style={styles.timelineStatus}>{t(`alerts.status.${entry.status}`)}</Text>
-                <Text style={styles.timelineMeta}>
-                  {t('alertDetail.history.by', { name: entry.changedByName })}
+              </React.Fragment>
+            );
+          })}
+        </View>
+
+        <View style={styles.timelineLabelsRow}>
+          {history.map((entry, index) => {
+            const isFirst = index === 0;
+            const isLast = index === history.length - 1;
+            const alignStyle =
+              history.length === 1 || isFirst
+                ? styles.timelineEntryStart
+                : isLast
+                  ? styles.timelineEntryEnd
+                  : styles.timelineEntryCenter;
+            const textAlignStyle =
+              history.length === 1 || isFirst
+                ? styles.textLeft
+                : isLast
+                  ? styles.textRight
+                  : styles.textCenter;
+            const when = new Date(entry.changedAt);
+            return (
+              <View
+                key={`${entry.status}-${entry.changedAt}`}
+                style={[styles.timelineEntry, alignStyle]}
+                testID={`alert-detail-history-entry-${index}`}
+              >
+                <Text style={[styles.timelineStatus, textAlignStyle]}>
+                  {t(`alerts.status.${entry.status}`)}
                 </Text>
-                <Text style={styles.timelineMeta}>
+                <Text style={[styles.timelineMeta, textAlignStyle]}>
                   {t('alertDetail.history.entry', {
                     date: formatLongDate(when),
                     time: formatTime(when),
                   })}
                 </Text>
+                <Text style={[styles.timelineMeta, textAlignStyle]}>
+                  {t('alertDetail.history.by', { name: entry.changedByName })}
+                </Text>
               </View>
-            </View>
-          );
-        })}
+            );
+          })}
+        </View>
       </View>
-    </Card>
+    </View>
   );
 }
 
@@ -252,21 +273,14 @@ export default function AlertDetailScreen() {
     });
   };
 
-  const backButton = (
-    <Pressable
-      style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-      onPress={goBack}
-      hitSlop={8}
-      accessibilityRole="button"
-      accessibilityLabel={t('common:actions.goBack')}
-      testID="alert-detail-back"
-    >
-      <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-      <Text style={styles.backText}>{t('common:actions.back')}</Text>
-    </Pressable>
+  const header = (
+    <ScreenHeader
+      title={t('alertDetail.title')}
+      backLabel={t('common:actions.back')}
+      onBack={goBack}
+      testID="alert-detail"
+    />
   );
-
-  const title = <Text style={styles.screenTitle}>{t('alertDetail.title')}</Text>;
 
   // Full-screen states: first load or the alert could not be loaded. A reload on focus keeps the
   // content visible.
@@ -274,8 +288,7 @@ export default function AlertDetailScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <View style={styles.content} testID="alert-detail-screen">
-          {backButton}
-          {title}
+          {header}
           {loading || !error ? (
             <View style={styles.centerBox} testID="alert-detail-loading">
               <ActivityIndicator size="large" color={PALETTE.primary} />
@@ -318,18 +331,13 @@ export default function AlertDetailScreen() {
         </Text>
       )}
       {canReview && (
-        <Pressable
-          style={({ pressed }) => [styles.primaryButton, (pressed || marking) && styles.pressed]}
+        <PrimaryButton
+          label={marking ? t('alertDetail.actions.marking') : t('alertDetail.actions.markReviewed')}
           onPress={() => void markReviewed()}
           disabled={marking}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: marking, busy: marking }}
+          loading={marking}
           testID="alert-detail-mark-reviewed"
-        >
-          <Text style={styles.primaryButtonText}>
-            {marking ? t('alertDetail.actions.marking') : t('alertDetail.actions.markReviewed')}
-          </Text>
-        </Pressable>
+        />
       )}
       {alert.status === 'REVIEWED' && (
         <Text style={styles.noteText} testID="alert-detail-reviewed-note">
@@ -341,23 +349,17 @@ export default function AlertDetailScreen() {
           {t('alertDetail.actions.establishedNote')}
         </Text>
       ) : (
-        <Pressable
-          style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+        <SecondaryButton
+          label={t('alertDetail.actions.followUp')}
           onPress={openFollowUp}
-          accessibilityRole="button"
           testID="alert-detail-follow-up"
-        >
-          <Text style={styles.secondaryButtonText}>{t('alertDetail.actions.followUp')}</Text>
-        </Pressable>
+        />
       )}
-      <Pressable
-        style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+      <SecondaryButton
+        label={t('alertDetail.actions.referral')}
         onPress={openReferral}
-        accessibilityRole="button"
         testID="alert-detail-referral"
-      >
-        <Text style={styles.secondaryButtonText}>{t('alertDetail.actions.referral')}</Text>
-      </Pressable>
+      />
     </View>
   );
 
@@ -375,8 +377,7 @@ export default function AlertDetailScreen() {
         testID="alert-detail-screen"
       >
         <View style={styles.content}>
-          {backButton}
-          {title}
+          {header}
           <ChildBanner
             name={child ? `${child.firstName} ${child.lastName}` : t('alertDetail.unknownChild')}
             subtitle={
@@ -421,96 +422,171 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MAX_CONTENT_WIDTH,
     alignSelf: 'center',
-    paddingHorizontal: 30,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 12,
-    gap: 16,
+    gap: 18,
   },
-  backButton: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start' },
-  backText: { fontSize: 18, fontWeight: '500', color: PALETTE.text.title },
-  screenTitle: { fontSize: 30, fontWeight: '800', color: PALETTE.text.title },
   pressed: { opacity: 0.8 },
-  stack: { gap: 16 },
-  columns: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
-  column: { flex: 1, gap: 16 },
-  card: {
-    backgroundColor: PALETTE.surface,
-    borderRadius: 25,
-    padding: 20,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+  stack: { gap: 20 },
+  columns: { flexDirection: 'row', gap: 20, alignItems: 'flex-start' },
+  column: { flex: 1, gap: 20 },
+  section: { gap: 10 },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
   },
-  cardHeader: { gap: 8 },
-  cardTitle: { fontSize: 18, fontWeight: '700', color: PALETTE.text.title },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  sectionTitle: {
+    fontFamily: font('medium'),
+    fontSize: 18,
+    fontWeight: '500',
+    color: PALETTE.text.title,
+    flexShrink: 1,
+  },
+  tags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 6,
+  },
   pill: {
     backgroundColor: PALETTE.secondary,
-    borderRadius: 12,
-    paddingHorizontal: 10,
+    borderRadius: RADIUS_PILL,
+    paddingHorizontal: 12,
     paddingVertical: 4,
   },
-  pillText: { fontSize: 12, fontWeight: '700', color: PALETTE.text.light },
+  pillText: {
+    fontFamily: font('semibold'),
+    fontSize: 12,
+    fontWeight: '600',
+    color: PALETTE.text.light,
+  },
   pillSevere: { backgroundColor: PALETTE.feedback.errorBg },
   pillSevereText: { color: PALETTE.feedback.error },
   infoRow: { flexDirection: 'row', gap: 12 },
-  infoLabel: { width: 84, fontSize: 14, fontWeight: '600', color: PALETTE.primary },
+  infoLabel: {
+    width: 84,
+    fontFamily: font('medium'),
+    fontSize: 14,
+    fontWeight: '500',
+    color: PALETTE.primary,
+  },
   infoValueBox: { flex: 1 },
-  infoValue: { fontSize: 15, color: PALETTE.text.body },
-  infoResult: { fontWeight: '700', color: PALETTE.secondaryPressed },
-  chartTitle: { fontSize: 18, fontWeight: '700', color: PALETTE.text.title, textAlign: 'center' },
-  chartSubtitle: { fontSize: 13, color: PALETTE.text.muted, textAlign: 'center' },
+  infoValue: {
+    fontFamily: font('regular'),
+    fontSize: 15,
+    color: PALETTE.text.body,
+  },
+  infoResult: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    color: PALETTE.secondaryPressed,
+  },
+  chartCard: {
+    padding: 18,
+    gap: 10,
+  },
+  chartTitle: {
+    fontFamily: font('medium'),
+    fontSize: 18,
+    fontWeight: '500',
+    color: PALETTE.text.title,
+    textAlign: 'center',
+  },
+  chartSubtitle: {
+    fontFamily: font('regular'),
+    fontSize: 13,
+    color: PALETTE.text.muted,
+    textAlign: 'center',
+  },
   chartState: { alignItems: 'center', gap: 10, paddingVertical: 24 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 12, height: 12, borderRadius: 6 },
   legendDotChild: { backgroundColor: PALETTE.secondary },
   legendDotAlert: { backgroundColor: PALETTE.secondary, borderWidth: 3, borderColor: '#FBC6B0' },
-  legendText: { fontSize: 12, color: PALETTE.text.body },
-  timeline: { gap: 0 },
-  timelineRow: { flexDirection: 'row', gap: 12 },
-  timelineRail: { alignItems: 'center', width: 14 },
-  timelineDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: PALETTE.primary },
-  timelineDotCurrent: { backgroundColor: PALETTE.secondary },
-  timelineLine: { flex: 1, width: 3, backgroundColor: PALETTE.primary, marginVertical: 2 },
-  timelineBody: { flex: 1, paddingBottom: 16, gap: 2 },
-  timelineStatus: { fontSize: 15, fontWeight: '700', color: PALETTE.text.title },
-  timelineMeta: { fontSize: 12, color: PALETTE.text.muted },
-  actions: { gap: 12 },
-  actionError: { fontSize: 14, color: PALETTE.feedback.error, textAlign: 'center' },
-  noteText: { fontSize: 14, color: PALETTE.text.muted, textAlign: 'center' },
-  primaryButton: {
+  legendText: {
+    fontFamily: font('regular'),
+    fontSize: 12,
+    color: PALETTE.text.body,
+  },
+  timeline: { gap: 8, paddingTop: 4 },
+  timelineRailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timelineDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: PALETTE.primary,
-    borderRadius: 25,
-    minHeight: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
   },
-  primaryButtonText: { color: PALETTE.text.light, fontSize: 16, fontWeight: '700' },
-  secondaryButton: {
-    borderRadius: 25,
-    minHeight: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    borderWidth: 2,
-    borderColor: PALETTE.primary,
-    backgroundColor: PALETTE.surface,
+  timelineDotCurrent: { backgroundColor: PALETTE.secondary },
+  timelineLine: {
+    flex: 1,
+    height: 3,
+    backgroundColor: PALETTE.primary,
   },
-  secondaryButtonText: { color: PALETTE.primary, fontSize: 16, fontWeight: '700' },
+  timelineLabelsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  timelineEntry: { flex: 1, gap: 2 },
+  timelineEntryStart: { alignItems: 'flex-start' },
+  timelineEntryCenter: { alignItems: 'center' },
+  timelineEntryEnd: { alignItems: 'flex-end' },
+  textLeft: { textAlign: 'left' },
+  textCenter: { textAlign: 'center' },
+  textRight: { textAlign: 'right' },
+  timelineStatus: {
+    fontFamily: font('medium'),
+    fontSize: 14,
+    fontWeight: '500',
+    color: PALETTE.text.title,
+  },
+  timelineMeta: {
+    fontFamily: font('regular'),
+    fontSize: 12,
+    color: PALETTE.text.muted,
+  },
+  actions: { gap: 12 },
+  actionError: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    color: PALETTE.feedback.error,
+    textAlign: 'center',
+  },
+  noteText: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    color: PALETTE.text.muted,
+    textAlign: 'center',
+  },
   centerBox: { alignItems: 'center', gap: 12, paddingVertical: 48 },
-  mutedText: { fontSize: 14, color: PALETTE.text.muted, textAlign: 'center' },
-  errorText: { fontSize: 15, color: PALETTE.feedback.error, textAlign: 'center' },
+  mutedText: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    color: PALETTE.text.muted,
+    textAlign: 'center',
+  },
+  errorText: {
+    fontFamily: font('regular'),
+    fontSize: 15,
+    color: PALETTE.feedback.error,
+    textAlign: 'center',
+  },
   smallButton: {
     backgroundColor: PALETTE.primary,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 25,
+    borderRadius: RADIUS_PILL,
   },
-  smallButtonText: { color: PALETTE.text.light, fontSize: 15, fontWeight: '600' },
+  smallButtonText: {
+    fontFamily: font('semibold'),
+    color: PALETTE.text.light,
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });

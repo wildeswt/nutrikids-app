@@ -91,6 +91,7 @@ function setHook(overrides: Partial<UseAlertDetailResult> = {}) {
 }
 
 interface Node {
+  type?: unknown;
   props?: Record<string, unknown>;
 }
 
@@ -99,6 +100,11 @@ function find(node: unknown, predicate: (n: Node) => boolean): Node | null {
   if (!node || typeof node !== 'object') return null;
   const el = node as Node;
   if (predicate(el)) return el;
+  if (typeof el.type === 'function' && el.type.name === 'ScreenHeader') {
+    const rendered = (el.type as (props: Record<string, unknown>) => unknown)(el.props ?? {});
+    const found = find(rendered, predicate);
+    if (found) return found;
+  }
   const children = el.props?.['children'];
   for (const child of Array.isArray(children) ? children : [children]) {
     const found = find(child, predicate);

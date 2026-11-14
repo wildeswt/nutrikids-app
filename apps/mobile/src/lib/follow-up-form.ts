@@ -6,6 +6,7 @@ import {
   type CreateFollowUpInput,
   type FollowUpType,
 } from '@nutrikids/shared';
+import { formatLongDate } from '../i18n/format.js';
 import { parseDateInput, toLocalIsoDate } from './checkup-form.js';
 
 export { FOLLOW_UP_TYPES };
@@ -16,7 +17,7 @@ export const NEXT_CHECKUP_SHORTCUT_DAYS = [7, 14, 30, 90] as const;
 export interface FollowUpFormData {
   type: FollowUpType | null;
   details: string;
-  /** Next checkup typed as `DD/MM/AAAA`; empty when there is none. */
+  /** Next checkup stored as `DD/MM/AAAA`; empty when there is none. */
   nextCheckupText: string;
   /** Move the alert to «seguimiento establecido» once the follow-up is saved. */
   establish: boolean;
@@ -51,6 +52,44 @@ export function nextCheckupAfterDays(days: number, now: Date = new Date()): stri
 export function isoDateToInput(isoDate: string): string {
   const [year, month, day] = isoDate.split('-');
   return `${day}/${month}/${year}`;
+}
+
+/** Parses `YYYY-MM-DD` as a local calendar date so the native picker opens on the right day. */
+export function isoToLocalDate(iso: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+  return date;
+}
+
+/** Lower bound for the next-checkup date picker, aligned with today in UTC like the API. */
+export function minNextCheckupDate(todayIso: string = todayIsoDate()): Date {
+  return isoToLocalDate(todayIso) ?? new Date();
+}
+
+/** Value passed to the next-checkup date picker, never earlier than today (UTC). */
+export function nextCheckupPickerValue(
+  nextCheckupText: string,
+  todayIso: string = todayIsoDate(),
+): Date {
+  const minDate = minNextCheckupDate(todayIso);
+  const parsed = parseDateInput(nextCheckupText);
+  if (!parsed || parsed < todayIso) return minDate;
+  return isoToLocalDate(parsed) ?? minDate;
+}
+
+/** Formats `DD/MM/AAAA` as a localized long date (e.g. "25 de octubre de 2026"), or `null`. */
+export function formatNextCheckupLong(nextCheckupText: string): string | null {
+  if (nextCheckupText.trim() === '') return null;
+  const iso = parseDateInput(nextCheckupText);
+  if (!iso) return null;
+  return formatLongDate(iso);
 }
 
 /**

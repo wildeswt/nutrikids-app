@@ -1,9 +1,13 @@
 import { USER_ROLES } from '@nutrikids/shared';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LanguageSelector } from '../../components/LanguageSelector.js';
+import { Card } from '../../components/ui/Card.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { PALETTE } from '../../constants/colors.js';
+import { BUTTON_HEIGHT, BUTTON_WIDTH, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
+import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
 
 export default function ProfessionalProfileScreen() {
@@ -14,8 +18,8 @@ export default function ProfessionalProfileScreen() {
     user?.roles.includes(USER_ROLES.CAREGIVER) && user?.roles.includes(USER_ROLES.PROFESSIONAL);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+      <Card style={styles.card}>
         <Text style={styles.title}>{t('profile.title')}</Text>
 
         <View style={styles.infoRow}>
@@ -43,12 +47,11 @@ export default function ProfessionalProfileScreen() {
         </View>
 
         {hasDualRole && (
-          <Pressable
-            style={({ pressed }) => [styles.switchButton, pressed && styles.buttonPressed]}
+          <PrimaryButton
+            label={t('profile.switchToCaregiver')}
             onPress={() => void switchRole(USER_ROLES.CAREGIVER)}
-          >
-            <Text style={styles.switchButtonText}>{t('profile.switchToCaregiver')}</Text>
-          </Pressable>
+            style={styles.switchButton}
+          />
         )}
 
         <LanguageSelector />
@@ -59,88 +62,87 @@ export default function ProfessionalProfileScreen() {
         >
           <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </Pressable>
-      </View>
-    </View>
+      </Card>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: '#ECFDF5',
-    padding: 20,
+    backgroundColor: PALETTE.background,
+  },
+  container: {
+    flexGrow: 1,
+    backgroundColor: PALETTE.background,
+    paddingHorizontal: SCREEN_MARGIN,
+    paddingVertical: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   card: {
     width: '100%',
     maxWidth: 420,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
     padding: 24,
     gap: 14,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#065F46',
+    fontFamily: font('semibold'),
+    fontSize: 32,
+    fontWeight: '600',
+    color: PALETTE.text.title,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: PALETTE.border.subtle,
     paddingBottom: 8,
   },
   label: {
+    fontFamily: font('medium'),
     fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontWeight: '500',
+    color: PALETTE.text.muted,
   },
   value: {
+    fontFamily: font('regular'),
     fontSize: 14,
-    color: '#111827',
+    color: PALETTE.text.body,
   },
   badge: {
+    fontFamily: font('semibold'),
     fontSize: 12,
-    fontWeight: '700',
-    color: '#047857',
-    backgroundColor: '#D1FAE5',
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    borderRadius: 6,
+    fontWeight: '600',
+    color: PALETTE.primary,
+    backgroundColor: PALETTE.primaryLight,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
   },
   switchButton: {
-    backgroundColor: '#16A34A',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
     marginTop: 6,
   },
-  switchButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
   logoutButton: {
-    backgroundColor: '#FEE2E2',
-    borderColor: '#FCA5A5',
+    width: '100%',
+    maxWidth: BUTTON_WIDTH,
+    height: BUTTON_HEIGHT,
+    alignSelf: 'center',
+    backgroundColor: PALETTE.feedback.errorBg,
+    borderColor: PALETTE.feedback.errorBorder,
     borderWidth: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: RADIUS_PILL,
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
     marginTop: 6,
   },
   logoutButtonText: {
+    fontFamily: font('semibold'),
     color: PALETTE.feedback.error,
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
   },
   buttonPressed: {
     opacity: 0.85,

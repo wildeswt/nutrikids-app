@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { PALETTE } from '../constants/colors.js';
-import { formatDecimal, formatShortDate } from '../i18n/format.js';
-import { toSegments, type PixelPoint } from '../lib/growth-chart.js';
+import { font } from '../constants/typography.js';
+import { formatDecimal, formatMonthShort } from '../i18n/format.js';
+import { toDashedSegments, toSegments, type PixelPoint } from '../lib/growth-chart.js';
 import { xPositions, yPosition, Z_TICKS, type ZPoint } from '../lib/alert-detail.js';
 
 const PLOT_HEIGHT = 168;
@@ -13,6 +14,7 @@ const HALO_SIZE = 30;
 const LABEL_WIDTH = 56;
 /** Beyond this many points only the first, the last and the alert's one get a date label. */
 const MAX_DATE_LABELS = 5;
+const RISK_GUIDE_Z = [-2, -3] as const;
 
 export interface ZScoreChartProps {
   /** Checkups of the child, oldest first (see `zSeriesFor`). */
@@ -55,7 +57,10 @@ export function ZScoreChart({ points, testID }: ZScoreChartProps) {
       <View style={styles.row}>
         <View style={styles.axis}>
           {Z_TICKS.map((tick) => (
-            <Text key={tick} style={[styles.axisLabel, { top: top(tick) - 7 }]}>
+            <Text
+              key={tick}
+              style={[styles.axisLabel, tick < 0 && styles.axisLabelRisk, { top: top(tick) - 7 }]}
+            >
               {tick > 0 ? `+${tick}` : tick < 0 ? `−${Math.abs(tick)}` : '0'}
             </Text>
           ))}
@@ -72,9 +77,29 @@ export function ZScoreChart({ points, testID }: ZScoreChartProps) {
             testID="z-chart-risk-zone"
             style={[styles.zone, styles.zoneRisk, { top: top(-2), height: PLOT_HEIGHT - top(-2) }]}
           />
+          <View style={[styles.guide, styles.guideHigh, { top: top(3) }]} />
+          <View style={[styles.guide, styles.guideUpper, { top: top(2) }]} />
           <View style={[styles.guide, styles.guideMedian, { top: top(0) }]} />
-          <View style={[styles.guide, styles.guideRisk, { top: top(-2) }]} />
-          <View style={[styles.guide, styles.guideRisk, { top: top(-3) }]} />
+          {RISK_GUIDE_Z.flatMap((z) =>
+            toDashedSegments([
+              { left: 0, top: top(z) },
+              { left: plotWidth, top: top(z) },
+            ]).map((segment, index) => (
+              <View
+                key={`risk-${z}-${index}`}
+                testID="z-chart-dashed-guide"
+                style={{
+                  position: 'absolute',
+                  left: segment.centerX - segment.length / 2,
+                  top: segment.centerY - 0.75,
+                  width: segment.length,
+                  height: 1.5,
+                  backgroundColor: PALETTE.secondary,
+                  opacity: 0.75,
+                }}
+              />
+            )),
+          )}
 
           {toSegments(pixels).map((segment, index) => (
             <View
@@ -93,42 +118,49 @@ export function ZScoreChart({ points, testID }: ZScoreChartProps) {
 
           {points.map((point, index) => {
             const pixel = pixels[index]!;
-            return point.isAlert ? (
+            const isLast = index === points.length - 1;
+            const showZLabel = isLast || point.isAlert;
+            const zLabelLeft = Math.max(0, Math.min(pixel.left - 62, plotWidth - 58));
+            const zLabelTop = Math.min(pixel.top + 14, PLOT_HEIGHT - 18);
+
+            return (
               <React.Fragment key={point.checkupId}>
-                <View
-                  testID="z-chart-halo"
-                  style={[
-                    styles.halo,
-                    { left: pixel.left - HALO_SIZE / 2, top: pixel.top - HALO_SIZE / 2 },
-                  ]}
-                />
-                <View
-                  testID="z-chart-alert-point"
-                  style={[
-                    styles.dot,
-                    styles.dotAlert,
-                    { left: pixel.left - DOT_SIZE / 2, top: pixel.top - DOT_SIZE / 2 },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.zLabel,
-                    { left: Math.max(0, pixel.left - 70), top: Math.min(pixel.top + 14, 150) },
-                  ]}
-                  testID="z-chart-alert-label"
-                >
-                  {`z = ${formatDecimal(point.z)}`}
-                </Text>
+                {point.isAlert ? (
+                  <>
+                    <View
+                      testID="z-chart-halo"
+                      style={[
+                        styles.halo,
+                        { left: pixel.left - HALO_SIZE / 2, top: pixel.top - HALO_SIZE / 2 },
+                      ]}
+                    />
+                    <View
+                      testID="z-chart-alert-point"
+                      style={[
+                        styles.dot,
+                        styles.dotAlert,
+                        { left: pixel.left - DOT_SIZE / 2, top: pixel.top - DOT_SIZE / 2 },
+                      ]}
+                    />
+                  </>
+                ) : (
+                  <View
+                    testID="z-chart-point"
+                    style={[
+                      styles.dot,
+                      { left: pixel.left - DOT_SIZE / 2, top: pixel.top - DOT_SIZE / 2 },
+                    ]}
+                  />
+                )}
+                {showZLabel ? (
+                  <Text
+                    style={[styles.zLabel, { left: zLabelLeft, top: zLabelTop }]}
+                    testID={point.isAlert ? 'z-chart-alert-label' : 'z-chart-last-label'}
+                  >
+                    {`z = ${formatDecimal(point.z)}`}
+                  </Text>
+                ) : null}
               </React.Fragment>
-            ) : (
-              <View
-                key={point.checkupId}
-                testID="z-chart-point"
-                style={[
-                  styles.dot,
-                  { left: pixel.left - DOT_SIZE / 2, top: pixel.top - DOT_SIZE / 2 },
-                ]}
-              />
             );
           })}
         </View>
@@ -143,7 +175,7 @@ export function ZScoreChart({ points, testID }: ZScoreChartProps) {
               { left: AXIS_WIDTH + xs[index]! * plotWidth - LABEL_WIDTH / 2 },
             ]}
           >
-            {formatShortDate(new Date(points[index]!.measuredAt))}
+            {formatMonthShort(new Date(points[index]!.measuredAt))}
           </Text>
         ))}
       </View>
@@ -160,9 +192,13 @@ const styles = StyleSheet.create({
   axisLabel: {
     position: 'absolute',
     right: 6,
+    fontFamily: font('medium'),
     fontSize: 11,
     fontWeight: '500',
     color: PALETTE.text.muted,
+  },
+  axisLabelRisk: {
+    color: PALETTE.secondaryPressed,
   },
   plot: { flex: 1, height: PLOT_HEIGHT, overflow: 'visible' },
   zone: { position: 'absolute', left: 0, right: 0 },
@@ -170,8 +206,9 @@ const styles = StyleSheet.create({
   zoneNormal: { backgroundColor: PALETTE.primaryLight },
   zoneRisk: { backgroundColor: PALETTE.secondaryLight },
   guide: { position: 'absolute', left: 0, right: 0, height: 1 },
-  guideMedian: { backgroundColor: PALETTE.primary },
-  guideRisk: { backgroundColor: PALETTE.secondary, opacity: 0.5 },
+  guideHigh: { backgroundColor: PALETTE.border.default },
+  guideUpper: { backgroundColor: PALETTE.primary, opacity: 0.2 },
+  guideMedian: { height: 1.5, backgroundColor: PALETTE.primary },
   dot: {
     position: 'absolute',
     width: DOT_SIZE,
@@ -192,8 +229,9 @@ const styles = StyleSheet.create({
   },
   zLabel: {
     position: 'absolute',
+    fontFamily: font('semibold'),
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     color: PALETTE.secondaryPressed,
   },
   dates: { height: 16 },
@@ -201,6 +239,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: LABEL_WIDTH,
     textAlign: 'center',
+    fontFamily: font('medium'),
     fontSize: 11,
     color: PALETTE.text.muted,
     fontWeight: '500',
