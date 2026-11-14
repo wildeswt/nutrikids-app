@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { registerPushDeviceApi, unregisterPushDeviceApi } from './notifications-api.js';
 
 export const PUSH_TOKEN_STORAGE_KEY = 'nutrikids.push.device_token';
@@ -60,6 +60,41 @@ export async function clearStoredPushToken(): Promise<void> {
   } finally {
     memoryPushTokenStorage.delete(PUSH_TOKEN_STORAGE_KEY);
   }
+}
+
+/** Permiso de notificaciones del teléfono; `unavailable` en web (no hay permiso que consultar). */
+export type NotificationsPermission = 'granted' | 'denied' | 'unavailable';
+
+/** Consulta si el teléfono permite mostrar notificaciones de la app (NK-52). */
+export async function getNotificationsPermission(): Promise<NotificationsPermission> {
+  if (Platform.OS === 'web') return 'unavailable';
+
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    return status === 'granted' ? 'granted' : 'denied';
+  } catch {
+    return 'unavailable';
+  }
+}
+
+/**
+ * Activa las notificaciones desde la pantalla de recordatorios: pide el permiso (y registra el
+ * dispositivo en la API). Si el teléfono ya no deja preguntar, abre los ajustes de la app.
+ */
+export async function enableNotifications(): Promise<NotificationsPermission> {
+  if (Platform.OS === 'web') return 'unavailable';
+
+  try {
+    const current = await Notifications.getPermissionsAsync();
+    if (current.status !== 'granted' && current.canAskAgain === false) {
+      await Linking.openSettings();
+      return 'denied';
+    }
+    await registerPushNotifications();
+  } catch {
+    // Se vuelve a consultar el permiso abajo.
+  }
+  return getNotificationsPermission();
 }
 
 /**
