@@ -68,6 +68,7 @@ model User {
   auditLogs            AuditLog[]
   refreshTokens        RefreshToken[]
   pushDevices          PushDevice[]
+  erasureRequests      ErasureRequest[]
 
   @@map("users")
 }
@@ -116,6 +117,7 @@ model Child {
   feedingLogs          FeedingLog[]
   followUps            FollowUp[]
   reminders            Reminder[]
+  erasureRequests      ErasureRequest[]
 
   @@map("children")
 }
@@ -322,6 +324,25 @@ model Reminder {
 
   @@index([childId])
   @@map("reminders")
+}
+
+// Solicitudes de eliminación de datos del niño (NK-41). La ejecución anonimiza al niño
+// (función SQL execute_erasure_requests); un solo pendiente por niño (índice parcial en SQL).
+model ErasureRequest {
+  id                   String              @id @default(uuid()) @db.Uuid
+  childId              String              @map("child_id") @db.Uuid
+  requestedById        String              @map("requested_by_id") @db.Uuid
+  status               String              @default("pending") @map("status")
+  requestedAt          DateTime            @default(now()) @map("requested_at") @db.Timestamptz(3)
+  dueAt                DateTime            @map("due_at") @db.Timestamptz(3)
+  resolvedAt           DateTime?           @map("resolved_at") @db.Timestamptz(3)
+
+  child                Child               @relation(fields: [childId], references: [id], onDelete: Restrict)
+  requestedBy          User                @relation(fields: [requestedById], references: [id], onDelete: Restrict)
+
+  @@index([childId])
+  @@index([requestedById])
+  @@map("erasure_requests")
 }
 
 model Notification {

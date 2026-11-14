@@ -1,25 +1,56 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../../constants/colors.js';
-import { DEMO_ACTIVE_CHILD, DEMO_NEW_CHECKUP } from '../../constants/demo-data.js';
 import { APP_ROUTES } from '../../constants/routes.js';
-import { formatAge, formatDecimal, formatLongDate } from '../../i18n/format.js';
+import { formatDecimal, formatLongDate } from '../../i18n/format.js';
+import { parseCheckupSavedParams } from '../../lib/checkup-route.js';
+import { formatChildAge } from '../../lib/children-api.js';
 
 export default function CheckupSavedScreen() {
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'common']);
+  const params = useLocalSearchParams();
+  const saved = parseCheckupSavedParams(params);
 
   const handleGoToEvolution = () => {
-    router.replace(APP_ROUTES.CAREGIVER.EVOLUTION);
+    router.replace({
+      pathname: APP_ROUTES.CAREGIVER.EVOLUTION as never,
+      params: saved ? { childId: saved.childId } : {},
+    });
   };
 
   const handleGoToHome = () => {
     router.replace(APP_ROUTES.CAREGIVER.HOME);
   };
+
+  if (!saved) {
+    // Opened without the checkup returned by the API (for example from a deep link).
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+        <View style={styles.content} testID="checkup-saved-missing">
+          <Text style={styles.subtitle}>{t('checkupSaved.missing')}</Text>
+          <View style={styles.spacer} />
+          <View style={styles.buttonsContainer}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryButton,
+                pressed && styles.primaryButtonPressed,
+              ]}
+              onPress={handleGoToHome}
+              accessibilityRole="button"
+              accessibilityLabel={t('checkupSaved.goHome')}
+            >
+              <Text style={styles.primaryButtonText}>{t('checkupSaved.goHome')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
@@ -33,15 +64,15 @@ export default function CheckupSavedScreen() {
         <Text style={styles.title}>{t('checkupSaved.title')}</Text>
         <Text style={styles.subtitle}>
           {t('checkupSaved.subtitle', {
-            name: DEMO_ACTIVE_CHILD.firstName,
-            age: formatAge(DEMO_ACTIVE_CHILD.ageMonths),
+            name: saved.childName,
+            age: formatChildAge(saved.birthDate),
           })}
         </Text>
 
         {/* Bloque resumen del registro */}
         <View style={styles.summaryContainer}>
           <Text style={styles.metaDate}>
-            {t('checkupSaved.lastRecord', { date: formatLongDate(DEMO_NEW_CHECKUP.measuredAt) })}
+            {t('checkupSaved.lastRecord', { date: formatLongDate(saved.measuredAt) })}
           </Text>
 
           <View style={styles.measurementsRow}>
@@ -49,7 +80,7 @@ export default function CheckupSavedScreen() {
             <View style={styles.measurementItem}>
               <Text style={styles.measurementLabel}>{t('checkupSaved.weight')}</Text>
               <Text style={styles.measurementValue}>
-                {t('common:units.weightValue', { value: formatDecimal(DEMO_NEW_CHECKUP.weightKg) })}
+                {t('common:units.weightValue', { value: formatDecimal(saved.weightKg) })}
               </Text>
             </View>
 
@@ -57,7 +88,7 @@ export default function CheckupSavedScreen() {
             <View style={styles.measurementItem}>
               <Text style={styles.measurementLabel}>{t('checkupSaved.height')}</Text>
               <Text style={styles.measurementValue}>
-                {t('common:units.heightValue', { value: formatDecimal(DEMO_NEW_CHECKUP.heightCm) })}
+                {t('common:units.heightValue', { value: formatDecimal(saved.lengthHeightCm) })}
               </Text>
             </View>
 
@@ -65,7 +96,7 @@ export default function CheckupSavedScreen() {
             <View style={styles.measurementItem}>
               <Text style={styles.measurementLabel}>{t('checkupSaved.position')}</Text>
               <Text style={styles.measurementValue}>
-                {t(`addCheckup.positions.${DEMO_NEW_CHECKUP.position}`)}
+                {t(`addCheckup.positions.${saved.position}`)}
               </Text>
             </View>
           </View>
@@ -84,12 +115,6 @@ export default function CheckupSavedScreen() {
           </View>
         </View>
 
-        {/* Banner de sin conexión / guardado local */}
-        <View style={styles.offlineBanner}>
-          <Ionicons name="cloud-offline-outline" size={20} color="#C2410C" />
-          <Text style={styles.offlineBannerText}>{t('checkupSaved.offline')}</Text>
-        </View>
-
         <View style={styles.spacer} />
 
         {/* Botones de acción inferiores */}
@@ -100,6 +125,7 @@ export default function CheckupSavedScreen() {
             onPress={handleGoToEvolution}
             accessibilityRole="button"
             accessibilityLabel={t('checkupSaved.seeEvolution')}
+            testID="checkup-saved-see-evolution"
           >
             <Text style={styles.primaryButtonText}>{t('checkupSaved.seeEvolution')}</Text>
           </Pressable>
@@ -210,23 +236,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: PALETTE.text.body,
-  },
-  offlineBanner: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#FFEADF',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginTop: 10,
-  },
-  offlineBannerText: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#C2410C',
   },
   spacer: {
     flex: 1,

@@ -12,12 +12,46 @@
     "profile": "Ñukamanta",
     "profileTitle": "Hampikmanta",
     "notifications": "Willaykuna",
-    "notificationsTitle": "Willaykuna"
+    "notificationsTitle": "Willaykuna",
+    "alertDetailTitle": "Yuyachikkunamanta"
   },
   "alerts": {
-    "title": "Mikuymanta yuyachikkuna",
-    "welcome": "Alli shamushka kapay, hampik {{firstName}} {{lastName}}",
-    "description": "Kaypimi kikinpak wawakunapak kawsak yuyachikkunata rikunki, ashtawan llakimanta kallarishpa."
+    "filtersA11y": "Yuyachikkunata ima kashkaman akllay",
+    "filters": {
+      "OPEN": "Mana rikushka",
+      "GENERATED": "Rurashka",
+      "PENDING_REVIEW": "Rikuyta shuyan"
+    },
+    "status": {
+      "GENERATED": "Rurashka",
+      "PENDING_REVIEW": "Rikuyta shuyan",
+      "REVIEWED": "Rikushka",
+      "FOLLOW_UP_ESTABLISHED": "Katina churashka"
+    },
+    "indicator": {
+      "WEIGHT_FOR_AGE": "Llasay wiñaypi",
+      "LENGTH_HEIGHT_FOR_AGE": "Hatunkay wiñaypi",
+      "WEIGHT_FOR_LENGTH_HEIGHT": "Llasay hatunkaypi",
+      "BMI_FOR_AGE": "IMC wiñaypi"
+    },
+    "risk": {
+      "UNDERWEIGHT": "Pishi llasay",
+      "STUNTING": "Pishi hatunkay",
+      "WASTING": "Ñañu kay",
+      "OVERWEIGHT": "Askha llasay",
+      "OBESITY": "Sinchi llasay"
+    },
+    "severe": "Sinchi",
+    "overdue": "Yallishka",
+    "overdueSummary_one": "{{count}} yuyachikkuna yallishka, mana rikushka",
+    "overdueSummary_other": "{{count}} yuyachikkuna yallishka, mana rikushka",
+    "today": "Kunan",
+    "unknownChild": "Mana riksishka wawa",
+    "loading": "Yuyachikkunata apamunkapak...",
+    "retry": "Kutin yachana",
+    "empty": "Kay kashkapi mana yuyachikkuna kanchu",
+    "emptyDescription": "Kamay llakita rikuchishpaka, kaypi rikuchikunka.",
+    "openA11y": "{{child}} yuyachikkunata kichay: {{indicator}}, {{risk}}"
   },
   "children": {
     "title": "Llakipi kak wawakuna",
@@ -36,5 +70,10 @@
     "activeRole": "Kunan ruray:",
     "switchToCaregiver": "Wawa kamak rikuchikman tikray",
     "logout": "Llukshiy"
+  },
+  "alertDetail": {
+    "title": "Yuyachikkunamanta",
+    "placeholder": "Yuyachikkunamanta tukuy willaykunaka mishkirak shamunka.",
+    "idLabel": "Yuyachikkuna: {{id}}"
   }
 }

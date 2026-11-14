@@ -9,6 +9,34 @@ vi.mock('expo-router', () => ({
     back: vi.fn(),
     canGoBack: () => true,
   }),
+  useLocalSearchParams: () => ({}),
+}));
+
+vi.mock('expo-secure-store', () => ({
+  isAvailableAsync: vi.fn(async () => true),
+  getItemAsync: vi.fn(async () => null),
+  setItemAsync: vi.fn(async () => {}),
+  deleteItemAsync: vi.fn(async () => {}),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 1,
+}));
+
+// The checkup form only renders once the caregiver's children are loaded.
+vi.mock('../hooks/useChildren.js', () => ({
+  useChildren: () => ({
+    status: 'ready',
+    children: [
+      {
+        id: '11111111-1111-4111-8111-111111111111',
+        firstName: 'Mateo',
+        lastName: 'Gómez',
+        birthDate: '2023-06-15',
+        sex: 'MALE',
+      },
+    ],
+    error: null,
+    load: vi.fn(),
+    create: vi.fn(),
+  }),
 }));
 
 vi.mock('@expo/vector-icons', () => ({

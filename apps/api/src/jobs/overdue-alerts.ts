@@ -1,5 +1,6 @@
 import { env } from '../config/env.js';
 import { processOverdueAlerts } from '../services/notifications.service.js';
+import { dispatchDueReminders } from '../services/reminders.service.js';
 
 let isRunning = false;
 let initialJobTimer: NodeJS.Timeout | null = null;
@@ -31,7 +32,24 @@ export async function runOverdueAlertsJob(): Promise<{ processed: number } | nul
 }
 
 /**
- * Inicia las tareas en segundo plano del servidor (NK-36, extensible para NK-37).
+ * Ejecuta una pasada del despacho de recordatorios (NK-37). La función SQL es atómica, así que
+ * dos pasadas simultáneas no duplican avisos.
+ */
+export async function runRemindersJob(): Promise<{ processed: number } | null> {
+  try {
+    const result = await dispatchDueReminders();
+    if (result.processed > 0) {
+      console.log(`Job de recordatorios: ${result.processed} notificaciones generadas`);
+    }
+    return result;
+  } catch (err) {
+    console.error('Error al ejecutar job de recordatorios:', err);
+    return null;
+  }
+}
+
+/**
+ * Inicia las tareas en segundo plano del servidor (alertas vencidas NK-36, recordatorios NK-37).
  * Programa una pasada inicial diferida (30s tras arranque) y ejecuciones periodicas con .unref().
  */
 export function startBackgroundJobs(): void {
@@ -42,11 +60,13 @@ export function startBackgroundJobs(): void {
   initialJobTimer = setTimeout(() => {
     initialJobTimer = null;
     void runOverdueAlertsJob();
+    void runRemindersJob();
   }, 30 * 1000);
   initialJobTimer.unref();
 
   overdueAlertsTimer = setInterval(() => {
     void runOverdueAlertsJob();
+    void runRemindersJob();
   }, intervalMs);
 
   overdueAlertsTimer.unref();

@@ -30,6 +30,7 @@ export const APP_ROUTES = {
     GROUP: '(professional)',
     ROOT: '/(professional)' as const,
     ALERTS: '/(professional)' as const,
+    ALERT_DETAIL: '/(professional)/alert-detail' as const,
     CHILDREN: '/(professional)/children' as const,
     MESSAGES: '/(professional)/messages' as const,
     PROFILE: '/(professional)/profile' as const,

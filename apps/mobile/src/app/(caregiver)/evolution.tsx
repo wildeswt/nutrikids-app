@@ -1,64 +1,188 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
+import { GrowthChart } from '../../components/GrowthChart.js';
 import { PALETTE } from '../../constants/colors.js';
+import { APP_ROUTES } from '../../constants/routes.js';
+import { useCheckups } from '../../hooks/useCheckups.js';
+import { useChildren } from '../../hooks/useChildren.js';
+import { useReferenceCurves } from '../../hooks/useReferenceCurves.js';
+import { formatAgeShort, formatDecimal, formatLongDate } from '../../i18n/format.js';
+import { formatChildAge } from '../../lib/children-api.js';
 import {
-  DEMO_ACTIVE_CHILD,
-  DEMO_AXIS_AGES_MONTHS,
-  DEMO_AXIS_HEIGHTS_CM,
-  DEMO_LAST_EVOLUTION_RECORD,
-} from '../../constants/demo-data.js';
-import { formatAge, formatAgeShort, formatDecimal, formatLongDate } from '../../i18n/format.js';
-
-type IndicatorKey = 'PE' | 'TE' | 'PT' | 'IMCE';
-
-type IndicatorStatus = 'ok' | 'improving';
-
-interface IndicatorInfo {
-  key: IndicatorKey;
-  /** X axis: by age (months) or by height (cm) for weight-for-height. */
-  xAxis: 'age' | 'height';
-  activeStatus: IndicatorStatus;
-}
-
-const INDICATORS: IndicatorInfo[] = [
-  { key: 'PE', xAxis: 'age', activeStatus: 'ok' },
-  { key: 'TE', xAxis: 'age', activeStatus: 'ok' },
-  { key: 'PT', xAxis: 'height', activeStatus: 'improving' },
-  { key: 'IMCE', xAxis: 'age', activeStatus: 'ok' },
-];
+  INDICATORS,
+  checkupsToPoints,
+  curvesPositionFor,
+  latestCheckup,
+  type IndicatorKey,
+} from '../../lib/growth-chart.js';
 
 export default function EvolutionScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
-  const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PT');
+  const router = useRouter();
+  const params = useLocalSearchParams<{ childId?: string }>();
+  const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PE');
+
+  const {
+    status: childrenStatus,
+    children,
+    error: childrenError,
+    load: loadChildren,
+  } = useChildren();
+  useEffect(() => {
+    void loadChildren();
+  }, [loadChildren]);
+
+  const child = children.find((item) => item.id === params.childId) ?? children[0] ?? null;
+
+  const {
+    status: checkupsStatus,
+    checkups,
+    error: checkupsError,
+    load: loadCheckups,
+  } = useCheckups(child?.id ?? null);
 
   const activeIndicator =
-    INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[2]!;
+    INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[0]!;
+  const latest = latestCheckup(checkups);
+  const position = curvesPositionFor(activeIndicator, latest);
 
-  const xLabels =
+  // The reference curves are requested once the child has at least one checkup to plot.
+  const curves = useReferenceCurves(
+    child && latest
+      ? {
+          indicator: activeIndicator.indicator,
+          sex: child.sex,
+          ...(position ? { position } : {}),
+        }
+      : null,
+  );
+
+  /** Screen without the child's data yet: loading, error with retry or empty state. */
+  const renderState = (content: ReactNode, testID: string) => (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <View style={styles.scrollContent}>
+        <Text style={styles.screenTitle}>
+          {child ? t('evolution.title', { name: child.firstName }) : t('tabs.evolution')}
+        </Text>
+        <View style={styles.stateBox} testID={testID}>
+          {content}
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+
+  const retryButton = (onPress: () => void) => (
+    <Pressable
+      style={({ pressed }) => [styles.stateButton, pressed && styles.pressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={t('evolution.retry')}
+      testID="evolution-retry"
+    >
+      <Text style={styles.stateButtonText}>{t('evolution.retry')}</Text>
+    </Pressable>
+  );
+
+  if (childrenStatus === 'idle' || childrenStatus === 'loading') {
+    return renderState(
+      <>
+        <ActivityIndicator color={PALETTE.primary} />
+        <Text style={styles.stateText}>{t('evolution.loading')}</Text>
+      </>,
+      'evolution-loading',
+    );
+  }
+
+  if (childrenStatus === 'error') {
+    return renderState(
+      <>
+        <Text style={styles.stateText}>{childrenError ?? t('evolution.loadError')}</Text>
+        {retryButton(() => void loadChildren())}
+      </>,
+      'evolution-error',
+    );
+  }
+
+  if (!child) {
+    return renderState(
+      <>
+        <Text style={styles.stateTitle}>{t('evolution.emptyChildrenTitle')}</Text>
+        <Text style={styles.stateText}>{t('evolution.emptyChildrenSubtitle')}</Text>
+      </>,
+      'evolution-empty-children',
+    );
+  }
+
+  if (checkupsStatus === 'idle' || checkupsStatus === 'loading') {
+    return renderState(
+      <>
+        <ActivityIndicator color={PALETTE.primary} />
+        <Text style={styles.stateText}>{t('evolution.loading')}</Text>
+      </>,
+      'evolution-loading',
+    );
+  }
+
+  if (checkupsStatus === 'error') {
+    return renderState(
+      <>
+        <Text style={styles.stateText}>{checkupsError ?? t('evolution.loadError')}</Text>
+        {retryButton(() => void loadCheckups())}
+      </>,
+      'evolution-error',
+    );
+  }
+
+  if (!latest) {
+    return renderState(
+      <>
+        <Text style={styles.stateTitle}>
+          {t('evolution.noCheckupsTitle', { name: child.firstName })}
+        </Text>
+        <Text style={styles.stateText}>{t('evolution.noCheckupsSubtitle')}</Text>
+        <Pressable
+          style={({ pressed }) => [styles.stateButton, pressed && styles.pressed]}
+          onPress={() =>
+            router.push({
+              pathname: APP_ROUTES.CAREGIVER.ADD_CHECKUP as never,
+              params: { childId: child.id },
+            })
+          }
+          accessibilityRole="button"
+          accessibilityLabel={t('evolution.addCheckup')}
+          testID="evolution-add-checkup"
+        >
+          <Text style={styles.stateButtonText}>{t('evolution.addCheckup')}</Text>
+        </Pressable>
+      </>,
+      'evolution-no-checkups',
+    );
+  }
+
+  const formatTick = (value: number) =>
     activeIndicator.xAxis === 'height'
-      ? DEMO_AXIS_HEIGHTS_CM.map((cm) => t('common:units.heightValue', { value: cm }))
-      : DEMO_AXIS_AGES_MONTHS.map((months) => formatAgeShort(months));
+      ? t('common:units.heightValue', { value })
+      : formatAgeShort(value);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Título de la pantalla */}
-        <Text style={styles.screenTitle}>
-          {t('evolution.title', { name: DEMO_ACTIVE_CHILD.firstName })}
-        </Text>
+        <Text style={styles.screenTitle}>{t('evolution.title', { name: child.firstName })}</Text>
 
-        {/* Tarjeta Naranja Superior: Datos del niño */}
+        {/* Banner naranja: datos del niño */}
         <ChildBanner
-          name={DEMO_ACTIVE_CHILD.fullName}
-          subtitle={t('evolution.childSubtitle', {
-            age: formatAge(DEMO_ACTIVE_CHILD.ageMonths),
-            birthDate: formatLongDate(DEMO_ACTIVE_CHILD.birthDate),
-          })}
           style={styles.childBanner}
+          name={`${child.firstName} ${child.lastName}`}
+          subtitle={t('evolution.childSubtitle', {
+            age: formatChildAge(child.birthDate),
+            birthDate: formatLongDate(child.birthDate),
+          })}
         />
 
         {/* Selector de Indicadores Antropométricos: P/E, T/E, P/T, IMC/E */}
@@ -102,60 +226,37 @@ export default function EvolutionScreen() {
             </Pressable>
           </View>
 
-          {/* Gráfico SVG-like con vista estilizada de curvas OMS */}
-          <View style={styles.chartPlotArea}>
-            {/* Franja sombreada de normalidad OMS (Z-score -2 a +2) */}
-            <View style={styles.omsBand}>
-              {/* Línea superior (+2 DE) punteada */}
-              <View style={styles.dashedLineTop} />
-
-              {/* Línea media (Mediana OMS / Z=0) */}
-              <View style={styles.omsMedianLine} />
-
-              {/* Línea inferior (-2 DE) punteada */}
-              <View style={styles.dashedLineBottom} />
-
-              {/* Trayectoria del niño (línea naranja y puntos) */}
-              <View style={styles.childTrajectoryContainer}>
-                {/* Segmento de línea que conecta los puntos */}
-                <View style={styles.childLineSegment} />
-
-                {/* Punto 1 */}
-                <View style={[styles.dataPoint, styles.point1]} />
-
-                {/* Punto 2 */}
-                <View style={[styles.dataPoint, styles.point2]} />
-
-                {/* Punto 3 (reciente y sólido) */}
-                <View style={[styles.dataPoint, styles.dataPointFilled, styles.point3]} />
-              </View>
+          {/* Curvas de referencia de la OMS con los puntos reales del niño */}
+          {curves.status === 'ready' && curves.curves ? (
+            <GrowthChart
+              curves={curves.curves}
+              points={checkupsToPoints(activeIndicator, checkups, child.birthDate)}
+              xAxis={activeIndicator.xAxis}
+              formatTick={formatTick}
+            />
+          ) : curves.status === 'error' ? (
+            <View style={styles.chartState} testID="evolution-curves-error">
+              <Text style={styles.stateText}>{curves.error ?? t('evolution.loadError')}</Text>
+              {retryButton(() => void curves.load())}
             </View>
-
-            {/* Eje X con etiquetas de referencia */}
-            <View style={styles.xAxisRow}>
-              {xLabels.map((lbl, idx) => (
-                <Text key={idx} style={styles.xAxisLabel}>
-                  {lbl}
-                </Text>
-              ))}
+          ) : (
+            <View style={styles.chartState} testID="evolution-curves-loading">
+              <ActivityIndicator color={PALETTE.primary} />
+              <Text style={styles.stateText}>{t('evolution.chartLoading')}</Text>
             </View>
-          </View>
+          )}
 
           {/* Leyenda del gráfico */}
           <View style={styles.legendRow}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, styles.legendDotChild]} />
-              <Text style={styles.legendText}>{DEMO_ACTIVE_CHILD.firstName}</Text>
+              <Text style={styles.legendText}>{child.firstName}</Text>
             </View>
 
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, styles.legendDotOms]} />
               <Text style={styles.legendText}>{t('evolution.legendReference')}</Text>
             </View>
-
-            <Text style={styles.statusLegendText}>
-              {t(`evolution.status.${activeIndicator.activeStatus}`)}
-            </Text>
           </View>
         </View>
 
@@ -163,7 +264,7 @@ export default function EvolutionScreen() {
         <View style={styles.lastRecordCard}>
           <Text style={styles.lastRecordTitle}>
             {t('evolution.lastRecord', {
-              date: formatLongDate(DEMO_LAST_EVOLUTION_RECORD.measuredAt),
+              date: formatLongDate(latest.measuredAt),
             })}
           </Text>
 
@@ -177,7 +278,7 @@ export default function EvolutionScreen() {
                 <Text style={styles.recordDetailLabel}>{t('evolution.weight')}</Text>
                 <Text style={styles.recordDetailValue}>
                   {t('common:units.weightValue', {
-                    value: formatDecimal(DEMO_LAST_EVOLUTION_RECORD.weightKg),
+                    value: formatDecimal(latest.weightKg),
                   })}
                 </Text>
               </View>
@@ -192,7 +293,7 @@ export default function EvolutionScreen() {
                 <Text style={styles.recordDetailLabel}>{t('evolution.height')}</Text>
                 <Text style={styles.recordDetailValue}>
                   {t('common:units.heightValue', {
-                    value: formatDecimal(DEMO_LAST_EVOLUTION_RECORD.heightCm),
+                    value: formatDecimal(latest.lengthHeightCm),
                   })}
                 </Text>
               </View>
@@ -206,7 +307,7 @@ export default function EvolutionScreen() {
               <View>
                 <Text style={styles.recordDetailLabel}>{t('evolution.recordedBy')}</Text>
                 <Text style={styles.recordDetailValue} numberOfLines={1}>
-                  {DEMO_LAST_EVOLUTION_RECORD.recordedBy}
+                  {t(`evolution.origin.${latest.origin}`)}
                 </Text>
               </View>
             </View>
@@ -234,7 +335,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   childBanner: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   indicatorTabsContainer: {
     flexDirection: 'row',
@@ -305,97 +406,6 @@ const styles = StyleSheet.create({
   infoIconWrapper: {
     padding: 2,
   },
-  chartPlotArea: {
-    height: 190,
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  omsBand: {
-    height: 120,
-    backgroundColor: '#E7F5EE',
-    borderRadius: 6,
-    justifyContent: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-    transform: [{ rotate: '-2deg' }],
-  },
-  dashedLineTop: {
-    position: 'absolute',
-    top: 6,
-    left: 0,
-    right: 0,
-    borderTopWidth: 1.5,
-    borderTopColor: '#52A789',
-    borderStyle: 'dashed',
-  },
-  omsMedianLine: {
-    position: 'absolute',
-    top: '50%',
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: '#52A789',
-  },
-  dashedLineBottom: {
-    position: 'absolute',
-    bottom: 6,
-    left: 0,
-    right: 0,
-    borderTopWidth: 1.5,
-    borderTopColor: '#52A789',
-    borderStyle: 'dashed',
-  },
-  childTrajectoryContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  childLineSegment: {
-    position: 'absolute',
-    left: '20%',
-    right: '20%',
-    top: '49%',
-    height: 3,
-    backgroundColor: '#F77E4D',
-    transform: [{ rotate: '-1.5deg' }],
-  },
-  dataPoint: {
-    position: 'absolute',
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 3,
-    borderColor: '#F77E4D',
-  },
-  dataPointFilled: {
-    backgroundColor: '#F77E4D',
-  },
-  point1: {
-    left: '20%',
-    top: '45%',
-  },
-  point2: {
-    left: '50%',
-    top: '44%',
-  },
-  point3: {
-    left: '73%',
-    top: '42%',
-  },
-  xAxisRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 28,
-    marginTop: 18,
-  },
-  xAxisLabel: {
-    fontSize: 11,
-    color: PALETTE.text.muted,
-    fontWeight: '500',
-  },
   legendRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -424,11 +434,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: PALETTE.text.body,
     fontWeight: '500',
-  },
-  statusLegendText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: PALETTE.primary,
   },
   lastRecordCard: {
     backgroundColor: '#FDC4A8',
@@ -478,6 +483,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     color: '#7C2D12',
+  },
+  chartState: {
+    alignItems: 'center',
+    gap: 12,
+    height: 190,
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  stateBox: {
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 32,
+  },
+  stateTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: PALETTE.text.title,
+    textAlign: 'center',
+  },
+  stateText: {
+    fontSize: 14,
+    color: PALETTE.text.body,
+    textAlign: 'center',
+  },
+  stateButton: {
+    backgroundColor: PALETTE.primary,
+    borderRadius: 28,
+    paddingHorizontal: 28,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stateButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   pressed: {
     opacity: 0.7,

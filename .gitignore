@@ -43,3 +43,6 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.json
 
+
+# Encrypted database backups (NK-44)
+backups/

@@ -12,12 +12,46 @@
     "profile": "Mi perfil",
     "profileTitle": "Perfil Profesional",
     "notifications": "Notificaciones",
-    "notificationsTitle": "Notificaciones"
+    "notificationsTitle": "Notificaciones",
+    "alertDetailTitle": "Detalle de la Alerta"
   },
   "alerts": {
-    "title": "Bandeja de Alertas Nutricionales",
-    "welcome": "Bienvenido, Dr./a. {{firstName}} {{lastName}}",
-    "description": "Aquí verás las alertas activas de tus pacientes, ordenadas por gravedad."
+    "filtersA11y": "Filtrar alertas por estado",
+    "filters": {
+      "OPEN": "Sin revisar",
+      "GENERATED": "Generadas",
+      "PENDING_REVIEW": "Pendientes de revisión"
+    },
+    "status": {
+      "GENERATED": "Generada",
+      "PENDING_REVIEW": "Pendiente de revisión",
+      "REVIEWED": "Revisada",
+      "FOLLOW_UP_ESTABLISHED": "Con seguimiento"
+    },
+    "indicator": {
+      "WEIGHT_FOR_AGE": "Peso para la edad",
+      "LENGTH_HEIGHT_FOR_AGE": "Talla para la edad",
+      "WEIGHT_FOR_LENGTH_HEIGHT": "Peso para la talla",
+      "BMI_FOR_AGE": "IMC para la edad"
+    },
+    "risk": {
+      "UNDERWEIGHT": "Bajo peso",
+      "STUNTING": "Talla baja",
+      "WASTING": "Emaciación",
+      "OVERWEIGHT": "Sobrepeso",
+      "OBESITY": "Obesidad"
+    },
+    "severe": "Grave",
+    "overdue": "Vencida",
+    "overdueSummary_one": "{{count}} alerta vencida sin revisar",
+    "overdueSummary_other": "{{count}} alertas vencidas sin revisar",
+    "today": "Hoy",
+    "unknownChild": "Niño sin identificar",
+    "loading": "Cargando alertas...",
+    "retry": "Reintentar",
+    "empty": "No hay alertas en este estado",
+    "emptyDescription": "Cuando un control genere una alerta de riesgo, aparecerá aquí.",
+    "openA11y": "Abrir alerta de {{child}}: {{indicator}}, {{risk}}"
   },
   "children": {
     "title": "Pacientes Clasificados por Riesgo",
@@ -36,5 +70,10 @@
     "activeRole": "Perfil activo:",
     "switchToCaregiver": "Cambiar a vista Cuidador",
     "logout": "Cerrar Sesión"
+  },
+  "alertDetail": {
+    "title": "Detalle de la alerta",
+    "placeholder": "El detalle completo de la alerta estará disponible próximamente.",
+    "idLabel": "Alerta: {{id}}"
   }
 }
