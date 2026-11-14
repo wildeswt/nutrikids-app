@@ -5,7 +5,7 @@
   "description": "NutriKids monorepo (React Native Expo + Express API + PostgreSQL)",
   "packageManager": "pnpm@10.28.2",
   "engines": {
-    "node": ">=22.0.0",
+    "node": ">=22.12.0",
     "pnpm": ">=10.0.0"
   },
   "scripts": {

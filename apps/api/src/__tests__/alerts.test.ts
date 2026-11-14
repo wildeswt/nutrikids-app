@@ -186,11 +186,13 @@ describe('Alerts API (/alerts)', { timeout: 60000 }, () => {
     return res.body as { id: string };
   }
 
-  async function setup() {
+  async function setup(options: { linked?: boolean } = {}) {
     const caregiver = await createUser('CAREGIVER');
     const professional = await createUser('PROFESSIONAL');
     const childId = await seedChild(caregiver.userId);
-    await linkProfessional(childId, professional.userId);
+    if (options.linked !== false) {
+      await linkProfessional(childId, professional.userId);
+    }
     return { caregiver, professional, childId };
   }
 
@@ -233,10 +235,17 @@ describe('Alerts API (/alerts)', { timeout: 60000 }, () => {
   }
 
   /** Alerta P/T grave aún en GENERATED (ningún profesional la recibió todavía). */
-  async function undeliveredWastingAlertId(user: TestUser, childId: string): Promise<string> {
-    await postCheckup(user, childId, 9);
+  async function undeliveredWastingAlertId(
+    caregiver: TestUser,
+    childId: string,
+    professionalId?: string,
+  ): Promise<string> {
+    await postCheckup(caregiver, childId, 9);
     const alert = (await dbAlerts(childId)).find((a) => a.indicator === 'WEIGHT_FOR_LENGTH_HEIGHT');
     expect(alert?.status).toBe('GENERATED');
+    if (professionalId) {
+      await linkProfessional(childId, professionalId);
+    }
     return alert!.id;
   }
 
@@ -256,8 +265,11 @@ describe('Alerts API (/alerts)', { timeout: 60000 }, () => {
       const { caregiver, professional, childId } = await setup();
       const checkup = await postCheckup(caregiver, childId, 9);
 
-      // Nacen en GENERATED: nadie las ha recibido aún.
-      expect((await dbAlerts(childId)).map((a) => a.status)).toEqual(['GENERATED', 'GENERATED']);
+      // Con un profesional vinculado nacen notificadas (NK-36).
+      expect((await dbAlerts(childId)).map((a) => a.status)).toEqual([
+        'PENDING_REVIEW',
+        'PENDING_REVIEW',
+      ]);
 
       const res = await listFor(professional, `?childId=${childId}`);
       expect(res.status).toBe(200);
@@ -348,8 +360,8 @@ describe('Alerts API (/alerts)', { timeout: 60000 }, () => {
 
   describe('máquina de estados (Figura 3)', () => {
     it('recorre los cuatro estados y registra cada cambio con usuario y hora', async () => {
-      const { caregiver, professional, childId } = await setup();
-      const alertId = await undeliveredWastingAlertId(caregiver, childId);
+      const { caregiver, professional, childId } = await setup({ linked: false });
+      const alertId = await undeliveredWastingAlertId(caregiver, childId, professional.userId);
 
       // El sistema notifica al profesional al entregársela: GENERATED → PENDING_REVIEW.
       const opened = await request(app)
@@ -388,8 +400,8 @@ describe('Alerts API (/alerts)', { timeout: 60000 }, () => {
     it.each(['GENERATED', 'PENDING_REVIEW', 'REVIEWED', 'FOLLOW_UP_ESTABLISHED'])(
       'desde GENERATED rechaza el PATCH a %s (409, sin historial)',
       async (to) => {
-        const { professional, childId } = await setup();
-        const alertId = await undeliveredWastingAlertId(professional, childId);
+        const { caregiver, professional, childId } = await setup({ linked: false });
+        const alertId = await undeliveredWastingAlertId(caregiver, childId, professional.userId);
         await insertFollowUp(childId, alertId, professional.userId);
 
         const res = await patchStatus(professional, alertId, to);
@@ -400,8 +412,8 @@ describe('Alerts API (/alerts)', { timeout: 60000 }, () => {
     );
 
     it('el paso a PENDING_REVIEW lo hace el sistema, no el profesional', async () => {
-      const { professional, childId } = await setup();
-      const alertId = await undeliveredWastingAlertId(professional, childId);
+      const { caregiver, professional, childId } = await setup({ linked: false });
+      const alertId = await undeliveredWastingAlertId(caregiver, childId, professional.userId);
       const res = await patchStatus(professional, alertId, 'PENDING_REVIEW');
       expect(res.status).toBe(409);
       expect(res.body.message).toMatch(/la realiza el sistema/);
@@ -451,7 +463,7 @@ describe('Alerts API (/alerts)', { timeout: 60000 }, () => {
     });
 
     it('la bandeja de un profesional no vinculado no muestra ni notifica la alerta', async () => {
-      const { caregiver, childId } = await setup();
+      const { caregiver, childId } = await setup({ linked: false });
       const alertId = await undeliveredWastingAlertId(caregiver, childId);
       const stranger = await createUser('PROFESSIONAL');
       expect((await listFor(stranger, `?childId=${childId}`)).body).toEqual([]);

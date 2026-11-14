@@ -7,5 +7,6 @@ export * from './schemas/common.js';
 export * from './schemas/enums.js';
 export * from './schemas/followUp.js';
 export * from './schemas/health.js';
+export * from './schemas/notification.js';
 export * from './schemas/reference.js';
 export * from './schemas/sync.js';
