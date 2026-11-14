@@ -29,6 +29,9 @@ export const APP_ROUTES = {
     ADD_REMINDER: '/(caregiver)/add-reminder' as const,
     LEARN: '/(caregiver)/learn' as const,
     LEARN_ARTICLE: '/(caregiver)/learn-article' as const,
+    MY_DATA: '/(caregiver)/my-data' as const,
+    EDIT_CHILD: '/(caregiver)/edit-child' as const,
+    PRIVACY: '/(caregiver)/privacy' as const,
   },
   PROFESSIONAL: {
     GROUP: '(professional)',

@@ -34,6 +34,8 @@ export interface AuthContextValue {
   signIn: (response: AuthenticatedAuthResponse, preferredRole?: UserRole) => Promise<void>;
   signOut: () => Promise<void>;
   switchRole: (role: UserRole) => Promise<void>;
+  /** Updates the name and email of the stored session user after editing the account (NK-55). */
+  updateUser: (changes: Pick<AuthUser, 'email' | 'firstName' | 'lastName'>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -188,6 +190,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [session],
   );
 
+  const updateUser = useCallback(
+    async (changes: Pick<AuthUser, 'email' | 'firstName' | 'lastName'>): Promise<void> => {
+      if (!session) return;
+      const updated = { ...session, user: { ...session.user, ...changes } };
+      await saveStoredSession(updated);
+      setSession(updated);
+    },
+    [session],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
@@ -199,8 +211,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signIn,
       signOut,
       switchRole,
+      updateUser,
     }),
-    [status, session, refreshError, clearRefreshError, signIn, signOut, switchRole],
+    [status, session, refreshError, clearRefreshError, signIn, signOut, switchRole, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

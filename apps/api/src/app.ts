@@ -3,6 +3,7 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
+import { createAccountRouter } from './routes/account.routes.js';
 import { createAlertsRouter } from './routes/alerts.routes.js';
 import { createAuditRouter } from './routes/audit.routes.js';
 import { createAuthRouter } from './routes/auth.routes.js';
@@ -31,6 +32,7 @@ export function createApp(): Express {
 
   app.use('/health', healthRouter);
   app.use('/auth', createAuthRouter());
+  app.use('/account', createAccountRouter());
   app.use('/children', createChildrenRouter());
   app.use('/children', createDataRightsRouter());
   app.use('/children', createGrowthMessageRouter());

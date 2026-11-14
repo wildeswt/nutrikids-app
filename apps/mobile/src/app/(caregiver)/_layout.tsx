@@ -179,6 +179,36 @@ export default function CaregiverTabsLayout() {
           tabBarButton: () => null,
         }}
       />
+      <Tabs.Screen
+        name="my-data"
+        options={{
+          title: t('tabs.myData'),
+          headerTitle: t('tabs.myDataHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="edit-child"
+        options={{
+          title: t('tabs.editChild'),
+          headerTitle: t('tabs.editChildHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="privacy"
+        options={{
+          title: t('tabs.privacy'),
+          headerTitle: t('tabs.privacyHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
     </Tabs>
   );
 }

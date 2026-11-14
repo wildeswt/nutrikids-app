@@ -63,5 +63,17 @@
   },
   "education": {
     "fetch": "No pudimos descargar los artículos. Intenta de nuevo."
+  },
+  "dataRights": {
+    "rectify": "No pudimos guardar los cambios. Intenta de nuevo.",
+    "export": "No pudimos preparar el historial. Intenta de nuevo.",
+    "erasureRequest": "No pudimos enviar la solicitud de eliminación. Intenta de nuevo.",
+    "erasureList": "No pudimos ver tus solicitudes de eliminación. Intenta de nuevo.",
+    "erasureCancel": "No pudimos cancelar la solicitud. Intenta de nuevo.",
+    "missingChild": "Falta elegir el niño."
+  },
+  "account": {
+    "fetch": "No pudimos cargar tu cuenta. Intenta de nuevo.",
+    "update": "No pudimos guardar tus datos. Intenta de nuevo."
   }
 }

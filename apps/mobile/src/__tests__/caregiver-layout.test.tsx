@@ -67,6 +67,9 @@ describe('CaregiverTabsLayout', () => {
       'add-reminder',
       'learn',
       'learn-article',
+      'my-data',
+      'edit-child',
+      'privacy',
     ]);
 
     // Auxiliary screens are hidden with `tabBarButton` (not `href: null`, which makes the route
@@ -79,6 +82,9 @@ describe('CaregiverTabsLayout', () => {
       'add-reminder',
       'learn',
       'learn-article',
+      'my-data',
+      'edit-child',
+      'privacy',
     ]) {
       const screen = screens.find((s) => s.props.name === name);
       expect(screen).toBeDefined();
