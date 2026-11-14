@@ -224,14 +224,14 @@ export default function CaregiverHomeScreen() {
         {/* Sección: Próximo control */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('home.nextCheckup')}</Text>
-          <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.ADD_CHECKUP)}>
+          <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.REMINDERS)}>
             <Text style={styles.sectionLink}>{t('home.schedule')}</Text>
           </Pressable>
         </View>
 
         <Pressable
           style={({ pressed }) => [styles.controlCard, pressed && styles.buttonPressed]}
-          onPress={() => router.push(APP_ROUTES.CAREGIVER.EVOLUTION)}
+          onPress={() => router.push(APP_ROUTES.CAREGIVER.REMINDERS)}
         >
           <View style={styles.controlCardRow}>
             <Ionicons name="calendar-outline" size={40} color={PALETTE.text.light} />
