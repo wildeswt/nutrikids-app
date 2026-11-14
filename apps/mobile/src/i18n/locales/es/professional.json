@@ -10,7 +10,9 @@
     "messages": "Mensajes y seguimientos",
     "messagesTitle": "Mensajes y Seguimientos",
     "profile": "Mi perfil",
-    "profileTitle": "Perfil Profesional"
+    "profileTitle": "Perfil Profesional",
+    "notifications": "Notificaciones",
+    "notificationsTitle": "Notificaciones"
   },
   "alerts": {
     "title": "Bandeja de Alertas Nutricionales",

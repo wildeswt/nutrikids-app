@@ -15,7 +15,9 @@
     "consent": "Permiso",
     "consentHeader": "Consentimiento informado",
     "addChild": "Registrar niño",
-    "addChildHeader": "Registrar niño"
+    "addChildHeader": "Registrar niño",
+    "notifications": "Notificaciones",
+    "notificationsHeader": "Notificaciones"
   },
   "home": {
     "notifications": "Avisos",

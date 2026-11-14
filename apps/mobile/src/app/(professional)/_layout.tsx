@@ -115,6 +115,17 @@ export default function ProfessionalDrawerLayout() {
           ),
         }}
       />
+      <Drawer.Screen
+        name="notifications"
+        options={{
+          drawerLabel: t('drawer.notifications'),
+          title: t('drawer.notificationsTitle'),
+          headerShown: false,
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="notifications-outline" size={size} color={color as string} />
+          ),
+        }}
+      />
     </Drawer>
   );
 }
