@@ -1,144 +1,20 @@
 import { USER_ROLES, type ChildResponse } from '@nutrikids/shared';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ConsentChildItem } from '../../components/ConsentChildItem.js';
 import { LanguageSelector } from '../../components/LanguageSelector.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
-import { useConsent } from '../../hooks/useConsent.js';
-import { formatNumericDate } from '../../i18n/format.js';
 import { fetchCaregiverChildren } from '../../lib/consent-api.js';
 
-interface ConsentChildItemProps {
-  child: ChildResponse;
-}
-
-export function ConsentChildItem({ child }: ConsentChildItemProps) {
-  const router = useRouter();
-  const { t } = useTranslation(['caregiver', 'common']);
-  const { status, consent, error, revoke } = useConsent(child.id);
-
-  const formatDate = (isoString?: string | null) => {
-    if (!isoString) return '-';
-    return formatNumericDate(new Date(isoString));
-  };
-
-  const handleRevoke = () => {
-    Alert.alert(
-      t('consentItem.revokeTitle'),
-      t('consentItem.revokeMessage', { name: `${child.firstName} ${child.lastName}` }),
-      [
-        { text: t('common:actions.cancel'), style: 'cancel' },
-        {
-          text: t('consentItem.revokeConfirm'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await revoke();
-              Alert.alert(
-                t('consentItem.revokeSuccessTitle'),
-                t('consentItem.revokeSuccessMessage'),
-              );
-            } catch (err) {
-              Alert.alert(
-                t('consentItem.revokeErrorTitle'),
-                err instanceof Error ? err.message : t('consentItem.revokeErrorMessage'),
-              );
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  const handleView = () => {
-    router.push({
-      pathname: APP_ROUTES.CAREGIVER.CONSENT,
-      params: {
-        childId: child.id,
-        childName: `${child.firstName} ${child.lastName}`,
-        mode: 'view',
-      },
-    });
-  };
-
-  return (
-    <View style={styles.childConsentCard} testID={`consent-child-${child.id}`}>
-      <View style={styles.childHeader}>
-        <Text style={styles.childName}>
-          {child.firstName} {child.lastName}
-        </Text>
-        {status === 'loading' ? (
-          <ActivityIndicator size="small" color="#16A34A" />
-        ) : consent && !consent.revokedAt ? (
-          <Text style={[styles.badgeBase, styles.badgeActive]}>{t('consentItem.badgeActive')}</Text>
-        ) : consent?.revokedAt ? (
-          <Text style={[styles.badgeBase, styles.badgeRevoked]}>
-            {t('consentItem.badgeRevoked')}
-          </Text>
-        ) : (
-          <Text style={[styles.badgeBase, styles.badgeNone]}>{t('consentItem.badgeNone')}</Text>
-        )}
-      </View>
-
-      {error && <Text style={styles.itemErrorText}>{error}</Text>}
-
-      {consent && !consent.revokedAt && (
-        <View style={styles.consentDetails}>
-          <Text style={styles.consentDetailText}>
-            <Text style={styles.detailLabel}>{t('consentItem.version')}</Text>
-            {consent.textVersion}
-          </Text>
-          <Text style={styles.consentDetailText}>
-            <Text style={styles.detailLabel}>{t('consentItem.date')}</Text>
-            {formatDate(consent.grantedAt)}
-          </Text>
-        </View>
-      )}
-
-      {consent?.revokedAt && (
-        <View style={styles.consentDetails}>
-          <Text style={styles.consentDetailText}>
-            <Text style={styles.detailLabel}>{t('consentItem.revokedOn')}</Text>
-            {formatDate(consent.revokedAt)}
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.childActionsRow}>
-        <Pressable
-          style={({ pressed }) => [styles.actionButtonOutline, pressed && styles.buttonPressed]}
-          onPress={handleView}
-          testID={`view-consent-${child.id}`}
-        >
-          <Text style={styles.actionButtonOutlineText}>{t('consentItem.viewDocument')}</Text>
-        </Pressable>
-
-        {consent && !consent.revokedAt && (
-          <Pressable
-            style={({ pressed }) => [styles.actionButtonRevoke, pressed && styles.buttonPressed]}
-            onPress={handleRevoke}
-            testID={`revoke-consent-${child.id}`}
-          >
-            <Text style={styles.actionButtonRevokeText}>{t('consentItem.revoke')}</Text>
-          </Pressable>
-        )}
-      </View>
-    </View>
-  );
-}
+export { ConsentChildItem };
 
 export default function CaregiverProfileScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
+  const router = useRouter();
   const { user, activeRole, switchRole, signOut } = useAuth();
   const [children, setChildren] = useState<ChildResponse[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
@@ -215,8 +91,30 @@ export default function CaregiverProfileScreen() {
           <LanguageSelector />
         </View>
 
-        <View style={styles.noteBox}>
-          <Text style={styles.noteText}>{t('profile.dataNote')}</Text>
+        {/* Derechos sobre los datos (NK-55) */}
+        <View style={styles.sectionContainer}>
+          {(
+            [
+              ['myData', APP_ROUTES.CAREGIVER.MY_DATA, 'person-outline'],
+              ['privacy', APP_ROUTES.CAREGIVER.PRIVACY, 'shield-checkmark-outline'],
+            ] as const
+          ).map(([key, route, icon]) => (
+            <Pressable
+              key={key}
+              style={({ pressed }) => [styles.linkRow, pressed && styles.buttonPressed]}
+              onPress={() => router.push(route)}
+              accessibilityRole="button"
+              accessibilityLabel={t(`profile.${key}`)}
+              testID={`profile-link-${key}`}
+            >
+              <Ionicons name={icon} size={22} color="#14532D" />
+              <View style={styles.linkText}>
+                <Text style={styles.linkTitle}>{t(`profile.${key}`)}</Text>
+                <Text style={styles.linkSubtitle}>{t(`profile.${key}Description`)}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+            </Pressable>
+          ))}
         </View>
 
         <Pressable
@@ -311,93 +209,32 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     lineHeight: 16,
   },
-  loader: {
-    marginVertical: 12,
-  },
-  childConsentCard: {
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: '#F9FAFB',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     padding: 12,
-    gap: 8,
   },
-  childHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  linkText: {
+    flex: 1,
+    gap: 2,
   },
-  childName: {
+  linkTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: '#1F2937',
   },
-  badgeBase: {
-    fontSize: 11,
-    fontWeight: '700',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 4,
-  },
-  badgeActive: {
-    backgroundColor: '#DCFCE7',
-    color: '#15803D',
-  },
-  badgeRevoked: {
-    backgroundColor: '#FEE2E2',
-    color: '#DC2626',
-  },
-  badgeNone: {
-    backgroundColor: '#F3F4F6',
+  linkSubtitle: {
+    fontSize: 12,
     color: '#6B7280',
+    lineHeight: 16,
   },
-  consentDetails: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  consentDetailText: {
-    fontSize: 12,
-    color: '#4B5563',
-  },
-  detailLabel: {
-    fontWeight: '600',
-    color: '#374151',
-  },
-  itemErrorText: {
-    fontSize: 11,
-    color: '#DC2626',
-  },
-  childActionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 4,
-  },
-  actionButtonOutline: {
-    borderColor: '#D1D5DB',
-    borderWidth: 1,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    backgroundColor: '#FFFFFF',
-  },
-  actionButtonOutlineText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  actionButtonRevoke: {
-    borderColor: '#FCA5A5',
-    borderWidth: 1,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    backgroundColor: '#FEF2F2',
-  },
-  actionButtonRevokeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#DC2626',
+  loader: {
+    marginVertical: 12,
   },
   emptyBox: {
     backgroundColor: '#F9FAFB',
@@ -412,18 +249,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 18,
-  },
-  noteBox: {
-    backgroundColor: '#F9FAFB',
-    borderColor: '#E5E7EB',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-  },
-  noteText: {
-    fontSize: 12,
-    color: '#6B7280',
-    lineHeight: 16,
   },
   logoutButton: {
     backgroundColor: '#FEE2E2',
