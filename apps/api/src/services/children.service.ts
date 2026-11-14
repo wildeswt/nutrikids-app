@@ -27,7 +27,7 @@ function parseIsoDateUtc(isoDate: string): Date {
   return new Date(`${isoDate.slice(0, 10)}T00:00:00.000Z`);
 }
 
-function formatChildResponse(child: {
+export function formatChildResponse(child: {
   id: string;
   firstName: string;
   lastName: string;

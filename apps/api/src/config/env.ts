@@ -75,6 +75,8 @@ const EnvSchema = z
     OVERDUE_ALERTS_INTERVAL_MINUTES: z.coerce.number().int().positive().default(60),
     /** Intervalo mínimo (horas) antes de volver a notificar una alerta vencida al mismo profesional (NK-36). */
     OVERDUE_ALERT_RENOTIFY_HOURS: z.coerce.number().int().positive().default(24),
+    /** Días entre la solicitud de eliminación y su ejecución; el representante puede cancelar mientras tanto (NK-41). */
+    ERASURE_GRACE_DAYS: z.coerce.number().int().min(0).max(14).default(7),
     ...cutoffEnvShape,
     OVERWEIGHT_CRITERION: z.preprocess(
       (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
@@ -153,6 +155,7 @@ const EnvSchema = z
       ALERT_REVIEW_DEADLINE_SEVERE_HOURS: raw.ALERT_REVIEW_DEADLINE_SEVERE_HOURS,
       OVERDUE_ALERTS_INTERVAL_MINUTES: raw.OVERDUE_ALERTS_INTERVAL_MINUTES,
       OVERDUE_ALERT_RENOTIFY_HOURS: raw.OVERDUE_ALERT_RENOTIFY_HOURS,
+      ERASURE_GRACE_DAYS: raw.ERASURE_GRACE_DAYS,
     };
   });
 
