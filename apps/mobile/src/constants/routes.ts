@@ -27,6 +27,8 @@ export const APP_ROUTES = {
     NOTIFICATIONS: '/(caregiver)/notifications' as const,
     REMINDERS: '/(caregiver)/reminders' as const,
     ADD_REMINDER: '/(caregiver)/add-reminder' as const,
+    LEARN: '/(caregiver)/learn' as const,
+    LEARN_ARTICLE: '/(caregiver)/learn-article' as const,
     MY_DATA: '/(caregiver)/my-data' as const,
     EDIT_CHILD: '/(caregiver)/edit-child' as const,
     PRIVACY: '/(caregiver)/privacy' as const,

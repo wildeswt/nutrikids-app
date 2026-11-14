@@ -160,6 +160,26 @@ export default function CaregiverTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="learn"
+        options={{
+          title: t('tabs.learn'),
+          headerTitle: t('tabs.learnHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="learn-article"
+        options={{
+          title: t('tabs.learnArticle'),
+          headerTitle: t('tabs.learnArticleHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
         name="my-data"
         options={{
           title: t('tabs.myData'),

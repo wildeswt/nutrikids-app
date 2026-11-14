@@ -61,6 +61,9 @@
     "create": "No pudimos guardar el recordatorio. Intenta de nuevo.",
     "complete": "No pudimos marcar el recordatorio como realizado. Intenta de nuevo."
   },
+  "education": {
+    "fetch": "No pudimos descargar los artículos. Intenta de nuevo."
+  },
   "dataRights": {
     "rectify": "No pudimos guardar los cambios. Intenta de nuevo.",
     "export": "No pudimos preparar el historial. Intenta de nuevo.",
