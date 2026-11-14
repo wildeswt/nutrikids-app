@@ -8,6 +8,7 @@ import {
   type RegisterPushDeviceInput,
 } from '@nutrikids/shared';
 import { Expo, type ExpoPushMessage } from 'expo-server-sdk';
+import { env } from '../config/env.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { HttpError } from '../lib/http-error.js';
 import type { AuthContext } from '../lib/permissions.js';
@@ -269,41 +270,129 @@ export async function notifyNewAlerts(
 
   // Despacho push a Expo en segundo plano
   if (pushPayloads.length > 0) {
-    void (async () => {
-      try {
-        const profIds = Array.from(new Set(pushPayloads.map((p) => p.professionalId)));
-        const devices = await prisma.pushDevice.findMany({
-          where: { userId: { in: profIds } },
-        });
-
-        if (devices.length === 0) return;
-
-        const messages: ExpoPushMessage[] = [];
-        for (const item of pushPayloads) {
-          const userDevices = devices.filter((d) => d.userId === item.professionalId);
-          for (const dev of userDevices) {
-            if (!Expo.isExpoPushToken(dev.token)) continue;
-            messages.push({
-              to: dev.token,
-              sound: 'default',
-              channelId: 'default',
-              title: 'NutriKids',
-              body: 'Tienes una alerta pendiente de revisión',
-              data: {
-                alertId: item.alertId,
-                notificationId: item.notificationId,
-                type: NOTIFICATION_TYPES.ALERT_NEW,
-              },
-            });
-          }
-        }
-
-        if (messages.length > 0) {
-          await dispatchExpoPush(messages);
-        }
-      } catch (pushErr) {
-        console.error('Error al despachar push de alertas nuevas:', pushErr);
-      }
-    })();
+    void dispatchPushNotificationsToProfessionals(
+      pushPayloads.map((p) => ({
+        ...p,
+        type: NOTIFICATION_TYPES.ALERT_NEW,
+        body: 'Tienes una alerta pendiente de revisión',
+      })),
+    );
   }
+}
+
+/**
+ * Helper interno para despachar notificaciones push a los dispositivos registrados
+ * de los profesionales destinatarios.
+ */
+async function dispatchPushNotificationsToProfessionals(
+  items: readonly {
+    professionalId: string;
+    alertId: string;
+    notificationId: string;
+    type: string;
+    body: string;
+  }[],
+): Promise<void> {
+  if (items.length === 0) return;
+
+  try {
+    const profIds = Array.from(new Set(items.map((p) => p.professionalId)));
+    const devices = await prisma.pushDevice.findMany({
+      where: { userId: { in: profIds } },
+    });
+
+    if (devices.length === 0) return;
+
+    const messages: ExpoPushMessage[] = [];
+    for (const item of items) {
+      const userDevices = devices.filter((d) => d.userId === item.professionalId);
+      for (const dev of userDevices) {
+        if (!Expo.isExpoPushToken(dev.token)) continue;
+        messages.push({
+          to: dev.token,
+          sound: 'default',
+          channelId: 'default',
+          title: 'NutriKids',
+          body: item.body,
+          data: {
+            alertId: item.alertId,
+            notificationId: item.notificationId,
+            type: item.type,
+          },
+        });
+      }
+    }
+
+    if (messages.length > 0) {
+      await dispatchExpoPush(messages);
+    }
+  } catch (pushErr) {
+    console.error('Error al despachar notificaciones push a profesionales:', pushErr);
+  }
+}
+
+/**
+ * Procesa las alertas pendientes de revisión vencidas (NK-36).
+ *
+ * 1. Invoca la función SQL `find_overdue_alert_recipients` pasando los plazos de vencimiento y renotificación.
+ * 2. Para cada destinatario, crea una notificación interna `type: 'alert_overdue'` con `createMany` (sin RETURNING).
+ *    No altera el estado de la alerta ni escribe en `alert_history`.
+ * 3. Despacha la notificación push a Expo en segundo plano.
+ *
+ * Retorna la cantidad de notificaciones generadas.
+ */
+export async function processOverdueAlerts(): Promise<{ processed: number }> {
+  const recipients = await prisma.$queryRaw<Array<{ alert_id: string; professional_id: string }>>`
+    SELECT alert_id, professional_id
+    FROM find_overdue_alert_recipients(
+      ${env.ALERT_REVIEW_DEADLINE_HOURS}::int,
+      ${env.ALERT_REVIEW_DEADLINE_SEVERE_HOURS}::int,
+      ${env.OVERDUE_ALERT_RENOTIFY_HOURS}::int
+    );
+  `;
+
+  if (recipients.length === 0) {
+    return { processed: 0 };
+  }
+
+  const notificationsToCreate: Prisma.NotificationCreateManyInput[] = [];
+  const pushPayloads: {
+    professionalId: string;
+    alertId: string;
+    notificationId: string;
+  }[] = [];
+
+  for (const item of recipients) {
+    const notifId = crypto.randomUUID();
+    notificationsToCreate.push({
+      id: notifId,
+      userId: item.professional_id,
+      type: NOTIFICATION_TYPES.ALERT_OVERDUE,
+      entityType: NOTIFICATION_ENTITY_TYPES.ALERT,
+      entityId: item.alert_id,
+      sentAt: new Date(),
+    });
+
+    pushPayloads.push({
+      professionalId: item.professional_id,
+      alertId: item.alert_id,
+      notificationId: notifId,
+    });
+  }
+
+  await prisma.notification.createMany({
+    data: notificationsToCreate,
+  });
+
+  if (pushPayloads.length > 0) {
+    void dispatchPushNotificationsToProfessionals(
+      pushPayloads.map((p) => ({
+        ...p,
+        type: NOTIFICATION_TYPES.ALERT_OVERDUE,
+        body: 'Tienes una alerta vencida pendiente de revisión',
+      })),
+    );
+  }
+
+  return { processed: notificationsToCreate.length };
 }

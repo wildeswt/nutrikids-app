@@ -16,6 +16,10 @@ describe('parseEnv (variables de entorno de autenticación)', () => {
     expect(devEnv.LOGIN_MAX_ATTEMPTS).toBe(5);
     expect(devEnv.LOGIN_WINDOW_MINUTES).toBe(15);
     expect(devEnv.PROFESSIONAL_INVITE_CODES).toEqual(['NK-PROF-2026']);
+    expect(devEnv.ALERT_REVIEW_DEADLINE_HOURS).toBe(72);
+    expect(devEnv.ALERT_REVIEW_DEADLINE_SEVERE_HOURS).toBe(24);
+    expect(devEnv.OVERDUE_ALERTS_INTERVAL_MINUTES).toBe(60);
+    expect(devEnv.OVERDUE_ALERT_RENOTIFY_HOURS).toBe(24);
   });
 
   it('separa y recorta múltiples códigos de invitación en PROFESSIONAL_INVITE_CODES', () => {
