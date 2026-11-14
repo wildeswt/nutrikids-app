@@ -1,5 +1,5 @@
 import { UuidSchema } from '@nutrikids/shared';
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
@@ -137,7 +137,10 @@ export async function registerPushNotifications(): Promise<string | null> {
 
   // En Expo Go para Android (SDK 53+), las notificaciones remotas no estan soportadas
   // y llamar al manager nativo lanza excepciones (NullPointerException).
-  if (Constants.appOwnership === 'expo') {
+  if (
+    Constants.appOwnership === 'expo' ||
+    Constants.executionEnvironment === ExecutionEnvironment.StoreClient
+  ) {
     console.warn(
       'Registro de push omitido: Expo Go no soporta notificaciones remotas en Android desde SDK 53. Utilice un development build.',
     );
