@@ -18,6 +18,13 @@ import { APP_ROUTES } from '../constants/routes.js';
 import { useNotifications } from '../hooks/useNotifications.js';
 import { formatShortDate } from '../i18n/format.js';
 
+// Colores del diseño en Figma que no están en PALETTE (NK-57)
+const DESIGN_COLORS = {
+  surface: '#FBFBFB',
+  overdueIcon: '#E14100',
+  shadow: '#000000',
+} as const;
+
 export function NotificationsScreen() {
   const { t } = useTranslation('common');
   const router = useRouter();
@@ -41,12 +48,24 @@ export function NotificationsScreen() {
 
   const getNotificationIcon = (type: string) => {
     if (type === 'alert_overdue') {
-      return { name: 'time' as const, color: PALETTE.feedback.error, bg: PALETTE.feedback.errorBg };
+      return {
+        name: 'time' as const,
+        color: DESIGN_COLORS.overdueIcon,
+        bg: PALETTE.feedback.errorBg,
+      };
     }
     if (type === 'alert_new' || type === 'alert_pending_review') {
-      return { name: 'warning' as const, color: PALETTE.secondary, bg: PALETTE.secondaryLight };
+      return {
+        name: 'warning' as const,
+        color: PALETTE.secondary,
+        bg: PALETTE.secondaryLight,
+      };
     }
-    return { name: 'notifications' as const, color: PALETTE.primary, bg: PALETTE.primaryLight };
+    return {
+      name: 'notifications' as const,
+      color: PALETTE.primary,
+      bg: PALETTE.primaryLight,
+    };
   };
 
   const formatNotificationTime = (isoString: string) => {
@@ -66,14 +85,11 @@ export function NotificationsScreen() {
     const typeLabel = t(`notifications.types.${item.type}`, {
       defaultValue: item.type,
     });
+    const unreadSuffix = isUnread ? ` - ${t('notifications.unreadBadge')}` : '';
 
     return (
       <Pressable
-        style={({ pressed }) => [
-          styles.notificationCard,
-          isUnread && styles.notificationCardUnread,
-          pressed && styles.cardPressed,
-        ]}
+        style={({ pressed }) => [styles.notificationCard, pressed && styles.cardPressed]}
         onPress={() => {
           if (isUnread) {
             void markAsRead(item.id);
@@ -87,7 +103,7 @@ export function NotificationsScreen() {
           }
         }}
         accessibilityRole="button"
-        accessibilityLabel={`${typeLabel}${isUnread ? ` - ${t('notifications.unreadBadge')}` : ''}`}
+        accessibilityLabel={`${typeLabel}${unreadSuffix}`}
         testID={`notification-item-${item.id}`}
       >
         <View style={[styles.iconContainer, { backgroundColor: icon.bg }]}>
@@ -95,19 +111,17 @@ export function NotificationsScreen() {
         </View>
 
         <View style={styles.contentContainer}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.typeTitle, isUnread && styles.typeTitleUnread]}>{typeLabel}</Text>
-            {isUnread && (
-              <View
-                style={styles.unreadDot}
-                testID={`notification-unread-dot-${item.id}`}
-                accessibilityLabel={t('notifications.unreadBadge')}
-              />
-            )}
-          </View>
-
+          <Text style={[styles.typeTitle, isUnread && styles.typeTitleUnread]}>{typeLabel}</Text>
           <Text style={styles.timestampText}>{formatNotificationTime(item.sentAt)}</Text>
         </View>
+
+        {isUnread && (
+          <View
+            style={styles.unreadDot}
+            testID={`notification-unread-dot-${item.id}`}
+            accessibilityLabel={t('notifications.unreadBadge')}
+          />
+        )}
       </Pressable>
     );
   };
@@ -184,41 +198,44 @@ export function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: PALETTE.background,
+    backgroundColor: DESIGN_COLORS.surface,
   },
   topBar: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
+    backgroundColor: DESIGN_COLORS.surface,
+    paddingHorizontal: 30,
+    paddingTop: 12,
+    paddingBottom: 6,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
     alignSelf: 'flex-start',
     paddingVertical: 6,
-    paddingHorizontal: 8,
     borderRadius: 8,
   },
   backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: PALETTE.text.title,
+    fontSize: 20,
+    fontWeight: '500',
+    color: PALETTE.text.body,
   },
   buttonPressed: {
     opacity: 0.75,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    backgroundColor: DESIGN_COLORS.surface,
+    paddingHorizontal: 30,
+    paddingTop: 6,
+    paddingBottom: 12,
   },
   screenTitle: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '600',
     color: PALETTE.text.title,
   },
   listContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 30,
+    paddingTop: 8,
     paddingBottom: 24,
     gap: 12,
   },
@@ -226,21 +243,21 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 30,
+    paddingBottom: 40,
   },
   notificationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: PALETTE.surface,
+    backgroundColor: DESIGN_COLORS.surface,
     padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
+    borderRadius: 25,
     gap: 14,
-  },
-  notificationCardUnread: {
-    borderColor: PALETTE.primary,
-    backgroundColor: '#FAFCFC',
+    shadowColor: DESIGN_COLORS.shadow,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   cardPressed: {
     opacity: 0.8,
@@ -256,37 +273,31 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   typeTitle: {
     fontSize: 15,
     fontWeight: '500',
     color: PALETTE.text.body,
-    flex: 1,
   },
   typeTitleUnread: {
-    fontWeight: '700',
-    color: PALETTE.text.title,
+    fontWeight: '600',
+    color: PALETTE.primary,
   },
   unreadDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: PALETTE.primary,
-    marginLeft: 8,
+    backgroundColor: PALETTE.secondary,
   },
   timestampText: {
     fontSize: 13,
+    fontWeight: '400',
     color: PALETTE.text.muted,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 30,
     gap: 12,
   },
   loadingText: {
@@ -328,6 +339,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: PALETTE.text.title,
     textAlign: 'center',
+    maxWidth: 280,
   },
   emptySubtitle: {
     fontSize: 14,
