@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { RegisterInputSchema, USER_ROLES, type Specialty, type UserRole } from '@nutrikids/shared';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -17,6 +17,7 @@ import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
+import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { registerRequest } from '../../lib/api.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
 
@@ -30,6 +31,15 @@ export default function RegisterScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ role?: string }>();
   const { signIn } = useAuth();
+  const keyboardInset = useKeyboardBottomInset();
+
+  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const lastNameRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const emailRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const licenseNumberRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const invitationCodeRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const passwordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const confirmPasswordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
   const selectedRole: UserRole =
     params.role === USER_ROLES.PROFESSIONAL ? USER_ROLES.PROFESSIONAL : USER_ROLES.CAREGIVER;
@@ -112,7 +122,17 @@ export default function RegisterScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: keyboardInset > 0 ? keyboardInset + 40 : 48 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header con Logo y Slogan */}
         <View style={styles.brandHeader}>
           <Image
@@ -162,6 +182,9 @@ export default function RegisterScreen() {
               placeholder="Ingrese su nombre"
               placeholderTextColor={PALETTE.input.placeholder}
               autoCapitalize="words"
+              returnKeyType="next"
+              onSubmitEditing={() => lastNameRef.current?.focus()}
+              blurOnSubmit={false}
               editable={!loading}
             />
             {fieldErrors['firstName'] ? (
@@ -173,6 +196,7 @@ export default function RegisterScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Apellido</Text>
             <TextInput
+              ref={lastNameRef}
               style={[styles.input, fieldErrors['lastName'] ? styles.inputError : undefined]}
               value={lastName}
               onChangeText={(text) => {
@@ -184,6 +208,9 @@ export default function RegisterScreen() {
               placeholder="Ingrese su apellido"
               placeholderTextColor={PALETTE.input.placeholder}
               autoCapitalize="words"
+              returnKeyType="next"
+              onSubmitEditing={() => emailRef.current?.focus()}
+              blurOnSubmit={false}
               editable={!loading}
             />
             {fieldErrors['lastName'] ? (
@@ -195,6 +222,7 @@ export default function RegisterScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Correo Electrónico</Text>
             <TextInput
+              ref={emailRef}
               style={[styles.input, fieldErrors['email'] ? styles.inputError : undefined]}
               value={email}
               onChangeText={(text) => {
@@ -208,6 +236,15 @@ export default function RegisterScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              returnKeyType="next"
+              onSubmitEditing={() => {
+                if (isProfessional) {
+                  licenseNumberRef.current?.focus();
+                } else {
+                  passwordRef.current?.focus();
+                }
+              }}
+              blurOnSubmit={false}
               editable={!loading}
             />
             {fieldErrors['email'] ? (
@@ -254,6 +291,7 @@ export default function RegisterScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Número de Licencia / Matrícula</Text>
                 <TextInput
+                  ref={licenseNumberRef}
                   style={[
                     styles.input,
                     fieldErrors['licenseNumber'] ? styles.inputError : undefined,
@@ -267,6 +305,9 @@ export default function RegisterScreen() {
                   }}
                   placeholder="Ej: MED-12345"
                   placeholderTextColor={PALETTE.input.placeholder}
+                  returnKeyType="next"
+                  onSubmitEditing={() => invitationCodeRef.current?.focus()}
+                  blurOnSubmit={false}
                   editable={!loading}
                 />
                 {fieldErrors['licenseNumber'] ? (
@@ -277,6 +318,7 @@ export default function RegisterScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Código de Invitación Profesional</Text>
                 <TextInput
+                  ref={invitationCodeRef}
                   style={[
                     styles.input,
                     fieldErrors['invitationCode'] ? styles.inputError : undefined,
@@ -292,6 +334,9 @@ export default function RegisterScreen() {
                   placeholderTextColor={PALETTE.input.placeholder}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  blurOnSubmit={false}
                   editable={!loading}
                 />
                 {fieldErrors['invitationCode'] ? (
@@ -311,6 +356,7 @@ export default function RegisterScreen() {
               ]}
             >
               <TextInput
+                ref={passwordRef}
                 style={styles.passwordInput}
                 value={password}
                 onChangeText={(text) => {
@@ -324,6 +370,14 @@ export default function RegisterScreen() {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
+                returnKeyType="next"
+                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                blurOnSubmit={false}
+                onFocus={() => {
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                  }, 150);
+                }}
                 editable={!loading}
               />
               <Pressable
@@ -354,6 +408,7 @@ export default function RegisterScreen() {
               ]}
             >
               <TextInput
+                ref={confirmPasswordRef}
                 style={styles.passwordInput}
                 value={confirmPassword}
                 onChangeText={(text) => {
@@ -367,6 +422,13 @@ export default function RegisterScreen() {
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={() => void handleRegisterSubmit()}
+                onFocus={() => {
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                  }, 150);
+                }}
                 editable={!loading}
               />
               <Pressable
@@ -422,6 +484,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PALETTE.background,
   },
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
   topBar: {
     width: '100%',
     paddingHorizontal: 16,
@@ -444,11 +510,11 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.border.subtle,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingTop: 12,
+    paddingBottom: 64,
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100%',
   },
   brandHeader: {
     alignItems: 'center',

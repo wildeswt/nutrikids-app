@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ForgotPasswordInputSchema } from '@nutrikids/shared';
 import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -16,11 +16,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { forgotPasswordRequest } from '../../lib/api.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const keyboardInset = useKeyboardBottomInset();
+  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -64,7 +68,17 @@ export default function ForgotPasswordScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: keyboardInset > 0 ? keyboardInset + 40 : 48 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header con Logo y Slogan */}
         <View style={styles.brandHeader}>
           <Image
@@ -128,6 +142,8 @@ export default function ForgotPasswordScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={() => void handleSubmit()}
                   editable={!loading}
                 />
                 {fieldErrors['email'] ? (
@@ -167,6 +183,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PALETTE.background,
   },
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
   topBar: {
     width: '100%',
     paddingHorizontal: 16,
@@ -189,11 +209,11 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.border.subtle,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingTop: 12,
+    paddingBottom: 48,
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100%',
   },
   brandHeader: {
     alignItems: 'center',

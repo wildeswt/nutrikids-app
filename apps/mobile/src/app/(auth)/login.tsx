@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LoginInputSchema } from '@nutrikids/shared';
 import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -17,6 +17,7 @@ import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
+import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { loginRequest } from '../../lib/api.js';
 import {
   AuthApiError,
@@ -27,6 +28,10 @@ import {
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
+  const keyboardInset = useKeyboardBottomInset();
+
+  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const passwordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -103,7 +108,17 @@ export default function LoginScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: keyboardInset > 0 ? keyboardInset + 40 : 48 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header con Logo y Slogan estilo UI final */}
         <View style={styles.brandHeader}>
           <Image
@@ -145,6 +160,9 @@ export default function LoginScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  blurOnSubmit={false}
                   editable={!loading}
                 />
                 {fieldErrors['email'] ? (
@@ -162,6 +180,7 @@ export default function LoginScreen() {
                   ]}
                 >
                   <TextInput
+                    ref={passwordRef}
                     style={styles.passwordInput}
                     value={password}
                     onChangeText={(text) => {
@@ -175,6 +194,13 @@ export default function LoginScreen() {
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={() => void handleLoginSubmit()}
+                    onFocus={() => {
+                      setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                      }, 150);
+                    }}
                     editable={!loading}
                   />
                   <Pressable
@@ -326,6 +352,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PALETTE.background,
   },
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
   topBar: {
     width: '100%',
     paddingHorizontal: 16,
@@ -348,11 +378,11 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.border.subtle,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingTop: 12,
+    paddingBottom: 48,
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100%',
   },
   brandHeader: {
     alignItems: 'center',

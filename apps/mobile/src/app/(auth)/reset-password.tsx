@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ResetPasswordInputSchema } from '@nutrikids/shared';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -16,12 +16,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { resetPasswordRequest } from '../../lib/api.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ token?: string }>();
+  const keyboardInset = useKeyboardBottomInset();
+
+  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const newPasswordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const confirmPasswordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
   const [token, setToken] = useState(params.token ?? '');
   const [newPassword, setNewPassword] = useState('');
@@ -83,7 +89,17 @@ export default function ResetPasswordScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: keyboardInset > 0 ? keyboardInset + 40 : 48 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header con Logo y Slogan */}
         <View style={styles.brandHeader}>
           <Image
@@ -140,6 +156,9 @@ export default function ResetPasswordScreen() {
                   placeholderTextColor="#9CA3AF"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => newPasswordRef.current?.focus()}
+                  blurOnSubmit={false}
                   editable={!loading}
                 />
                 {fieldErrors['token'] ? (
@@ -152,6 +171,7 @@ export default function ResetPasswordScreen() {
                 <Text style={styles.label}>Nueva contraseña</Text>
                 <View style={styles.passwordContainer}>
                   <TextInput
+                    ref={newPasswordRef}
                     style={[
                       styles.passwordInput,
                       fieldErrors['newPassword'] ? styles.inputError : undefined,
@@ -168,6 +188,14 @@ export default function ResetPasswordScreen() {
                     secureTextEntry={!showNewPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    returnKeyType="next"
+                    onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                    blurOnSubmit={false}
+                    onFocus={() => {
+                      setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                      }, 150);
+                    }}
                     editable={!loading}
                   />
                   <Pressable
@@ -195,6 +223,7 @@ export default function ResetPasswordScreen() {
                 <Text style={styles.label}>Confirmar nueva contraseña</Text>
                 <View style={styles.passwordContainer}>
                   <TextInput
+                    ref={confirmPasswordRef}
                     style={[
                       styles.passwordInput,
                       fieldErrors['confirmPassword'] ? styles.inputError : undefined,
@@ -211,6 +240,13 @@ export default function ResetPasswordScreen() {
                     secureTextEntry={!showConfirmPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={() => void handleSubmit()}
+                    onFocus={() => {
+                      setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                      }, 150);
+                    }}
                     editable={!loading}
                   />
                   <Pressable
@@ -265,6 +301,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PALETTE.background,
   },
+  scrollView: {
+    flex: 1,
+    width: '100%',
+  },
   topBar: {
     width: '100%',
     paddingHorizontal: 16,
@@ -287,11 +327,11 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.border.subtle,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingTop: 12,
+    paddingBottom: 48,
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100%',
   },
   brandHeader: {
     alignItems: 'center',
