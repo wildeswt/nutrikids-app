@@ -64,3 +64,14 @@ Requires the `PROFESSIONAL` role, the `followup:create` permission (nutrition, p
 | `403` | Caregiver, nursing, no active professional link, or no active consent.              |
 | `404` | Referenced alert does not exist or is not visible.                                  |
 | `409` | The `id` already belongs to a follow-up of another child.                           |
+
+## Mobile form (NK-34)
+
+`apps/mobile/src/app/(professional)/follow-up.tsx` (route `/(professional)/follow-up?alertId=...&childId=...`, hidden from the drawer; opened from the alert detail with «Registrar seguimiento»). Design: Figma «Seguimiento clínico».
+
+- **Fields**: type selector (observation, recommendation, intervention, referral), detail (1–2000 characters) and next checkup (`DD/MM/AAAA`, optional, never before today in UTC like the API; quick choices of 1 week, 2 weeks, 1 month and 3 months). The follow-up is one row: one type and one detail per form.
+- **Alert**: with an `alertId` the follow-up references it and a checkbox (on by default, hidden when the alert is already `FOLLOW_UP_ESTABLISHED`) moves the alert to «seguimiento establecido» after saving. The state machine has no shortcut, so an alert still `PENDING_REVIEW` goes through `REVIEWED` first (`establishAlert` in `lib/follow-up-sync.ts`). If only that step fails (for example a concurrent change) the follow-up stays saved and the screen says the alert was not updated.
+- **«Guardar como borrador»** keeps the form on the phone (one draft per user and alert, or per child), restores it when the form is opened again and drops it after a successful save or at sign-out.
+- **Without connection** (a request that gets no answer): the form shows «Sin conexión · Se guardará en este teléfono y se enviará al recuperar la conexión», saves the follow-up in the local queue and goes back. The queue is flushed when the form or the alert detail gains focus (the alert detail shows how many are waiting). The follow-up `id` is created once per attempt, so a resend returns the existing follow-up (`200`) instead of duplicating it. A queued follow-up that the server later refuses (4xx) goes back to the drafts with the server message so it can be corrected; 5xx/no connection stay queued.
+- **Storage**: `lib/follow-up-storage.ts` keeps drafts and the queue in one encrypted SecureStore value, scoped by user. Sign-out clears the drafts but not the queued follow-ups, so nothing waiting is lost.
+- **Limits**: there is no connectivity listener yet, so «offline» is detected when a request fails and the queue is flushed on focus, not at the instant the connection returns. NK-27 (SQLite and the general sync queue) and NK-29 (connection indicator) should replace `follow-up-storage.ts` and the focus trigger; callers only use `submitFollowUp` / `flushPendingFollowUps`.

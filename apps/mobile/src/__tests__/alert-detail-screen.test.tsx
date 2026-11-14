@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   back: vi.fn(),
   canGoBack: vi.fn(() => true),
   useAlertDetail: vi.fn(),
+  pending: { pendingCount: 0, syncPending: vi.fn(async () => {}) },
   focusEffects: [] as (() => void)[],
   width: 390,
 }));
@@ -50,6 +51,9 @@ vi.mock('expo-secure-store', () => ({
 }));
 
 vi.mock('../hooks/useAlertDetail.js', () => ({ useAlertDetail: mocks.useAlertDetail }));
+vi.mock('../hooks/usePendingFollowUps.js', () => ({
+  usePendingFollowUps: () => mocks.pending,
+}));
 
 import AlertDetailScreen from '../app/(professional)/alert-detail.js';
 import { APP_ROUTES } from '../constants/routes.js';
@@ -124,15 +128,29 @@ describe('AlertDetailScreen (NK-33)', () => {
     vi.clearAllMocks();
     mocks.focusEffects.length = 0;
     mocks.width = 390;
+    mocks.pending.pendingCount = 0;
     mocks.canGoBack.mockReturnValue(true);
     setHook();
   });
 
-  it('loads the alert for the route param and reloads when the screen gains focus', () => {
+  it('loads the alert for the route param', () => {
     html();
     expect(mocks.useAlertDetail).toHaveBeenCalledWith('22222222-2222-4222-8222-222222222222');
+  });
+
+  it('sends the follow-ups saved without connection, then reloads, when the screen gains focus', async () => {
+    html();
     mocks.focusEffects.forEach((cb) => cb());
-    expect(reload).toHaveBeenCalled();
+    await vi.waitFor(() => expect(reload).toHaveBeenCalled());
+    expect(mocks.pending.syncPending).toHaveBeenCalled();
+  });
+
+  it('tells how many follow-ups are waiting on the phone', () => {
+    expect(html()).not.toContain('alert-detail-pending');
+    mocks.pending.pendingCount = 2;
+    expect(html()).toContain('Tienes 2 seguimientos guardados en este teléfono por enviar.');
+    mocks.pending.pendingCount = 1;
+    expect(html()).toContain('Tienes 1 seguimiento guardado en este teléfono por enviar.');
   });
 
   it('shows the child banner, the indicator, the result and the reason', () => {
