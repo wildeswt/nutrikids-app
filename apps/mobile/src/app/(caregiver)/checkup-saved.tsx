@@ -2,10 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { SecondaryButton } from '../../components/ui/SecondaryButton.js';
 import { PALETTE } from '../../constants/colors.js';
+import { SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { formatDecimal, formatLongDate } from '../../i18n/format.js';
 import { parseCheckupSavedParams } from '../../lib/checkup-route.js';
 import { formatChildAge } from '../../lib/children-api.js';
@@ -35,17 +39,11 @@ export default function CheckupSavedScreen() {
           <Text style={styles.subtitle}>{t('checkupSaved.missing')}</Text>
           <View style={styles.spacer} />
           <View style={styles.buttonsContainer}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.primaryButton,
-                pressed && styles.primaryButtonPressed,
-              ]}
+            <PrimaryButton
+              label={t('checkupSaved.goHome')}
               onPress={handleGoToHome}
-              accessibilityRole="button"
-              accessibilityLabel={t('checkupSaved.goHome')}
-            >
-              <Text style={styles.primaryButtonText}>{t('checkupSaved.goHome')}</Text>
-            </Pressable>
+              testID="checkup-saved-go-home"
+            />
           </View>
         </View>
       </SafeAreaView>
@@ -120,28 +118,18 @@ export default function CheckupSavedScreen() {
         {/* Botones de acción inferiores */}
         <View style={styles.buttonsContainer}>
           {/* Botón primario: Ver evolución */}
-          <Pressable
-            style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]}
+          <PrimaryButton
+            label={t('checkupSaved.seeEvolution')}
             onPress={handleGoToEvolution}
-            accessibilityRole="button"
-            accessibilityLabel={t('checkupSaved.seeEvolution')}
             testID="checkup-saved-see-evolution"
-          >
-            <Text style={styles.primaryButtonText}>{t('checkupSaved.seeEvolution')}</Text>
-          </Pressable>
+          />
 
           {/* Botón secundario: Volver al inicio */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.secondaryButton,
-              pressed && styles.secondaryButtonPressed,
-            ]}
+          <SecondaryButton
+            label={t('checkupSaved.goHome')}
             onPress={handleGoToHome}
-            accessibilityRole="button"
-            accessibilityLabel={t('checkupSaved.goHome')}
-          >
-            <Text style={styles.secondaryButtonText}>{t('checkupSaved.goHome')}</Text>
-          </Pressable>
+            testID="checkup-saved-go-home"
+          />
         </View>
       </View>
     </SafeAreaView>
@@ -155,7 +143,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 26,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 36,
     paddingBottom: 24,
     alignItems: 'center',
@@ -175,15 +163,17 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   title: {
+    fontFamily: font('semibold'),
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: '600',
     color: PALETTE.text.title,
     marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
+    fontFamily: font('medium'),
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     color: PALETTE.primary,
     marginBottom: 28,
     textAlign: 'center',
@@ -194,8 +184,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   metaDate: {
+    fontFamily: font('semibold'),
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
     color: PALETTE.text.title,
     marginBottom: 18,
   },
@@ -208,18 +199,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   measurementLabel: {
+    fontFamily: font('medium'),
     fontSize: 13,
-    color: PALETTE.text.muted,
+    fontWeight: '500',
+    color: PALETTE.primary,
     marginBottom: 4,
   },
   measurementValue: {
+    fontFamily: font('semibold'),
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '600',
     color: PALETTE.text.title,
   },
   divider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: PALETTE.border.default,
     marginVertical: 14,
   },
   noteRow: {
@@ -233,6 +227,7 @@ const styles = StyleSheet.create({
   },
   noteText: {
     flex: 1,
+    fontFamily: font('regular'),
     fontSize: 14,
     lineHeight: 20,
     color: PALETTE.text.body,
@@ -244,42 +239,5 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 14,
     marginTop: 20,
-  },
-  primaryButton: {
-    backgroundColor: PALETTE.primary,
-    borderRadius: 28,
-    height: 54,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: PALETTE.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  primaryButtonPressed: {
-    backgroundColor: PALETTE.primaryPressed,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    backgroundColor: 'transparent',
-    borderRadius: 28,
-    height: 54,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: PALETTE.primary,
-  },
-  secondaryButtonPressed: {
-    backgroundColor: PALETTE.primaryLight,
-  },
-  secondaryButtonText: {
-    color: PALETTE.primary,
-    fontSize: 16,
-    fontWeight: '700',
   },
 });

@@ -5,8 +5,13 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Card } from '../../components/ui/Card.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
+import { CARD_SHADOW, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { useNotificationsPermission } from '../../hooks/useNotificationsPermission.js';
 import { useReminders } from '../../hooks/useReminders.js';
@@ -74,6 +79,14 @@ export default function RemindersScreen() {
     }
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(APP_ROUTES.CAREGIVER.HOME);
+    }
+  };
+
   const handleCreate = () => {
     router.push({
       pathname: APP_ROUTES.CAREGIVER.ADD_REMINDER as never,
@@ -133,15 +146,23 @@ export default function RemindersScreen() {
 
   const renderUpcomingCard = (reminder: ReminderResponse) => {
     const expanded = expandedId === reminder.id;
+    const date = new Date(reminder.scheduledFor);
+    const { day, month } = dateBadgeParts(date);
     return (
-      <View key={reminder.id} style={styles.listCard} testID={`reminder-upcoming-${reminder.id}`}>
+      <Card key={reminder.id} style={styles.listCard} testID={`reminder-upcoming-${reminder.id}`}>
         <View style={styles.listCardRow}>
-          <View style={styles.listIcon}>
-            <Ionicons name="calendar" size={22} color={PALETTE.secondary} />
+          <View style={styles.dateBadge}>
+            <Text style={styles.dateBadgeDay}>{day}</Text>
+            <Text style={styles.dateBadgeMonth}>{month}</Text>
           </View>
           <View style={styles.listContent}>
+            <Text style={styles.listTime}>{formatTime(date)}</Text>
             <Text style={styles.listTitle}>{typeLabel(reminder)}</Text>
-            <Text style={styles.listMeta}>{whenLabel(reminder)}</Text>
+            {childLabel(reminder) ? (
+              <Text style={styles.listMeta}>{childLabel(reminder)}</Text>
+            ) : (
+              <Text style={styles.listMeta}>{whenLabel(reminder)}</Text>
+            )}
           </View>
           <Pressable
             style={({ pressed }) => [styles.viewButton, pressed && styles.pressed]}
@@ -154,6 +175,11 @@ export default function RemindersScreen() {
             <Text style={styles.viewButtonText}>
               {expanded ? t('reminders.hideAppointment') : t('reminders.viewAppointment')}
             </Text>
+            <Ionicons
+              name={expanded ? 'chevron-up' : 'chevron-forward'}
+              size={14}
+              color={PALETTE.primary}
+            />
           </Pressable>
         </View>
 
@@ -167,12 +193,12 @@ export default function RemindersScreen() {
             {renderMarkDone(reminder, 'dark')}
           </View>
         ) : null}
-      </View>
+      </Card>
     );
   };
 
   const renderCompletedCard = (reminder: ReminderResponse) => (
-    <View key={reminder.id} style={styles.listCard} testID={`reminder-completed-${reminder.id}`}>
+    <Card key={reminder.id} style={styles.listCard} testID={`reminder-completed-${reminder.id}`}>
       <View style={styles.listCardRow}>
         <View style={[styles.listIcon, styles.listIconDone]}>
           <Ionicons name="checkmark-circle" size={22} color={PALETTE.primary} />
@@ -185,7 +211,7 @@ export default function RemindersScreen() {
           <Text style={styles.listMeta}>{whenLabel(reminder)}</Text>
         </View>
       </View>
-    </View>
+    </Card>
   );
 
   const renderEmpty = (title: string, subtitle: string, testID: string) => (
@@ -205,8 +231,8 @@ export default function RemindersScreen() {
         testID="reminders-notifications-status"
       >
         <Ionicons
-          name={granted ? 'notifications' : 'notifications-off-outline'}
-          size={24}
+          name={granted ? 'checkmark-circle' : 'notifications-off-outline'}
+          size={20}
           color={granted ? PALETTE.primary : PALETTE.feedback.warning}
         />
         <View style={styles.notifContent}>
@@ -310,9 +336,14 @@ export default function RemindersScreen() {
       testID="caregiver-reminders-screen"
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.screenTitle}>{t('reminders.title')}</Text>
-
-        {renderNotificationStatus()}
+        <ScreenHeader
+          title={t('reminders.title')}
+          backLabel={t('common:actions.back')}
+          onBack={handleBack}
+          style={styles.header}
+          testID="reminders-header"
+        />
+        <Text style={styles.subtitle}>{t('reminders.subtitle')}</Text>
 
         <View style={styles.tabs} accessibilityRole="tablist">
           {(['upcoming', 'completed'] as const).map((key) => {
@@ -349,16 +380,15 @@ export default function RemindersScreen() {
 
         {renderBody()}
 
-        <Pressable
-          style={({ pressed }) => [styles.createButton, pressed && styles.createButtonPressed]}
-          onPress={handleCreate}
-          accessibilityRole="button"
-          accessibilityLabel={t('reminders.create')}
-          testID="reminders-create-button"
-        >
-          <Ionicons name="add" size={20} color={PALETTE.text.light} />
-          <Text style={styles.createButtonText}>{t('reminders.create')}</Text>
-        </Pressable>
+        {renderNotificationStatus()}
+
+        <View style={styles.createWrapper}>
+          <PrimaryButton
+            label={t('reminders.create')}
+            onPress={handleCreate}
+            testID="reminders-create-button"
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -374,37 +404,70 @@ function isToday(iso: string, now: Date = new Date()): boolean {
   );
 }
 
+const SHORT_MONTHS = [
+  'ENE',
+  'FEB',
+  'MAR',
+  'ABR',
+  'MAY',
+  'JUN',
+  'JUL',
+  'AGO',
+  'SEP',
+  'OCT',
+  'NOV',
+  'DIC',
+] as const;
+
+function dateBadgeParts(date: Date): { day: string; month: string } {
+  if (Number.isNaN(date.getTime())) {
+    return { day: '--', month: '' };
+  }
+  return {
+    day: String(date.getDate()),
+    month: SHORT_MONTHS[date.getMonth()] ?? '',
+  };
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: PALETTE.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 12,
     paddingBottom: 32,
   },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: PALETTE.text.title,
-    marginBottom: 16,
+  header: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontFamily: font('regular'),
+    fontSize: 15,
+    color: PALETTE.text.muted,
+    marginBottom: 20,
   },
   notifCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 16,
+    gap: 10,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginTop: 8,
+    marginBottom: 18,
   },
   notifCardOn: {
-    backgroundColor: PALETTE.primaryLight,
-    borderColor: PALETTE.primary,
+    backgroundColor: PALETTE.background,
+    borderWidth: 1,
+    borderColor: PALETTE.border.subtle,
   },
   notifCardOff: {
     backgroundColor: PALETTE.feedback.warningBg,
+    borderWidth: 1,
     borderColor: PALETTE.feedback.warning,
   },
   notifContent: {
@@ -412,69 +475,72 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   notifTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 14,
     color: PALETTE.text.title,
   },
   notifHint: {
+    fontFamily: font('regular'),
     fontSize: 13,
-    color: PALETTE.text.body,
+    color: PALETTE.text.muted,
   },
   notifButton: {
     alignSelf: 'flex-start',
     marginTop: 8,
     backgroundColor: PALETTE.primary,
-    borderRadius: 18,
+    borderRadius: RADIUS_PILL,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   notifButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: PALETTE.text.light,
     fontSize: 13,
-    fontWeight: '700',
   },
   tabs: {
     flexDirection: 'row',
-    backgroundColor: PALETTE.border.subtle,
-    borderRadius: 24,
+    backgroundColor: PALETTE.primary,
+    borderRadius: RADIUS_PILL,
     padding: 4,
-    marginBottom: 18,
+    marginBottom: 22,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
+    borderRadius: 21,
     paddingVertical: 10,
   },
   tabActive: {
-    backgroundColor: PALETTE.primary,
+    backgroundColor: PALETTE.surface,
   },
   tabText: {
+    fontFamily: font('medium'),
+    fontWeight: '500',
     fontSize: 14,
-    fontWeight: '700',
-    color: PALETTE.text.title,
-  },
-  tabTextActive: {
     color: PALETTE.text.light,
   },
+  tabTextActive: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    color: PALETTE.primary,
+  },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontFamily: font('medium'),
+    fontWeight: '500',
+    fontSize: 18,
     color: PALETTE.text.title,
     marginBottom: 12,
   },
   todayCard: {
     backgroundColor: PALETTE.secondary,
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 18,
+    borderRadius: RADIUS_PILL,
+    padding: 20,
+    marginBottom: 22,
     gap: 14,
-    shadowColor: PALETTE.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+    ...CARD_SHADOW,
   },
   todayRow: {
     flexDirection: 'row',
@@ -486,20 +552,22 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   todayTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: PALETTE.text.light,
     fontSize: 17,
-    fontWeight: '800',
   },
   todayMeta: {
+    fontFamily: font('regular'),
     color: PALETTE.text.light,
     fontSize: 13,
-    fontWeight: '500',
     opacity: 0.95,
   },
   todayOverdue: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: PALETTE.text.light,
     fontSize: 12,
-    fontWeight: '700',
     textDecorationLine: 'underline',
   },
   markButton: {
@@ -507,7 +575,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 24,
+    borderRadius: RADIUS_PILL,
     paddingVertical: 11,
     paddingHorizontal: 16,
   },
@@ -519,8 +587,9 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   markButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 14,
-    fontWeight: '700',
   },
   markButtonTextLight: {
     color: PALETTE.primary,
@@ -529,22 +598,34 @@ const styles = StyleSheet.create({
     color: PALETTE.text.light,
   },
   listCard: {
-    backgroundColor: PALETTE.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
-    padding: 14,
+    padding: 16,
     marginBottom: 12,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   listCardRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  dateBadge: {
+    width: 48,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: PALETTE.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateBadgeDay: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 17,
+    color: PALETTE.primary,
+    lineHeight: 20,
+  },
+  dateBadgeMonth: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 11,
+    color: PALETTE.primary,
   },
   listIcon: {
     width: 44,
@@ -561,35 +642,45 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  listTime: {
+    fontFamily: font('medium'),
+    fontWeight: '500',
+    fontSize: 12,
+    color: PALETTE.secondary,
+  },
   listTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 15,
-    fontWeight: '700',
     color: PALETTE.text.title,
   },
   listMeta: {
+    fontFamily: font('regular'),
     fontSize: 13,
-    color: PALETTE.text.body,
+    color: PALETTE.text.muted,
   },
   viewButton: {
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderColor: PALETTE.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingLeft: 8,
   },
   viewButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: PALETTE.primary,
     fontSize: 13,
-    fontWeight: '700',
   },
   detail: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: PALETTE.border.default,
+    borderTopColor: PALETTE.border.subtle,
     gap: 4,
   },
   detailText: {
+    fontFamily: font('regular'),
     fontSize: 13,
     color: PALETTE.text.body,
   },
@@ -602,9 +693,10 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   errorBannerText: {
+    fontFamily: font('medium'),
+    fontWeight: '500',
     color: PALETTE.feedback.error,
     fontSize: 13,
-    fontWeight: '600',
   },
   stateBox: {
     alignItems: 'center',
@@ -612,12 +704,14 @@ const styles = StyleSheet.create({
     paddingVertical: 28,
   },
   stateTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 17,
-    fontWeight: '700',
     color: PALETTE.text.title,
     textAlign: 'center',
   },
   stateText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.body,
     textAlign: 'center',
@@ -625,37 +719,19 @@ const styles = StyleSheet.create({
   },
   stateButton: {
     backgroundColor: PALETTE.primary,
-    borderRadius: 22,
+    borderRadius: RADIUS_PILL,
     paddingHorizontal: 22,
     paddingVertical: 11,
   },
   stateButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: PALETTE.text.light,
     fontSize: 14,
-    fontWeight: '700',
   },
-  createButton: {
-    marginTop: 14,
-    flexDirection: 'row',
+  createWrapper: {
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: PALETTE.primary,
-    borderRadius: 28,
-    height: 54,
-    shadowColor: PALETTE.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  createButtonPressed: {
-    backgroundColor: PALETTE.primaryPressed,
-  },
-  createButtonText: {
-    color: PALETTE.text.light,
-    fontSize: 16,
-    fontWeight: '700',
+    marginTop: 8,
   },
   pressed: {
     opacity: 0.85,

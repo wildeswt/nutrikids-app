@@ -2,12 +2,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { GrowthChart } from '../../components/GrowthChart.js';
+import { Card } from '../../components/ui/Card.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
+import { CARD_SHADOW, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { useCheckups } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { useReferenceCurves } from '../../hooks/useReferenceCurves.js';
@@ -26,6 +39,7 @@ export default function EvolutionScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ childId?: string }>();
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PE');
+  const [showChartInfo, setShowChartInfo] = useState(false);
 
   const {
     status: childrenStatus,
@@ -66,9 +80,12 @@ export default function EvolutionScreen() {
   const renderState = (content: ReactNode, testID: string) => (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.scrollContent}>
-        <Text style={styles.screenTitle}>
-          {child ? t('evolution.title', { name: child.firstName }) : t('tabs.evolution')}
-        </Text>
+        <ScreenHeader
+          title={child ? t('evolution.title', { name: child.firstName }) : t('tabs.evolution')}
+          showBack={false}
+          style={styles.screenHeader}
+          testID="evolution-header"
+        />
         <View style={styles.stateBox} testID={testID}>
           {content}
         </View>
@@ -173,7 +190,12 @@ export default function EvolutionScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Título de la pantalla */}
-        <Text style={styles.screenTitle}>{t('evolution.title', { name: child.firstName })}</Text>
+        <ScreenHeader
+          title={t('evolution.title', { name: child.firstName })}
+          showBack={false}
+          style={styles.screenHeader}
+          testID="evolution-header"
+        />
 
         {/* Banner naranja: datos del niño */}
         <ChildBanner
@@ -196,11 +218,12 @@ export default function EvolutionScreen() {
                 onPress={() => setSelectedIndicator(indicator.key)}
                 accessibilityRole="button"
                 accessibilityLabel={t(`evolution.indicators.${indicator.key}.name`)}
+                testID={`evolution-indicator-${indicator.key}`}
               >
                 <Text
                   style={[styles.indicatorTabText, isSelected && styles.indicatorTabTextActive]}
                 >
-                  {t(`evolution.indicators.${indicator.key}.short`)}
+                  {t(`evolution.indicators.${indicator.key}.code`)}
                 </Text>
               </Pressable>
             );
@@ -208,7 +231,7 @@ export default function EvolutionScreen() {
         </View>
 
         {/* Tarjeta de Gráfica de Crecimiento */}
-        <View style={styles.chartCard}>
+        <Card style={styles.chartCard} testID="evolution-chart-card">
           {/* Cabecera del gráfico */}
           <View style={styles.chartHeader}>
             <View style={styles.chartTitleWrapper}>
@@ -219,10 +242,12 @@ export default function EvolutionScreen() {
             </View>
             <Pressable
               style={({ pressed }) => [styles.infoIconWrapper, pressed && styles.pressed]}
+              onPress={() => setShowChartInfo(true)}
               accessibilityRole="button"
               accessibilityLabel={t('evolution.chartInfo')}
+              testID="evolution-chart-info-button"
             >
-              <Ionicons name="information-circle-outline" size={26} color="#2D5F5A" />
+              <Ionicons name="information-circle-outline" size={26} color={PALETTE.primary} />
             </Pressable>
           </View>
 
@@ -258,23 +283,20 @@ export default function EvolutionScreen() {
               <Text style={styles.legendText}>{t('evolution.legendReference')}</Text>
             </View>
           </View>
-        </View>
+        </Card>
 
         {/* Tarjeta Inferior de Último Registro */}
-        <View style={styles.lastRecordCard}>
-          <Text style={styles.lastRecordTitle}>
-            {t('evolution.lastRecord', {
-              date: formatLongDate(latest.measuredAt),
-            })}
-          </Text>
+        <Card style={styles.lastRecordCard} testID="evolution-last-record-card">
+          <View style={styles.lastRecordHeader}>
+            <Text style={styles.lastRecordTitle}>{t('evolution.lastRecordTitle')}</Text>
+            <Text style={styles.lastRecordDate}>{formatLongDate(latest.measuredAt)}</Text>
+          </View>
 
           <View style={styles.lastRecordDetailsRow}>
             {/* Peso */}
             <View style={styles.recordDetailItem}>
-              <View style={styles.recordIconBox}>
-                <Ionicons name="scale-outline" size={20} color="#C2410C" />
-              </View>
-              <View>
+              <Ionicons name="barbell-outline" size={24} color={PALETTE.secondary} />
+              <View style={styles.recordDetailText}>
                 <Text style={styles.recordDetailLabel}>{t('evolution.weight')}</Text>
                 <Text style={styles.recordDetailValue}>
                   {t('common:units.weightValue', {
@@ -286,10 +308,8 @@ export default function EvolutionScreen() {
 
             {/* Talla */}
             <View style={styles.recordDetailItem}>
-              <View style={styles.recordIconBox}>
-                <Ionicons name="resize-outline" size={20} color="#C2410C" />
-              </View>
-              <View>
+              <Ionicons name="resize-outline" size={24} color={PALETTE.secondary} />
+              <View style={styles.recordDetailText}>
                 <Text style={styles.recordDetailLabel}>{t('evolution.height')}</Text>
                 <Text style={styles.recordDetailValue}>
                   {t('common:units.heightValue', {
@@ -298,22 +318,58 @@ export default function EvolutionScreen() {
                 </Text>
               </View>
             </View>
+          </View>
 
-            {/* Registró */}
-            <View style={styles.recordDetailItem}>
-              <View style={styles.recordIconBox}>
-                <Ionicons name="person-outline" size={20} color="#C2410C" />
-              </View>
-              <View>
-                <Text style={styles.recordDetailLabel}>{t('evolution.recordedBy')}</Text>
-                <Text style={styles.recordDetailValue} numberOfLines={1}>
-                  {t(`evolution.origin.${latest.origin}`)}
-                </Text>
+          <View style={styles.lastRecordDivider} />
+
+          {/* Registró */}
+          <View style={styles.recordedByRow}>
+            <Ionicons name="person" size={18} color={PALETTE.secondary} />
+            <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>
+            <Text style={styles.recordedByValue} numberOfLines={1}>
+              {t(`evolution.origin.${latest.origin}`)}
+            </Text>
+          </View>
+        </Card>
+      </ScrollView>
+
+      {/* Modal explicativo de la gráfica OMS */}
+      <Modal
+        visible={showChartInfo}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowChartInfo(false)}
+        testID="evolution-chart-info-modal"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{t('evolution.infoModal.title')}</Text>
+
+            <View style={styles.modalItem}>
+              <View style={[styles.modalDot, styles.legendDotOms]} />
+              <View style={styles.modalItemText}>
+                <Text style={styles.modalItemTitle}>{t('evolution.infoModal.whoBandTitle')}</Text>
+                <Text style={styles.modalItemBody}>{t('evolution.infoModal.whoBand')}</Text>
               </View>
             </View>
+
+            <View style={styles.modalItem}>
+              <View style={[styles.modalDot, styles.legendDotChild]} />
+              <View style={styles.modalItemText}>
+                <Text style={styles.modalItemTitle}>{t('evolution.infoModal.childLineTitle')}</Text>
+                <Text style={styles.modalItemBody}>{t('evolution.infoModal.childLine')}</Text>
+              </View>
+            </View>
+
+            <PrimaryButton
+              label={t('evolution.infoModal.close')}
+              onPress={() => setShowChartInfo(false)}
+              testID="evolution-chart-info-close"
+              style={styles.modalButton}
+            />
           </View>
         </View>
-      </ScrollView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -324,14 +380,11 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 12,
     paddingBottom: 28,
   },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: PALETTE.text.title,
+  screenHeader: {
     marginBottom: 16,
   },
   childBanner: {
@@ -354,7 +407,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   indicatorTabActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: PALETTE.text.light,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -362,25 +415,17 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   indicatorTabText: {
+    fontFamily: font('semibold'),
     fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: '600',
+    color: PALETTE.text.light,
   },
   indicatorTabTextActive: {
     color: PALETTE.primary,
   },
   chartCard: {
-    backgroundColor: PALETTE.surface,
-    borderRadius: 26,
     padding: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
     marginBottom: 22,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
   },
   chartHeader: {
     flexDirection: 'row',
@@ -394,14 +439,18 @@ const styles = StyleSheet.create({
     marginLeft: 26,
   },
   chartTitleText: {
+    fontFamily: font('semibold'),
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: '600',
     color: PALETTE.text.title,
+    textAlign: 'center',
   },
   chartSubtitleText: {
+    fontFamily: font('regular'),
     fontSize: 12,
     color: PALETTE.text.muted,
     marginTop: 2,
+    textAlign: 'center',
   },
   infoIconWrapper: {
     padding: 2,
@@ -411,7 +460,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: PALETTE.border.subtle,
     paddingTop: 14,
   },
   legendItem: {
@@ -425,64 +474,136 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   legendDotChild: {
-    backgroundColor: '#F77E4D',
+    backgroundColor: PALETTE.secondary,
   },
   legendDotOms: {
     backgroundColor: '#7FA89E',
   },
   legendText: {
+    fontFamily: font('medium'),
     fontSize: 12,
     color: PALETTE.text.body,
     fontWeight: '500',
   },
   lastRecordCard: {
-    backgroundColor: '#FDC4A8',
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: '#F77E4D',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    shadowColor: '#F77E4D',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 2,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+  },
+  lastRecordHeader: {
+    marginBottom: 16,
   },
   lastRecordTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#9A3412',
-    textAlign: 'center',
-    marginBottom: 14,
+    fontFamily: font('semibold'),
+    fontSize: 18,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+  },
+  lastRecordDate: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    color: PALETTE.text.muted,
+    marginTop: 2,
   },
   lastRecordDetailsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
   },
   recordDetailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     flex: 1,
   },
-  recordIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: '#FFEADF',
-    alignItems: 'center',
-    justifyContent: 'center',
+  recordDetailText: {
+    flex: 1,
   },
   recordDetailLabel: {
-    fontSize: 11,
-    color: '#9A3412',
-    fontWeight: '600',
+    fontFamily: font('medium'),
+    fontSize: 13,
+    color: PALETTE.text.muted,
+    fontWeight: '500',
   },
   recordDetailValue: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#7C2D12',
+    fontFamily: font('semibold'),
+    fontSize: 22,
+    fontWeight: '600',
+    color: PALETTE.primary,
+  },
+  lastRecordDivider: {
+    height: 1,
+    backgroundColor: PALETTE.border.default,
+    marginVertical: 14,
+  },
+  recordedByRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  recordedByLabel: {
+    fontFamily: font('medium'),
+    fontSize: 14,
+    fontWeight: '500',
+    color: PALETTE.text.title,
+  },
+  recordedByValue: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    color: PALETTE.text.muted,
+    flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SCREEN_MARGIN,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: PALETTE.surface,
+    borderRadius: RADIUS_PILL,
+    padding: 24,
+    gap: 16,
+    ...CARD_SHADOW,
+  },
+  modalTitle: {
+    fontFamily: font('semibold'),
+    fontSize: 20,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+  },
+  modalItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  modalDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginTop: 3,
+  },
+  modalItemText: {
+    flex: 1,
+    gap: 2,
+  },
+  modalItemTitle: {
+    fontFamily: font('semibold'),
+    fontSize: 15,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+  },
+  modalItemBody: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    lineHeight: 20,
+    color: PALETTE.text.body,
+  },
+  modalButton: {
+    marginTop: 4,
   },
   chartState: {
     alignItems: 'center',
@@ -497,28 +618,31 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   stateTitle: {
+    fontFamily: font('semibold'),
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     color: PALETTE.text.title,
     textAlign: 'center',
   },
   stateText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.body,
     textAlign: 'center',
   },
   stateButton: {
     backgroundColor: PALETTE.primary,
-    borderRadius: 28,
+    borderRadius: RADIUS_PILL,
     paddingHorizontal: 28,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stateButtonText: {
-    color: '#FFFFFF',
+    fontFamily: font('semibold'),
+    color: PALETTE.text.light,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   pressed: {
     opacity: 0.7,

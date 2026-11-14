@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   EMPTY_FOLLOW_UP_FORM,
   buildFollowUpInput,
+  formatNextCheckupLong,
   isFollowUpFormEmpty,
   isoDateToInput,
+  isoToLocalDate,
+  minNextCheckupDate,
   nextCheckupAfterDays,
+  nextCheckupPickerValue,
   type FollowUpFormData,
 } from '../lib/follow-up-form.js';
 
@@ -82,6 +86,29 @@ describe('dates', () => {
 
   it('formats an ISO date as DD/MM/AAAA', () => {
     expect(isoDateToInput('2026-01-05')).toBe('05/01/2026');
+  });
+
+  it('formats the next checkup in localized long date format', () => {
+    expect(formatNextCheckupLong('25/10/2026')).toBe('25 de octubre de 2026');
+    expect(formatNextCheckupLong('')).toBeNull();
+    expect(formatNextCheckupLong('31/02/2026')).toBeNull();
+  });
+
+  it('computes local calendar dates and clamps picker value to today (UTC)', () => {
+    const parsed = isoToLocalDate('2026-10-25');
+    expect(parsed?.getFullYear()).toBe(2026);
+    expect(parsed?.getMonth()).toBe(9);
+    expect(parsed?.getDate()).toBe(25);
+    expect(isoToLocalDate('2026-02-30')).toBeNull();
+
+    const minDate = minNextCheckupDate('2026-11-14');
+    expect([minDate.getFullYear(), minDate.getMonth(), minDate.getDate()]).toEqual([2026, 10, 14]);
+
+    const future = nextCheckupPickerValue('25/11/2026', '2026-11-14');
+    expect([future.getFullYear(), future.getMonth(), future.getDate()]).toEqual([2026, 10, 25]);
+
+    const past = nextCheckupPickerValue('10/11/2026', '2026-11-14');
+    expect([past.getFullYear(), past.getMonth(), past.getDate()]).toEqual([2026, 10, 14]);
   });
 });
 

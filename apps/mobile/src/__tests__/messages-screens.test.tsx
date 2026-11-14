@@ -287,6 +287,15 @@ describe('Messages & Chat Screens (NK-50)', () => {
         },
       });
     });
+
+    it('no muestra botón Volver y usa banner de contexto en pestaña Mensajes', () => {
+      setConversations({ conversations: [makeConversation()], unreadTotal: 1 });
+      const html = renderToString(React.createElement(CaregiverMessagesScreen));
+
+      expect(html).not.toContain('conversations-header-back');
+      expect(html).not.toContain('conversations-back-button');
+      expect(html).toContain('conversations-banner');
+    });
   });
 
   describe('Professional MessagesScreen & ChatDetailScreen', () => {
@@ -461,6 +470,23 @@ describe('Messages & Chat Screens (NK-50)', () => {
       const html = renderToString(React.createElement(CaregiverChatDetailScreen));
       expect(html).toContain('chat-error');
       expect(html).toContain('No tienes acceso a este niño');
+    });
+
+    it('conserva chat-back-button y usa banner de contexto', () => {
+      mocks.localParams = {
+        childId: CHILD_ID,
+        withUserId: PROF_ID,
+        participantName: 'Laura Pérez',
+        participantRole: 'PROFESSIONAL',
+        participantSpecialty: 'nutrition',
+        childFirstName: 'Mateo',
+        childFullName: 'Mateo Gómez',
+      };
+      setThread({ messages: [] });
+
+      const html = renderToString(React.createElement(CaregiverChatDetailScreen));
+      expect(html).toContain('chat-back-button');
+      expect(html).toContain('chat-context-banner');
     });
   });
 });

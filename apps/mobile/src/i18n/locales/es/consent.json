@@ -28,6 +28,7 @@
     "checkLegalA11y": "Soy el representante legal y doy permiso para usar los datos",
     "checkRevocation": "Entiendo que puedo retirar este permiso cuando quiera desde mi perfil.",
     "checkRevocationA11y": "Entiendo que puedo retirar este permiso",
+    "versionLine": "Versión {{version}} del texto · {{date}}",
     "notNow": "Ahora no"
   },
   "alerts": {

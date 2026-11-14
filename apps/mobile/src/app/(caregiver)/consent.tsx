@@ -13,11 +13,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
+import { Card } from '../../components/ui/Card.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { SecondaryButton } from '../../components/ui/SecondaryButton.js';
 import { PALETTE } from '../../constants/colors.js';
+import { BUTTON_WIDTH, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
 import { useConsent } from '../../hooks/useConsent.js';
-import { formatNumericDate, formatTime } from '../../i18n/format.js';
+import { formatLongDate, formatNumericDate, formatTime } from '../../i18n/format.js';
 import { CURRENT_CONSENT_VERSION, getConsentText } from '../../lib/consent-api.js';
 
 export default function ConsentScreen() {
@@ -122,11 +127,14 @@ export default function ConsentScreen() {
   const isGranting = mode === 'register' || (mode === 'view' && Boolean(consent?.revokedAt));
   const canGrant = isLegalRepresentative && understandsRevocation;
   const caregiverName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
+  const versionNumber = displayedVersion === 'v1' ? '1.0' : displayedVersion;
+  const versionDate = consent?.grantedAt
+    ? formatLongDate(new Date(consent.grantedAt))
+    : formatLongDate(new Date());
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']} testID="consent-screen">
-      {/* Botón superior Volver */}
-      <View style={styles.topBar}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
           onPress={handleBack}
@@ -138,9 +146,7 @@ export default function ConsentScreen() {
           <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
           <Text style={styles.backButtonText}>{t('screen.back')}</Text>
         </Pressable>
-      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.screenTitle}>{t('screen.title')}</Text>
 
         {mode === 'register' ? (
@@ -152,12 +158,13 @@ export default function ConsentScreen() {
               caregiverName ? t('screen.representative', { name: caregiverName }) : undefined
             }
             style={styles.childBanner}
+            testID="consent-child-banner"
           />
         )}
 
         {/* Metadata de versión y fecha si ya existe consentimiento */}
         {consent && (
-          <View style={styles.metaCard} testID="consent-metadata">
+          <Card style={styles.metaCard} testID="consent-metadata">
             <View style={styles.metaRow}>
               <Text style={styles.metaLabel}>{t('screen.versionLabel')}</Text>
               <Text style={styles.versionBadge}>{consent.textVersion}</Text>
@@ -186,7 +193,7 @@ export default function ConsentScreen() {
                 <Text style={styles.metaValue}>{formatDate(consent.revokedAt)}</Text>
               </View>
             )}
-          </View>
+          </Card>
         )}
 
         {/* Notificación de error si ocurre */}
@@ -246,12 +253,12 @@ export default function ConsentScreen() {
         </Pressable>
 
         {showFullText && (
-          <View style={styles.fullTextCard} testID="consent-full-text">
+          <Card style={styles.fullTextCard} testID="consent-full-text">
             {!isDocumentTranslated && (
               <Text style={styles.documentLanguageNotice}>{t('screen.documentInSpanish')}</Text>
             )}
             <Text style={styles.fullTextBody}>{textBody}</Text>
-          </View>
+          </Card>
         )}
 
         <View style={styles.divider} />
@@ -296,30 +303,24 @@ export default function ConsentScreen() {
               </View>
               <Text style={styles.checkboxLabel}>{t('screen.checkRevocation')}</Text>
             </Pressable>
+
+            <Text style={styles.versionLine} testID="consent-version-line">
+              {t('screen.versionLine', { version: versionNumber, date: versionDate })}
+            </Text>
           </View>
         )}
 
         {/* Acciones según el modo y estado */}
         <View style={styles.actionsContainer}>
           {mode === 'register' && (
-            <Pressable
-              style={({ pressed }) => [
-                styles.primaryButton,
-                pressed && styles.buttonPressed,
-                (isActionLoading || !canGrant) && styles.buttonDisabled,
-              ]}
+            <PrimaryButton
+              label={t('screen.accept')}
               onPress={() => void handleAcceptConsent()}
+              loading={isActionLoading}
               disabled={isActionLoading || !canGrant}
               testID="accept-consent-button"
-              accessibilityRole="button"
               accessibilityLabel={t('screen.accept')}
-            >
-              {isActionLoading ? (
-                <ActivityIndicator color={PALETTE.text.light} />
-              ) : (
-                <Text style={styles.primaryButtonText}>{t('screen.accept')}</Text>
-              )}
-            </Pressable>
+            />
           )}
 
           {mode === 'view' && consent && !consent.revokedAt && (
@@ -344,36 +345,23 @@ export default function ConsentScreen() {
           )}
 
           {mode === 'view' && consent?.revokedAt && (
-            <Pressable
-              style={({ pressed }) => [
-                styles.primaryButton,
-                pressed && styles.buttonPressed,
-                (isActionLoading || !canGrant) && styles.buttonDisabled,
-              ]}
+            <PrimaryButton
+              label={t('screen.renew')}
               onPress={() => void handleAcceptConsent()}
+              loading={isActionLoading}
               disabled={isActionLoading || !canGrant}
               testID="renew-consent-button"
-              accessibilityRole="button"
               accessibilityLabel={t('screen.renew')}
-            >
-              {isActionLoading ? (
-                <ActivityIndicator color={PALETTE.text.light} />
-              ) : (
-                <Text style={styles.primaryButtonText}>{t('screen.renew')}</Text>
-              )}
-            </Pressable>
+            />
           )}
 
           {isGranting && (
-            <Pressable
-              style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
+            <SecondaryButton
+              label={t('screen.notNow')}
               onPress={handleBack}
               testID="decline-consent-button"
-              accessibilityRole="button"
               accessibilityLabel={t('screen.notNow')}
-            >
-              <Text style={styles.secondaryButtonText}>{t('screen.notNow')}</Text>
-            </Pressable>
+            />
           )}
         </View>
       </ScrollView>
@@ -386,24 +374,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PALETTE.background,
   },
-  topBar: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 8,
+    paddingVertical: 4,
+    marginBottom: 8,
   },
   backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: PALETTE.text.title,
+    fontFamily: font('medium'),
+    fontWeight: '500',
+    fontSize: 20,
+    color: PALETTE.text.body,
   },
   buttonPressed: {
     opacity: 0.75,
@@ -412,19 +395,21 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 12,
     paddingBottom: 40,
   },
   screenTitle: {
-    fontSize: 26,
-    fontWeight: '800',
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 32,
     color: PALETTE.text.title,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   screenSubtitle: {
+    fontFamily: font('regular'),
     fontSize: 14,
-    color: PALETTE.text.body,
+    color: PALETTE.text.muted,
     lineHeight: 20,
     marginBottom: 20,
   },
@@ -432,18 +417,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   metaCard: {
-    backgroundColor: PALETTE.surface,
-    borderRadius: 20,
     padding: 16,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
     gap: 10,
     marginBottom: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
   },
   metaRow: {
     flexDirection: 'row',
@@ -452,30 +428,34 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   metaLabel: {
-    fontSize: 13,
+    fontFamily: font('semibold'),
     fontWeight: '600',
+    fontSize: 13,
     color: PALETTE.text.body,
   },
   metaValue: {
     flexShrink: 1,
-    fontSize: 13,
+    fontFamily: font('medium'),
     fontWeight: '500',
+    fontSize: 13,
     color: PALETTE.text.title,
     textAlign: 'right',
   },
   versionBadge: {
     backgroundColor: PALETTE.primaryLight,
     color: PALETTE.primary,
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 12,
-    fontWeight: '700',
     paddingVertical: 3,
     paddingHorizontal: 10,
     borderRadius: 10,
     overflow: 'hidden',
   },
   statusBadge: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 11,
-    fontWeight: '700',
     paddingVertical: 3,
     paddingHorizontal: 10,
     borderRadius: 10,
@@ -502,10 +482,11 @@ const styles = StyleSheet.create({
   },
   errorText: {
     flex: 1,
+    fontFamily: font('medium'),
+    fontWeight: '500',
     color: PALETTE.feedback.error,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: '500',
   },
   authorizeHeader: {
     flexDirection: 'row',
@@ -522,8 +503,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontFamily: font('medium'),
+    fontWeight: '500',
+    fontSize: 18,
     color: PALETTE.text.title,
   },
   bulletList: {
@@ -545,6 +527,7 @@ const styles = StyleSheet.create({
   },
   bulletText: {
     flex: 1,
+    fontFamily: font('regular'),
     fontSize: 15,
     lineHeight: 22,
     color: PALETTE.text.body,
@@ -558,32 +541,31 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   readMoreText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 14,
-    fontWeight: '700',
     color: PALETTE.primary,
   },
   documentLanguageNotice: {
+    fontFamily: font('regular'),
     fontSize: 13,
     fontStyle: 'italic',
-    color: '#B45309',
+    color: PALETTE.feedback.warning,
     marginBottom: 8,
   },
   fullTextCard: {
-    backgroundColor: PALETTE.surface,
-    borderRadius: 20,
     padding: 16,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
     marginTop: 8,
   },
   fullTextBody: {
+    fontFamily: font('regular'),
     fontSize: 13,
     lineHeight: 20,
     color: PALETTE.text.body,
   },
   divider: {
     height: 1,
-    backgroundColor: PALETTE.border.default,
+    backgroundColor: PALETTE.border.subtle,
     marginVertical: 20,
   },
   checkboxGroup: {
@@ -599,7 +581,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: PALETTE.border.default,
+    borderColor: PALETTE.border.checkbox,
     backgroundColor: PALETTE.surface,
     alignItems: 'center',
     justifyContent: 'center',
@@ -611,57 +593,37 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     flex: 1,
+    fontFamily: font('regular'),
     fontSize: 14,
     lineHeight: 20,
     color: PALETTE.text.body,
   },
+  versionLine: {
+    fontFamily: font('regular'),
+    fontSize: 12,
+    color: PALETTE.text.muted,
+    marginTop: 2,
+  },
   actionsContainer: {
+    alignItems: 'center',
     gap: 12,
     marginTop: 24,
   },
-  primaryButton: {
-    height: 52,
-    backgroundColor: PALETTE.primary,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: PALETTE.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: PALETTE.text.light,
-  },
-  secondaryButton: {
-    height: 52,
-    backgroundColor: PALETTE.background,
-    borderColor: PALETTE.primary,
-    borderWidth: 2,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: PALETTE.primary,
-  },
   revokeButton: {
-    height: 52,
+    width: BUTTON_WIDTH,
+    maxWidth: '100%',
+    height: 50,
     backgroundColor: PALETTE.background,
     borderColor: PALETTE.feedback.error,
-    borderWidth: 2,
-    borderRadius: 14,
+    borderWidth: 1.5,
+    borderRadius: RADIUS_PILL,
     alignItems: 'center',
     justifyContent: 'center',
   },
   revokeButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 16,
-    fontWeight: '700',
     color: PALETTE.feedback.error,
   },
 });

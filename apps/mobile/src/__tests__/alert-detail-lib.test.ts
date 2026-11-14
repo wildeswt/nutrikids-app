@@ -117,16 +117,30 @@ describe('ZScoreChart', () => {
     { checkupId: 'c', measuredAt: '2026-10-18T09:00:00.000Z', z: -2.2, isAlert: true },
   ];
 
-  it('draws the bands, a dot per checkup and the highlighted alert point with its z label', () => {
+  it('draws the bands, dashed guides, month labels and the z label on the last point', () => {
     const html = renderToString(React.createElement(ZScoreChart, { points: series }));
 
     expect(html).toContain('z-chart-normal-band');
     expect(html).toContain('z-chart-risk-zone');
+    expect(html).toContain('z-chart-dashed-guide');
     expect(html.match(/z-chart-point/g)).toHaveLength(2);
     expect(html).toContain('z-chart-alert-point');
     expect(html).toContain('z-chart-halo');
     expect(html).toContain('z = -2,2');
+    for (const month of ['Abr', 'Ago', 'Oct']) expect(html).toContain(`>${month}<`);
     for (const tick of ['+3', '+2', '0', '−2', '−3']) expect(html).toContain(`>${tick}<`);
+  });
+
+  it('also shows the z label on the last point when a newer checkup follows the alert', () => {
+    const extended: ZPoint[] = [
+      ...series,
+      { checkupId: 'd', measuredAt: '2026-11-18T09:00:00.000Z', z: -1.4, isAlert: false },
+    ];
+    const html = renderToString(React.createElement(ZScoreChart, { points: extended }));
+
+    expect(html).toContain('z-chart-alert-label');
+    expect(html).toContain('z-chart-last-label');
+    expect(html).toContain('z = -1,4');
   });
 
   it('labels only the first, last and alert dates when there are many checkups', () => {

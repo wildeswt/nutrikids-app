@@ -2,6 +2,7 @@ import React from 'react';
 import type * as ReactTypes from 'react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PALETTE } from '../constants/colors.js';
 import { APP_ROUTES } from '../constants/routes.js';
 import { FeedingApiError } from '../lib/feeding-api.js';
 
@@ -388,5 +389,41 @@ describe('FeedingScreen («Alimentación»)', () => {
     const emptyTree = renderTree();
     const emptyText = textContent(findElementByTestId(emptyTree, 'feeding-empty'));
     expect(emptyText).toContain(i18n.t('caregiver:feeding.emptyTitle'));
+  });
+
+  it('uses gray borders on unchecked boxes/counter and #575757 Volver', () => {
+    let tree = renderTree();
+
+    const uncheckedBox = findElementByTestId(tree, 'feeding-meal-box-breakfast');
+    expect(uncheckedBox?.props?.['style']).toEqual(
+      expect.arrayContaining([expect.objectContaining({ borderColor: PALETTE.border.checkbox })]),
+    );
+
+    press(tree, 'feeding-meal-breakfast');
+    tree = renderTree();
+
+    const checkedBox = findElementByTestId(tree, 'feeding-meal-box-breakfast');
+    expect(checkedBox?.props?.['style']).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          backgroundColor: PALETTE.primary,
+          borderColor: PALETTE.primary,
+        }),
+      ]),
+    );
+
+    const counter = findElementByTestId(tree, 'feeding-meals-counter');
+    expect(counter?.props?.['style']).toMatchObject({ borderColor: PALETTE.border.checkbox });
+
+    const decBtn = findElementByTestId(tree, 'feeding-meals-decrease');
+    const decStyleFn = decBtn?.props?.['style'] as (s: { pressed: boolean }) => unknown[];
+    expect(decStyleFn({ pressed: false })).toEqual(
+      expect.arrayContaining([expect.objectContaining({ borderColor: PALETTE.border.checkbox })]),
+    );
+
+    const backBtn = findElementByTestId(tree, 'feeding-back-button');
+    const backChildren = backBtn?.props?.children as ElementWithProps[] | undefined;
+    const backLabel = backChildren?.find((child) => textContent(child) === 'Volver');
+    expect(backLabel?.props?.['style']).toMatchObject({ color: PALETTE.text.title });
   });
 });

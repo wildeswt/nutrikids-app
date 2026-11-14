@@ -347,6 +347,18 @@ describe('RemindersScreen («Recordatorios»)', () => {
     expect(html).toContain(t('caregiver:reminders.marking'));
   });
 
+  it('shows the back header, subtitle and places notification status below the list', () => {
+    const tree = renderTree(RemindersScreen as () => unknown);
+    const html = render(RemindersScreen);
+
+    expect(findElementByTestId(tree, 'reminders-header')).not.toBeNull();
+    expect(html).toContain('reminders-header-back');
+    expect(html).toContain(t('caregiver:reminders.subtitle'));
+    expect(html.indexOf(String(t('caregiver:reminders.upcomingTitle')))).toBeLessThan(
+      html.indexOf(String(t('caregiver:reminders.notifications.enabled'))),
+    );
+  });
+
   it('never shows sample data', () => {
     mocks.reminders = { status: 'ready', reminders: [], error: null, completingIds: [] };
 
@@ -358,6 +370,16 @@ describe('RemindersScreen («Recordatorios»)', () => {
 });
 
 describe('AddReminderScreen («Crear un recordatorio»)', () => {
+  it('renders PillField containers for date and time inputs', () => {
+    const tree = renderTree(AddReminderScreen as () => unknown);
+    const html = render(AddReminderScreen);
+
+    expect(findElementByTestId(tree, 'add-reminder-header')).not.toBeNull();
+    expect(html).toContain('add-reminder-header-back');
+    expect(findElementByTestId(tree, 'add-reminder-date-field')).not.toBeNull();
+    expect(findElementByTestId(tree, 'add-reminder-time-field')).not.toBeNull();
+  });
+
   it('shows the form with the child chips and both reminder types', () => {
     const html = render(AddReminderScreen);
 

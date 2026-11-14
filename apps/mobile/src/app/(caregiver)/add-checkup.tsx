@@ -1,17 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import type { Position } from '@nutrikids/shared';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   KeyboardAwareScrollView,
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
 import { ChildBanner } from '../../components/ChildBanner.js';
+import { PillField } from '../../components/ui/PillField.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
+import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { useCheckups } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { formatLongDate } from '../../i18n/format.js';
@@ -19,6 +25,7 @@ import { isConsentRequiredError } from '../../lib/checkups-api.js';
 import {
   buildCreateCheckupInput,
   formatDateInput,
+  parseDateInput,
   type CheckupFormError,
 } from '../../lib/checkup-form.js';
 import { toCheckupSavedParams } from '../../lib/checkup-route.js';
@@ -26,6 +33,13 @@ import { formatChildAge } from '../../lib/children-api.js';
 import { generateUuid } from '../../lib/uuid.js';
 
 const POSITION_OPTIONS: Position[] = ['STANDING', 'RECUMBENT'];
+
+/** Parses `YYYY-MM-DD` as a local calendar date so the native picker opens on the right day. */
+function isoToLocalDate(iso: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return null;
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
 
 export default function AddCheckupScreen() {
   const router = useRouter();
@@ -43,6 +57,7 @@ export default function AddCheckupScreen() {
   const { create, saving } = useCheckups(activeChild?.id ?? null, { autoLoad: false });
 
   const [measuredDateText, setMeasuredDateText] = useState(() => formatDateInput(new Date()));
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [position, setPosition] = useState<Position>('STANDING');
   const [showPositionMenu, setShowPositionMenu] = useState(false);
   const [weightText, setWeightText] = useState('');
@@ -148,24 +163,33 @@ export default function AddCheckupScreen() {
     }
   };
 
+  const handleDatePickerChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS !== 'ios') {
+      setShowDatePicker(false);
+    }
+    if (event.type === 'dismissed' || !selectedDate) {
+      return;
+    }
+    setMeasuredDateText(formatDateInput(selectedDate));
+    resetAttempt();
+  };
+
+  const parsedIsoDate = parseDateInput(measuredDateText);
+  const datePickerValue = (parsedIsoDate ? isoToLocalDate(parsedIsoDate) : null) ?? new Date();
+  const minBirthDate = activeChild
+    ? (isoToLocalDate(activeChild.birthDate) ?? undefined)
+    : undefined;
+
   const isLoadingChildren = childrenStatus === 'idle' || childrenStatus === 'loading';
 
   const header = (
-    <>
-      {/* Botón superior: <- Volver */}
-      <Pressable
-        style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
-        onPress={handleBack}
-        accessibilityRole="button"
-        accessibilityLabel={t('addCheckup.back')}
-      >
-        <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-        <Text style={styles.backText}>{t('addCheckup.back')}</Text>
-      </Pressable>
-
-      {/* Título principal */}
-      <Text style={styles.screenTitle}>{t('addCheckup.title')}</Text>
-    </>
+    <ScreenHeader
+      title={t('addCheckup.title')}
+      backLabel={t('addCheckup.back')}
+      onBack={handleBack}
+      style={styles.header}
+      testID="add-checkup-header"
+    />
   );
 
   if (!activeChild) {
@@ -277,8 +301,22 @@ export default function AddCheckupScreen() {
 
         {/* Campo: Fecha del control */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>{t('addCheckup.dateLabel')}</Text>
-          <View style={styles.pillInputContainer}>
+          <PillField
+            label={t('addCheckup.dateLabel')}
+            rightIcon={
+              <Pressable
+                onPress={() => setShowDatePicker((prev) => !prev)}
+                accessibilityRole="button"
+                accessibilityLabel={t('addCheckup.openDatePicker')}
+                testID="add-checkup-date-picker-button"
+                hitSlop={8}
+                style={({ pressed }) => pressed && styles.pressed}
+              >
+                <Ionicons name="calendar" size={22} color="#27272A" />
+              </Pressable>
+            }
+            testID="add-checkup-date-field"
+          >
             <KeyboardAwareTextInput
               style={styles.pillTextInput}
               value={measuredDateText}
@@ -292,27 +330,54 @@ export default function AddCheckupScreen() {
               })}
               placeholderTextColor={PALETTE.input.placeholder}
               accessibilityLabel={t('addCheckup.dateLabel')}
+              testID="add-checkup-date-input"
             />
-            <Ionicons name="calendar" size={22} color="#27272A" />
-          </View>
+          </PillField>
+
+          {showDatePicker ? (
+            <View style={styles.datePickerWrapper}>
+              <DateTimePicker
+                value={datePickerValue}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                maximumDate={new Date()}
+                minimumDate={minBirthDate}
+                onChange={handleDatePickerChange}
+                testID="add-checkup-date-picker"
+              />
+              {Platform.OS === 'ios' ? (
+                <Pressable
+                  onPress={() => setShowDatePicker(false)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('addCheckup.closeDatePicker')}
+                  testID="add-checkup-date-picker-done"
+                  style={({ pressed }) => [styles.datePickerDone, pressed && styles.pressed]}
+                >
+                  <Text style={styles.datePickerDoneText}>{t('addCheckup.closeDatePicker')}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
         </View>
 
         {/* Campo: Posición de medición */}
         <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>{t('addCheckup.positionLabel')}</Text>
-          <Pressable
-            style={({ pressed }) => [styles.pillInputContainer, pressed && styles.pressed]}
-            onPress={() => setShowPositionMenu((prev) => !prev)}
-            accessibilityRole="button"
-            accessibilityLabel={t('addCheckup.positionLabel')}
-          >
-            <Text style={styles.selectorValueText}>{selectedPositionLabel}</Text>
-            <Ionicons
-              name={showPositionMenu ? 'chevron-up' : 'chevron-down'}
-              size={22}
-              color="#27272A"
-            />
-          </Pressable>
+          <PillField label={t('addCheckup.positionLabel')} testID="add-checkup-position-field">
+            <Pressable
+              style={({ pressed }) => [styles.selectorPressable, pressed && styles.pressed]}
+              onPress={() => setShowPositionMenu((prev) => !prev)}
+              accessibilityRole="button"
+              accessibilityLabel={t('addCheckup.positionLabel')}
+              testID="add-checkup-position-button"
+            >
+              <Text style={styles.selectorValueText}>{selectedPositionLabel}</Text>
+              <Ionicons
+                name={showPositionMenu ? 'chevron-up' : 'chevron-down'}
+                size={22}
+                color="#27272A"
+              />
+            </Pressable>
+          </PillField>
 
           {showPositionMenu ? (
             <View style={styles.dropdownMenu}>
@@ -348,43 +413,47 @@ export default function AddCheckupScreen() {
 
         {/* Fila doble: Peso (kg) y Talla (cm) */}
         <View style={styles.measurementsRow}>
-          <View style={styles.measurementColumn}>
-            <Text style={styles.fieldLabel}>{t('addCheckup.weightLabel')}</Text>
-            <View style={styles.measurementBox}>
-              <KeyboardAwareTextInput
-                style={styles.measurementInput}
-                value={weightText}
-                onChangeText={(val) => {
-                  setWeightText(val);
-                  resetAttempt();
-                }}
-                keyboardType="decimal-pad"
-                placeholder={t('addCheckup.decimalPlaceholder')}
-                placeholderTextColor={PALETTE.input.placeholder}
-                accessibilityLabel={t('addCheckup.weightA11y')}
-              />
-              <Text style={styles.measurementUnit}>{t('common:units.kg')}</Text>
-            </View>
-          </View>
+          <PillField
+            label={t('addCheckup.weightLabel')}
+            rightIcon={<Text style={styles.measurementUnit}>{t('common:units.kg')}</Text>}
+            style={styles.measurementColumn}
+            testID="add-checkup-weight-field"
+          >
+            <KeyboardAwareTextInput
+              style={styles.measurementInput}
+              value={weightText}
+              onChangeText={(val) => {
+                setWeightText(val);
+                resetAttempt();
+              }}
+              keyboardType="decimal-pad"
+              placeholder={t('addCheckup.decimalPlaceholder')}
+              placeholderTextColor={PALETTE.input.placeholder}
+              accessibilityLabel={t('addCheckup.weightA11y')}
+              testID="add-checkup-weight-input"
+            />
+          </PillField>
 
-          <View style={styles.measurementColumn}>
-            <Text style={styles.fieldLabel}>{t('addCheckup.heightLabel')}</Text>
-            <View style={styles.measurementBox}>
-              <KeyboardAwareTextInput
-                style={styles.measurementInput}
-                value={heightText}
-                onChangeText={(val) => {
-                  setHeightText(val);
-                  resetAttempt();
-                }}
-                keyboardType="decimal-pad"
-                placeholder={t('addCheckup.decimalPlaceholder')}
-                placeholderTextColor={PALETTE.input.placeholder}
-                accessibilityLabel={t('addCheckup.heightA11y')}
-              />
-              <Text style={styles.measurementUnit}>{t('common:units.cm')}</Text>
-            </View>
-          </View>
+          <PillField
+            label={t('addCheckup.heightLabel')}
+            rightIcon={<Text style={styles.measurementUnit}>{t('common:units.cm')}</Text>}
+            style={styles.measurementColumn}
+            testID="add-checkup-height-field"
+          >
+            <KeyboardAwareTextInput
+              style={styles.measurementInput}
+              value={heightText}
+              onChangeText={(val) => {
+                setHeightText(val);
+                resetAttempt();
+              }}
+              keyboardType="decimal-pad"
+              placeholder={t('addCheckup.decimalPlaceholder')}
+              placeholderTextColor={PALETTE.input.placeholder}
+              accessibilityLabel={t('addCheckup.heightA11y')}
+              testID="add-checkup-height-input"
+            />
+          </PillField>
         </View>
 
         {/* Campo: Observaciones */}
@@ -406,19 +475,15 @@ export default function AddCheckupScreen() {
         </View>
 
         {/* Botón Guardar y calcular */}
-        <Pressable
-          style={({ pressed }) => [styles.submitButton, pressed && styles.submitButtonPressed]}
+        <PrimaryButton
+          label={saving ? t('addCheckup.saving') : t('addCheckup.submit')}
           onPress={() => void handleSaveAndCalculate()}
+          loading={saving}
           disabled={saving}
-          accessibilityRole="button"
           accessibilityLabel={t('addCheckup.submit')}
-          accessibilityState={{ busy: saving, disabled: saving }}
           testID="submit-checkup-button"
-        >
-          <Text style={styles.submitButtonText}>
-            {saving ? t('addCheckup.saving') : t('addCheckup.submit')}
-          </Text>
-        </Pressable>
+          style={styles.submitButton}
+        />
       </KeyboardAwareScrollView>
     </SafeAreaView>
   );
@@ -430,27 +495,11 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.background,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 12,
     paddingBottom: 36,
   },
-  backRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 10,
-    marginBottom: 18,
-    paddingVertical: 4,
-  },
-  backText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: PALETTE.text.title,
-  },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: PALETTE.text.title,
+  header: {
     marginBottom: 18,
   },
   changePatientButton: {
@@ -460,6 +509,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   changePatientText: {
+    fontFamily: font('semibold'),
     fontSize: 13,
     fontWeight: '600',
     color: PALETTE.primary,
@@ -474,6 +524,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   errorBannerText: {
+    fontFamily: font('semibold'),
     color: PALETTE.feedback.error,
     fontSize: 13,
     fontWeight: '600',
@@ -487,6 +538,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   warningBannerText: {
+    fontFamily: font('semibold'),
     color: PALETTE.feedback.warning,
     fontSize: 13,
     fontWeight: '600',
@@ -495,30 +547,45 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   fieldLabel: {
+    fontFamily: font('medium'),
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '500',
     color: PALETTE.text.title,
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  pillInputContainer: {
+  pillTextInput: {
+    fontFamily: font('regular'),
+    fontSize: 16,
+    color: PALETTE.text.body,
+    paddingVertical: 0,
+  },
+  datePickerWrapper: {
+    marginTop: 8,
+    backgroundColor: PALETTE.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: PALETTE.border.input,
+    overflow: 'hidden',
+  },
+  datePickerDone: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  datePickerDoneText: {
+    fontFamily: font('semibold'),
+    fontSize: 14,
+    fontWeight: '600',
+    color: PALETTE.primary,
+  },
+  selectorPressable: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F7F7F7',
-    borderWidth: 1.5,
-    borderColor: '#D4D4D8',
-    borderRadius: 28,
-    paddingHorizontal: 20,
-    height: 54,
-  },
-  pillTextInput: {
-    flex: 1,
-    fontSize: 16,
-    color: PALETTE.text.body,
-    paddingVertical: 8,
-    marginRight: 10,
+    width: '100%',
   },
   selectorValueText: {
+    fontFamily: font('regular'),
     fontSize: 16,
     color: PALETTE.text.body,
   },
@@ -527,7 +594,7 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#D4D4D8',
+    borderColor: PALETTE.border.input,
     overflow: 'hidden',
   },
   dropdownOption: {
@@ -541,80 +608,52 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.primaryLight,
   },
   dropdownOptionText: {
+    fontFamily: font('regular'),
     fontSize: 15,
     color: PALETTE.text.body,
   },
   dropdownOptionTextSelected: {
-    fontWeight: '700',
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: PALETTE.primary,
   },
   measurementsRow: {
     flexDirection: 'row',
-    gap: 20,
+    gap: 16,
     marginBottom: 22,
   },
   measurementColumn: {
     flex: 1,
   },
-  measurementBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F7F7F7',
-    borderWidth: 1.5,
-    borderColor: '#D4D4D8',
-    borderRadius: 26,
-    paddingHorizontal: 20,
-    height: 70,
-  },
   measurementInput: {
-    flex: 1,
-    fontSize: 30,
-    fontWeight: '500',
+    fontFamily: font('regular'),
+    fontSize: 16,
     color: PALETTE.text.body,
-    paddingVertical: 6,
+    paddingVertical: 0,
   },
   measurementUnit: {
-    fontSize: 17,
-    color: PALETTE.text.body,
-    marginLeft: 6,
+    fontFamily: font('regular'),
+    fontSize: 15,
+    color: PALETTE.text.muted,
   },
   observationsContainer: {
-    backgroundColor: '#F7F7F7',
-    borderWidth: 1.5,
-    borderColor: '#D4D4D8',
-    borderRadius: 24,
+    backgroundColor: PALETTE.input.background,
+    borderWidth: 1,
+    borderColor: PALETTE.border.input,
+    borderRadius: RADIUS_PILL,
     paddingHorizontal: 18,
     paddingVertical: 14,
     minHeight: 124,
   },
   observationsInput: {
     flex: 1,
+    fontFamily: font('regular'),
     fontSize: 15,
     color: PALETTE.text.body,
     minHeight: 96,
   },
   submitButton: {
     marginTop: 10,
-    backgroundColor: PALETTE.primary,
-    borderRadius: 28,
-    height: 54,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 18,
-    shadowColor: PALETTE.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  submitButtonPressed: {
-    backgroundColor: PALETTE.primaryPressed,
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
   },
   consentButton: {
     alignSelf: 'flex-start',
@@ -625,9 +664,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   consentButtonText: {
-    color: '#FFFFFF',
+    fontFamily: font('semibold'),
+    color: PALETTE.text.light,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   stateBox: {
     alignItems: 'center',
@@ -635,28 +675,31 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   stateTitle: {
+    fontFamily: font('semibold'),
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     color: PALETTE.text.title,
     textAlign: 'center',
   },
   stateText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.body,
     textAlign: 'center',
   },
   stateButton: {
     backgroundColor: PALETTE.primary,
-    borderRadius: 28,
+    borderRadius: RADIUS_PILL,
     paddingHorizontal: 28,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stateButtonText: {
-    color: '#FFFFFF',
+    fontFamily: font('semibold'),
+    color: PALETTE.text.light,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   pressed: {
     opacity: 0.8,

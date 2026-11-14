@@ -10,8 +10,13 @@ import {
   KeyboardAwareScrollView,
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
+import { PillField } from '../../components/ui/PillField.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { SecondaryButton } from '../../components/ui/SecondaryButton.js';
 import { PALETTE } from '../../constants/colors.js';
+import { FIELD_HEIGHT, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
 import { useReferral } from '../../hooks/useReferral.js';
 import { formatChildAge } from '../../lib/children-api.js';
@@ -20,13 +25,6 @@ import {
   maxReasonLength,
   type ReferralFormError,
 } from '../../lib/referral-form.js';
-
-// Colores del diseño en Figma (428x926) que difieren de PALETTE (sin modificar constants/colors.ts).
-const DESIGN_COLORS = {
-  background: '#FBFBFB',
-  inputBg: '#F9F9F9',
-  inputBorder: '#ECECEC',
-} as const;
 
 const SEND_CONFIRMATION_DELAY_MS = 900;
 
@@ -101,7 +99,7 @@ export default function ReferralScreen() {
     : doctorName;
 
   const header = (
-    <>
+    <View style={styles.header}>
       <Pressable
         style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
         onPress={goBack}
@@ -113,8 +111,10 @@ export default function ReferralScreen() {
         <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
         <Text style={styles.backText}>{t('common:actions.back')}</Text>
       </Pressable>
-      <Text style={styles.screenTitle}>{t('referral.title')}</Text>
-    </>
+      <Text accessibilityRole="header" style={styles.screenTitle}>
+        {t('referral.title')}
+      </Text>
+    </View>
   );
 
   if (referral.loadingChildren || referral.childrenError || referral.children.length === 0) {
@@ -175,30 +175,31 @@ export default function ReferralScreen() {
 
           {/* Paciente */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.sectionTitle}>{t('referral.patientLabel')}</Text>
-            <Pressable
-              style={({ pressed }) => [styles.selectorPill, pressed && styles.pressed]}
-              onPress={() => {
-                setShowChildMenu((open) => !open);
-                setShowRecipientMenu(false);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={t('referral.patientLabel')}
-              accessibilityState={{ expanded: showChildMenu }}
-              testID="referral-child-selector"
-            >
-              <Text
-                style={activeChild ? styles.selectorValue : styles.selectorPlaceholder}
-                numberOfLines={1}
+            <PillField label={t('referral.patientLabel')} testID="referral-child-field">
+              <Pressable
+                style={({ pressed }) => [styles.selectorPressable, pressed && styles.pressed]}
+                onPress={() => {
+                  setShowChildMenu((open) => !open);
+                  setShowRecipientMenu(false);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={t('referral.patientLabel')}
+                accessibilityState={{ expanded: showChildMenu }}
+                testID="referral-child-selector"
               >
-                {activeChild ? formatChildOption(activeChild) : t('referral.patientPlaceholder')}
-              </Text>
-              <Ionicons
-                name={showChildMenu ? 'chevron-up' : 'chevron-down'}
-                size={22}
-                color={PALETTE.text.body}
-              />
-            </Pressable>
+                <Text
+                  style={activeChild ? styles.selectorValue : styles.selectorPlaceholder}
+                  numberOfLines={1}
+                >
+                  {activeChild ? formatChildOption(activeChild) : t('referral.patientPlaceholder')}
+                </Text>
+                <Ionicons
+                  name={showChildMenu ? 'chevron-up' : 'chevron-down'}
+                  size={22}
+                  color={PALETTE.text.title}
+                />
+              </Pressable>
+            </PillField>
             {showChildMenu ? (
               <View style={styles.dropdownMenu} testID="referral-child-menu">
                 {referral.children.map((child) => {
@@ -259,31 +260,33 @@ export default function ReferralScreen() {
               </View>
             ) : (
               <>
-                <Pressable
-                  style={({ pressed }) => [styles.selectorPill, pressed && styles.pressed]}
-                  onPress={() => {
-                    setShowRecipientMenu((open) => !open);
-                    setShowChildMenu(false);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('referral.recipientLabel')}
-                  accessibilityState={{ expanded: showRecipientMenu }}
-                  testID="referral-recipient-selector"
-                >
-                  <Text
-                    style={activeRecipient ? styles.selectorValue : styles.selectorPlaceholder}
-                    numberOfLines={1}
+                <PillField testID="referral-recipient-field">
+                  <Pressable
+                    style={({ pressed }) => [styles.selectorPressable, pressed && styles.pressed]}
+                    onPress={() => {
+                      setShowRecipientMenu((open) => !open);
+                      setShowChildMenu(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('referral.recipientLabel')}
+                    accessibilityState={{ expanded: showRecipientMenu }}
+                    testID="referral-recipient-selector"
                   >
-                    {activeRecipient
-                      ? formatProfessionalOption(activeRecipient)
-                      : t('referral.recipientPlaceholder')}
-                  </Text>
-                  <Ionicons
-                    name={showRecipientMenu ? 'chevron-up' : 'chevron-down'}
-                    size={22}
-                    color={PALETTE.text.body}
-                  />
-                </Pressable>
+                    <Text
+                      style={activeRecipient ? styles.selectorValue : styles.selectorPlaceholder}
+                      numberOfLines={1}
+                    >
+                      {activeRecipient
+                        ? formatProfessionalOption(activeRecipient)
+                        : t('referral.recipientPlaceholder')}
+                    </Text>
+                    <Ionicons
+                      name={showRecipientMenu ? 'chevron-up' : 'chevron-down'}
+                      size={22}
+                      color={PALETTE.text.title}
+                    />
+                  </Pressable>
+                </PillField>
                 {showRecipientMenu ? (
                   <View style={styles.dropdownMenu} testID="referral-recipient-menu">
                     {referral.recipients.map((assignment) => {
@@ -402,33 +405,21 @@ export default function ReferralScreen() {
           ) : null}
 
           <View style={styles.actions}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.primaryButton,
-                !referral.canSubmit && styles.primaryButtonDisabled,
-                pressed && referral.canSubmit && styles.pressed,
-              ]}
+            <PrimaryButton
+              label={
+                referral.sending ? t('referral.actions.sending') : t('referral.actions.submit')
+              }
               onPress={() => void handleSubmit()}
               disabled={!referral.canSubmit}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !referral.canSubmit, busy: referral.sending }}
+              loading={referral.sending}
               testID="referral-submit"
-            >
-              <Text style={styles.primaryButtonText}>
-                {referral.sending ? t('referral.actions.sending') : t('referral.actions.submit')}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+            />
+            <SecondaryButton
+              label={t('referral.actions.saveDraft')}
               onPress={() => void referral.saveDraft()}
               disabled={referral.sending}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: referral.sending }}
               testID="referral-save-draft"
-            >
-              <Text style={styles.secondaryButtonText}>{t('referral.actions.saveDraft')}</Text>
-            </Pressable>
+            />
 
             {referral.notice === 'draftSaved' ? (
               <Text style={styles.noticeText} testID="referral-draft-saved">
@@ -445,7 +436,7 @@ export default function ReferralScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: DESIGN_COLORS.background,
+    backgroundColor: PALETTE.background,
   },
   scrollContent: {
     paddingBottom: 32,
@@ -454,23 +445,28 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 428,
     alignSelf: 'center',
-    paddingHorizontal: 30,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 12,
     gap: 16,
+  },
+  header: {
+    gap: 8,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     alignSelf: 'flex-start',
     paddingVertical: 4,
   },
   backText: {
+    fontFamily: font('medium'),
     fontSize: 20,
     fontWeight: '500',
-    color: PALETTE.text.body,
+    color: PALETTE.text.title,
   },
   screenTitle: {
+    fontFamily: font('semibold'),
     fontSize: 32,
     fontWeight: '600',
     color: PALETTE.text.title,
@@ -479,29 +475,27 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sectionTitle: {
+    fontFamily: font('medium'),
     fontSize: 18,
     fontWeight: '500',
     color: PALETTE.text.title,
   },
-  selectorPill: {
+  selectorPressable: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: DESIGN_COLORS.inputBg,
-    borderWidth: 1,
-    borderColor: DESIGN_COLORS.inputBorder,
-    borderRadius: 25,
-    minHeight: 50,
-    paddingHorizontal: 20,
+    width: '100%',
     gap: 8,
   },
   selectorValue: {
     flex: 1,
+    fontFamily: font('regular'),
     fontSize: 16,
     color: PALETTE.text.body,
   },
   selectorPlaceholder: {
     flex: 1,
+    fontFamily: font('regular'),
     fontSize: 16,
     color: PALETTE.input.placeholder,
   },
@@ -509,7 +503,7 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.surface,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: DESIGN_COLORS.inputBorder,
+    borderColor: PALETTE.border.input,
     overflow: 'hidden',
   },
   dropdownOption: {
@@ -525,10 +519,12 @@ const styles = StyleSheet.create({
   },
   dropdownOptionText: {
     flex: 1,
+    fontFamily: font('regular'),
     fontSize: 15,
     color: PALETTE.text.body,
   },
   dropdownOptionTextSelected: {
+    fontFamily: font('semibold'),
     fontWeight: '600',
     color: PALETTE.primary,
   },
@@ -536,9 +532,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: DESIGN_COLORS.inputBg,
-    borderRadius: 25,
-    minHeight: 50,
+    backgroundColor: PALETTE.input.background,
+    borderRadius: RADIUS_PILL,
+    borderWidth: 1,
+    borderColor: PALETTE.border.input,
+    minHeight: FIELD_HEIGHT,
     paddingHorizontal: 20,
   },
   emptyRecipientBanner: {
@@ -548,31 +546,35 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   emptyRecipientText: {
+    fontFamily: font('medium'),
     fontSize: 14,
     fontWeight: '500',
     color: PALETTE.text.body,
   },
   reasonBox: {
-    backgroundColor: DESIGN_COLORS.inputBg,
+    backgroundColor: PALETTE.input.background,
     borderWidth: 1,
-    borderColor: DESIGN_COLORS.inputBorder,
-    borderRadius: 25,
+    borderColor: PALETTE.border.input,
+    borderRadius: RADIUS_PILL,
     paddingHorizontal: 20,
     paddingVertical: 14,
     minHeight: 112,
   },
   reasonInput: {
+    fontFamily: font('regular'),
     fontSize: 16,
     color: PALETTE.text.body,
     minHeight: 84,
   },
   charCount: {
+    fontFamily: font('regular'),
     fontSize: 12,
     color: PALETTE.text.muted,
     textAlign: 'right',
     paddingRight: 8,
   },
   charCountOver: {
+    fontFamily: font('semibold'),
     color: PALETTE.feedback.error,
     fontWeight: '600',
   },
@@ -582,8 +584,8 @@ const styles = StyleSheet.create({
   },
   priorityButton: {
     flex: 1,
-    minHeight: 50,
-    borderRadius: 25,
+    minHeight: FIELD_HEIGHT,
+    borderRadius: RADIUS_PILL,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -594,16 +596,18 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.primary,
   },
   priorityButtonInactive: {
-    backgroundColor: DESIGN_COLORS.inputBg,
+    backgroundColor: PALETTE.input.background,
     borderWidth: 1,
-    borderColor: DESIGN_COLORS.inputBorder,
+    borderColor: PALETTE.border.input,
   },
   priorityTextActive: {
+    fontFamily: font('semibold'),
     fontSize: 15,
     fontWeight: '600',
     color: PALETTE.text.light,
   },
   priorityTextInactive: {
+    fontFamily: font('medium'),
     fontSize: 15,
     fontWeight: '500',
     color: PALETTE.text.body,
@@ -618,6 +622,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   errorBannerText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.feedback.error,
   },
@@ -626,6 +631,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   inlineRetryText: {
+    fontFamily: font('semibold'),
     fontSize: 14,
     fontWeight: '600',
     color: PALETTE.primary,
@@ -638,12 +644,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   successBannerText: {
+    fontFamily: font('semibold'),
     fontSize: 14,
     fontWeight: '600',
     color: PALETTE.feedback.success,
     textAlign: 'center',
   },
   noticeText: {
+    fontFamily: font('regular'),
     fontSize: 13,
     color: PALETTE.primary,
     textAlign: 'center',
@@ -652,60 +660,26 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 4,
   },
-  primaryButton: {
-    width: 318,
-    maxWidth: '100%',
-    alignSelf: 'center',
-    backgroundColor: PALETTE.primary,
-    borderRadius: 25,
-    minHeight: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  primaryButtonDisabled: {
-    opacity: 0.45,
-  },
-  primaryButtonText: {
-    color: PALETTE.text.light,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    width: 318,
-    maxWidth: '100%',
-    alignSelf: 'center',
-    backgroundColor: DESIGN_COLORS.background,
-    borderWidth: 2,
-    borderColor: PALETTE.primary,
-    borderRadius: 25,
-    minHeight: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  secondaryButtonText: {
-    color: PALETTE.primary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
   centerBox: {
     alignItems: 'center',
     gap: 12,
     paddingVertical: 48,
   },
   emptyTitle: {
+    fontFamily: font('semibold'),
     fontSize: 18,
     fontWeight: '600',
     color: PALETTE.text.title,
     textAlign: 'center',
   },
   mutedText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.muted,
     textAlign: 'center',
   },
   errorText: {
+    fontFamily: font('regular'),
     fontSize: 15,
     color: PALETTE.feedback.error,
     textAlign: 'center',
@@ -714,9 +688,10 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.primary,
     paddingHorizontal: 24,
     paddingVertical: 10,
-    borderRadius: 25,
+    borderRadius: RADIUS_PILL,
   },
   retryButtonText: {
+    fontFamily: font('semibold'),
     color: PALETTE.text.light,
     fontSize: 15,
     fontWeight: '600',

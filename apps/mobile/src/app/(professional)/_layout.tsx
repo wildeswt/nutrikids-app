@@ -4,6 +4,9 @@ import { Drawer, DrawerContentScrollView, DrawerItemList } from 'expo-router/dra
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { PALETTE } from '../../constants/colors.js';
+import { RADIUS_PILL } from '../../constants/layout.js';
+import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
 
 type DrawerContentProps = Parameters<
@@ -21,7 +24,7 @@ export function CustomDrawerContent(props: DrawerContentProps) {
       <DrawerContentScrollView contentContainerStyle={styles.drawerScroll}>
         <View style={styles.drawerHeader}>
           <View style={styles.avatar}>
-            <Ionicons name="medical" size={28} color="#FFFFFF" />
+            <Ionicons name="medical" size={28} color={PALETTE.text.light} />
           </View>
           <Text style={styles.userName}>
             {user?.firstName} {user?.lastName}
@@ -43,7 +46,7 @@ export function CustomDrawerContent(props: DrawerContentProps) {
             style={({ pressed }) => [styles.switchButton, pressed && styles.buttonPressed]}
             onPress={() => void switchRole(USER_ROLES.CAREGIVER)}
           >
-            <Ionicons name="swap-horizontal" size={18} color="#15803D" />
+            <Ionicons name="swap-horizontal" size={18} color={PALETTE.primary} />
             <Text style={styles.switchButtonText}>{t('drawer.switchToCaregiver')}</Text>
           </Pressable>
         )}
@@ -52,7 +55,7 @@ export function CustomDrawerContent(props: DrawerContentProps) {
           style={({ pressed }) => [styles.logoutButton, pressed && styles.buttonPressed]}
           onPress={() => void signOut()}
         >
-          <Ionicons name="log-out-outline" size={18} color="#DC2626" />
+          <Ionicons name="log-out-outline" size={18} color={PALETTE.feedback.error} />
           <Text style={styles.logoutButtonText}>{t('drawer.logout')}</Text>
         </Pressable>
       </View>
@@ -67,11 +70,12 @@ export default function ProfessionalDrawerLayout() {
       defaultStatus="closed"
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
-        headerStyle: { backgroundColor: '#059669' },
-        headerTintColor: '#FFFFFF',
-        headerTitleStyle: { fontWeight: '700' },
-        drawerActiveTintColor: '#059669',
-        drawerInactiveTintColor: '#4B5563',
+        headerStyle: { backgroundColor: PALETTE.primary },
+        headerTintColor: PALETTE.text.light,
+        headerTitleStyle: { fontFamily: font('semibold'), fontWeight: '600' },
+        drawerActiveTintColor: PALETTE.primary,
+        drawerInactiveTintColor: PALETTE.text.body,
+        drawerStyle: { backgroundColor: PALETTE.background },
       }}
     >
       <Drawer.Screen
@@ -170,15 +174,16 @@ export default function ProfessionalDrawerLayout() {
 const styles = StyleSheet.create({
   drawerContainer: {
     flex: 1,
+    backgroundColor: PALETTE.background,
   },
   drawerScroll: {
     paddingTop: 0,
   },
   drawerHeader: {
     padding: 20,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: PALETTE.primaryLight,
     borderBottomWidth: 1,
-    borderBottomColor: '#D1FAE5',
+    borderBottomColor: PALETTE.border.default,
     marginBottom: 10,
     alignItems: 'flex-start',
     gap: 4,
@@ -187,34 +192,37 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#059669',
+    backgroundColor: PALETTE.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6,
   },
   userName: {
+    fontFamily: font('semibold'),
     fontSize: 16,
-    fontWeight: '700',
-    color: '#065F46',
+    fontWeight: '600',
+    color: PALETTE.primary,
   },
   userEmail: {
+    fontFamily: font('regular'),
     fontSize: 13,
-    color: '#4B5563',
+    color: PALETTE.text.body,
   },
   specialtyBadge: {
     marginTop: 4,
+    fontFamily: font('semibold'),
     fontSize: 11,
-    fontWeight: '700',
-    color: '#047857',
-    backgroundColor: '#A7F3D0',
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    borderRadius: 6,
+    fontWeight: '600',
+    color: PALETTE.primary,
+    backgroundColor: PALETTE.background,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+    borderRadius: 12,
     textTransform: 'capitalize',
   },
   drawerFooter: {
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: PALETTE.border.default,
     padding: 16,
     gap: 10,
   },
@@ -222,29 +230,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: PALETTE.primaryLight,
     paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    borderRadius: RADIUS_PILL,
   },
   switchButtonText: {
+    fontFamily: font('semibold'),
     fontSize: 14,
     fontWeight: '600',
-    color: '#15803D',
+    color: PALETTE.primary,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: PALETTE.feedback.errorBg,
     paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    borderRadius: RADIUS_PILL,
   },
   logoutButtonText: {
+    fontFamily: font('semibold'),
     fontSize: 14,
     fontWeight: '600',
-    color: '#DC2626',
+    color: PALETTE.feedback.error,
   },
   buttonPressed: {
     opacity: 0.85,

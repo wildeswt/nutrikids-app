@@ -150,6 +150,8 @@
     },
     "nextCheckupLabel": "Próximo control",
     "nextCheckupPlaceholder": "DD/MM/AAAA (opcional)",
+    "openDatePicker": "Elegir fecha en el calendario",
+    "closeDatePicker": "Listo",
     "nextCheckupShortcuts": {
       "7": "1 semana",
       "14": "2 semanas",

@@ -5,6 +5,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UseFollowUpFormResult } from '../hooks/useFollowUpForm.js';
 import { CHILD_ID, makeDetail } from './alerts-fixtures.js';
 
+const runtime = vi.hoisted(() => ({
+  slots: [] as unknown[],
+  index: 0,
+}));
+
 const mocks = vi.hoisted(() => ({
   back: vi.fn(),
   replace: vi.fn(),
@@ -12,8 +17,6 @@ const mocks = vi.hoisted(() => ({
   useFollowUpForm: vi.fn(),
   params: {} as Record<string, string>,
   effects: [] as (() => void)[],
-  menuOpen: false,
-  setMenuOpen: vi.fn(),
 }));
 
 vi.mock('expo-router', () => ({
@@ -27,8 +30,20 @@ vi.mock('react', async (importOriginal) => {
   return {
     ...actual,
     useEffect: (effect: () => void) => mocks.effects.push(effect),
-    // The screen's only state is whether the type menu is open.
-    useState: () => [mocks.menuOpen, mocks.setMenuOpen],
+    useState: (initial: unknown) => {
+      const slot = runtime.index++;
+      if (!(slot in runtime.slots)) {
+        runtime.slots[slot] =
+          typeof initial === 'function' ? (initial as () => unknown)() : initial;
+      }
+      const set = (value: unknown) => {
+        runtime.slots[slot] =
+          typeof value === 'function'
+            ? (value as (prev: unknown) => unknown)(runtime.slots[slot])
+            : value;
+      };
+      return [runtime.slots[slot], set];
+    },
   };
 });
 
@@ -99,6 +114,7 @@ function setHook(overrides: Partial<UseFollowUpFormResult> = {}) {
 }
 
 interface Node {
+  type?: unknown;
   props?: Record<string, unknown>;
 }
 
@@ -113,15 +129,23 @@ function find(node: unknown, predicate: (n: Node) => boolean): Node | null {
   if (!node || typeof node !== 'object') return null;
   const el = node as Node;
   if (predicate(el)) return el;
-  const children = el.props?.['children'];
-  for (const child of Array.isArray(children) ? children : [children]) {
-    const found = find(child, predicate);
+  if (typeof el.type === 'function' && el.type.name === 'ScreenHeader') {
+    const rendered = (el.type as (props: Record<string, unknown>) => unknown)(el.props ?? {});
+    const found = find(rendered, predicate);
     if (found) return found;
+  }
+  const branches = [el.props?.['children'], el.props?.['rightIcon']];
+  for (const branch of branches) {
+    for (const child of Array.isArray(branch) ? branch : [branch]) {
+      const found = find(child, predicate);
+      if (found) return found;
+    }
   }
   return null;
 }
 
 function byTestId(testID: string): Node | null {
+  runtime.index = 0;
   let tree: unknown = null;
   function Capture() {
     tree = FollowUpScreen();
@@ -131,14 +155,18 @@ function byTestId(testID: string): Node | null {
   return find(tree, (n) => n.props?.['testID'] === testID);
 }
 
-const html = () => renderToString(React.createElement(FollowUpScreen));
+const html = () => {
+  runtime.index = 0;
+  return renderToString(React.createElement(FollowUpScreen));
+};
 const press = (testID: string) => (byTestId(testID)?.props?.['onPress'] as () => unknown)();
 
 describe('FollowUpScreen (NK-34)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.effects.length = 0;
-    mocks.menuOpen = false;
+    runtime.slots.length = 0;
+    runtime.index = 0;
     mocks.params = { alertId: ALERT_ID, childId: CHILD_ID };
     mocks.canGoBack.mockReturnValue(true);
     save.mockResolvedValue('sent');
@@ -174,11 +202,13 @@ describe('FollowUpScreen (NK-34)', () => {
     it('opens and closes from the selector', () => {
       expect(html()).not.toContain('follow-up-type-menu');
       press('follow-up-type');
-      expect(mocks.setMenuOpen).toHaveBeenCalled();
+      expect(html()).toContain('follow-up-type-menu');
+      press('follow-up-type');
+      expect(html()).not.toContain('follow-up-type-menu');
     });
 
     it('lists the four follow-up types when open and picks one', () => {
-      mocks.menuOpen = true;
+      press('follow-up-type');
       const out = html();
       expect(out).toContain('follow-up-type-menu');
       for (const label of [
@@ -192,7 +222,7 @@ describe('FollowUpScreen (NK-34)', () => {
 
       press('follow-up-type-intervention');
       expect(setForm).toHaveBeenCalledWith({ type: 'intervention' });
-      expect(mocks.setMenuOpen).toHaveBeenCalledWith(false);
+      expect(html()).not.toContain('follow-up-type-menu');
     });
 
     it('shows the chosen type', () => {
@@ -209,6 +239,35 @@ describe('FollowUpScreen (NK-34)', () => {
       expect(setForm).toHaveBeenCalledWith({
         nextCheckupText: expect.stringMatching(/^\d{2}\/\d{2}\/\d{4}$/),
       });
+    });
+
+    it('displays the chosen date in long format', () => {
+      setHook({
+        form: { type: null, details: '', nextCheckupText: '25/10/2026', establish: true },
+      });
+      const out = html();
+      expect(out).toContain('25 de octubre de 2026');
+      expect(out).not.toContain('25/10/2026');
+    });
+
+    it('opens the date picker from the calendar icon and updates the date on selection', () => {
+      expect(byTestId('follow-up-date-picker')).toBeNull();
+      press('follow-up-date-picker-button');
+      expect(byTestId('follow-up-date-picker')).not.toBeNull();
+
+      const picker = byTestId('follow-up-date-picker');
+      expect(picker?.props?.['minimumDate']).toBeInstanceOf(Date);
+      const onChange = picker?.props?.['onChange'] as (
+        event: { type: string },
+        date?: Date,
+      ) => void;
+      onChange({ type: 'set' }, new Date(2026, 9, 25));
+      expect(setForm).toHaveBeenCalledWith({ nextCheckupText: '25/10/2026' });
+    });
+
+    it('opens the date picker when tapping the date field itself', () => {
+      press('follow-up-next-checkup');
+      expect(html()).toContain('follow-up-date-picker');
     });
 
     it('can remove the chosen date', () => {

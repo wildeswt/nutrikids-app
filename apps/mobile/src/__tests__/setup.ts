@@ -1,4 +1,10 @@
+import React from 'react';
 import { vi } from 'vitest';
+
+// @react-native-community/datetimepicker ships Flow source that Vite/Rolldown cannot parse in Node.
+vi.mock('@react-native-community/datetimepicker', () => ({
+  default: (props: Record<string, unknown>) => React.createElement('mock-date-picker', props),
+}));
 
 // expo-constants mock for Node/Vitest.
 vi.mock('expo-constants', () => ({

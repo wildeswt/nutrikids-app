@@ -14,14 +14,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../constants/colors.js';
+import { RADIUS_PILL, SCREEN_MARGIN } from '../constants/layout.js';
+import { font } from '../constants/typography.js';
 import { useConversations } from '../hooks/useConversations.js';
 import { formatShortDate, formatTime } from '../i18n/format.js';
 import i18n from '../i18n/index.js';
+import { ChildBanner } from './ChildBanner.js';
+import { Card } from './ui/Card.js';
+import { PrimaryButton } from './ui/PrimaryButton.js';
+import { ScreenHeader } from './ui/ScreenHeader.js';
 
 const LOCAL_COLORS = {
   white: '#FFFFFF',
-  pillTrack: '#FFEADF',
-  divider: '#E5E7EB',
 } as const;
 
 export interface ConversationListProps {
@@ -185,40 +189,39 @@ export function ConversationList({
           const timeLabel = formatConversationTime(item.lastMessage.sentAt);
           const key = `${item.childId}:${item.participant.userId}`;
           return (
-            <Pressable
-              key={key}
-              style={({ pressed }) => [styles.threadItem, pressed && styles.pressed]}
-              onPress={() => onSelectConversation(item)}
-              accessibilityRole="button"
-              accessibilityLabel={t('caregiver:messages.threadA11y', { title })}
-              testID={`conversation-item-${item.childId}-${item.participant.userId}`}
-            >
-              <View style={styles.threadMainRow}>
-                <View style={styles.threadContent}>
-                  <Text style={styles.threadTitle}>{title}</Text>
-                  {subtitle ? <Text style={styles.threadSubtitle}>{subtitle}</Text> : null}
-                  <Text style={styles.threadPreview} numberOfLines={2}>
-                    {item.lastMessage.body}
-                  </Text>
-                </View>
+            <Card key={key} style={styles.threadCard}>
+              <Pressable
+                style={({ pressed }) => [styles.threadItem, pressed && styles.pressed]}
+                onPress={() => onSelectConversation(item)}
+                accessibilityRole="button"
+                accessibilityLabel={t('caregiver:messages.threadA11y', { title })}
+                testID={`conversation-item-${item.childId}-${item.participant.userId}`}
+              >
+                <View style={styles.threadMainRow}>
+                  <View style={styles.threadContent}>
+                    <Text style={styles.threadTitle}>{title}</Text>
+                    {subtitle ? <Text style={styles.threadSubtitle}>{subtitle}</Text> : null}
+                    <Text style={styles.threadPreview} numberOfLines={2}>
+                      {item.lastMessage.body}
+                    </Text>
+                  </View>
 
-                <View style={styles.threadMetaColumn}>
-                  <Text style={styles.threadTime}>{timeLabel}</Text>
-                  {item.unreadCount > 0 ? (
-                    <View
-                      style={styles.unreadBadge}
-                      testID={`conversation-unread-${item.childId}-${item.participant.userId}`}
-                    >
-                      <Text style={styles.unreadBadgeText}>{item.unreadCount}</Text>
-                    </View>
-                  ) : (
-                    <View style={styles.emptyBadgePlaceholder} />
-                  )}
+                  <View style={styles.threadMetaColumn}>
+                    <Text style={styles.threadTime}>{timeLabel}</Text>
+                    {item.unreadCount > 0 ? (
+                      <View
+                        style={styles.unreadBadge}
+                        testID={`conversation-unread-${item.childId}-${item.participant.userId}`}
+                      >
+                        <Text style={styles.unreadBadgeText}>{item.unreadCount}</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.emptyBadgePlaceholder} />
+                    )}
+                  </View>
                 </View>
-              </View>
-
-              <View style={styles.threadDivider} />
-            </Pressable>
+              </Pressable>
+            </Card>
           );
         })}
       </View>
@@ -238,28 +241,22 @@ export function ConversationList({
         />
       }
     >
-      {onBack ? (
-        <Pressable
-          style={({ pressed }) => [styles.backRow, pressed && styles.pressed]}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel={t('caregiver:messages.back')}
-          testID="conversations-back-button"
-        >
-          <Ionicons name="chevron-back" size={20} color={PALETTE.text.title} />
-          <Text style={styles.backText}>{t('caregiver:messages.back')}</Text>
-        </Pressable>
-      ) : null}
+      <ScreenHeader
+        title={t('caregiver:messages.title')}
+        showBack={Boolean(onBack)}
+        onBack={onBack}
+        backLabel={t('caregiver:messages.back')}
+        style={styles.header}
+        testID="conversations-header"
+      />
 
-      <Text style={styles.screenTitle}>{t('caregiver:messages.title')}</Text>
-
-      <View style={styles.bannerCard}>
-        <Text style={styles.bannerText}>
-          {mode === 'caregiver'
-            ? t('caregiver:messages.banner')
-            : t('professional:messages.banner')}
-        </Text>
-      </View>
+      <ChildBanner
+        name={
+          mode === 'caregiver' ? t('caregiver:messages.banner') : t('professional:messages.banner')
+        }
+        style={styles.bannerCard}
+        testID="conversations-banner"
+      />
 
       <View style={styles.filterPillContainer}>
         <Pressable
@@ -297,15 +294,13 @@ export function ConversationList({
 
       {/* En el profesional no hay "Nuevo mensaje" en esta tarea (NK-50): solo responde en conversaciones existentes. */}
       {mode === 'caregiver' && onNewMessage ? (
-        <Pressable
-          style={({ pressed }) => [styles.newMsgButton, pressed && styles.newMsgButtonPressed]}
-          onPress={onNewMessage}
-          accessibilityRole="button"
-          accessibilityLabel={t('caregiver:messages.newMessage')}
-          testID="conversations-new-message"
-        >
-          <Text style={styles.newMsgButtonText}>{t('caregiver:messages.newMessage')}</Text>
-        </Pressable>
+        <View style={styles.newMsgWrapper}>
+          <PrimaryButton
+            label={t('caregiver:messages.newMessage')}
+            onPress={onNewMessage}
+            testID="conversations-new-message"
+          />
+        </View>
       ) : null}
     </ScrollView>
   );
@@ -327,82 +322,55 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.background,
   },
   scrollContent: {
-    paddingHorizontal: 22,
-    paddingTop: 10,
-    paddingBottom: 28,
+    paddingHorizontal: SCREEN_MARGIN,
+    paddingTop: 12,
+    paddingBottom: 32,
   },
-  backRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 4,
-    marginBottom: 14,
-    paddingVertical: 4,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: PALETTE.text.title,
-  },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: PALETTE.text.title,
+  header: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
     marginBottom: 16,
   },
   bannerCard: {
-    backgroundColor: PALETTE.secondary,
-    borderRadius: 24,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    marginBottom: 18,
-    shadowColor: PALETTE.secondary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  bannerText: {
-    color: LOCAL_COLORS.white,
-    fontSize: 15,
-    fontWeight: '700',
-    textAlign: 'center',
+    marginBottom: 20,
   },
   filterPillContainer: {
     flexDirection: 'row',
-    alignSelf: 'center',
-    backgroundColor: LOCAL_COLORS.pillTrack,
-    borderRadius: 22,
-    padding: 3,
-    marginBottom: 24,
+    backgroundColor: PALETTE.primary,
+    borderRadius: RADIUS_PILL,
+    padding: 4,
+    marginBottom: 22,
   },
   filterTab: {
-    paddingVertical: 7,
-    paddingHorizontal: 28,
-    borderRadius: 18,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 21,
   },
   filterTabActive: {
-    backgroundColor: PALETTE.secondary,
-    shadowColor: PALETTE.secondary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 2,
+    backgroundColor: PALETTE.surface,
   },
   filterTabText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: PALETTE.text.body,
+    fontFamily: font('medium'),
+    fontWeight: '500',
+    fontSize: 14,
+    color: PALETTE.text.light,
   },
   filterTabTextActive: {
-    color: LOCAL_COLORS.white,
-    fontWeight: '700',
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    color: PALETTE.primary,
   },
   threadsList: {
-    marginBottom: 28,
+    gap: 14,
+    marginBottom: 24,
+  },
+  threadCard: {
+    padding: 16,
   },
   threadItem: {
-    paddingVertical: 6,
+    paddingVertical: 2,
   },
   threadMainRow: {
     flexDirection: 'row',
@@ -414,17 +382,20 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   threadTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 17,
-    fontWeight: '800',
     color: PALETTE.primary,
     marginBottom: 3,
   },
   threadSubtitle: {
+    fontFamily: font('regular'),
     fontSize: 12,
     color: PALETTE.text.muted,
     marginBottom: 6,
   },
   threadPreview: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.body,
     lineHeight: 19,
@@ -435,6 +406,7 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
   threadTime: {
+    fontFamily: font('regular'),
     fontSize: 12,
     color: PALETTE.text.muted,
     marginBottom: 8,
@@ -449,18 +421,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   unreadBadgeText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: LOCAL_COLORS.white,
     fontSize: 11,
-    fontWeight: '700',
   },
   emptyBadgePlaceholder: {
     width: 22,
     height: 22,
-  },
-  threadDivider: {
-    height: 1,
-    backgroundColor: LOCAL_COLORS.divider,
-    marginTop: 18,
   },
   stateBox: {
     alignItems: 'center',
@@ -471,18 +439,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emptyTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 17,
-    fontWeight: '700',
     color: PALETTE.text.title,
     textAlign: 'center',
   },
   stateText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.muted,
     textAlign: 'center',
     lineHeight: 20,
   },
   errorText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.feedback.error,
     textAlign: 'center',
@@ -491,42 +462,27 @@ const styles = StyleSheet.create({
   retryButton: {
     marginTop: 4,
     backgroundColor: PALETTE.primary,
-    borderRadius: 22,
+    borderRadius: RADIUS_PILL,
     paddingHorizontal: 22,
     paddingVertical: 10,
   },
   retryButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: LOCAL_COLORS.white,
     fontSize: 14,
-    fontWeight: '700',
   },
   disclaimerText: {
+    fontFamily: font('regular'),
     fontSize: 12,
     lineHeight: 18,
     color: PALETTE.text.muted,
     textAlign: 'center',
     paddingHorizontal: 12,
-    marginBottom: 28,
+    marginBottom: 24,
   },
-  newMsgButton: {
-    backgroundColor: PALETTE.primary,
-    borderRadius: 28,
-    height: 54,
+  newMsgWrapper: {
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: PALETTE.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  newMsgButtonPressed: {
-    backgroundColor: PALETTE.primaryPressed,
-  },
-  newMsgButtonText: {
-    color: LOCAL_COLORS.white,
-    fontSize: 16,
-    fontWeight: '700',
   },
   pressed: {
     opacity: 0.75,

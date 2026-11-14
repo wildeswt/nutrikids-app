@@ -154,7 +154,6 @@ export default function CaregiverTabsLayout() {
         options={{
           title: t('tabs.reminders'),
           headerTitle: t('tabs.remindersHeader'),
-          tabBarStyle: { display: 'none' },
           tabBarItemStyle: { display: 'none' },
           tabBarButton: () => null,
         }}
@@ -214,6 +213,16 @@ export default function CaregiverTabsLayout() {
         options={{
           title: t('tabs.privacy'),
           headerTitle: t('tabs.privacyHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="my-children"
+        options={{
+          title: t('tabs.myChildren'),
+          headerTitle: t('tabs.myChildrenHeader'),
           tabBarStyle: { display: 'none' },
           tabBarItemStyle: { display: 'none' },
           tabBarButton: () => null,

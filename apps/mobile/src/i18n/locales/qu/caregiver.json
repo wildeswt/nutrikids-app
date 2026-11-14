@@ -33,7 +33,9 @@
     "editChild": "Corregir datos",
     "editChildHeader": "Corregir datos del niño",
     "privacy": "Privacidad e historial",
-    "privacyHeader": "Privacidad e historial"
+    "privacyHeader": "Privacidad e historial",
+    "myChildren": "Mis niños",
+    "myChildrenHeader": "Mis niños"
   },
   "home": {
     "notifications": "Yuyachikkuna",
@@ -84,7 +86,26 @@
     "learnLoading": "Buscando artículos para ti...",
     "learnConnect": "Conéctate una vez para descargar los artículos.",
     "learnEmpty": "Pronto habrá artículos para esta edad.",
-    "articleA11y": "Leer el artículo: {{title}}"
+    "articleA11y": "Leer el artículo: {{title}}",
+    "myChildrenLink": "Mis niños",
+    "myChildrenA11y": "Ver todos mis niños",
+    "registerFeeding": "Registrar alimentación",
+    "registerFeedingA11y": "Registrar alimentación de {{name}}",
+    "messageLoading": "Cargando mensajes...",
+    "messageEmpty": "Aún no tienes mensajes de tu equipo de salud.",
+    "messageError": "No pudimos cargar tu último mensaje.",
+    "checkupLoading": "Cargando próximo control...",
+    "checkupEmpty": "No tienes controles próximos agendados.",
+    "checkupError": "No pudimos cargar tu próximo control.",
+    "timeJustNow": "Hace un momento",
+    "timeMinutesAgo_one": "Hace {{count}} min",
+    "timeMinutesAgo_other": "Hace {{count}} min",
+    "timeHoursAgo_one": "Hace {{count}} h",
+    "timeHoursAgo_other": "Hace {{count}} h"
+  },
+  "myChildren": {
+    "title": "Mis niños",
+    "selectChildA11y": "Elegir a {{name}} como niño activo"
   },
   "addCheckup": {
     "back": "Tikray",
@@ -93,6 +114,8 @@
     "changeChild": "Shuk wawata akllay",
     "dateLabel": "Kamay puncha",
     "datePlaceholder": "Shina: {{example}}",
+    "openDatePicker": "Abrir selector de fecha",
+    "closeDatePicker": "Listo",
     "positionLabel": "¿Imashinata tupurkanki?",
     "positions": {
       "STANDING": "Shayarishka",
@@ -181,23 +204,28 @@
     "chartSubtitle": "OMS-pak shuyashkawan chimpapurashka",
     "indicators": {
       "PE": {
+        "code": "P/E",
         "short": "Llasay",
         "name": "¿Paypak llasayka watakunapak allichu kan?"
       },
       "TE": {
+        "code": "T/E",
         "short": "Hatunkay",
         "name": "¿Paypak hatunkayka watakunapak allichu kan?"
       },
       "PT": {
+        "code": "P/T",
         "short": "Llasay/Hatunkay",
         "name": "¿Paypak llasayka hatunkaypak allichu kan?"
       },
       "IMCE": {
+        "code": "IMC/E",
         "short": "IMC",
         "name": "¿Paypak IMC (llasaypash hatunkaypash) watakunapak allichu kan?"
       }
     },
     "legendReference": "Shuyashka (OMS)",
+    "lastRecordTitle": "Último control",
     "lastRecord": "Kipa kamay - {{date}}",
     "weight": "Llasay",
     "height": "Hatunkay",
@@ -215,7 +243,15 @@
       "CAREGIVER": "Kikin",
       "PROFESSIONAL": "Hampik tantanakuy"
     },
-    "chartLoading": "Rikuchikka shamukun..."
+    "chartLoading": "Rikuchikka shamukun...",
+    "infoModal": {
+      "title": "¿Qué muestra esta gráfica?",
+      "whoBandTitle": "Banda verde: lo esperado (OMS)",
+      "whoBand": "Muestra el rango esperado por la Organización Mundial de la Salud según la edad o estatura. Las líneas punteadas marcan los bordes superior e inferior.",
+      "childLineTitle": "Línea naranja: tu niño",
+      "childLine": "Cada punto es un control registrado y la línea muestra cómo va cambiando con el tiempo.",
+      "close": "Entendido"
+    }
   },
   "messages": {
     "back": "Tikray",
@@ -326,6 +362,10 @@
     "sexMaleA11y": "Kari wawata akllay",
     "sexFemaleA11y": "Warmi wawata akllay",
     "birthDateLabel": "Wacharishka puncha",
+    "birthDatePlaceholder": "Ej. {{example}}",
+    "birthDateInvalid": "Escribe la fecha como día/mes/año. Ejemplo: {{example}}.",
+    "openDatePicker": "Abrir selector de fecha",
+    "closeDatePicker": "Listo",
     "ageRangeHelper": "{{min}} killamanta {{max}} killakaman kana (1 watamanta 5 watakaman).",
     "day": "Puncha",
     "dayPlaceholder": "PP",
@@ -334,6 +374,8 @@
     "year": "Wata",
     "yearPlaceholder": "WWWW",
     "calculatedAge": "Watakuna: {{age}} ({{months}} killa)",
+    "ageInRangeNotice": "Edad: {{age}}. Está dentro del rango de 1 a 5 años que atiende NutriKids.",
+    "linkedAccountNotice": "Quedará vinculado a tu cuenta: {{name}} (cuidador/a).",
     "relationshipLabel": "¿Wawapak imatak kanki?",
     "legalRepA11y": "Ñukami wawapak kamachik kamak kani",
     "legalRepLabel": "Ñukami wawapak kamachik kamak kani, paypak willaykunata killkakatinkapak ari ninata ushani.",
@@ -341,6 +383,7 @@
   },
   "reminders": {
     "title": "Recordatorios",
+    "subtitle": "Tus cuidados, a tiempo.",
     "tabUpcoming": "Próximos ({{count}})",
     "tabCompleted": "Completados ({{count}})",
     "todayTitle": "Para hoy",
@@ -443,6 +486,8 @@
   "myData": {
     "back": "Volver",
     "title": "Mis datos",
+    "bannerTitle": "{{name}} · {{role}}",
+    "bannerSubtitle": "Gestiona tu cuenta y tu información.",
     "accountTitle": "Mi cuenta",
     "name": "Nombre",
     "email": "Correo",
@@ -456,6 +501,7 @@
     "fixData": "Corregir datos",
     "fixDataA11y": "Corregir los datos de {{name}}",
     "privacyLink": "Privacidad e historial",
+    "privacySubtitle": "Consentimiento, exportación y eliminación",
     "loading": "Cargando tus datos...",
     "loadError": "No pudimos cargar a tus niños.",
     "retry": "Intentar de nuevo",
@@ -514,6 +560,16 @@
     "title": "Privacidad e historial",
     "intro": "Aquí decides sobre los datos de tus niños. Solo el representante legal puede usar estas opciones.",
     "consentTitle": "Permiso para guardar los datos",
+    "consentStatusActive": "Vigente · Aceptado el {{date}}",
+    "consentStatusRevoked": "Retirado · {{date}}",
+    "consentStatusNone": "Sin consentimiento registrado",
+    "consentActiveHint": "Puedes retirar la autorización para el tratamiento de los datos de {{name}}.",
+    "consentRevokedHint": "Mientras no vuelvas a autorizarlo, no se podrán anotar nuevos controles de {{name}}.",
+    "readConsent": "Leer consentimiento",
+    "revokeConsent": "Revocar consentimiento",
+    "grantConsent": "Dar consentimiento",
+    "backToMyData": "Volver a mis datos",
+    "selectChildA11y": "Elegir niño para gestionar su privacidad",
     "exportTitle": "Historial de crecimiento",
     "exportDescription": "Descarga los controles de {{name}} en un archivo CSV, que se abre en cualquier hoja de cálculo.",
     "exportButton": "Exportar historial (CSV)",

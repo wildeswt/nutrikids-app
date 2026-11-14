@@ -1,17 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LoginInputSchema } from '@nutrikids/shared';
 import { Link, useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AuthBrandHeader, authStyles } from '../../components/auth/AuthBrandHeader.js';
 import {
   KeyboardAwareScrollView,
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
-import { APP_ASSETS } from '../../constants/assets.js';
+import { PillField } from '../../components/ui/PillField.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { BackButton } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
 import { loginRequest } from '../../lib/api.js';
 import {
@@ -88,53 +92,39 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={authStyles.container}>
       {/* Botón Volver */}
-      <View style={styles.topBar}>
-        <Pressable
-          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+      <View style={authStyles.topBar}>
+        <BackButton
+          label={t('common:actions.back')}
+          accessibilityLabel={t('common:actions.goBack')}
           onPress={() => router.back()}
           hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={t('common:actions.goBack')}
-        >
-          <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-        </Pressable>
+        />
       </View>
 
       <KeyboardAwareScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={authStyles.scrollView}
+        contentContainerStyle={authStyles.scrollContent}
       >
-        {/* Header con Logo y Slogan estilo UI final */}
-        <View style={styles.brandHeader}>
-          <Image
-            source={APP_ASSETS.LOGO}
-            style={styles.logo}
-            resizeMode="contain"
-            accessibilityLabel={t('common:brand.logoLabel')}
-          />
-          <Text style={styles.slogan}>{t('common:brand.slogan')}</Text>
-          <View style={styles.orangeDivider} />
-        </View>
+        <AuthBrandHeader />
 
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>
+        <View style={authStyles.formContainer}>
+          <Text style={authStyles.title}>
             {requiresTwoFactor ? t('login.twoFactorTitle') : t('login.title')}
           </Text>
           {generalError && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorBoxText}>{generalError}</Text>
+            <View style={authStyles.errorBox}>
+              <Text style={authStyles.errorBoxText}>{generalError}</Text>
             </View>
           )}
 
           {!requiresTwoFactor ? (
             <>
               {/* Email Field */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t('login.emailLabel')}</Text>
+              <PillField label={t('login.emailLabel')} error={fieldErrors['email']}>
                 <KeyboardAwareTextInput
-                  style={[styles.input, fieldErrors['email'] ? styles.inputError : undefined]}
+                  style={authStyles.pillInput}
                   value={email}
                   onChangeText={(text) => {
                     setEmail(text);
@@ -143,7 +133,7 @@ export default function LoginScreen() {
                     }
                   }}
                   placeholder={t('login.emailPlaceholder')}
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={PALETTE.input.placeholder}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -152,39 +142,13 @@ export default function LoginScreen() {
                   blurOnSubmit={false}
                   editable={!loading}
                 />
-                {fieldErrors['email'] ? (
-                  <Text style={styles.errorText}>{fieldErrors['email']}</Text>
-                ) : null}
-              </View>
+              </PillField>
 
               {/* Password Field */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t('login.passwordLabel')}</Text>
-                <View
-                  style={[
-                    styles.passwordContainer,
-                    fieldErrors['password'] ? styles.inputError : undefined,
-                  ]}
-                >
-                  <KeyboardAwareTextInput
-                    ref={passwordRef}
-                    style={styles.passwordInput}
-                    value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      if (fieldErrors['password']) {
-                        setFieldErrors((prev) => ({ ...prev, password: '' }));
-                      }
-                    }}
-                    placeholder={t('login.passwordPlaceholder')}
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    returnKeyType="done"
-                    onSubmitEditing={() => void handleLoginSubmit()}
-                    editable={!loading}
-                  />
+              <PillField
+                label={t('login.passwordLabel')}
+                error={fieldErrors['password']}
+                rightIcon={
                   <Pressable
                     style={styles.eyeButton}
                     onPress={() => setShowPassword((prev) => !prev)}
@@ -193,13 +157,34 @@ export default function LoginScreen() {
                       showPassword ? t('common:password.hide') : t('common:password.show')
                     }
                   >
-                    <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#374151" />
+                    <Ionicons
+                      name={showPassword ? 'eye-off' : 'eye'}
+                      size={20}
+                      color={PALETTE.text.title}
+                    />
                   </Pressable>
-                </View>
-                {fieldErrors['password'] ? (
-                  <Text style={styles.errorText}>{fieldErrors['password']}</Text>
-                ) : null}
-              </View>
+                }
+              >
+                <KeyboardAwareTextInput
+                  ref={passwordRef}
+                  style={authStyles.pillInput}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (fieldErrors['password']) {
+                      setFieldErrors((prev) => ({ ...prev, password: '' }));
+                    }
+                  }}
+                  placeholder={t('login.passwordPlaceholder')}
+                  placeholderTextColor={PALETTE.input.placeholder}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={() => void handleLoginSubmit()}
+                  editable={!loading}
+                />
+              </PillField>
 
               {/* Forgot Password Link */}
               <View style={styles.forgotPasswordContainer}>
@@ -211,17 +196,12 @@ export default function LoginScreen() {
               </View>
 
               {/* Submit Button */}
-              <Pressable
-                style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
+              <PrimaryButton
+                label={t('login.submit')}
                 onPress={() => void handleLoginSubmit()}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.submitButtonText}>{t('login.submit')}</Text>
-                )}
-              </Pressable>
+                loading={loading}
+                style={styles.submitButton}
+              />
             </>
           ) : (
             <>
@@ -229,10 +209,9 @@ export default function LoginScreen() {
               <Text style={styles.stepDescription}>{t('login.twoFactorDescription')}</Text>
 
               {!isUsingRecoveryCode ? (
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>{t('login.totpLabel')}</Text>
+                <PillField label={t('login.totpLabel')} error={fieldErrors['totpCode']}>
                   <KeyboardAwareTextInput
-                    style={[styles.input, fieldErrors['totpCode'] ? styles.inputError : undefined]}
+                    style={authStyles.pillInput}
                     value={totpCode}
                     onChangeText={(text) => {
                       setTotpCode(text.replace(/\D/g, '').slice(0, 6));
@@ -241,23 +220,16 @@ export default function LoginScreen() {
                       }
                     }}
                     placeholder={t('login.totpPlaceholder')}
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={PALETTE.input.placeholder}
                     keyboardType="number-pad"
                     maxLength={6}
                     editable={!loading}
                   />
-                  {fieldErrors['totpCode'] ? (
-                    <Text style={styles.errorText}>{fieldErrors['totpCode']}</Text>
-                  ) : null}
-                </View>
+                </PillField>
               ) : (
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>{t('login.recoveryLabel')}</Text>
+                <PillField label={t('login.recoveryLabel')} error={fieldErrors['recoveryCode']}>
                   <KeyboardAwareTextInput
-                    style={[
-                      styles.input,
-                      fieldErrors['recoveryCode'] ? styles.inputError : undefined,
-                    ]}
+                    style={authStyles.pillInput}
                     value={recoveryCode}
                     onChangeText={(text) => {
                       setRecoveryCode(text);
@@ -266,15 +238,12 @@ export default function LoginScreen() {
                       }
                     }}
                     placeholder={t('login.recoveryPlaceholder')}
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={PALETTE.input.placeholder}
                     autoCapitalize="none"
                     autoCorrect={false}
                     editable={!loading}
                   />
-                  {fieldErrors['recoveryCode'] ? (
-                    <Text style={styles.errorText}>{fieldErrors['recoveryCode']}</Text>
-                  ) : null}
-                </View>
+                </PillField>
               )}
 
               {/* Alternate between TOTP and Recovery Code */}
@@ -291,17 +260,12 @@ export default function LoginScreen() {
                 </Text>
               </Pressable>
 
-              <Pressable
-                style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
+              <PrimaryButton
+                label={t('login.verifySubmit')}
                 onPress={() => void handleLoginSubmit()}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.submitButtonText}>{t('login.verifySubmit')}</Text>
-                )}
-              </Pressable>
+                loading={loading}
+                style={styles.submitButton}
+              />
 
               <Pressable onPress={handleResetToCredentials} style={styles.cancelTwoFactorButton}>
                 <Text style={styles.cancelTwoFactorText}>{t('login.backToLogin')}</Text>
@@ -311,11 +275,11 @@ export default function LoginScreen() {
 
           {/* Registration Link */}
           {!requiresTwoFactor && (
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerPrompt}>{t('login.noAccount')}</Text>
+            <View style={authStyles.footerPromptRow}>
+              <Text style={authStyles.footerPromptText}>{t('login.noAccount')}</Text>
               <Link href={APP_ROUTES.AUTH.SELECT_ROLE} asChild>
                 <Pressable hitSlop={6}>
-                  <Text style={styles.registerLink}>{t('login.registerLink')}</Text>
+                  <Text style={authStyles.footerPromptLink}>{t('login.registerLink')}</Text>
                 </Pressable>
               </Link>
             </View>
@@ -327,206 +291,46 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: PALETTE.background,
-  },
-  scrollView: {
-    flex: 1,
-    width: '100%',
-  },
-  topBar: {
-    width: '100%',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-    alignItems: 'flex-start',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
-  },
-  backButtonPressed: {
-    opacity: 0.7,
-    backgroundColor: PALETTE.border.subtle,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 48,
-    alignItems: 'center',
-  },
-  brandHeader: {
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 400,
-    marginBottom: 24,
-  },
-  logo: {
-    width: 300,
-    height: 85,
-  },
-  slogan: {
-    fontSize: 16,
-    color: PALETTE.text.body,
-    fontWeight: '500',
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  orangeDivider: {
-    width: '90%',
-    height: 4,
-    backgroundColor: PALETTE.secondary,
-    borderRadius: 2,
-    marginTop: 18,
-  },
-  formContainer: {
-    width: '100%',
-    maxWidth: 380,
-    gap: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: PALETTE.text.title,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  errorBox: {
-    backgroundColor: PALETTE.feedback.errorBg,
-    borderColor: PALETTE.feedback.errorBorder,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-  },
-  errorBoxText: {
-    color: PALETTE.feedback.error,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  inputGroup: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-    marginLeft: 4,
-  },
-  input: {
-    borderWidth: 1.5,
-    borderColor: PALETTE.border.default,
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: PALETTE.text.body,
-    backgroundColor: PALETTE.input.background,
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: PALETTE.border.default,
-    borderRadius: 24,
-    backgroundColor: PALETTE.input.background,
-    paddingRight: 8,
-  },
-  passwordInput: {
-    flex: 1,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: PALETTE.text.body,
-  },
   eyeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  inputError: {
-    borderColor: PALETTE.feedback.error,
-  },
-  errorText: {
-    color: PALETTE.feedback.error,
-    fontSize: 12,
-    marginLeft: 8,
+    padding: 4,
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',
-    marginTop: -4,
+    marginTop: -6,
   },
   forgotPasswordText: {
+    fontFamily: font('medium'),
+    fontWeight: '500',
     fontSize: 13,
     color: PALETTE.primary,
     textDecorationLine: 'underline',
-    fontWeight: '500',
   },
   submitButton: {
-    backgroundColor: PALETTE.primary,
-    paddingVertical: 14,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 8,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  buttonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.99 }],
-  },
-  submitButtonText: {
-    color: PALETTE.text.light,
-    fontSize: 15,
-    fontWeight: '700',
   },
   stepDescription: {
-    fontSize: 13,
+    fontFamily: font('regular'),
+    fontSize: 14,
     color: PALETTE.text.body,
-    lineHeight: 19,
+    lineHeight: 20,
   },
   switchModeButton: {
     marginTop: -4,
   },
   switchModeText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 12,
     color: PALETTE.primary,
-    fontWeight: '600',
   },
   cancelTwoFactorButton: {
     alignItems: 'center',
     paddingVertical: 6,
   },
   cancelTwoFactorText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 13,
     color: PALETTE.text.muted,
-    fontWeight: '600',
-  },
-  registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 12,
-  },
-  registerPrompt: {
-    fontSize: 13,
-    color: PALETTE.text.body,
-  },
-  registerLink: {
-    fontSize: 13,
-    color: PALETTE.primary,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
   },
 });
