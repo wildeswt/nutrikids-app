@@ -1,0 +1,349 @@
+import type * as ReactTypes from 'react';
+import type * as StorageTypes from '../lib/follow-up-storage.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CHILD_ID, makeDetail } from './alerts-fixtures.js';
+
+// Minimal hook runtime so the hook can run outside a renderer and its state can be inspected
+// (the repo has no react-test-renderer / DOM environment).
+const runtime = vi.hoisted(() => ({
+  slots: [] as unknown[],
+  refs: [] as { current: unknown }[],
+  index: 0,
+  refIndex: 0,
+}));
+
+vi.mock('react', async (importOriginal) => {
+  const actual = await importOriginal<typeof ReactTypes>();
+  return {
+    ...actual,
+    useState: (initial: unknown) => {
+      const slot = runtime.index++;
+      if (!(slot in runtime.slots)) runtime.slots[slot] = initial;
+      const set = (value: unknown) => {
+        runtime.slots[slot] =
+          typeof value === 'function'
+            ? (value as (prev: unknown) => unknown)(runtime.slots[slot])
+            : value;
+      };
+      return [runtime.slots[slot], set];
+    },
+    useRef: (initial: unknown) => {
+      const slot = runtime.refIndex++;
+      runtime.refs[slot] ??= { current: initial };
+      return runtime.refs[slot];
+    },
+    useCallback: (fn: unknown) => fn,
+  };
+});
+
+const mocks = vi.hoisted(() => ({
+  fetchAlertDetail: vi.fn(),
+  fetchChild: vi.fn(),
+  getDraft: vi.fn(),
+  saveDraft: vi.fn(async () => {}),
+  clearDraft: vi.fn(async () => {}),
+  flushPendingFollowUps: vi.fn(),
+  submitFollowUp: vi.fn(),
+}));
+
+vi.mock('../context/auth-context.js', () => ({
+  useAuth: () => ({ user: { id: '99999999-9999-4999-8999-999999999999' } }),
+}));
+vi.mock('expo-secure-store', () => ({
+  isAvailableAsync: vi.fn(async () => true),
+  getItemAsync: vi.fn(async () => null),
+  setItemAsync: vi.fn(async () => {}),
+  deleteItemAsync: vi.fn(async () => {}),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 1,
+}));
+vi.mock('../lib/alerts-api.js', () => ({ fetchAlertDetail: mocks.fetchAlertDetail }));
+vi.mock('../lib/children-api.js', () => ({ fetchChild: mocks.fetchChild }));
+vi.mock('../lib/follow-up-storage.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof StorageTypes>()),
+  getDraft: mocks.getDraft,
+  saveDraft: mocks.saveDraft,
+  clearDraft: mocks.clearDraft,
+}));
+vi.mock('../lib/follow-up-sync.js', () => ({
+  flushPendingFollowUps: mocks.flushPendingFollowUps,
+  submitFollowUp: mocks.submitFollowUp,
+}));
+
+import { useFollowUpForm } from '../hooks/useFollowUpForm.js';
+
+const USER = '99999999-9999-4999-8999-999999999999';
+const ALERT = makeDetail().id;
+const mateo = {
+  id: CHILD_ID,
+  firstName: 'Mateo',
+  lastName: 'Gómez',
+  birthDate: '2023-06-15',
+  sex: 'MALE' as const,
+};
+
+interface Params {
+  alertId?: string | undefined;
+  childId?: string | undefined;
+}
+
+/** Re-runs the hook against the persisted fake state, like a re-render would. */
+function render(params: Params = { alertId: ALERT, childId: CHILD_ID }) {
+  runtime.index = 0;
+  runtime.refIndex = 0;
+  return useFollowUpForm(params);
+}
+
+/** Opens the form and fills it with a valid follow-up. */
+async function openAndFill(params?: Params) {
+  await render(params).load();
+  render(params).setForm({ type: 'recommendation', details: 'Reforzar la variedad.' });
+  return render(params);
+}
+
+describe('useFollowUpForm (NK-34)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    runtime.slots.length = 0;
+    runtime.refs.length = 0;
+    mocks.fetchAlertDetail.mockResolvedValue(makeDetail());
+    mocks.fetchChild.mockResolvedValue(mateo);
+    mocks.getDraft.mockResolvedValue(null);
+    mocks.flushPendingFollowUps.mockResolvedValue({ sent: 0, remaining: 0, rejected: 0 });
+    mocks.submitFollowUp.mockResolvedValue({ kind: 'queued' });
+  });
+
+  describe('opening', () => {
+    it('starts loading, with «establecer» on when there is an alert', () => {
+      const hook = render();
+      expect(hook.loading).toBe(true);
+      expect(hook.form).toEqual({
+        type: null,
+        details: '',
+        nextCheckupText: '',
+        establish: true,
+      });
+    });
+
+    it('loads the child and the status of the alert', async () => {
+      await render().load();
+      const hook = render();
+
+      expect(hook.loading).toBe(false);
+      expect(hook.child).toEqual(mateo);
+      expect(hook.alertStatus).toBe('PENDING_REVIEW');
+      expect(hook.canEstablish).toBe(true);
+      expect(hook.offline).toBe(false);
+      expect(hook.fatalError).toBeNull();
+    });
+
+    it('takes the child from the alert when only the alert is given', async () => {
+      await render({ alertId: ALERT }).load();
+      expect(mocks.fetchChild).toHaveBeenCalledWith(CHILD_ID);
+    });
+
+    it('does not offer «establecer» once the follow-up was established or without an alert', async () => {
+      mocks.fetchAlertDetail.mockResolvedValue(makeDetail({ status: 'FOLLOW_UP_ESTABLISHED' }));
+      await render().load();
+      expect(render().canEstablish).toBe(false);
+
+      runtime.slots.length = 0;
+      await render({ childId: CHILD_ID }).load();
+      expect(render({ childId: CHILD_ID }).canEstablish).toBe(false);
+    });
+
+    it('fails when there is neither an alert nor a child to attach it to', async () => {
+      await render({}).load();
+      const hook = render({});
+      expect(hook.fatalError).toBe('Abre el seguimiento desde el detalle de una alerta.');
+      expect(hook.loading).toBe(false);
+    });
+
+    it('fails with the API message when the alert is refused and there is no child', async () => {
+      mocks.fetchAlertDetail.mockRejectedValue(new Error('Alerta no encontrada'));
+      await render({ alertId: ALERT }).load();
+      expect(render({ alertId: ALERT }).fatalError).toBe('Alerta no encontrada');
+    });
+
+    it('still opens, offline, when the alert and the child cannot be reached', async () => {
+      mocks.fetchAlertDetail.mockRejectedValue(new TypeError('Network request failed'));
+      mocks.fetchChild.mockRejectedValue(new TypeError('Network request failed'));
+
+      await render().load();
+      const hook = render();
+
+      expect(hook.fatalError).toBeNull();
+      expect(hook.offline).toBe(true);
+      expect(hook.child).toBeNull();
+      expect(hook.canEstablish).toBe(true);
+    });
+
+    it('shows the offline notice while follow-ups are still waiting on the phone', async () => {
+      mocks.flushPendingFollowUps.mockResolvedValue({ sent: 0, remaining: 1, rejected: 0 });
+      await render().load();
+      expect(render().offline).toBe(true);
+    });
+
+    it('sends the follow-ups that were waiting before reading the draft', async () => {
+      const order: string[] = [];
+      mocks.flushPendingFollowUps.mockImplementation(async () => {
+        order.push('flush');
+        return { sent: 1, remaining: 0, rejected: 0 };
+      });
+      mocks.getDraft.mockImplementation(async () => {
+        order.push('draft');
+        return null;
+      });
+
+      await render().load();
+
+      expect(order).toEqual(['flush', 'draft']);
+      expect(mocks.flushPendingFollowUps).toHaveBeenCalledWith(USER);
+    });
+
+    it('restores the saved draft and the reason the server refused it', async () => {
+      mocks.getDraft.mockResolvedValue({
+        form: {
+          type: 'referral',
+          details: 'Derivar a nutrición',
+          nextCheckupText: '',
+          establish: false,
+        },
+        lastError: 'Sin consentimiento',
+      });
+
+      await render().load();
+      const hook = render();
+
+      expect(mocks.getDraft).toHaveBeenCalledWith(`${USER}:alert:${ALERT}`);
+      expect(hook.form.type).toBe('referral');
+      expect(hook.notice).toBe('draftRestored');
+      expect(hook.rejectedReason).toBe('Sin consentimiento');
+    });
+  });
+
+  describe('saving', () => {
+    it('does not send an invalid form and says what is wrong', async () => {
+      await render().load();
+      const outcome = await render().save();
+
+      expect(outcome).toBeNull();
+      expect(render().formError).toEqual({ code: 'typeRequired' });
+      expect(mocks.submitFollowUp).not.toHaveBeenCalled();
+    });
+
+    it('sends the follow-up with the alert and asks to establish it', async () => {
+      mocks.submitFollowUp.mockResolvedValue({
+        kind: 'sent',
+        followUp: {},
+        alertStatus: 'FOLLOW_UP_ESTABLISHED',
+      });
+      const hook = await openAndFill();
+
+      const outcome = await hook.save();
+
+      expect(outcome).toBe('sent');
+      expect(mocks.submitFollowUp).toHaveBeenCalledWith({
+        userId: USER,
+        childId: CHILD_ID,
+        alertId: ALERT,
+        establish: true,
+        input: expect.objectContaining({
+          type: 'recommendation',
+          details: 'Reforzar la variedad.',
+          alertId: ALERT,
+        }),
+      });
+      expect(mocks.clearDraft).toHaveBeenCalledWith(`${USER}:alert:${ALERT}`);
+      expect(render().saving).toBe(false);
+    });
+
+    it('does not ask to establish when the professional unchecks it', async () => {
+      mocks.submitFollowUp.mockResolvedValue({ kind: 'sent', followUp: {}, alertStatus: null });
+      await openAndFill();
+      render().setForm({ establish: false });
+
+      await render().save();
+
+      expect(mocks.submitFollowUp).toHaveBeenCalledWith(
+        expect.objectContaining({ establish: false }),
+      );
+    });
+
+    it('reports it as queued, with the offline notice, when there is no connection', async () => {
+      const hook = await openAndFill();
+
+      const outcome = await hook.save();
+
+      expect(outcome).toBe('queued');
+      expect(render().offline).toBe(true);
+    });
+
+    it('keeps the form and explains when the alert could not be moved', async () => {
+      mocks.submitFollowUp.mockResolvedValue({
+        kind: 'sent',
+        followUp: {},
+        alertStatus: null,
+        alertError: 'Cambio concurrente',
+      });
+      const hook = await openAndFill();
+
+      expect(await hook.save()).toBe('sentAlertNotMoved');
+      expect(render().alertNotMoved).toBe('Cambio concurrente');
+    });
+
+    it('shows the server message when it refuses the follow-up and can be retried', async () => {
+      mocks.submitFollowUp.mockRejectedValueOnce(new Error('Falta el consentimiento'));
+      const hook = await openAndFill();
+
+      expect(await hook.save()).toBeNull();
+      expect(render().apiError).toBe('Falta el consentimiento');
+      expect(render().saving).toBe(false);
+    });
+
+    it('keeps the same follow-up id across retries and renews it after saving', async () => {
+      mocks.submitFollowUp.mockRejectedValueOnce(new Error('Falla temporal'));
+      mocks.submitFollowUp.mockResolvedValueOnce({ kind: 'sent', followUp: {}, alertStatus: null });
+      mocks.submitFollowUp.mockResolvedValueOnce({ kind: 'sent', followUp: {}, alertStatus: null });
+      const hook = await openAndFill();
+
+      await hook.save();
+      await render().save();
+      await render().save();
+
+      const ids = mocks.submitFollowUp.mock.calls.map((call) => call[0].input.id);
+      expect(ids[0]).toBe(ids[1]);
+      expect(ids[2]).not.toBe(ids[1]);
+    });
+  });
+
+  describe('draft', () => {
+    it('saves the form as a draft and says so', async () => {
+      const hook = await openAndFill();
+
+      await hook.saveAsDraft();
+
+      expect(mocks.saveDraft).toHaveBeenCalledWith(`${USER}:alert:${ALERT}`, {
+        userId: USER,
+        childId: CHILD_ID,
+        alertId: ALERT,
+        form: expect.objectContaining({ type: 'recommendation', details: 'Reforzar la variedad.' }),
+      });
+      expect(render().notice).toBe('draftSaved');
+    });
+
+    it('does not save an empty form as a draft', async () => {
+      await render().load();
+      await render().saveAsDraft();
+      expect(mocks.saveDraft).not.toHaveBeenCalled();
+    });
+
+    it('drops the draft notice when the form is edited', async () => {
+      const hook = await openAndFill();
+      await hook.saveAsDraft();
+
+      render().setForm({ details: 'Otro texto' });
+
+      expect(render().notice).toBeNull();
+    });
+  });
+});

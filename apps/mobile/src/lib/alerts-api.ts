@@ -1,6 +1,8 @@
 import {
+  AlertDetailResponseSchema,
   AlertResponseSchema,
   OPEN_ALERT_STATUSES,
+  type AlertDetailResponse,
   type AlertResponse,
   type AlertStatus,
 } from '@nutrikids/shared';
@@ -43,4 +45,35 @@ export async function fetchAlerts(params: FetchAlertsParams = {}): Promise<Alert
 
   const rawJson: unknown = await response.json();
   return z.array(AlertResponseSchema).parse(rawJson);
+}
+
+async function parseDetail(response: Response, fallback: string): Promise<AlertDetailResponse> {
+  if (!response.ok) {
+    const payload: unknown = await response.json().catch(() => ({}));
+    throw new Error(parseApiError(payload, fallback).message);
+  }
+  const rawJson: unknown = await response.json();
+  return AlertDetailResponseSchema.parse(rawJson);
+}
+
+/** Alert with its status history (`GET /alerts/:alertId`). */
+export async function fetchAlertDetail(alertId: string): Promise<AlertDetailResponse> {
+  const response = await authFetch(`/alerts/${encodeURIComponent(alertId)}`);
+  return parseDetail(response, i18n.t('errors:alerts.detail'));
+}
+
+/**
+ * Moves an alert to the next status (`PATCH /alerts/:alertId/status`). The API enforces the state
+ * machine, so an invalid or concurrent change comes back as an error (409) with its message.
+ */
+export async function updateAlertStatus(
+  alertId: string,
+  status: AlertStatus,
+): Promise<AlertDetailResponse> {
+  const response = await authFetch(`/alerts/${encodeURIComponent(alertId)}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  return parseDetail(response, i18n.t('errors:alerts.review'));
 }

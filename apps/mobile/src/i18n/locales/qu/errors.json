@@ -29,7 +29,8 @@
     "missingChildForRevoke": "Ari ninata kichunkapakka wawata akllanami kan."
   },
   "children": {
-    "create": "Wawata mana killkakatiy usharkanchikchu. Kutin rurapay."
+    "create": "Wawata mana killkakatiy usharkanchikchu. Kutin rurapay.",
+    "fetch": "No pudimos cargar los datos del niño. Intenta de nuevo."
   },
   "notifications": {
     "registerDevice": "Manam willaykunapaq antañikikuta willayta atikurchu.",
@@ -45,7 +46,15 @@
     "fetch": "OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay."
   },
   "alerts": {
-    "list": "Mana yuyachikkunata apamunkapak ushashkanchu. Kutin yachay."
+    "list": "Mana yuyachikkunata apamunkapak ushashkanchu. Kutin yachay.",
+    "detail": "No pudimos cargar la alerta. Intenta de nuevo.",
+    "review": "No pudimos marcar la alerta como revisada. Intenta de nuevo."
+  },
+  "followUps": {
+    "create": "No pudimos guardar el seguimiento. Intenta de nuevo."
+  },
+  "growth": {
+    "fetch": "No pudimos cargar el estado de crecimiento. Intenta de nuevo."
   },
   "reminders": {
     "fetch": "No pudimos cargar los recordatorios. Intenta de nuevo.",

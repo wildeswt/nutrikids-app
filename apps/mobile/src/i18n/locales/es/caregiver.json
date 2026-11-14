@@ -58,7 +58,15 @@
     "addChild": "Agregar niño",
     "seeMoreA11y": "Ver cómo crece {{name}}",
     "linkedNotice": "Solo ves a los niños vinculados a tu cuenta",
-    "checkupDate": "Fecha: {{date}}"
+    "checkupDate": "Fecha: {{date}}",
+    "growth": {
+      "reviewedPill": "Revisado por tu profesional",
+      "below": "Tu profesional revisó los últimos controles de {{name}}: su crecimiento está por debajo de lo esperado para su edad.",
+      "above": "Tu profesional revisó los últimos controles de {{name}}: su crecimiento está por encima de lo esperado para su edad.",
+      "reviewed": "Tu profesional revisó los últimos controles de {{name}}.",
+      "recommendation": "Recomendación: {{text}}",
+      "nextCheckup": "Próximo control: {{date}}"
+    }
   },
   "addCheckup": {
     "back": "Volver",

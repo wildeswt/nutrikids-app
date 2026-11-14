@@ -90,12 +90,23 @@ describe('ProfessionalDrawerLayout', () => {
     expect(screenNames).toEqual([
       'index',
       'alert-detail',
+      'follow-up',
       'children',
       'messages',
       'profile',
       'notifications',
     ]);
     expect(screenNames[0]).toBe('index');
+  });
+
+  it('hides the alert detail and the follow-up form from the drawer and draws their own header', () => {
+    const screens = getDrawerScreens();
+    for (const name of ['alert-detail', 'follow-up']) {
+      const options = screens.find((s) => s.props.name === name)?.props.options as
+        { drawerItemStyle?: { display?: string }; headerShown?: boolean } | undefined;
+      expect(options?.drawerItemStyle).toEqual({ display: 'none' });
+      expect(options?.headerShown).toBe(false);
+    }
   });
 
   it('sets accurate drawer labels and titles for professional views', () => {
