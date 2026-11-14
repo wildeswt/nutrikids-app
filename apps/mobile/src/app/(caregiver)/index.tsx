@@ -162,20 +162,44 @@ export default function CaregiverHomeScreen() {
                     {/* Status is shown with short text, icon and color (never color alone); no z-scores or technical classifications */}
                     <ChildGrowthStatus childId={child.id} childName={child.firstName} />
 
-                    <Pressable
-                      style={({ pressed }) => [styles.seeMoreRow, pressed && styles.buttonPressed]}
-                      onPress={() =>
-                        router.push({
-                          pathname: APP_ROUTES.CAREGIVER.EVOLUTION as never,
-                          params: { childId: child.id },
-                        })
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel={t('home.seeMoreA11y', { name: child.firstName })}
-                    >
-                      <Text style={styles.seeMoreText}>{t('home.seeMore')}</Text>
-                      <Ionicons name="arrow-forward" size={14} color={PALETTE.text.light} />
-                    </Pressable>
+                    <View style={styles.childCardActions}>
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.seeMoreRow,
+                          pressed && styles.buttonPressed,
+                        ]}
+                        onPress={() =>
+                          router.push({
+                            pathname: APP_ROUTES.CAREGIVER.FEEDING as never,
+                            params: { childId: child.id },
+                          })
+                        }
+                        accessibilityRole="button"
+                        accessibilityLabel={t('home.logFeedingA11y', { name: child.firstName })}
+                        testID={`child-feeding-button-${child.id}`}
+                      >
+                        <Ionicons name="restaurant-outline" size={14} color={PALETTE.text.light} />
+                        <Text style={styles.seeMoreText}>{t('home.logFeeding')}</Text>
+                      </Pressable>
+
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.seeMoreRow,
+                          pressed && styles.buttonPressed,
+                        ]}
+                        onPress={() =>
+                          router.push({
+                            pathname: APP_ROUTES.CAREGIVER.EVOLUTION as never,
+                            params: { childId: child.id },
+                          })
+                        }
+                        accessibilityRole="button"
+                        accessibilityLabel={t('home.seeMoreA11y', { name: child.firstName })}
+                      >
+                        <Text style={styles.seeMoreText}>{t('home.seeMore')}</Text>
+                        <Ionicons name="arrow-forward" size={14} color={PALETTE.text.light} />
+                      </Pressable>
+                    </View>
                   </View>
                 </View>
               );
@@ -516,12 +540,18 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: 8,
   },
+  childCardActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+  },
   seeMoreRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-end',
     gap: 4,
-    marginTop: 2,
   },
   seeMoreText: {
     color: PALETTE.text.light,

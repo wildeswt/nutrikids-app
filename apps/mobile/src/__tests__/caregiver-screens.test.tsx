@@ -295,7 +295,7 @@ describe('Caregiver Screens (NK-21)', () => {
         expect(html).toContain('Meriendas para llevar');
         expect(html).not.toContain('Para bebés grandes');
         expect(html).not.toContain('Ideas de');
-        expect(html).not.toContain('Alimentación');
+        expect(html).not.toContain('a los 3 años');
       });
 
       it('shows the first articles of the catalog when none matches the age', () => {
