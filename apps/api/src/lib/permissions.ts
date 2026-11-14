@@ -9,6 +9,7 @@ export const PERMISSIONS = [
   'alert:read',
   'alert:review',
   'feedinglog:read',
+  'feedinglog:create',
   'followup:create',
   'audit:read',
 ] as const;
@@ -29,6 +30,7 @@ const READ_ALL: readonly Permission[] = [
   'curves:read',
   'alert:read',
   'feedinglog:read',
+  'feedinglog:create',
 ];
 
 /** Permissions matrix: capabilities of caregiver and each professional specialty. */

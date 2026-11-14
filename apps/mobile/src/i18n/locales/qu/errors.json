@@ -35,5 +35,8 @@
     "registerDevice": "Manam willaykunapaq antañikikuta willayta atikurchu.",
     "unregisterDevice": "Manam antañikikuta anchuchiyta atikurchu.",
     "markRead": "Manam willayta ñawinchasqa nispa churayta atikurchu."
+  },
+  "alerts": {
+    "list": "Mana yuyachikkunata apamunkapak ushashkanchu. Kutin yachay."
   }
 }

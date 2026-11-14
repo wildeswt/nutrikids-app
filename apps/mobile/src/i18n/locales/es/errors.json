@@ -35,5 +35,8 @@
     "registerDevice": "No se pudo registrar el dispositivo para notificaciones.",
     "unregisterDevice": "No se pudo desregistrar el dispositivo.",
     "markRead": "No se pudo marcar la notificación como leída."
+  },
+  "alerts": {
+    "list": "No pudimos cargar las alertas. Intenta de nuevo."
   }
 }

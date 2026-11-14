@@ -343,6 +343,10 @@ The navigation guard in `apps/mobile/src/app/_layout.tsx` inspects auth status a
   - Request form taking email (`POST /auth/forgot-password`).
   - Reset form taking reset token and new password (`POST /auth/reset-password`).
 
+## Database Backups (NK-44)
+
+`scripts/backup/backup.sh` creates a PostgreSQL backup encrypted with AES-256 and deletes the ones older than `BACKUP_RETENTION_DAYS` (30 by default); `scripts/backup/restore.sh` restores one into a new database. Usage, the tested restore procedure, key management and the retention policy are in [docs/backups.md](docs/backups.md).
+
 ## Push Notifications (Android / FCM / EAS — NK-36)
 
 The application supports real-time push alerts and in-app notifications for health professionals upon risk detection or overdue reviews (RF-13, RT-09). Detailed architecture is available in [docs/notifications.md](docs/notifications.md).

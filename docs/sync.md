@@ -63,3 +63,7 @@ When a newly created item carries `results` computed by the phone, the server co
 - an `audit_logs` row is written with `action = 'DISCREPANCY'`, `entityType = 'indicator_results'`, `entityId` = server result id, and `details = { checkupId, indicator, fields, client, server }` (column added by migration `20261113120000_audit_details`).
 
 Resends (`DUPLICATE`) are not compared again. Every created checkup is also audited as `CREATE` / `checkups`.
+
+## Out of scope: feeding logs
+
+Only checkups go through the offline queue and `POST /sync/checkups`. Feeding logs (`POST /children/:childId/feeding-logs`) are online-only for now; see the offline decision in [feeding-and-education.md](feeding-and-education.md).

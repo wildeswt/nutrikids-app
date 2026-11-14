@@ -9,9 +9,11 @@ import { createAuthRouter } from './routes/auth.routes.js';
 import { createCheckupsRouter } from './routes/checkups.routes.js';
 import { createChildrenRouter } from './routes/children.routes.js';
 import { createDataRightsRouter } from './routes/dataRights.routes.js';
+import { createEducationRouter } from './routes/education.routes.js';
 import { healthRouter } from './routes/health.routes.js';
 import { createNotificationsRouter } from './routes/notifications.routes.js';
 import { referenceRouter } from './routes/reference.routes.js';
+import { createRemindersRouter } from './routes/reminders.routes.js';
 import { createSyncRouter } from './routes/sync.routes.js';
 
 export function createApp(): Express {
@@ -30,11 +32,13 @@ export function createApp(): Express {
   app.use('/children', createChildrenRouter());
   app.use('/children', createDataRightsRouter());
   app.use('/checkups', createCheckupsRouter());
+  app.use('/education', createEducationRouter());
   app.use('/reference', referenceRouter);
   app.use('/audit', createAuditRouter());
   app.use('/alerts', createAlertsRouter());
   app.use('/sync', createSyncRouter());
   app.use('/notifications', createNotificationsRouter());
+  app.use('/reminders', createRemindersRouter());
 
   app.use(notFoundHandler);
   app.use(errorHandler);

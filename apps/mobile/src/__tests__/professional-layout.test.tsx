@@ -87,7 +87,14 @@ describe('ProfessionalDrawerLayout', () => {
     const screens = getDrawerScreens();
     const screenNames = screens.map((s) => s.props.name);
 
-    expect(screenNames).toEqual(['index', 'children', 'messages', 'profile', 'notifications']);
+    expect(screenNames).toEqual([
+      'index',
+      'alert-detail',
+      'children',
+      'messages',
+      'profile',
+      'notifications',
+    ]);
     expect(screenNames[0]).toBe('index');
   });
 

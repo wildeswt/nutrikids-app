@@ -86,6 +86,14 @@ export default function ProfessionalDrawerLayout() {
         }}
       />
       <Drawer.Screen
+        name="alert-detail"
+        options={{
+          title: t('drawer.alertDetailTitle'),
+          // Reachable only by tapping an alert card, so it has no drawer entry.
+          drawerItemStyle: { display: 'none' },
+        }}
+      />
+      <Drawer.Screen
         name="children"
         options={{
           drawerLabel: t('drawer.children'),
