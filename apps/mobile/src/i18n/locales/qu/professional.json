@@ -16,6 +16,8 @@
     "alertDetailTitle": "Yuyachikkunamanta"
   },
   "alerts": {
+    "title": "Yuyachikkuna",
+    "subtitle": "Rikuyta munashka kamaykuna.",
     "filtersA11y": "Yuyachikkunata ima kashkaman akllay",
     "filters": {
       "OPEN": "Mana rikushka",

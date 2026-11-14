@@ -20,6 +20,10 @@ import { ALERT_STATUS_FILTERS, type AlertStatusFilter } from '../../lib/alerts-a
 
 const FILTER_KEYS = Object.keys(ALERT_STATUS_FILTERS) as AlertStatusFilter[];
 
+// Colores específicos del diseño que no están en PALETTE (sin modificar colors.ts).
+const SCREEN_SURFACE = '#FBFBFB';
+const SEVERE_COLOR = '#E14100';
+
 export default function AlertsInboxScreen() {
   const { t } = useTranslation('professional');
   const router = useRouter();
@@ -28,7 +32,7 @@ export default function AlertsInboxScreen() {
     ALERT_STATUS_FILTERS[filter],
   );
 
-  // Reload on focus (and whenever the filter changes, since `reload` depends on it).
+  // Recarga al enfocar la pantalla (y al cambiar el filtro, ya que `reload` depende de él).
   useFocusEffect(
     useCallback(() => {
       void reload();
@@ -75,7 +79,7 @@ export default function AlertsInboxScreen() {
           </View>
           {item.isOverdue && (
             <View style={[styles.tag, styles.tagSevere]} testID={`alert-overdue-${item.id}`}>
-              <Ionicons name="time" size={12} color={PALETTE.feedback.error} />
+              <Ionicons name="time" size={12} color={SEVERE_COLOR} />
               <Text style={[styles.tagText, styles.tagSevereText]}>{t('alerts.overdue')}</Text>
             </View>
           )}
@@ -86,19 +90,24 @@ export default function AlertsInboxScreen() {
 
   return (
     <View style={styles.container} testID="alerts-inbox-screen">
-      <View style={styles.chips} accessibilityLabel={t('alerts.filtersA11y')}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t('alerts.title')}</Text>
+        <Text style={styles.subtitle}>{t('alerts.subtitle')}</Text>
+      </View>
+
+      <View style={styles.filterBar} accessibilityLabel={t('alerts.filtersA11y')}>
         {FILTER_KEYS.map((key) => {
           const selected = key === filter;
           return (
             <Pressable
               key={key}
-              style={[styles.chip, selected && styles.chipSelected]}
+              style={[styles.filterSegment, selected && styles.filterSegmentActive]}
               onPress={() => setFilter(key)}
               accessibilityRole="button"
               accessibilityState={{ selected }}
               testID={`alerts-filter-${key}`}
             >
-              <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+              <Text style={[styles.filterSegmentText, selected && styles.filterSegmentTextActive]}>
                 {t(`alerts.filters.${key}`)}
               </Text>
             </Pressable>
@@ -108,7 +117,7 @@ export default function AlertsInboxScreen() {
 
       {overdueCount > 0 && (
         <View style={styles.overdueBanner} testID="alerts-overdue-summary">
-          <Ionicons name="time" size={18} color={PALETTE.feedback.error} />
+          <Ionicons name="time" size={20} color={SEVERE_COLOR} />
           <Text style={styles.overdueBannerText}>
             {t('alerts.overdueSummary', { count: overdueCount })}
           </Text>
@@ -149,9 +158,11 @@ export default function AlertsInboxScreen() {
           }
           ListEmptyComponent={
             <View style={styles.empty} testID="alerts-empty">
-              <Ionicons name="checkmark-circle-outline" size={48} color={PALETTE.text.muted} />
+              <View style={styles.emptyIconCircle}>
+                <Ionicons name="checkmark-circle-outline" size={44} color={PALETTE.text.muted} />
+              </View>
               <Text style={styles.emptyTitle}>{t('alerts.empty')}</Text>
-              <Text style={styles.mutedText}>{t('alerts.emptyDescription')}</Text>
+              <Text style={styles.emptyDescription}>{t('alerts.emptyDescription')}</Text>
             </View>
           }
         />
@@ -161,46 +172,95 @@ export default function AlertsInboxScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: PALETTE.background },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingTop: 16 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
+  container: { flex: 1, backgroundColor: SCREEN_SURFACE },
+  header: {
+    paddingHorizontal: 30,
+    paddingTop: 24,
+    gap: 4,
   },
-  chipSelected: { backgroundColor: PALETTE.primary, borderColor: PALETTE.primary },
-  chipText: { fontSize: 14, fontWeight: '600', color: PALETTE.text.body },
-  chipTextSelected: { color: PALETTE.text.light },
+  title: {
+    fontSize: 32,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+  },
+  subtitle: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: PALETTE.text.muted,
+  },
+  filterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 46,
+    marginHorizontal: 30,
+    marginTop: 22,
+    paddingVertical: 5,
+    paddingHorizontal: 4,
+    borderRadius: 25,
+    backgroundColor: PALETTE.primary,
+  },
+  filterSegment: {
+    minHeight: 36,
+    paddingHorizontal: 12,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterSegmentActive: {
+    backgroundColor: SCREEN_SURFACE,
+  },
+  filterSegmentText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: SCREEN_SURFACE,
+    textAlign: 'center',
+  },
+  filterSegmentTextActive: {
+    color: PALETTE.primary,
+  },
   overdueBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 12,
+    gap: 10,
+    marginHorizontal: 30,
+    marginTop: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 25,
     backgroundColor: PALETTE.feedback.errorBg,
     borderWidth: 1,
     borderColor: PALETTE.feedback.errorBorder,
   },
-  overdueBannerText: { flex: 1, fontSize: 14, fontWeight: '600', color: PALETTE.feedback.error },
-  list: { padding: 16, gap: 12 },
-  emptyList: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  overdueBannerText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: SEVERE_COLOR,
+  },
+  list: {
+    paddingHorizontal: 30,
+    paddingTop: 18,
+    paddingBottom: 28,
+    gap: 14,
+  },
+  emptyList: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+    paddingBottom: 40,
+  },
   card: {
-    backgroundColor: PALETTE.surface,
-    borderRadius: 16,
+    backgroundColor: SCREEN_SURFACE,
+    borderRadius: 25,
     padding: 16,
     gap: 8,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   pressed: { opacity: 0.8 },
   cardHeader: {
@@ -209,9 +269,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
   },
-  childName: { flex: 1, fontSize: 17, fontWeight: '700', color: PALETTE.text.title },
-  age: { fontSize: 13, color: PALETTE.text.muted },
-  indicator: { fontSize: 14, color: PALETTE.text.body },
+  childName: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '600',
+    color: PALETTE.primary,
+  },
+  age: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: PALETTE.text.muted,
+  },
+  indicator: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: PALETTE.text.body,
+  },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   tag: {
     flexDirection: 'row',
@@ -219,18 +292,40 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 25,
   },
-  tagText: { fontSize: 12, fontWeight: '700' },
+  tagText: { fontSize: 11, fontWeight: '600' },
   tagRisk: { backgroundColor: PALETTE.secondaryLight },
   tagRiskText: { color: PALETTE.secondaryPressed },
   tagSevere: { backgroundColor: PALETTE.feedback.errorBg },
-  tagSevereText: { color: PALETTE.feedback.error },
+  tagSevereText: { color: SEVERE_COLOR },
   tagStatus: { backgroundColor: PALETTE.border.subtle },
   tagStatusText: { color: PALETTE.text.body },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 12 },
-  empty: { alignItems: 'center', gap: 10 },
-  emptyTitle: { fontSize: 17, fontWeight: '600', color: PALETTE.text.title, textAlign: 'center' },
+  empty: { alignItems: 'center', gap: 8 },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: PALETTE.border.subtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  emptyDescription: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: PALETTE.text.muted,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
   mutedText: { fontSize: 14, color: PALETTE.text.muted, textAlign: 'center' },
   errorText: { fontSize: 15, color: PALETTE.feedback.error, textAlign: 'center' },
   retryButton: {
