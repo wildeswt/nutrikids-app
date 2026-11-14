@@ -9,6 +9,7 @@ import {
   KeyboardAwareScrollView,
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
+import { ChildBanner } from '../../components/ChildBanner.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useCheckups } from '../../hooks/useCheckups.js';
@@ -220,18 +221,14 @@ export default function AddCheckupScreen() {
       <KeyboardAwareScrollView contentContainerStyle={styles.scrollContent}>
         {header}
 
-        {/* Tarjeta naranja del paciente activo */}
-        <View style={styles.patientCard}>
-          <Text style={styles.patientName}>
-            {activeChild.firstName} {activeChild.lastName}
-          </Text>
-          <Text style={styles.patientSubtitle}>
-            {t('addCheckup.childSubtitle', {
-              age: formatChildAge(activeChild.birthDate),
-              birthDate: formatLongDate(activeChild.birthDate),
-            })}
-          </Text>
-        </View>
+        {/* Banner naranja del paciente activo */}
+        <ChildBanner
+          name={`${activeChild.firstName} ${activeChild.lastName}`}
+          subtitle={t('addCheckup.childSubtitle', {
+            age: formatChildAge(activeChild.birthDate),
+            birthDate: formatLongDate(activeChild.birthDate),
+          })}
+        />
 
         {/* Enlace Cambiar paciente (solo con más de un niño) */}
         {children.length > 1 ? (
@@ -455,29 +452,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: PALETTE.text.title,
     marginBottom: 18,
-  },
-  patientCard: {
-    backgroundColor: PALETTE.secondary,
-    borderRadius: 24,
-    paddingVertical: 16,
-    paddingHorizontal: 22,
-    shadowColor: PALETTE.secondary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  patientName: {
-    color: '#FFFFFF',
-    fontSize: 19,
-    fontWeight: '800',
-    marginBottom: 3,
-  },
-  patientSubtitle: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '500',
-    opacity: 0.95,
   },
   changePatientButton: {
     alignSelf: 'flex-end',
