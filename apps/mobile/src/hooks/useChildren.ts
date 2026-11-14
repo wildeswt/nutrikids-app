@@ -17,7 +17,7 @@ export function useChildren() {
     error: null,
   });
 
-  const load = useCallback(async (): Promise<ChildResponse[]> => {
+  const load = useCallback(async (): Promise<ChildResponse[] | null> => {
     setState((prev) => ({
       ...prev,
       status: prev.children.length === 0 ? 'loading' : prev.status,
@@ -35,12 +35,13 @@ export function useChildren() {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Error desconocido al cargar la lista de niños';
-      setState({
+      setState((prev) => ({
+        ...prev,
         status: 'error',
-        children: [],
+        children: prev.children,
         error: message,
-      });
-      throw err;
+      }));
+      return null;
     }
   }, []);
 

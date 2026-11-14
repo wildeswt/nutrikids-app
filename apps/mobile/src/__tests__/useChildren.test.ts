@@ -92,4 +92,22 @@ describe('useChildren hook', () => {
     expect(result).toEqual([mockChild]);
     expect(childrenApi.fetchCaregiverChildren).toHaveBeenCalled();
   });
+
+  it('load function returns null and gracefully handles errors without throwing', async () => {
+    vi.spyOn(childrenApi, 'fetchCaregiverChildren').mockRejectedValueOnce(
+      new Error('Network error'),
+    );
+
+    let captured: ReturnType<typeof useChildren> | undefined;
+
+    function TestComponent() {
+      captured = useChildren();
+      return React.createElement('div', null, 'ok');
+    }
+
+    renderToString(React.createElement(TestComponent));
+
+    const result = await captured?.load();
+    expect(result).toBeNull();
+  });
 });
