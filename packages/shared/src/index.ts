@@ -10,6 +10,7 @@ export * from './schemas/education.js';
 export * from './schemas/enums.js';
 export * from './schemas/feedingLog.js';
 export * from './schemas/followUp.js';
+export * from './schemas/growthMessage.js';
 export * from './schemas/health.js';
 export * from './schemas/notification.js';
 export * from './schemas/reference.js';

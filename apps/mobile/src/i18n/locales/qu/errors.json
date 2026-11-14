@@ -63,5 +63,8 @@
     "fetch": "No pudimos cargar los recordatorios. Intenta de nuevo.",
     "create": "No pudimos guardar el recordatorio. Intenta de nuevo.",
     "complete": "No pudimos marcar el recordatorio como realizado. Intenta de nuevo."
+  },
+  "growth": {
+    "fetch": "No pudimos cargar el estado de crecimiento. Intenta de nuevo."
   }
 }

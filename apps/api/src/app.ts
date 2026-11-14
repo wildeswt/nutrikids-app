@@ -11,6 +11,7 @@ import { createCheckupsRouter } from './routes/checkups.routes.js';
 import { createChildrenRouter } from './routes/children.routes.js';
 import { createDataRightsRouter } from './routes/dataRights.routes.js';
 import { createEducationRouter } from './routes/education.routes.js';
+import { createGrowthMessageRouter } from './routes/growthMessage.routes.js';
 import { healthRouter } from './routes/health.routes.js';
 import { createNotificationsRouter } from './routes/notifications.routes.js';
 import { referenceRouter } from './routes/reference.routes.js';
@@ -33,6 +34,7 @@ export function createApp(): Express {
   app.use('/account', createAccountRouter());
   app.use('/children', createChildrenRouter());
   app.use('/children', createDataRightsRouter());
+  app.use('/children', createGrowthMessageRouter());
   app.use('/checkups', createCheckupsRouter());
   app.use('/education', createEducationRouter());
   app.use('/reference', referenceRouter);
