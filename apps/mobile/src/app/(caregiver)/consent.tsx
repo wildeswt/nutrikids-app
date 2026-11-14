@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChildBanner } from '../../components/ChildBanner.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
@@ -145,14 +146,13 @@ export default function ConsentScreen() {
         {mode === 'register' ? (
           <Text style={styles.screenSubtitle}>{t('screen.registerSubtitle')}</Text>
         ) : (
-          <View style={styles.childBlock}>
-            <Text style={styles.childName}>{childName}</Text>
-            {caregiverName ? (
-              <Text style={styles.childRepresentative}>
-                {t('screen.representative', { name: caregiverName })}
-              </Text>
-            ) : null}
-          </View>
+          <ChildBanner
+            name={childName}
+            subtitle={
+              caregiverName ? t('screen.representative', { name: caregiverName }) : undefined
+            }
+            style={styles.childBanner}
+          />
         )}
 
         {/* Metadata de versión y fecha si ya existe consentimiento */}
@@ -428,19 +428,8 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 20,
   },
-  childBlock: {
-    marginBottom: 20,
-    gap: 4,
-  },
-  childName: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: PALETTE.primary,
-  },
-  childRepresentative: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: PALETTE.text.body,
+  childBanner: {
+    marginBottom: 24,
   },
   metaCard: {
     backgroundColor: PALETTE.surface,

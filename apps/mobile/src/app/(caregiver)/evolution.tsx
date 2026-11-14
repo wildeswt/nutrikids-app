@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChildBanner } from '../../components/ChildBanner.js';
 import { PALETTE } from '../../constants/colors.js';
 import {
   DEMO_ACTIVE_CHILD,
@@ -51,15 +52,14 @@ export default function EvolutionScreen() {
         </Text>
 
         {/* Tarjeta Naranja Superior: Datos del niño */}
-        <View style={styles.childHeaderCard}>
-          <Text style={styles.childNameTitle}>{DEMO_ACTIVE_CHILD.fullName}</Text>
-          <Text style={styles.childSubtitle}>
-            {t('evolution.childSubtitle', {
-              age: formatAge(DEMO_ACTIVE_CHILD.ageMonths),
-              birthDate: formatLongDate(DEMO_ACTIVE_CHILD.birthDate),
-            })}
-          </Text>
-        </View>
+        <ChildBanner
+          name={DEMO_ACTIVE_CHILD.fullName}
+          subtitle={t('evolution.childSubtitle', {
+            age: formatAge(DEMO_ACTIVE_CHILD.ageMonths),
+            birthDate: formatLongDate(DEMO_ACTIVE_CHILD.birthDate),
+          })}
+          style={styles.childBanner}
+        />
 
         {/* Selector de Indicadores Antropométricos: P/E, T/E, P/T, IMC/E */}
         <View style={styles.indicatorTabsContainer}>
@@ -233,29 +233,8 @@ const styles = StyleSheet.create({
     color: PALETTE.text.title,
     marginBottom: 16,
   },
-  childHeaderCard: {
-    backgroundColor: PALETTE.secondary,
-    borderRadius: 24,
-    paddingVertical: 18,
-    paddingHorizontal: 22,
-    marginBottom: 20,
-    shadowColor: PALETTE.secondary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  childNameTitle: {
-    color: '#FFFFFF',
-    fontSize: 19,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  childSubtitle: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '500',
-    opacity: 0.95,
+  childBanner: {
+    marginBottom: 24,
   },
   indicatorTabsContainer: {
     flexDirection: 'row',

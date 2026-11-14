@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChildBanner } from '../../components/ChildBanner.js';
 import {
   KeyboardAwareScrollView,
   KeyboardAwareTextInput,
@@ -132,15 +133,13 @@ export default function AddCheckupScreen() {
         <Text style={styles.screenTitle}>{t('addCheckup.title')}</Text>
 
         {/* Tarjeta naranja del paciente activo */}
-        <View style={styles.patientCard}>
-          <Text style={styles.patientName}>{activePatient.fullName}</Text>
-          <Text style={styles.patientSubtitle}>
-            {t('addCheckup.childSubtitle', {
-              age: formatAge(activePatient.ageMonths),
-              birthDate: formatLongDate(activePatient.birthDate),
-            })}
-          </Text>
-        </View>
+        <ChildBanner
+          name={activePatient.fullName}
+          subtitle={t('addCheckup.childSubtitle', {
+            age: formatAge(activePatient.ageMonths),
+            birthDate: formatLongDate(activePatient.birthDate),
+          })}
+        />
 
         {/* Enlace Cambiar paciente */}
         <Pressable
@@ -340,29 +339,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: PALETTE.text.title,
     marginBottom: 18,
-  },
-  patientCard: {
-    backgroundColor: PALETTE.secondary,
-    borderRadius: 24,
-    paddingVertical: 16,
-    paddingHorizontal: 22,
-    shadowColor: PALETTE.secondary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  patientName: {
-    color: '#FFFFFF',
-    fontSize: 19,
-    fontWeight: '800',
-    marginBottom: 3,
-  },
-  patientSubtitle: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '500',
-    opacity: 0.95,
   },
   changePatientButton: {
     alignSelf: 'flex-end',
