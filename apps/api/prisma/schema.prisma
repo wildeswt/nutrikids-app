@@ -277,6 +277,7 @@ model AlertHistory {
 model FollowUp {
   id                   String              @id @db.Uuid
   childId              String              @map("child_id") @db.Uuid
+  groupId              String?             @map("group_id") @db.Uuid
   alertId              String?             @map("alert_id") @db.Uuid
   professionalId       String              @map("professional_id") @db.Uuid
   type                 String              @map("type")
@@ -291,6 +292,7 @@ model FollowUp {
   @@index([childId])
   @@index([alertId])
   @@index([professionalId])
+  @@index([groupId], map: "follow_ups_group_id_idx")
   @@map("follow_ups")
 }
 

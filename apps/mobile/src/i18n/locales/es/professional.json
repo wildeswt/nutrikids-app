@@ -150,6 +150,14 @@
       "referral": "Indica a quién se deriva al niño y por qué.",
       "none": "Elige primero el tipo de seguimiento."
     },
+    "sections": {
+      "observationsLabel": "Observaciones clínicas",
+      "observationsPlaceholder": "Escribe lo que observaste en el control y en el registro de crecimiento...",
+      "interventionLabel": "Intervención nutricional",
+      "interventionPlaceholder": "Describe la intervención nutricional indicada...",
+      "referralLabel": "Derivación",
+      "referralPlaceholder": "Indica a quién se deriva al niño y por qué..."
+    },
     "nextCheckupLabel": "Próximo control",
     "nextCheckupPlaceholder": "DD/MM/AAAA (opcional)",
     "openDatePicker": "Elegir fecha en el calendario",
@@ -174,6 +182,7 @@
     "rejected": "El servidor no aceptó el seguimiento que estaba guardado en este teléfono: {{reason}}",
     "alertNotMoved": "El seguimiento se guardó, pero no pudimos actualizar la alerta: {{reason}}",
     "errors": {
+      "atLeastOneRequired": "Completa al menos una sección (observaciones, intervención o derivación).",
       "typeRequired": "Elige el tipo de seguimiento.",
       "detailsRequired": "Escribe el detalle del seguimiento.",
       "detailsTooLong": "El detalle no puede pasar de {{max}} caracteres.",

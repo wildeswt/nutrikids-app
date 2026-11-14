@@ -1,5 +1,6 @@
 import {
   NEXT_CHECKUP_REMINDER_TYPE,
+  type CreateFollowUpBatchInput,
   type CreateFollowUpInput,
   type FollowUpResponse,
   type FollowUpType,
@@ -11,9 +12,10 @@ import type { AuthContext } from '../lib/permissions.js';
 import { withUser } from '../lib/prisma.js';
 
 /**
- * Seguimientos clínicos (RF-15): observaciones, recomendaciones, intervenciones y derivaciones
+ * Seguimientos clínicos (RF-15, NK-75): observaciones, recomendaciones, intervenciones y derivaciones
  * de un profesional vinculado, opcionalmente ligadas a una alerta del niño. Si se indica el
- * próximo control, se crea su recordatorio en la misma transacción.
+ * próximo control, se crea su recordatorio en la misma transacción. Permite envíos individuales o
+ * por lote atómico vinculados por un `groupId`.
  */
 
 /**
@@ -25,6 +27,12 @@ export const REMINDER_HOUR_UTC = 13;
 export interface FollowUpWriteResult {
   followUp: FollowUpResponse;
   /** `true` si se creó en esta llamada; `false` si fue un reenvío idempotente. */
+  created: boolean;
+}
+
+export interface FollowUpBatchWriteResult {
+  followUps: FollowUpResponse[];
+  /** `true` si se crearon en esta llamada; `false` si fue un reenvío idempotente. */
   created: boolean;
 }
 
@@ -53,6 +61,7 @@ function formatFollowUp(row: FollowUpRow): FollowUpResponse {
   return {
     id: row.id,
     childId: row.childId,
+    groupId: row.groupId,
     alertId: row.alertId,
     professionalId: row.professionalId,
     type: row.type as FollowUpType,
@@ -124,7 +133,7 @@ async function assertAlertBelongsToChild(
 }
 
 /**
- * Registra un seguimiento (RF-15). Idempotente por el `id` generado en el cliente: reenviar
+ * Registra un seguimiento individual (RF-15). Idempotente por el `id` generado en el cliente: reenviar
  * el mismo id devuelve el seguimiento existente sin duplicar su recordatorio. No cambia el
  * estado de la alerta referenciada: eso se hace con `PATCH /alerts/:alertId/status`.
  */
@@ -163,6 +172,7 @@ export async function createFollowUp(
         data: {
           id: input.id,
           childId,
+          groupId: input.groupId ?? null,
           alertId: input.alertId ?? null,
           professionalId: auth.userId,
           type: input.type,
@@ -184,6 +194,106 @@ export async function createFollowUp(
         include: followUpInclude,
       });
       return { followUp: formatFollowUp(created), created: true };
+    } catch (err) {
+      return mapFollowUpDbError(err);
+    }
+  });
+}
+
+/**
+ * Registra un lote de 1 a 3 seguimientos clínicos en una sola transacción atómica (NK-75).
+ *
+ * Idempotencia y atomicidad:
+ * - Todos los ítems comparten el mismo `groupId`. Si el cliente no lo envía, se deriva de forma
+ *   determinista a partir del `id` del primer ítem (`items[0].id`).
+ * - Reenviar el mismo lote con los mismos identificadores devuelve los registros existentes con
+ *   `created: false` (HTTP 200) sin duplicar seguimientos ni recordatorios.
+ * - Si algún identificador pertenece a otro niño o hay colisión parcial, se rechaza la operación
+ *   completa sin persistir ningún registro.
+ * - Si se provee `nextCheckupDate`, se crea un único recordatorio vinculado al primer ítem del lote.
+ */
+export async function createFollowUpBatch(
+  auth: AuthContext,
+  childId: string,
+  input: CreateFollowUpBatchInput,
+): Promise<FollowUpBatchWriteResult> {
+  return withUser(auth.userId, async (tx) => {
+    await assertActiveProfessionalLink(tx, auth, childId);
+
+    const itemIds = input.items.map((item) => item.id);
+    const existing = await tx.followUp.findMany({
+      where: { id: { in: itemIds } },
+      include: followUpInclude,
+    });
+
+    if (existing.length > 0) {
+      for (const row of existing) {
+        if (row.childId !== childId) {
+          throw HttpError.conflict('Ya existe un seguimiento con ese identificador');
+        }
+      }
+
+      if (existing.length === input.items.length) {
+        const byId = new Map(existing.map((row) => [row.id, row]));
+        const formatted = input.items.map((item) => formatFollowUp(byId.get(item.id)!));
+        return { followUps: formatted, created: false };
+      }
+
+      throw HttpError.conflict('Ya existe un seguimiento con ese identificador');
+    }
+
+    const nextCheckupDate = input.nextCheckupDate
+      ? new Date(`${input.nextCheckupDate}T00:00:00.000Z`)
+      : null;
+    if (nextCheckupDate && nextCheckupDate < utcToday()) {
+      throw HttpError.badRequest('La fecha del próximo control no puede estar en el pasado');
+    }
+
+    if (input.alertId) {
+      await assertAlertBelongsToChild(tx, input.alertId, childId);
+    }
+
+    // Si el cliente no envía groupId, se deriva deterministamente del id del primer ítem
+    const groupId = input.groupId ?? input.items[0]!.id;
+
+    try {
+      const createdRows: FollowUpRow[] = [];
+      for (let i = 0; i < input.items.length; i++) {
+        const item = input.items[i]!;
+        const hasReminder = Boolean(input.nextCheckupDate && i === 0);
+
+        const created = await tx.followUp.create({
+          data: {
+            id: item.id,
+            childId,
+            groupId,
+            alertId: input.alertId ?? null,
+            professionalId: auth.userId,
+            type: item.type,
+            details: item.details,
+            nextCheckupDate,
+            ...(hasReminder
+              ? {
+                  reminder: {
+                    create: {
+                      childId,
+                      type: NEXT_CHECKUP_REMINDER_TYPE,
+                      scheduledFor: reminderScheduledFor(input.nextCheckupDate!),
+                      status: 'pending',
+                    },
+                  },
+                }
+              : {}),
+          },
+          include: followUpInclude,
+        });
+        createdRows.push(created);
+      }
+
+      return {
+        followUps: createdRows.map(formatFollowUp),
+        created: true,
+      };
     } catch (err) {
       return mapFollowUpDbError(err);
     }

@@ -96,11 +96,11 @@ function render(params: Params = { alertId: ALERT, childId: CHILD_ID }) {
 /** Opens the form and fills it with a valid follow-up. */
 async function openAndFill(params?: Params) {
   await render(params).load();
-  render(params).setForm({ type: 'recommendation', details: 'Reforzar la variedad.' });
+  render(params).setForm({ observations: 'Reforzar la variedad.' });
   return render(params);
 }
 
-describe('useFollowUpForm (NK-34)', () => {
+describe('useFollowUpForm (NK-34, NK-75)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     runtime.slots.length = 0;
@@ -117,8 +117,9 @@ describe('useFollowUpForm (NK-34)', () => {
       const hook = render();
       expect(hook.loading).toBe(true);
       expect(hook.form).toEqual({
-        type: null,
-        details: '',
+        observations: '',
+        intervention: '',
+        referral: '',
         nextCheckupText: '',
         establish: true,
       });
@@ -203,8 +204,9 @@ describe('useFollowUpForm (NK-34)', () => {
     it('restores the saved draft and the reason the server refused it', async () => {
       mocks.getDraft.mockResolvedValue({
         form: {
-          type: 'referral',
-          details: 'Derivar a nutrición',
+          observations: '',
+          intervention: '',
+          referral: 'Derivar a nutrición',
           nextCheckupText: '',
           establish: false,
         },
@@ -215,7 +217,7 @@ describe('useFollowUpForm (NK-34)', () => {
       const hook = render();
 
       expect(mocks.getDraft).toHaveBeenCalledWith(`${USER}:alert:${ALERT}`);
-      expect(hook.form.type).toBe('referral');
+      expect(hook.form.referral).toBe('Derivar a nutrición');
       expect(hook.notice).toBe('draftRestored');
       expect(hook.rejectedReason).toBe('Sin consentimiento');
     });
@@ -227,14 +229,14 @@ describe('useFollowUpForm (NK-34)', () => {
       const outcome = await render().save();
 
       expect(outcome).toBeNull();
-      expect(render().formError).toEqual({ code: 'typeRequired' });
+      expect(render().formError).toEqual({ code: 'atLeastOneRequired' });
       expect(mocks.submitFollowUp).not.toHaveBeenCalled();
     });
 
     it('sends the follow-up with the alert and asks to establish it', async () => {
       mocks.submitFollowUp.mockResolvedValue({
         kind: 'sent',
-        followUp: {},
+        followUps: [],
         alertStatus: 'FOLLOW_UP_ESTABLISHED',
       });
       const hook = await openAndFill();
@@ -248,9 +250,13 @@ describe('useFollowUpForm (NK-34)', () => {
         alertId: ALERT,
         establish: true,
         input: expect.objectContaining({
-          type: 'recommendation',
-          details: 'Reforzar la variedad.',
           alertId: ALERT,
+          items: expect.arrayContaining([
+            expect.objectContaining({
+              type: 'observation',
+              details: 'Reforzar la variedad.',
+            }),
+          ]),
         }),
       });
       expect(mocks.clearDraft).toHaveBeenCalledWith(`${USER}:alert:${ALERT}`);
@@ -258,7 +264,7 @@ describe('useFollowUpForm (NK-34)', () => {
     });
 
     it('does not ask to establish when the professional unchecks it', async () => {
-      mocks.submitFollowUp.mockResolvedValue({ kind: 'sent', followUp: {}, alertStatus: null });
+      mocks.submitFollowUp.mockResolvedValue({ kind: 'sent', followUps: [], alertStatus: null });
       await openAndFill();
       render().setForm({ establish: false });
 
@@ -281,7 +287,7 @@ describe('useFollowUpForm (NK-34)', () => {
     it('keeps the form and explains when the alert could not be moved', async () => {
       mocks.submitFollowUp.mockResolvedValue({
         kind: 'sent',
-        followUp: {},
+        followUps: [],
         alertStatus: null,
         alertError: 'Cambio concurrente',
       });
@@ -302,15 +308,23 @@ describe('useFollowUpForm (NK-34)', () => {
 
     it('keeps the same follow-up id across retries and renews it after saving', async () => {
       mocks.submitFollowUp.mockRejectedValueOnce(new Error('Falla temporal'));
-      mocks.submitFollowUp.mockResolvedValueOnce({ kind: 'sent', followUp: {}, alertStatus: null });
-      mocks.submitFollowUp.mockResolvedValueOnce({ kind: 'sent', followUp: {}, alertStatus: null });
+      mocks.submitFollowUp.mockResolvedValueOnce({
+        kind: 'sent',
+        followUps: [],
+        alertStatus: null,
+      });
+      mocks.submitFollowUp.mockResolvedValueOnce({
+        kind: 'sent',
+        followUps: [],
+        alertStatus: null,
+      });
       const hook = await openAndFill();
 
       await hook.save();
       await render().save();
       await render().save();
 
-      const ids = mocks.submitFollowUp.mock.calls.map((call) => call[0].input.id);
+      const ids = mocks.submitFollowUp.mock.calls.map((call) => call[0].input.items[0].id);
       expect(ids[0]).toBe(ids[1]);
       expect(ids[2]).not.toBe(ids[1]);
     });
@@ -326,7 +340,7 @@ describe('useFollowUpForm (NK-34)', () => {
         userId: USER,
         childId: CHILD_ID,
         alertId: ALERT,
-        form: expect.objectContaining({ type: 'recommendation', details: 'Reforzar la variedad.' }),
+        form: expect.objectContaining({ observations: 'Reforzar la variedad.' }),
       });
       expect(render().notice).toBe('draftSaved');
     });
@@ -341,7 +355,7 @@ describe('useFollowUpForm (NK-34)', () => {
       const hook = await openAndFill();
       await hook.saveAsDraft();
 
-      render().setForm({ details: 'Otro texto' });
+      render().setForm({ observations: 'Otro texto' });
 
       expect(render().notice).toBeNull();
     });

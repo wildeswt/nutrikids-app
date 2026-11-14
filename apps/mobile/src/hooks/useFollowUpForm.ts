@@ -6,7 +6,7 @@ import { fetchAlertDetail } from '../lib/alerts-api.js';
 import { fetchChild } from '../lib/children-api.js';
 import {
   EMPTY_FOLLOW_UP_FORM,
-  buildFollowUpInput,
+  buildFollowUpBatchInput,
   isFollowUpFormEmpty,
   type FollowUpFormData,
   type FollowUpFormError,
@@ -88,8 +88,13 @@ export function useFollowUpForm({
   const [notice, setNotice] = useState<'draftSaved' | 'draftRestored' | null>(null);
   const [rejectedReason, setRejectedReason] = useState<string | null>(null);
   const [alertNotMoved, setAlertNotMoved] = useState<string | null>(null);
-  /** Id of the follow-up being written: kept across retries so a resend never duplicates it. */
-  const attemptId = useRef<string>(generateUuid());
+  /** Ids of the follow-ups and group being written: kept across retries so a resend never duplicates them. */
+  const attemptIds = useRef({
+    observation: generateUuid(),
+    intervention: generateUuid(),
+    referral: generateUuid(),
+    groupId: generateUuid(),
+  });
 
   const canEstablish = Boolean(alertId) && alertStatus !== 'FOLLOW_UP_ESTABLISHED';
 
@@ -160,7 +165,7 @@ export function useFollowUpForm({
   const save = useCallback(async (): Promise<FollowUpSaveOutcome> => {
     if (!userId || !targetChildId) return null;
 
-    const built = buildFollowUpInput(form, { id: attemptId.current, alertId });
+    const built = buildFollowUpBatchInput(form, { ids: attemptIds.current, alertId });
     if (!built.ok) {
       setFormError(built.error);
       return null;
@@ -180,7 +185,12 @@ export function useFollowUpForm({
       });
       const key = draftKey(userId, { alertId, childId: targetChildId });
       await clearDraft(key).catch(() => {});
-      attemptId.current = generateUuid();
+      attemptIds.current = {
+        observation: generateUuid(),
+        intervention: generateUuid(),
+        referral: generateUuid(),
+        groupId: generateUuid(),
+      };
 
       if (result.kind === 'queued') {
         setOffline(true);
