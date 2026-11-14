@@ -58,5 +58,10 @@
   "account": {
     "fetch": "No pudimos cargar tu cuenta. Intenta de nuevo.",
     "update": "No pudimos guardar tus datos. Intenta de nuevo."
+  },
+  "reminders": {
+    "fetch": "No pudimos cargar los recordatorios. Intenta de nuevo.",
+    "create": "No pudimos guardar el recordatorio. Intenta de nuevo.",
+    "complete": "No pudimos marcar el recordatorio como realizado. Intenta de nuevo."
   }
 }

@@ -169,6 +169,26 @@ export default function CaregiverTabsLayout() {
           tabBarButton: () => null,
         }}
       />
+      <Tabs.Screen
+        name="reminders"
+        options={{
+          title: t('tabs.reminders'),
+          headerTitle: t('tabs.remindersHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="add-reminder"
+        options={{
+          title: t('tabs.addReminder'),
+          headerTitle: t('tabs.addReminderHeader'),
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
     </Tabs>
   );
 }
