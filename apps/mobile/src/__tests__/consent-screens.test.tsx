@@ -1,7 +1,9 @@
 import type { ConsentResponse } from '@nutrikids/shared';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
+import { Alert } from 'react-native';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { APP_ROUTES } from '../constants/routes.js';
 import type { ConsentStatus } from '../hooks/useConsent.js';
 import type * as ConsentApiModule from '../lib/consent-api.js';
 
@@ -43,6 +45,7 @@ vi.mock('expo-router', () => ({
     back: mocks.back,
   }),
   useLocalSearchParams: () => mocks.searchParams,
+  useFocusEffect: vi.fn(),
 }));
 
 vi.mock('@expo/vector-icons', () => ({
@@ -141,17 +144,68 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       const html = renderToString(React.createElement(ConsentScreen));
 
       // Título y encabezados
-      expect(html).toContain('Consentimiento Informado');
-      expect(html).toContain('Términos y condiciones para el registro del niño');
+      expect(html).toContain('Consentimiento');
+      expect(html).toContain('Antes de registrar a tu hijo o hija necesitamos tu autorización');
 
-      // Texto en lenguaje claro
-      expect(html).toContain('DECLARACIÓN DE CONSENTIMIENTO INFORMADO');
-      expect(html).toContain('Organización Mundial de la Salud (OMS)');
-      expect(html).toContain('Confidencialidad y Seguridad');
-      expect(html).toContain('Derecho de Revocación');
+      // Resumen en lenguaje claro: ¿Qué autorizas?
+      expect(html).toContain('¿Qué autorizas?');
+      expect(html).toContain('Guardar el peso, la talla y la alimentación');
+      expect(html).toContain('estándares de la OMS');
+      expect(html).toContain('equipo de salud asignado');
 
-      // Botón de aceptar consentimiento
-      expect(html).toContain('Aceptar consentimiento');
+      // El texto completo está disponible de forma desplegable
+      expect(html).toContain('Leer el texto completo');
+      expect(html).not.toContain('Versión v1 del texto');
+
+      // Confirmaciones y acciones del representante legal
+      expect(html).toContain('Soy el representante legal');
+      expect(html).toContain('Entiendo que puedo revocar este consentimiento');
+      expect(html).toContain('Acepto y continuar');
+      expect(html).toContain('Ahora no');
+    });
+
+    it('accepting consent without childId navigates directly to ADD_CHILD without modal', async () => {
+      mocks.searchParams = { mode: 'register' };
+      const alertSpy = vi.spyOn(Alert, 'alert');
+
+      interface ElementWithProps {
+        props?: {
+          testID?: string;
+          children?: ElementWithProps | ElementWithProps[];
+          [key: string]: unknown;
+        };
+      }
+
+      function findElementByTestId(node: unknown, testId: string): ElementWithProps | null {
+        if (!node || typeof node !== 'object') return null;
+        const element = node as ElementWithProps;
+        if (element.props?.testID === testId) return element;
+        if (Array.isArray(element.props?.children)) {
+          for (const child of element.props.children) {
+            const found = findElementByTestId(child, testId);
+            if (found) return found;
+          }
+        } else if (element.props?.children) {
+          return findElementByTestId(element.props.children, testId);
+        }
+        return null;
+      }
+
+      let capturedTree: unknown = null;
+      function TestWrapper() {
+        capturedTree = ConsentScreen();
+        return null;
+      }
+
+      renderToString(React.createElement(TestWrapper));
+
+      const acceptButton = findElementByTestId(capturedTree, 'accept-consent-button');
+      expect(acceptButton).toBeDefined();
+      const onPress = acceptButton?.props?.['onPress'] as (() => void | Promise<void>) | undefined;
+      await onPress?.();
+
+      expect(alertSpy).not.toHaveBeenCalled();
+      expect(mocks.replace).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.ADD_CHILD);
     });
 
     it('muestra versión del texto aceptado y fecha en modo vista con opción de revocar', () => {

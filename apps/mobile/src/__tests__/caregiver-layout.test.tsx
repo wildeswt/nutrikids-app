@@ -55,11 +55,17 @@ describe('CaregiverTabsLayout', () => {
       'chat-detail',
       'profile',
       'consent',
+      'add-child',
     ]);
 
-    const consentScreen = screens.find((s) => s.props.name === 'consent');
-    expect(consentScreen).toBeDefined();
-    expect(consentScreen?.props.options?.href).toBeNull();
+    // Auxiliary screens are hidden with `tabBarButton` (not `href: null`, which makes the route
+    // unreachable by router.push in expo-router 58).
+    for (const name of ['consent', 'add-child']) {
+      const screen = screens.find((s) => s.props.name === name);
+      expect(screen).toBeDefined();
+      expect(screen?.props.options?.href).toBeUndefined();
+      expect(screen?.props.options?.tabBarButton?.()).toBeNull();
+    }
   });
 
   it('assigns correct tab titles for caregiver navigation', () => {

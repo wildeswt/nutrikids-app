@@ -2,22 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { RegisterInputSchema, USER_ROLES, type Specialty, type UserRole } from '@nutrikids/shared';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  KeyboardAwareScrollView,
+  KeyboardAwareTextInput,
+} from '../../components/KeyboardAwareScrollView.js';
 import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
-import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { registerRequest } from '../../lib/api.js';
 import { extractZodFieldErrors, formatAuthErrorMessage } from '../../lib/auth-errors.js';
 
@@ -31,15 +25,13 @@ export default function RegisterScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ role?: string }>();
   const { signIn } = useAuth();
-  const keyboardInset = useKeyboardBottomInset();
 
-  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
-  const lastNameRef = useRef<React.ComponentRef<typeof TextInput>>(null);
-  const emailRef = useRef<React.ComponentRef<typeof TextInput>>(null);
-  const licenseNumberRef = useRef<React.ComponentRef<typeof TextInput>>(null);
-  const invitationCodeRef = useRef<React.ComponentRef<typeof TextInput>>(null);
-  const passwordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
-  const confirmPasswordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const lastNameRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
+  const emailRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
+  const licenseNumberRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
+  const invitationCodeRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
+  const passwordRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
+  const confirmPasswordRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
 
   const selectedRole: UserRole =
     params.role === USER_ROLES.PROFESSIONAL ? USER_ROLES.PROFESSIONAL : USER_ROLES.CAREGIVER;
@@ -122,16 +114,9 @@ export default function RegisterScreen() {
         </Pressable>
       </View>
 
-      <ScrollView
-        ref={scrollViewRef}
+      <KeyboardAwareScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: keyboardInset > 0 ? keyboardInset + 40 : 48 },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
         {/* Header con Logo y Slogan */}
         <View style={styles.brandHeader}>
@@ -170,7 +155,7 @@ export default function RegisterScreen() {
           {/* Nombre */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Nombre</Text>
-            <TextInput
+            <KeyboardAwareTextInput
               style={[styles.input, fieldErrors['firstName'] ? styles.inputError : undefined]}
               value={firstName}
               onChangeText={(text) => {
@@ -195,7 +180,7 @@ export default function RegisterScreen() {
           {/* Apellido */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Apellido</Text>
-            <TextInput
+            <KeyboardAwareTextInput
               ref={lastNameRef}
               style={[styles.input, fieldErrors['lastName'] ? styles.inputError : undefined]}
               value={lastName}
@@ -221,7 +206,7 @@ export default function RegisterScreen() {
           {/* Correo Electrónico */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Correo Electrónico</Text>
-            <TextInput
+            <KeyboardAwareTextInput
               ref={emailRef}
               style={[styles.input, fieldErrors['email'] ? styles.inputError : undefined]}
               value={email}
@@ -290,7 +275,7 @@ export default function RegisterScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Número de Licencia / Matrícula</Text>
-                <TextInput
+                <KeyboardAwareTextInput
                   ref={licenseNumberRef}
                   style={[
                     styles.input,
@@ -317,7 +302,7 @@ export default function RegisterScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Código de Invitación Profesional</Text>
-                <TextInput
+                <KeyboardAwareTextInput
                   ref={invitationCodeRef}
                   style={[
                     styles.input,
@@ -355,7 +340,7 @@ export default function RegisterScreen() {
                 fieldErrors['password'] ? styles.inputError : undefined,
               ]}
             >
-              <TextInput
+              <KeyboardAwareTextInput
                 ref={passwordRef}
                 style={styles.passwordInput}
                 value={password}
@@ -373,11 +358,6 @@ export default function RegisterScreen() {
                 returnKeyType="next"
                 onSubmitEditing={() => confirmPasswordRef.current?.focus()}
                 blurOnSubmit={false}
-                onFocus={() => {
-                  setTimeout(() => {
-                    scrollViewRef.current?.scrollToEnd({ animated: true });
-                  }, 150);
-                }}
                 editable={!loading}
               />
               <Pressable
@@ -407,7 +387,7 @@ export default function RegisterScreen() {
                 fieldErrors['confirmPassword'] ? styles.inputError : undefined,
               ]}
             >
-              <TextInput
+              <KeyboardAwareTextInput
                 ref={confirmPasswordRef}
                 style={styles.passwordInput}
                 value={confirmPassword}
@@ -424,11 +404,6 @@ export default function RegisterScreen() {
                 autoCorrect={false}
                 returnKeyType="done"
                 onSubmitEditing={() => void handleRegisterSubmit()}
-                onFocus={() => {
-                  setTimeout(() => {
-                    scrollViewRef.current?.scrollToEnd({ animated: true });
-                  }, 150);
-                }}
                 editable={!loading}
               />
               <Pressable
@@ -474,7 +449,7 @@ export default function RegisterScreen() {
             </Link>
           </View>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

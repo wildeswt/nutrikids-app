@@ -2,22 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { LoginInputSchema } from '@nutrikids/shared';
 import { Link, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  KeyboardAwareScrollView,
+  KeyboardAwareTextInput,
+} from '../../components/KeyboardAwareScrollView.js';
 import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
-import { useKeyboardBottomInset } from '../../hooks/useKeyboardBottomInset.js';
 import { loginRequest } from '../../lib/api.js';
 import {
   AuthApiError,
@@ -28,10 +22,8 @@ import {
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
-  const keyboardInset = useKeyboardBottomInset();
 
-  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
-  const passwordRef = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const passwordRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -108,16 +100,9 @@ export default function LoginScreen() {
         </Pressable>
       </View>
 
-      <ScrollView
-        ref={scrollViewRef}
+      <KeyboardAwareScrollView
         style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: keyboardInset > 0 ? keyboardInset + 40 : 48 },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
         {/* Header con Logo y Slogan estilo UI final */}
         <View style={styles.brandHeader}>
@@ -146,7 +131,7 @@ export default function LoginScreen() {
               {/* Email Field */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Correo Electrónico</Text>
-                <TextInput
+                <KeyboardAwareTextInput
                   style={[styles.input, fieldErrors['email'] ? styles.inputError : undefined]}
                   value={email}
                   onChangeText={(text) => {
@@ -179,7 +164,7 @@ export default function LoginScreen() {
                     fieldErrors['password'] ? styles.inputError : undefined,
                   ]}
                 >
-                  <TextInput
+                  <KeyboardAwareTextInput
                     ref={passwordRef}
                     style={styles.passwordInput}
                     value={password}
@@ -196,11 +181,6 @@ export default function LoginScreen() {
                     autoCorrect={false}
                     returnKeyType="done"
                     onSubmitEditing={() => void handleLoginSubmit()}
-                    onFocus={() => {
-                      setTimeout(() => {
-                        scrollViewRef.current?.scrollToEnd({ animated: true });
-                      }, 150);
-                    }}
                     editable={!loading}
                   />
                   <Pressable
@@ -250,7 +230,7 @@ export default function LoginScreen() {
               {!isUsingRecoveryCode ? (
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Código de autenticación (6 dígitos)</Text>
-                  <TextInput
+                  <KeyboardAwareTextInput
                     style={[styles.input, fieldErrors['totpCode'] ? styles.inputError : undefined]}
                     value={totpCode}
                     onChangeText={(text) => {
@@ -272,7 +252,7 @@ export default function LoginScreen() {
               ) : (
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Código de recuperación</Text>
-                  <TextInput
+                  <KeyboardAwareTextInput
                     style={[
                       styles.input,
                       fieldErrors['recoveryCode'] ? styles.inputError : undefined,
@@ -342,7 +322,7 @@ export default function LoginScreen() {
             </View>
           )}
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }
