@@ -261,6 +261,17 @@ describe('MyDataScreen («Mis datos»)', () => {
     expect(render(MyDataScreen)).toContain(t('caregiver:myData.emptyTitle'));
   });
 
+  it('shows the ChildBanner below the title and the bottom link to privacy', () => {
+    const tree = renderTree(MyDataScreen as () => unknown);
+    const html = render(MyDataScreen);
+
+    expect(findElementByTestId(tree, 'my-data-banner')).not.toBeNull();
+    expect(html).toContain('Andrea Silva');
+    expect(html).toContain(t('caregiver:myData.privacySubtitle'));
+    press(tree, 'my-data-privacy-bottom');
+    expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.PRIVACY);
+  });
+
   it('reloads the children every time the screen gains focus', () => {
     render(MyDataScreen);
     mocks.focusCallbacks.at(-1)!();
@@ -372,23 +383,32 @@ describe('EditChildScreen («Corregir datos»)', () => {
 });
 
 describe('PrivacyScreen («Privacidad e historial»)', () => {
-  it('shows the intro, the chips and the panel of the child received in the route', () => {
+  it('shows the intro, the integrated child selector and the panel of the child received in the route', () => {
     mocks.params = { childId: VALENTINA.id };
 
     const tree = renderTree(PrivacyScreen as () => unknown);
     const html = render(PrivacyScreen);
 
     expect(html).toContain(t('caregiver:privacy.intro'));
-    expect(findElementByTestId(tree, `privacy-child-${MATEO.id}`)).not.toBeNull();
+    expect(findElementByTestId(tree, 'privacy-child-selector')).not.toBeNull();
     expect(html).toContain('Valentina Ríos');
   });
 
-  it('does not show chips with a single child', () => {
+  it('does not show the child selector with a single child', () => {
     mocks.children = { status: 'ready', children: [MATEO], error: null };
 
     const tree = renderTree(PrivacyScreen as () => unknown);
 
-    expect(findElementByTestId(tree, `privacy-child-${MATEO.id}`)).toBeNull();
+    expect(findElementByTestId(tree, 'privacy-child-selector')).toBeNull();
+  });
+
+  it('includes the bottom link back to Mis datos and omits PDF export', () => {
+    const tree = renderTree(PrivacyScreen as () => unknown);
+    const html = render(PrivacyScreen);
+
+    expect(html).not.toContain('PDF');
+    press(tree, 'privacy-back-to-my-data');
+    expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.MY_DATA);
   });
 
   it('shows loading, error with retry and an empty state for the children', () => {
@@ -406,12 +426,13 @@ describe('PrivacyScreen («Privacidad e historial»)', () => {
 });
 
 describe('ChildPrivacyPanel (consent, export and deletion)', () => {
-  it('shows the consent of the child with the options to read it and withdraw it', () => {
+  it('shows the consent section without the legacy ConsentChildItem component', () => {
     const html = render(MateoPanel);
 
     expect(html).toContain(t('caregiver:privacy.consentTitle'));
-    expect(html).toContain(t('caregiver:consentItem.viewDocument'));
-    expect(html).toContain(t('caregiver:consentItem.revoke'));
+    expect(html).toContain(t('caregiver:privacy.readConsent'));
+    expect(html).toContain(t('caregiver:privacy.revokeConsent'));
+    expect(html).not.toContain(t('caregiver:consentItem.viewDocument'));
   });
 
   it('exports the history from the button', () => {
