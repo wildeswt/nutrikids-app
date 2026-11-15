@@ -227,11 +227,23 @@
       }
     },
     "legendReference": "Shuyashka (OMS)",
+    "zoneLabels": {
+      "upper": "Shuyashkamanta hawa",
+      "normal": "Shuyashka tupuy (OMS)",
+      "lower": "Shuyashkamanta ura"
+    },
+    "nonDiagnosticNotice": "Kay rikuchikka wiñayta rikunkapak yanapanmi, mana hampik diagnósticochu kan.",
+    "tapPointHint": "Maykan iñuta llapiy chay kamaymanta rikunkapak.",
+    "selectedRecordTitle": "Akllashka kamaymanta",
+    "trendSummaryTitle": "Wiñay imashina rikurikun",
+    "trendSummaryFavorable": "Kipa kamaykunapika alliman wiñakushkatami rikuchin.",
+    "trendSummarySteady": "Tukuy kamaykunapi wiñashkata katikunchik.",
     "favorableTrend": "Tendencia favorable",
     "lastRecordTitle": "Último control",
     "lastRecord": "Kipa kamay - {{date}}",
     "weight": "Llasay",
     "height": "Hatunkay",
+    "position": "Imashina tupushka",
     "recordedBy": "Killkarka",
     "notes": "Observaciones",
     "unitKgM2": "kg/m²",
