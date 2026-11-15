@@ -202,6 +202,8 @@ Copy `.env.example` to `.env` at the repository root (the API also reads `apps/a
 | `pnpm dev`                          | Runs `api` and `mobile` concurrently                                           |
 | `pnpm dev:api`                      | Starts Express API server in watch mode (`tsx`)                                |
 | `pnpm dev:mobile`                   | Starts Expo dev server with interactive terminal and QR code                   |
+| `pnpm dev:phone`                    | Expo Go on a phone in the same Wi-Fi (`expo start --lan --go`)                 |
+| `pnpm dev:phone:tunnel`             | Same over an Expo tunnel, for other networks (slow on low upload bandwidth)    |
 | `pnpm build`                        | Builds all workspace packages                                                  |
 | `pnpm typecheck`                    | Verifies TypeScript types across `shared`, `who-growth`, `api`, and `mobile`   |
 | `pnpm test`                         | Runs test suite across all packages (Vitest + Supertest)                       |
