@@ -58,14 +58,17 @@ export function useNotifications(): UseNotificationsResult {
     [notifications],
   );
 
+  const reload = useCallback(() => loadNotifications(false), [loadNotifications]);
+  const refresh = useCallback(() => loadNotifications(true), [loadNotifications]);
+
   return {
     notifications,
     loading,
     refreshing,
     error,
     unreadCount,
-    reload: () => loadNotifications(false),
-    refresh: () => loadNotifications(true),
+    reload,
+    refresh,
     markAsRead,
   };
 }
