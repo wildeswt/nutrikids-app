@@ -1,18 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { FeedingLogResponse } from '@nutrikids/shared';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CardMenuButton } from '../../components/CardMenuButton.js';
 import { ChildBanner } from '../../components/ChildBanner.js';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.js';
 import { PALETTE } from '../../constants/colors.js';
 import { BUTTON_HEIGHT, BUTTON_WIDTH, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { formatLongDate } from '../../i18n/format.js';
-import { fetchChildFeedingLogs } from '../../lib/feeding-api.js';
+import { deleteChildFeedingLog, fetchChildFeedingLogs } from '../../lib/feeding-api.js';
 import { toLocalIsoDate } from '../../lib/feeding-form.js';
 import { daysBetween, parseFeedingDetails } from '../../lib/feeding-history.js';
 
@@ -22,13 +24,17 @@ type LoadState = 'loading' | 'ready' | 'error';
 
 export default function FeedingHistoryScreen() {
   const router = useRouter();
-  const { t } = useTranslation(['caregiver']);
+  const { t } = useTranslation(['caregiver', 'common']);
   const params = useLocalSearchParams<{ childId?: string }>();
   const { status: childrenStatus, children, load: loadChildren } = useChildren();
   const child = children.find((c) => c.id === params.childId) ?? children[0] ?? null;
 
   const [state, setState] = useState<LoadState>('loading');
   const [logs, setLogs] = useState<FeedingLogResponse[]>([]);
+  const [detailLog, setDetailLog] = useState<FeedingLogResponse | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<FeedingLogResponse | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     void loadChildren();
@@ -47,13 +53,46 @@ export default function FeedingHistoryScreen() {
     }
   }, [child]);
 
-  useEffect(() => {
-    void loadLogs();
-  }, [loadLogs]);
+  // Reloads every time the screen is shown (also when coming back from editing a log).
+  useFocusEffect(
+    useCallback(() => {
+      void loadLogs();
+    }, [loadLogs]),
+  );
+
+  const handleEdit = (log: FeedingLogResponse) => {
+    if (!child) return;
+    router.push({
+      pathname: APP_ROUTES.CAREGIVER.FEEDING as never,
+      params: {
+        childId: child.id,
+        editLogId: log.id,
+        logDate: log.logDate,
+        mealsPerDay: String(log.mealsPerDay ?? ''),
+        details: log.details ?? '',
+      },
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!child || !deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteChildFeedingLog(child.id, deleteTarget.id);
+      setDeleteTarget(null);
+      await loadLogs();
+    } catch (err) {
+      setDeleteTarget(null);
+      setDeleteError(err instanceof Error ? err.message : t('feedingHistory.deleteErrorTitle'));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleBack = () => {
+    // Opened from the feeding form, which is the previous screen in the tabs' history.
     if (router.canGoBack()) router.back();
-    else router.replace(APP_ROUTES.CAREGIVER.FEEDING);
+    else router.replace(APP_ROUTES.CAREGIVER.FEEDING as never);
   };
 
   const dayLabel = (logDate: string) => {
@@ -64,6 +103,8 @@ export default function FeedingHistoryScreen() {
     if (diff === 1) return t('feedingHistory.yesterday', { date });
     return date;
   };
+
+  const detailParsed = parseFeedingDetails(detailLog?.details ?? null);
 
   const renderBody = () => {
     if (!child || state === 'loading' || childrenStatus === 'idle') {
@@ -101,23 +142,60 @@ export default function FeedingHistoryScreen() {
     return logs.map((log) => {
       const { meals, text } = parseFeedingDetails(log.details);
       return (
-        <View key={log.id} style={styles.card} testID={`feeding-history-item-${log.id}`}>
-          <View style={styles.cardTop}>
-            <Text style={styles.cardDate}>{dayLabel(log.logDate)}</Text>
-            {log.mealsPerDay !== null ? (
-              <View style={styles.chip}>
-                <Text style={styles.chipText}>
-                  {t('feedingHistory.mealsCount', { count: log.mealsPerDay })}
-                </Text>
-              </View>
+        <View key={log.id} style={styles.cardWrap}>
+          <Pressable
+            style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+            onPress={() => setDetailLog(log)}
+            accessibilityRole="button"
+            accessibilityLabel={t('feedingHistory.openDetailA11y', {
+              date: dayLabel(log.logDate),
+            })}
+            testID={`feeding-history-item-${log.id}`}
+          >
+            <View style={styles.cardTop}>
+              <Text style={styles.cardDate}>{dayLabel(log.logDate)}</Text>
+              {log.mealsPerDay !== null ? (
+                <View style={styles.chip}>
+                  <Text style={styles.chipText}>
+                    {t('feedingHistory.mealsCount', { count: log.mealsPerDay })}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+            {meals.length > 0 ? (
+              <Text style={styles.cardMeals}>
+                {meals.map((id) => t(`feeding.meals.${id}`)).join(' · ')}
+              </Text>
             ) : null}
-          </View>
-          {meals.length > 0 ? (
-            <Text style={styles.cardMeals}>
-              {meals.map((id) => t(`feeding.meals.${id}`)).join(' · ')}
-            </Text>
-          ) : null}
-          {text ? <Text style={styles.cardText}>{text}</Text> : null}
+            {text ? (
+              <Text style={styles.cardText} numberOfLines={2}>
+                {text}
+              </Text>
+            ) : null}
+          </Pressable>
+          {/* Sibling of the card (not inside it): a button cannot contain another button on web. */}
+          <CardMenuButton
+            style={styles.cardMenu}
+            testID={`feeding-history-menu-${log.id}`}
+            accessibilityLabel={t('feedingHistory.menuA11y')}
+            title={t('feedingHistory.detailTitle')}
+            subtitle={dayLabel(log.logDate)}
+            actions={[
+              {
+                id: 'edit-feeding',
+                label: t('feedingHistory.edit'),
+                icon: 'create-outline',
+                onPress: () => handleEdit(log),
+              },
+              {
+                id: 'delete-feeding',
+                label: t('feedingHistory.delete'),
+                icon: 'trash-outline',
+                destructive: true,
+                onPress: () => setDeleteTarget(log),
+              },
+            ]}
+          />
         </View>
       );
     });
@@ -175,11 +253,85 @@ export default function FeedingHistoryScreen() {
           <Text style={styles.submitButtonText}>{t('feedingHistory.register')}</Text>
         </Pressable>
       </ScrollView>
+      <ConfirmDialog
+        visible={detailLog !== null}
+        tone="primary"
+        icon="restaurant-outline"
+        title={t('feedingHistory.detailTitle')}
+        message={detailLog ? dayLabel(detailLog.logDate) : ''}
+        cancelLabel={t('feedingHistory.detailClose')}
+        onCancel={() => setDetailLog(null)}
+        testID="feeding-history-detail-dialog"
+      >
+        {detailLog ? (
+          <View style={styles.detailBody}>
+            {detailLog.mealsPerDay !== null ? (
+              <Text style={styles.detailLabel}>
+                {t('feedingHistory.mealsCount', { count: detailLog.mealsPerDay })}
+              </Text>
+            ) : null}
+            <Text style={styles.detailText}>
+              {detailParsed.meals.length > 0
+                ? detailParsed.meals.map((id) => t(`feeding.meals.${id}`)).join(' · ')
+                : t('feedingHistory.detailNoMeals')}
+            </Text>
+            {detailParsed.text ? (
+              <>
+                <Text style={styles.detailLabel}>{t('feedingHistory.detailNotes')}</Text>
+                <Text style={styles.detailText}>{detailParsed.text}</Text>
+              </>
+            ) : null}
+          </View>
+        ) : null}
+      </ConfirmDialog>
+      <ConfirmDialog
+        visible={deleteTarget !== null}
+        tone="danger"
+        icon="trash-outline"
+        title={t('feedingHistory.deleteTitle')}
+        message={t('feedingHistory.deleteMessage', {
+          date: deleteTarget ? dayLabel(deleteTarget.logDate) : '',
+        })}
+        confirmLabel={t('feedingHistory.deleteConfirm')}
+        cancelLabel={t('common:actions.cancel')}
+        loading={deleting}
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setDeleteTarget(null)}
+        testID="feeding-history-delete-dialog"
+      />
+      <ConfirmDialog
+        visible={deleteError !== null}
+        tone="danger"
+        icon="alert-circle-outline"
+        title={t('feedingHistory.deleteErrorTitle')}
+        message={deleteError ?? ''}
+        confirmLabel={t('common:actions.accept')}
+        onConfirm={() => setDeleteError(null)}
+        onCancel={() => setDeleteError(null)}
+        testID="feeding-history-delete-error-dialog"
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  cardWrap: { position: 'relative' },
+  cardMenu: { position: 'absolute', top: 10, right: 12 },
+  cardTopRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  detailBody: { gap: 6, marginBottom: 20 },
+  detailLabel: {
+    fontFamily: font('semibold'),
+    fontSize: 14,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+    marginTop: 4,
+  },
+  detailText: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    lineHeight: 20,
+    color: PALETTE.text.body,
+  },
   container: { flex: 1, backgroundColor: PALETTE.background },
   scrollContent: { paddingHorizontal: SCREEN_MARGIN, paddingTop: 12, paddingBottom: 36 },
   backRow: {
@@ -215,7 +367,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 6,
   },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 44 },
   cardDate: {
     flex: 1,
     fontFamily: font('semibold'),

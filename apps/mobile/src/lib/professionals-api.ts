@@ -2,7 +2,6 @@ import {
   ProfessionalAssignmentResponseSchema,
   ProfessionalLookupResponseSchema,
   UuidSchema,
-  todayIsoDate,
   type ProfessionalAssignmentResponse,
   type ProfessionalLookupResponse,
 } from '@nutrikids/shared';
@@ -95,7 +94,10 @@ export async function listLinkedProfessionals(
   return z.array(ProfessionalAssignmentResponseSchema).parse(raw);
 }
 
-/** Termina el vínculo con el profesional hoy (`PATCH …/professionals/:id/end`). */
+/**
+ * Termina el vínculo con el profesional ya (`PATCH …/professionals/:id/end`). El vínculo está
+ * vigente hasta el día de `endDate` inclusive, así que se cierra con la fecha de ayer.
+ */
 export async function unlinkProfessional(
   childId: string,
   professionalId: string,
@@ -107,7 +109,9 @@ export async function unlinkProfessional(
     {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endDate: todayIsoDate() }),
+      body: JSON.stringify({
+        endDate: new Date(Date.now() - 86_400_000).toISOString().slice(0, 10),
+      }),
     },
     i18n.t('errors:professionals.unlink'),
   );

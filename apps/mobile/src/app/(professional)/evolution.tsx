@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { CheckupResponse } from '@nutrikids/shared';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState, type ReactNode } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CheckupMenuButton } from '../../components/CheckupMenuButton.js';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { GrowthChart } from '../../components/GrowthChart.js';
 import { Card } from '../../components/ui/Card.js';
@@ -15,7 +16,6 @@ import { font } from '../../constants/typography.js';
 import { useOptionalAuth } from '../../context/auth-context.js';
 import { useProfessionalCheckups } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
-import { useGrowthTrend } from '../../hooks/useGrowthTrend.js';
 import { useReferenceCurves } from '../../hooks/useReferenceCurves.js';
 import { formatAgeShort, formatDecimal, formatLongDate } from '../../i18n/format.js';
 import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
@@ -69,14 +69,22 @@ export default function ProfessionalChildrenScreen() {
     load: loadCheckups,
   } = useProfessionalCheckups(child?.id ?? null);
 
-  const { trends: growthTrends } = useGrowthTrend(child?.id ?? null);
+  // Reloads when coming back (after correcting a checkup).
+  useFocusEffect(
+    useCallback(() => {
+      void loadCheckups();
+    }, [loadCheckups]),
+  );
 
   const activeIndicator =
     INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[0]!;
-  const activeTrend = growthTrends?.find((item) => item.indicator === activeIndicator.indicator);
-  const isFavorable = activeTrend?.trend === 'FAVORABLE';
   const latest = latestProfessionalCheckup(checkups);
   const position = curvesPositionFor(activeIndicator, latest);
+
+  const reloadAfterDelete = () => {
+    setSelectedCheckupId(null);
+    void loadCheckups();
+  };
 
   const curves = useReferenceCurves(
     child && latest
@@ -333,11 +341,6 @@ export default function ProfessionalChildrenScreen() {
                 <Text style={styles.legendText}>{t('children.legendReference')}</Text>
               </View>
             </View>
-            {isFavorable ? (
-              <Text style={styles.favorableTrendText} testID="professional-evolution-growth-trend">
-                {t('caregiver:evolution.favorableTrend')}
-              </Text>
-            ) : null}
           </View>
 
           <Text style={styles.tapPointHint}>{t('children.tapPointHint')}</Text>
@@ -352,22 +355,22 @@ export default function ProfessionalChildrenScreen() {
           <Text style={styles.nonDiagnosticNoticeText}>{t('children.nonDiagnosticNotice')}</Text>
         </View>
 
-        {/* Resumen de la tendencia en texto */}
-        <Card style={styles.trendSummaryCard} testID="professional-evolution-trend-summary-card">
-          <Text style={styles.trendSummaryTitle}>{t('children.trendSummaryTitle')}</Text>
-          <Text style={styles.trendSummaryBody}>
-            {isFavorable ? t('children.trendSummaryFavorable') : t('children.trendSummarySteady')}
-          </Text>
-        </Card>
-
         {/* Detalle técnico completo del control seleccionado al tocar un punto */}
         <Card
           style={styles.selectedRecordCard}
           testID="professional-evolution-selected-checkup-card"
         >
           <View style={styles.recordHeader}>
-            <Text style={styles.recordTitle}>{t('children.selectedRecordTitle')}</Text>
-            <Text style={styles.recordDate}>{formatLongDate(selectedCheckup.measuredAt)}</Text>
+            <View style={styles.recordHeaderText}>
+              <Text style={styles.recordTitle}>{t('children.selectedRecordTitle')}</Text>
+              <Text style={styles.recordDate}>{formatLongDate(selectedCheckup.measuredAt)}</Text>
+            </View>
+            <CheckupMenuButton
+              checkup={selectedCheckup}
+              roleMode="PROFESSIONAL"
+              onDeleted={reloadAfterDelete}
+              testID="professional-selected-checkup-menu"
+            />
           </View>
 
           <View style={styles.metricsRow}>
@@ -444,8 +447,16 @@ export default function ProfessionalChildrenScreen() {
         {/* Último registro con la persona que lo hizo */}
         <Card style={styles.lastRecordCard} testID="professional-evolution-last-record-card">
           <View style={styles.recordHeader}>
-            <Text style={styles.recordTitle}>{t('children.lastRecordTitle')}</Text>
-            <Text style={styles.recordDate}>{formatLongDate(latest.measuredAt)}</Text>
+            <View style={styles.recordHeaderText}>
+              <Text style={styles.recordTitle}>{t('children.lastRecordTitle')}</Text>
+              <Text style={styles.recordDate}>{formatLongDate(latest.measuredAt)}</Text>
+            </View>
+            <CheckupMenuButton
+              checkup={latest}
+              roleMode="PROFESSIONAL"
+              onDeleted={reloadAfterDelete}
+              testID="professional-last-record-menu"
+            />
           </View>
 
           <View style={styles.metricsRow}>
@@ -654,12 +665,6 @@ const styles = StyleSheet.create({
     color: PALETTE.text.body,
     fontWeight: '500',
   },
-  favorableTrendText: {
-    fontFamily: font('semibold'),
-    fontSize: 12,
-    fontWeight: '600',
-    color: PALETTE.primary,
-  },
   tapPointHint: {
     fontFamily: font('regular'),
     fontSize: 12,
@@ -685,24 +690,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: PALETTE.primary,
   },
-  trendSummaryCard: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 16,
-    gap: 4,
-  },
-  trendSummaryTitle: {
-    fontFamily: font('semibold'),
-    fontSize: 15,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-  },
-  trendSummaryBody: {
-    fontFamily: font('regular'),
-    fontSize: 14,
-    lineHeight: 20,
-    color: PALETTE.text.body,
-  },
   selectedRecordCard: {
     paddingHorizontal: 20,
     paddingVertical: 18,
@@ -716,6 +703,13 @@ const styles = StyleSheet.create({
   },
   recordHeader: {
     marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  recordHeaderText: {
+    flex: 1,
   },
   recordTitle: {
     fontFamily: font('semibold'),

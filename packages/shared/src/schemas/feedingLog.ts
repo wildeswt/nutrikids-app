@@ -38,6 +38,9 @@ export const CreateFeedingLogInputSchema = z.strictObject({
 });
 
 /** `GET /children/:childId/feeding-logs?from=&to=&limit=` (todos opcionales). */
+/** Edición de un registro (`PATCH`): los mismos datos que al crearlo, sin el `id`. */
+export const UpdateFeedingLogInputSchema = CreateFeedingLogInputSchema.omit({ id: true });
+
 export const ListFeedingLogsQuerySchema = z.object({
   from: IsoDateSchema.optional(),
   to: IsoDateSchema.optional(),
@@ -60,5 +63,6 @@ export const FeedingLogResponseSchema = z.object({
 });
 
 export type CreateFeedingLogInput = z.infer<typeof CreateFeedingLogInputSchema>;
+export type UpdateFeedingLogInput = z.infer<typeof UpdateFeedingLogInputSchema>;
 export type ListFeedingLogsQuery = z.infer<typeof ListFeedingLogsQuerySchema>;
 export type FeedingLogResponse = z.infer<typeof FeedingLogResponseSchema>;

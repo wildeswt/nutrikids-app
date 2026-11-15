@@ -13,6 +13,8 @@ export default function ProfessionalTabsLayout() {
   return (
     <ConnectionBarLayout role={USER_ROLES.PROFESSIONAL}>
       <Tabs
+        // «Atrás» (botón del teléfono o router.back) vuelve a la pantalla anterior, no a la primera.
+        backBehavior="history"
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: PALETTE.primary,

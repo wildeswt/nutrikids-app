@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback } from 'react';
+import type { ChildResponse } from '@nutrikids/shared';
+import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CaregiverChildCard } from '../../components/CaregiverChildCard.js';
 import { OfflineDataNotice } from '../../components/OfflineDataNotice.js';
 import { Card } from '../../components/ui/Card.js';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
@@ -16,6 +18,7 @@ import { font } from '../../constants/typography.js';
 import { setActiveChildId } from '../../hooks/useActiveChild.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { useChildrenProfessionals } from '../../hooks/useChildrenProfessionals.js';
+import { isNotLegalRepresentativeError, removeChild } from '../../lib/data-rights-api.js';
 
 /**
  * Pantalla «Mis niños» (oculta de la barra inferior): lista todos los niños vinculados
@@ -27,6 +30,9 @@ export default function MyChildrenScreen() {
   const { status, children, error, fromCache, stale, lastSyncedAt, loadError, load } =
     useChildren();
   const { professionals, load: loadProfessionals } = useChildrenProfessionals();
+  const [removeTarget, setRemoveTarget] = useState<ChildResponse | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -52,7 +58,32 @@ export default function MyChildrenScreen() {
 
   const handleSelectChild = (childId: string) => {
     setActiveChildId(childId);
-    handleBack();
+    router.push({
+      pathname: APP_ROUTES.CAREGIVER.EVOLUTION as never,
+      params: { childId },
+    });
+  };
+
+  const handleRemoveChild = async () => {
+    if (!removeTarget) return;
+    setRemoving(true);
+    try {
+      await removeChild(removeTarget.id);
+      setRemoveTarget(null);
+      await load();
+    } catch (err) {
+      const name = removeTarget.firstName;
+      setRemoveTarget(null);
+      setRemoveError(
+        isNotLegalRepresentativeError(err)
+          ? t('privacy.forbidden', { name })
+          : err instanceof Error
+            ? err.message
+            : t('privacy.removeChildErrorTitle'),
+      );
+    } finally {
+      setRemoving(false);
+    }
   };
 
   const handleAddChild = () => {
@@ -135,6 +166,13 @@ export default function MyChildrenScreen() {
                     params: { childId: child.id },
                   })
                 }
+                onEdit={() =>
+                  router.push({
+                    pathname: APP_ROUTES.CAREGIVER.EDIT_CHILD as never,
+                    params: { childId: child.id },
+                  })
+                }
+                onRemove={() => setRemoveTarget(child)}
               />
             ))}
           </View>
@@ -160,6 +198,31 @@ export default function MyChildrenScreen() {
           <Text style={styles.linkedNoticeText}>{t('home.linkedNotice')}</Text>
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={removeTarget !== null}
+        tone="danger"
+        icon="person-remove-outline"
+        title={t('privacy.removeChildConfirmTitle', { name: removeTarget?.firstName ?? '' })}
+        message={t('privacy.removeChildConfirmMessage', { name: removeTarget?.firstName ?? '' })}
+        confirmLabel={t('privacy.removeChildConfirm')}
+        cancelLabel={t('common:actions.cancel')}
+        loading={removing}
+        onConfirm={() => void handleRemoveChild()}
+        onCancel={() => setRemoveTarget(null)}
+        testID="my-children-remove-dialog"
+      />
+      <ConfirmDialog
+        visible={removeError !== null}
+        tone="danger"
+        icon="alert-circle-outline"
+        title={t('privacy.removeChildErrorTitle')}
+        message={removeError ?? ''}
+        confirmLabel={t('common:actions.accept')}
+        onConfirm={() => setRemoveError(null)}
+        onCancel={() => setRemoveError(null)}
+        testID="my-children-remove-error-dialog"
+      />
     </SafeAreaView>
   );
 }

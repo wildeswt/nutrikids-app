@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import React, { useEffect, useState, type ReactNode } from 'react';
+import React, { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CheckupMenuButton } from '../../components/CheckupMenuButton.js';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { GrowthChart } from '../../components/GrowthChart.js';
 import { OfflineDataNotice } from '../../components/OfflineDataNotice.js';
@@ -23,9 +24,8 @@ import { CARD_SHADOW, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useOptionalAuth } from '../../context/auth-context.js';
-import { useCheckups } from '../../hooks/useCheckups.js';
+import { useCheckups, type CaregiverCheckupListItem } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
-import { useGrowthTrend } from '../../hooks/useGrowthTrend.js';
 import { useReferenceCurves } from '../../hooks/useReferenceCurves.js';
 import { formatAgeShort, formatDecimal, formatLongDate } from '../../i18n/format.js';
 import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
@@ -47,6 +47,7 @@ export default function EvolutionScreen() {
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PE');
   const [showChartInfo, setShowChartInfo] = useState(false);
   const [selectedCheckupId, setSelectedCheckupId] = useState<string | null>(null);
+  const [modalCheckup, setModalCheckup] = useState<CaregiverCheckupListItem | null>(null);
 
   const {
     status: childrenStatus,
@@ -75,14 +76,23 @@ export default function EvolutionScreen() {
     load: loadCheckups,
   } = useCheckups(child?.id ?? null);
 
-  const { trends: growthTrends } = useGrowthTrend(child?.id ?? null);
+  // Recarga niños, controles y tendencia al enfocar la pestaña Evolución (NK-74)
+  useFocusEffect(
+    useCallback(() => {
+      void loadChildren();
+      void loadCheckups();
+    }, [loadChildren, loadCheckups]),
+  );
 
   const activeIndicator =
     INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[0]!;
-  const activeTrend = growthTrends?.find((item) => item.indicator === activeIndicator.indicator);
-  const isFavorable = activeTrend?.trend === 'FAVORABLE';
   const latest = latestCheckup(checkups);
   const position = curvesPositionFor(activeIndicator, latest);
+
+  const reloadAfterDelete = () => {
+    setSelectedCheckupId(null);
+    void loadCheckups();
+  };
 
   // The reference curves are requested once the child has at least one checkup to plot.
   const curves = useReferenceCurves(
@@ -243,6 +253,7 @@ export default function EvolutionScreen() {
     upper: t('evolution.zoneLabels.upper'),
     normal: t('evolution.zoneLabels.normal'),
     lower: t('evolution.zoneLabels.lower'),
+    outer: t('evolution.zoneLabels.outer'),
   };
 
   return (
@@ -328,7 +339,14 @@ export default function EvolutionScreen() {
               variant="caregiver"
               zoneLabels={chartZoneLabels}
               selectedCheckupId={selectedCheckup.id}
-              onSelectPoint={(point) => setSelectedCheckupId(point.checkupId ?? null)}
+              onSelectPoint={(point) => {
+                const checkupId = point.checkupId ?? null;
+                setSelectedCheckupId(checkupId);
+                const found = checkups.find((item) => item.id === checkupId);
+                if (found) {
+                  setModalCheckup(found);
+                }
+              }}
             />
           ) : curves.status === 'error' ? (
             <View style={styles.chartState} testID="evolution-curves-error">
@@ -346,8 +364,9 @@ export default function EvolutionScreen() {
           )}
 
           {/* Leyenda del gráfico */}
-          <View style={styles.legendRow}>
-            <View style={styles.legendGroup}>
+          <View style={styles.legendGrid} testID="evolution-chart-legend">
+            {/* Fila 1: Niño y Rango esperado OMS */}
+            <View style={styles.legendRow}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, styles.legendDotChild]} />
                 <Text style={styles.legendText}>{child.firstName}</Text>
@@ -355,113 +374,48 @@ export default function EvolutionScreen() {
 
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, styles.legendDotOms]} />
-                <Text style={styles.legendText}>{t('evolution.legendReference')}</Text>
+                <Text testID="growth-chart-zone-label-normal" style={styles.legendText}>
+                  {chartZoneLabels.normal}
+                </Text>
               </View>
             </View>
 
-            {isFavorable ? (
-              <Text style={styles.favorableTrendText} testID="evolution-growth-trend">
-                {t('evolution.favorableTrend')}
-              </Text>
-            ) : null}
+            {/* Fila 2: Línea naranja de referencia */}
+            <View style={styles.legendRow}>
+              <View style={styles.legendItem}>
+                <View style={styles.legendDashRow}>
+                  <View style={styles.legendDash} />
+                  <View style={styles.legendDash} />
+                </View>
+                <Text testID="growth-chart-zone-label-upper" style={styles.legendTextSecondary}>
+                  {chartZoneLabels.outer}
+                </Text>
+              </View>
+            </View>
           </View>
 
           <Text style={styles.tapPointHint}>{t('evolution.tapPointHint')}</Text>
         </Card>
 
-        {/* Aviso permanente de que la gráfica apoya la valoración y no es un diagnóstico */}
-        <View style={styles.nonDiagnosticNotice} testID="evolution-non-diagnostic-notice">
-          <Ionicons name="shield-checkmark-outline" size={20} color={PALETTE.primary} />
-          <Text style={styles.nonDiagnosticNoticeText}>{t('evolution.nonDiagnosticNotice')}</Text>
-        </View>
-
-        {/* Resumen de la tendencia en texto */}
-        <Card style={styles.trendSummaryCard} testID="evolution-trend-summary-card">
-          <Text style={styles.trendSummaryTitle}>{t('evolution.trendSummaryTitle')}</Text>
-          <Text style={styles.trendSummaryBody}>
-            {isFavorable ? t('evolution.trendSummaryFavorable') : t('evolution.trendSummarySteady')}
-          </Text>
-        </Card>
-
-        {/* Detalle del control seleccionado al tocar un punto de la gráfica */}
-        {selectedCheckupId ? (
-          <Card style={styles.selectedRecordCard} testID="evolution-selected-checkup-card">
-            <View style={styles.lastRecordHeader}>
-              <Text style={styles.lastRecordTitle}>{t('evolution.selectedRecordTitle')}</Text>
-              <Text style={styles.lastRecordDate}>
-                {formatLongDate(selectedCheckup.measuredAt)}
-              </Text>
-            </View>
-
-            <View style={styles.lastRecordDetailsRow}>
-              <View style={styles.recordDetailItem}>
-                <Ionicons name="barbell-outline" size={24} color={PALETTE.secondary} />
-                <View style={styles.recordDetailText}>
-                  <Text style={styles.recordDetailLabel}>{t('evolution.weight')}</Text>
-                  <Text style={styles.recordDetailValue}>
-                    {t('common:units.weightValue', {
-                      value: formatDecimal(selectedCheckup.weightKg),
-                    })}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.recordDetailItem}>
-                <Ionicons name="resize-outline" size={24} color={PALETTE.secondary} />
-                <View style={styles.recordDetailText}>
-                  <Text style={styles.recordDetailLabel}>{t('evolution.height')}</Text>
-                  <Text style={styles.recordDetailValue}>
-                    {t('common:units.heightValue', {
-                      value: formatDecimal(selectedCheckup.lengthHeightCm),
-                    })}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.lastRecordDivider} />
-
-            <View style={styles.recordedByRow}>
-              <Ionicons name="person" size={18} color={PALETTE.secondary} />
-              <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>
-              <Text style={styles.recordedByValue} numberOfLines={1}>
-                {formatCheckupRecorder({
-                  recorder: selectedCheckup.recordedBy,
-                  origin: selectedCheckup.origin,
-                  currentUserId: user?.id,
-                  t,
-                })}
-              </Text>
-            </View>
-
-            {selectedCheckup.notes ? (
-              <View style={styles.notesRow}>
-                <Ionicons
-                  name="document-text-outline"
-                  size={18}
-                  color={PALETTE.secondary}
-                  style={styles.notesIcon}
-                />
-                <View style={styles.notesContent}>
-                  <Text style={styles.recordedByLabel}>{t('evolution.notes')}</Text>
-                  <Text style={styles.notesValue}>{selectedCheckup.notes}</Text>
-                </View>
-              </View>
-            ) : null}
-          </Card>
-        ) : null}
-
         {/* Tarjeta Inferior de Último Registro */}
         <Card style={styles.lastRecordCard} testID="evolution-last-record-card">
           <View style={styles.lastRecordHeader}>
             <View style={styles.lastRecordTitleRow}>
-              <Text style={styles.lastRecordTitle}>{t('evolution.lastRecordTitle')}</Text>
-              {'localOnly' in latest && latest.localOnly ? (
-                <View style={styles.localOnlyPill} testID="evolution-local-only-badge">
-                  <Ionicons name="cloud-upload-outline" size={13} color="#E06A39" />
-                  <Text style={styles.localOnlyText}>{t('common:offline.localOnlyBadge')}</Text>
-                </View>
-              ) : null}
+              <View style={styles.lastRecordTitleGroup}>
+                <Text style={styles.lastRecordTitle}>{t('evolution.lastRecordTitle')}</Text>
+                {'localOnly' in latest && latest.localOnly ? (
+                  <View style={styles.localOnlyPill} testID="evolution-local-only-badge">
+                    <Ionicons name="cloud-upload-outline" size={13} color="#E06A39" />
+                    <Text style={styles.localOnlyText}>{t('common:offline.localOnlyBadge')}</Text>
+                  </View>
+                ) : null}
+              </View>
+              <CheckupMenuButton
+                checkup={latest}
+                roleMode="CAREGIVER"
+                onDeleted={reloadAfterDelete}
+                testID="evolution-last-record-menu"
+              />
             </View>
             <Text style={styles.lastRecordDate}>{formatLongDate(latest.measuredAt)}</Text>
           </View>
@@ -564,6 +518,132 @@ export default function EvolutionScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal con el detalle del control seleccionado */}
+      <Modal
+        visible={Boolean(modalCheckup)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalCheckup(null)}
+        testID="evolution-checkup-detail-modal"
+      >
+        {modalCheckup ? (
+          <View style={styles.modalOverlay}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => setModalCheckup(null)}
+              testID="evolution-checkup-modal-backdrop"
+              accessibilityRole="button"
+              accessibilityLabel={t('evolution.infoModal.close')}
+            />
+            <View
+              style={styles.checkupModalCard}
+              testID="evolution-selected-checkup-card"
+              accessibilityLabel={t('evolution.selectedRecordTitle')}
+            >
+              <View style={styles.checkupModalHeader}>
+                <View style={styles.checkupModalTitleColumn}>
+                  <View style={styles.lastRecordTitleRow}>
+                    <Text style={styles.modalTitle}>{t('evolution.selectedRecordTitle')}</Text>
+                    {'localOnly' in modalCheckup && modalCheckup.localOnly ? (
+                      <View style={styles.localOnlyPill} testID="evolution-modal-local-only-badge">
+                        <Ionicons name="cloud-upload-outline" size={13} color="#E06A39" />
+                        <Text style={styles.localOnlyText}>
+                          {t('common:offline.localOnlyBadge')}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={styles.lastRecordDate}>
+                    {formatLongDate(modalCheckup.measuredAt)}
+                  </Text>
+                </View>
+                <CheckupMenuButton
+                  checkup={modalCheckup}
+                  roleMode="CAREGIVER"
+                  onDeleted={() => {
+                    setModalCheckup(null);
+                    reloadAfterDelete();
+                  }}
+                  testID="evolution-modal-menu"
+                />
+                <Pressable
+                  onPress={() => setModalCheckup(null)}
+                  style={({ pressed }) => [styles.closeIconButton, pressed && styles.pressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('evolution.infoModal.close')}
+                  testID="evolution-checkup-modal-close-icon"
+                >
+                  <Ionicons name="close" size={24} color={PALETTE.text.title} />
+                </Pressable>
+              </View>
+
+              <View style={styles.lastRecordDetailsRow}>
+                <View style={styles.recordDetailItem}>
+                  <Ionicons name="barbell-outline" size={24} color={PALETTE.secondary} />
+                  <View style={styles.recordDetailText}>
+                    <Text style={styles.recordDetailLabel}>{t('evolution.weight')}</Text>
+                    <Text style={styles.recordDetailValue}>
+                      {t('common:units.weightValue', {
+                        value: formatDecimal(modalCheckup.weightKg),
+                      })}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.recordDetailItem}>
+                  <Ionicons name="resize-outline" size={24} color={PALETTE.secondary} />
+                  <View style={styles.recordDetailText}>
+                    <Text style={styles.recordDetailLabel}>{t('evolution.height')}</Text>
+                    <Text style={styles.recordDetailValue}>
+                      {t('common:units.heightValue', {
+                        value: formatDecimal(modalCheckup.lengthHeightCm),
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.lastRecordDivider} />
+
+              <View style={styles.recordedByRow}>
+                <Ionicons name="person" size={18} color={PALETTE.secondary} />
+                <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>
+                <Text style={styles.recordedByValue} numberOfLines={1}>
+                  {formatCheckupRecorder({
+                    recorder: modalCheckup.recordedBy,
+                    origin: modalCheckup.origin,
+                    currentUserId: user?.id,
+                    t,
+                  })}
+                </Text>
+              </View>
+
+              {modalCheckup.notes ? (
+                <View style={styles.notesRow}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={18}
+                    color={PALETTE.secondary}
+                    style={styles.notesIcon}
+                  />
+                  <View style={styles.notesContent}>
+                    <Text style={styles.recordedByLabel}>{t('evolution.notes')}</Text>
+                    <Text style={styles.notesValue}>{modalCheckup.notes}</Text>
+                  </View>
+                </View>
+              ) : null}
+
+              <PrimaryButton
+                label={t('evolution.infoModal.close')}
+                onPress={() => setModalCheckup(null)}
+                testID="evolution-checkup-modal-close"
+                style={styles.modalButton}
+              />
+            </View>
+          </View>
+        ) : null}
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -656,28 +736,28 @@ const styles = StyleSheet.create({
   infoIconWrapper: {
     padding: 2,
   },
+  legendGrid: {
+    borderTopWidth: 1,
+    borderTopColor: PALETTE.border.subtle,
+    paddingTop: 12,
+    gap: 8,
+  },
   legendRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: PALETTE.border.subtle,
-    paddingTop: 14,
-  },
-  legendGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
+    gap: 12,
   },
   legendItem: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   legendDotChild: {
     backgroundColor: PALETTE.secondary,
@@ -685,17 +765,28 @@ const styles = StyleSheet.create({
   legendDotOms: {
     backgroundColor: '#7FA89E',
   },
+  legendDashRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    width: 10,
+  },
+  legendDash: {
+    width: 4,
+    height: 2,
+    backgroundColor: '#D9825B',
+    borderRadius: 1,
+  },
   legendText: {
     fontFamily: font('medium'),
     fontSize: 12,
     color: PALETTE.text.body,
     fontWeight: '500',
   },
-  favorableTrendText: {
-    fontFamily: font('semibold'),
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#2D5F5A',
+  legendTextSecondary: {
+    fontFamily: font('regular'),
+    fontSize: 11,
+    color: PALETTE.text.muted,
   },
   tapPointHint: {
     fontFamily: font('regular'),
@@ -722,30 +813,28 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: PALETTE.primary,
   },
-  trendSummaryCard: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 16,
-    gap: 4,
+  checkupModalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: PALETTE.surface,
+    borderRadius: RADIUS_PILL,
+    padding: 22,
+    gap: 16,
+    ...CARD_SHADOW,
   },
-  trendSummaryTitle: {
-    fontFamily: font('semibold'),
-    fontSize: 15,
-    fontWeight: '600',
-    color: PALETTE.text.title,
+  checkupModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  trendSummaryBody: {
-    fontFamily: font('regular'),
-    fontSize: 14,
-    lineHeight: 20,
-    color: PALETTE.text.body,
+  checkupModalTitleColumn: {
+    flex: 1,
   },
-  selectedRecordCard: {
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: PALETTE.secondary,
+  closeIconButton: {
+    padding: 4,
+    marginRight: -4,
+    marginTop: -4,
   },
   lastRecordCard: {
     paddingHorizontal: 20,
@@ -753,6 +842,12 @@ const styles = StyleSheet.create({
   },
   lastRecordHeader: {
     marginBottom: 16,
+  },
+  lastRecordTitleGroup: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   lastRecordTitleRow: {
     flexDirection: 'row',

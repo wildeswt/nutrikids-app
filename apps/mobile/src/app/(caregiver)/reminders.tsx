@@ -222,33 +222,20 @@ export default function RemindersScreen() {
   );
 
   const renderNotificationStatus = () => {
-    if (permission === null) return null;
-    const granted = permission === 'granted';
+    // Only shown when notifications are off or unavailable: with them on there is nothing to say.
+    if (permission === null || permission === 'granted') return null;
     const unavailable = permission === 'unavailable';
     return (
-      <View
-        style={[styles.notifCard, granted ? styles.notifCardOn : styles.notifCardOff]}
-        testID="reminders-notifications-status"
-      >
-        <Ionicons
-          name={granted ? 'checkmark-circle' : 'notifications-off-outline'}
-          size={20}
-          color={granted ? PALETTE.primary : PALETTE.feedback.warning}
-        />
+      <View style={[styles.notifCard, styles.notifCardOff]} testID="reminders-notifications-status">
+        <Ionicons name="notifications-off-outline" size={20} color={PALETTE.feedback.warning} />
         <View style={styles.notifContent}>
           <Text style={styles.notifTitle}>
-            {granted
-              ? t('reminders.notifications.enabled')
-              : unavailable
-                ? t('reminders.notifications.unavailable')
-                : t('reminders.notifications.disabled')}
+            {unavailable
+              ? t('reminders.notifications.unavailable')
+              : t('reminders.notifications.disabled')}
           </Text>
           {unavailable ? null : (
-            <Text style={styles.notifHint}>
-              {granted
-                ? t('reminders.notifications.enabledHint')
-                : t('reminders.notifications.disabledHint')}
-            </Text>
+            <Text style={styles.notifHint}>{t('reminders.notifications.disabledHint')}</Text>
           )}
           {permission === 'denied' ? (
             <Pressable

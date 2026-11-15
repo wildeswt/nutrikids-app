@@ -14,6 +14,7 @@ export const AuditActionSchema = z.enum([
   'UPDATE',
   'EXPORT',
   'ERASE',
+  'DELETE',
 ]);
 
 /** Detalle estructurado opcional de un evento de auditoría (JSON). */

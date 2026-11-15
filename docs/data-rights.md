@@ -11,6 +11,7 @@ Everything here is limited to the **legal representative** of the child (`caregi
 | `GET /children/:childId`                                | Consult the child's identity data (existing endpoint).                            | `READ` / `children`              |
 | `PATCH /children/:childId`                              | Rectify identity data (below).                                                    | `UPDATE` / `children`            |
 | `GET /children/:childId/export`                         | Download all the child's data as a JSON file (`Content-Disposition: attachment`). | `EXPORT` / `children`            |
+| `GET /children/:childId/export.xlsx`                    | Download the child's history as a formatted Excel workbook (below).               | `EXPORT` / `children`            |
 | `POST /children/:childId/erasure-requests`              | Request deletion. `201`; `409` if one is already pending.                         | `CREATE` / `erasure_requests`    |
 | `GET /children/:childId/erasure-requests`               | History of requests (`pending`, `completed`, `cancelled`).                        | -                                |
 | `DELETE /children/:childId/erasure-requests/:requestId` | Cancel a pending request. `409` if it is no longer pending.                       | `REVOKE` / `erasure_requests`    |
@@ -26,6 +27,19 @@ Body (strict, at least one field): `firstName`, `lastName`, `birthDate` (`YYYY-M
 ### Export
 
 One JSON document: `exportedAt`, `child`, `caregivers`, `professionals`, `consents`, `checkups` (with indicator results, alerts and alert status history), `feedingLogs`, `followUps` and `reminders`. For other people it only includes what the representative already sees: a caregiver's name, email and relationship, and a professional's name and specialty. Never password hashes, licence numbers or other users' contact data.
+
+#### Excel workbook (`export.xlsx`)
+
+This is what the "Exportar a Excel" button of the app downloads (RF-20 export / portability). It is built by the API (`services/exportWorkbook.service.ts`, `exceljs`) from the same data as the JSON export, and it only includes what the caregiver already sees in the app (RF-14): no z-scores, percentiles or classifications. Sheets:
+
+| Sheet          | Content                                                                                                                                                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Resumen`      | Child (name, birth date, sex, age), legal representative, date of the file, number of checkups, first and last checkup, weight and height gained, feeding logs and the state of the permission.                                                                           |
+| `Controles`    | One row per checkup, oldest first: date, age, weight, height, BMI, change in weight and height since the previous current checkup, how it was measured, who recorded it, state and notes. Replaced (corrected) checkups stay in grey as "Reemplazado por una corrección". |
+| `Alimentación` | Date, meals per day, the meals marked and the free text.                                                                                                                                                                                                                  |
+| `Permisos`     | The dates the permission was accepted and withdrawn, and its state.                                                                                                                                                                                                       |
+
+Only the legal representative can download it (`403` otherwise). Deleted checkups and logs (soft delete) are not included.
 
 ## What "delete" means
 
@@ -51,6 +65,17 @@ One JSON document: `exportedAt`, `child`, `caregivers`, `professionals`, `consen
 3. A job (`jobs/erasure.ts`, hourly, first pass 60 s after start) calls the SQL function `execute_erasure_requests(grace_days)`, which anonymises the child in one transaction, marks the request `completed` and writes the `ERASE` audit event. The function is `SECURITY DEFINER` because the job runs without a session user.
 
 Since the grace period is shorter than the legal deadline, every request is executed within the 15 days. Rectification and export are answered immediately.
+
+## Eliminación lógica (soft delete)
+
+Aparte de la solicitud de eliminación definitiva, hay una eliminación **lógica**: la fila se marca con `deleted_at` y RLS la oculta a toda la aplicación, pero queda en la base para auditoría. Se hace con las funciones `SECURITY DEFINER` `soft_delete_checkup` y `soft_delete_child`, porque PostgreSQL rechaza un `UPDATE` cuya fila nueva ya no es visible.
+
+| Método y ruta                 | Quién                                              | Efecto                                                                                                           |
+| ----------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `DELETE /checkups/:checkupId` | Quien registró el control o el representante legal | El control, sus resultados y alertas dejan de verse. Si era una corrección, el original vuelve a ser el vigente. |
+| `DELETE /children/:childId`   | Solo el representante legal                        | El niño y todos sus datos dejan de verse para todos (`app_has_child_access` devuelve `false`).                   |
+
+Editar un control sigue siendo **corregirlo** (`POST /checkups/:checkupId/correction`): los controles no se modifican. Ambas acciones quedan en `audit_logs` (`DELETE`, `CREATE`). El trigger de `checkups` solo permite el paso de `deleted_at` de `NULL` a una fecha; cualquier otro `UPDATE` o `DELETE` sigue prohibido.
 
 ## Limits
 

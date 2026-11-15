@@ -97,18 +97,7 @@ export default function MyDataScreen() {
           style={[styles.childRow, index > 0 && styles.childRowBorder]}
           testID={`my-data-child-${child.id}`}
         >
-          <Pressable
-            style={({ pressed }) => [styles.childMainLink, pressed && styles.pressed]}
-            onPress={() =>
-              router.push({
-                pathname: APP_ROUTES.CAREGIVER.EDIT_CHILD as never,
-                params: { childId: child.id },
-              })
-            }
-            accessibilityRole="button"
-            accessibilityLabel={t('myData.fixDataA11y', { name })}
-            testID={`my-data-fix-${child.id}`}
-          >
+          <View style={styles.childMainLink}>
             <View style={styles.childHeader}>
               <Text style={styles.childName}>{name}</Text>
               <Text style={styles.childSummary}>
@@ -118,11 +107,7 @@ export default function MyDataScreen() {
                 })}
               </Text>
             </View>
-            <View style={styles.childActionHint}>
-              <Text style={styles.childActionText}>{t('myData.fixData')}</Text>
-              <Ionicons name="chevron-forward" size={16} color={PALETTE.primary} />
-            </View>
-          </Pressable>
+          </View>
 
           <Pressable
             style={({ pressed }) => [styles.childPrivacyLink, pressed && styles.pressed]}

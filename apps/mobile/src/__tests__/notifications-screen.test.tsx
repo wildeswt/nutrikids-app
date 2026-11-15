@@ -238,7 +238,7 @@ describe('NotificationsScreen Component (NK-36)', () => {
       expect(mocks.push).toHaveBeenCalledTimes(1);
     });
 
-    it('does not navigate for notifications about something else', () => {
+    it('opens the reminders screen for reminder notifications', () => {
       mocks.hookResult = { ...mocks.hookResult, loading: false, error: null, notifications: [] };
 
       renderItemOf({
@@ -250,7 +250,22 @@ describe('NotificationsScreen Component (NK-36)', () => {
         readAt: null,
       }).props.onPress();
 
-      expect(mocks.push).not.toHaveBeenCalled();
+      expect(mocks.push).toHaveBeenCalledWith('/(caregiver)/reminders');
+    });
+
+    it('opens the messages list for message notifications', () => {
+      mocks.hookResult = { ...mocks.hookResult, loading: false, error: null, notifications: [] };
+
+      renderItemOf({
+        ...base,
+        id: 'notif-4',
+        type: 'message_new',
+        entityType: 'message',
+        entityId: alertId,
+        readAt: null,
+      }).props.onPress();
+
+      expect(mocks.push).toHaveBeenCalledWith('/(professional)/messages');
     });
   });
 });

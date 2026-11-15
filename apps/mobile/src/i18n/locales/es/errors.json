@@ -41,6 +41,7 @@
   "checkups": {
     "fetch": "No pudimos cargar los controles. Intenta de nuevo.",
     "create": "No pudimos guardar el control. Intenta de nuevo.",
+    "delete": "No pudimos eliminar el control. Intenta de nuevo.",
     "missingChild": "Falta elegir el niño para anotar el control.",
     "offlineNoLocalDb": "Necesitas conexión para guardar el control en este dispositivo"
   },
@@ -50,7 +51,9 @@
   "feeding": {
     "create": "No pudimos guardar la alimentación. Intenta de nuevo.",
     "missingChild": "Falta elegir el niño para registrar su alimentación.",
-    "network": "Necesitas conexión para guardar la alimentación. Inténtalo de nuevo cuando vuelvas a tener internet."
+    "network": "Necesitas conexión para guardar la alimentación. Inténtalo de nuevo cuando vuelvas a tener internet.",
+    "update": "No pudimos guardar los cambios. Intenta de nuevo.",
+    "delete": "No pudimos eliminar el registro. Intenta de nuevo."
   },
   "reference": {
     "fetch": "No pudimos cargar las curvas de referencia. Intenta de nuevo.",
@@ -81,6 +84,7 @@
     "erasureRequest": "No pudimos enviar la solicitud de eliminación. Intenta de nuevo.",
     "erasureList": "No pudimos ver tus solicitudes de eliminación. Intenta de nuevo.",
     "erasureCancel": "No pudimos cancelar la solicitud. Intenta de nuevo.",
+    "removeChild": "No pudimos eliminar al niño. Intenta de nuevo.",
     "missingChild": "Falta elegir el niño."
   },
   "account": {

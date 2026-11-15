@@ -69,6 +69,39 @@ export async function fetchProfessionalCheckups(childId: string): Promise<Checku
 }
 
 /**
+ * Corrects a checkup (`POST /checkups/:id/correction`): the server stores a new checkup that
+ * replaces the original one. Needs a connection (not queued offline).
+ */
+export async function correctChildCheckup(
+  checkupId: string,
+  input: CreateCheckupInput,
+): Promise<CaregiverCheckupResponse> {
+  const validatedBody = CreateCheckupInputSchema.parse(input);
+
+  const response = await authFetch(`/checkups/${checkupId}/correction`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(validatedBody),
+  });
+
+  if (!response.ok) {
+    throw await toApiError(response, i18n.t('errors:checkups.create'));
+  }
+
+  const rawJson: unknown = await response.json();
+  return CaregiverCheckupResponseSchema.parse(rawJson);
+}
+
+/** Soft-deletes a checkup (`DELETE /checkups/:id`): it stops showing but stays for audit. */
+export async function deleteChildCheckup(checkupId: string): Promise<void> {
+  const response = await authFetch(`/checkups/${checkupId}`, { method: 'DELETE' });
+
+  if (!response.ok) {
+    throw await toApiError(response, i18n.t('errors:checkups.delete'));
+  }
+}
+
+/**
  * Registers a checkup for a child. The body is validated with `CreateCheckupInputSchema`; the
  * server recalculates everything and returns the stored checkup (201, or 200 when the same `id`
  * was already saved).

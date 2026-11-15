@@ -216,7 +216,6 @@ describe('SignOutPendingDialog and sign-out entry points (NK-63)', () => {
 
       const syncBtn = findByTestId(tree, 'sign-out-pending-sync-btn');
       const deleteBtn = findByTestId(tree, 'sign-out-pending-delete-btn');
-      const cancelBtn = findByTestId(tree, 'sign-out-pending-cancel-btn');
       const closeBtn = findByTestId(tree, 'sign-out-pending-close');
 
       expect(syncBtn?.props?.disabled).toBe(false);
@@ -224,8 +223,6 @@ describe('SignOutPendingDialog and sign-out entry points (NK-63)', () => {
       expect(syncBtn?.props?.accessibilityLabel).toBe('Sincronizar y salir');
       expect(deleteBtn?.props?.accessibilityRole).toBe('button');
       expect(deleteBtn?.props?.accessibilityLabel).toBe('Salir y borrar datos');
-      expect(cancelBtn?.props?.accessibilityRole).toBe('button');
-      expect(cancelBtn?.props?.accessibilityLabel).toBe('Cancelar');
       expect(closeBtn?.props?.accessibilityLabel).toBe('Cancelar cierre de sesión');
     });
 
@@ -283,9 +280,9 @@ describe('SignOutPendingDialog and sign-out entry points (NK-63)', () => {
         'Se perderán 2 registros que no se han enviado. Esta acción no se puede deshacer',
       );
       const confirmBtn = findByTestId(tree, 'sign-out-pending-confirm-delete-btn');
-      const cancelBtn = findByTestId(tree, 'sign-out-pending-confirm-cancel-btn');
+      const closeBtn = findByTestId(tree, 'sign-out-pending-close');
       expect(confirmBtn?.props?.disabled).toBe(true);
-      expect(cancelBtn?.props?.disabled).toBe(true);
+      expect(closeBtn?.props?.disabled).toBe(true);
     });
   });
 

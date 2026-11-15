@@ -2,18 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { Card } from '../../components/ui/Card.js';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { SecondaryButton } from '../../components/ui/SecondaryButton.js';
 import { PALETTE } from '../../constants/colors.js';
@@ -44,6 +37,14 @@ export default function ConsentScreen() {
   const [isLegalRepresentative, setIsLegalRepresentative] = useState(false);
   const [understandsRevocation, setUnderstandsRevocation] = useState(false);
   const [showFullText, setShowFullText] = useState(false);
+  const [confirmRevoke, setConfirmRevoke] = useState(false);
+  const [notice, setNotice] = useState<{
+    title: string;
+    message: string;
+    error?: boolean;
+    confirmLabel?: string;
+    onClose?: () => void;
+  } | null>(null);
 
   useEffect(() => {
     if (childId && mode === 'view') {
@@ -51,21 +52,27 @@ export default function ConsentScreen() {
     }
   }, [childId, mode, load]);
 
+  const closeNotice = () => {
+    const onClose = notice?.onClose;
+    setNotice(null);
+    onClose?.();
+  };
+
   const handleAcceptConsent = async () => {
     if (childId) {
       try {
         await grant(CURRENT_CONSENT_VERSION);
-        Alert.alert(t('alerts.grantedTitle'), t('alerts.grantedMessage'), [
-          {
-            text: t('common:actions.accept'),
-            onPress: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE),
-          },
-        ]);
+        setNotice({
+          title: t('alerts.grantedTitle'),
+          message: t('alerts.grantedMessage'),
+          onClose: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE),
+        });
       } catch (err) {
-        Alert.alert(
-          t('alerts.errorTitle'),
-          err instanceof Error ? err.message : t('alerts.grantError'),
-        );
+        setNotice({
+          title: t('alerts.errorTitle'),
+          message: err instanceof Error ? err.message : t('alerts.grantError'),
+          error: true,
+        });
       }
     } else {
       // Pre-registration flow: go straight to the child registration screen
@@ -75,30 +82,26 @@ export default function ConsentScreen() {
 
   const handleRevokeConsent = () => {
     if (!childId) return;
+    setConfirmRevoke(true);
+  };
 
-    Alert.alert(t('alerts.revokeTitle'), t('alerts.revokeMessage', { name: childName }), [
-      { text: t('common:actions.cancel'), style: 'cancel' },
-      {
-        text: t('alerts.revokeConfirm'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await revoke();
-            Alert.alert(t('alerts.revokedTitle'), t('alerts.revokedMessage'), [
-              {
-                text: t('common:actions.understood'),
-                onPress: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE),
-              },
-            ]);
-          } catch (err) {
-            Alert.alert(
-              t('alerts.revokeErrorTitle'),
-              err instanceof Error ? err.message : t('alerts.revokeError'),
-            );
-          }
-        },
-      },
-    ]);
+  const performRevoke = async () => {
+    setConfirmRevoke(false);
+    try {
+      await revoke();
+      setNotice({
+        title: t('alerts.revokedTitle'),
+        message: t('alerts.revokedMessage'),
+        confirmLabel: t('common:actions.understood'),
+        onClose: () => router.replace(APP_ROUTES.CAREGIVER.PROFILE),
+      });
+    } catch (err) {
+      setNotice({
+        title: t('alerts.revokeErrorTitle'),
+        message: err instanceof Error ? err.message : t('alerts.revokeError'),
+        error: true,
+      });
+    }
   };
 
   const handleBack = () => {
@@ -360,6 +363,29 @@ export default function ConsentScreen() {
           )}
         </View>
       </ScrollView>
+      <ConfirmDialog
+        visible={confirmRevoke}
+        tone="danger"
+        icon="shield-outline"
+        title={t('alerts.revokeTitle')}
+        message={t('alerts.revokeMessage', { name: childName })}
+        confirmLabel={t('alerts.revokeConfirm')}
+        cancelLabel={t('common:actions.cancel')}
+        onConfirm={() => void performRevoke()}
+        onCancel={() => setConfirmRevoke(false)}
+        testID="consent-revoke-dialog"
+      />
+      <ConfirmDialog
+        visible={notice !== null}
+        tone={notice?.error ? 'danger' : 'primary'}
+        icon={notice?.error ? 'alert-circle-outline' : 'checkmark-circle-outline'}
+        title={notice?.title ?? ''}
+        message={notice?.message}
+        confirmLabel={notice?.confirmLabel ?? t('common:actions.accept')}
+        onConfirm={closeNotice}
+        onCancel={closeNotice}
+        testID="consent-notice-dialog"
+      />
     </SafeAreaView>
   );
 }

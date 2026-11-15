@@ -1,15 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../constants/colors.js';
@@ -20,6 +12,7 @@ import { usePendingSyncItems, type PendingSyncItem } from '../hooks/usePendingSy
 import { formatDecimal, formatMediumDate } from '../i18n/format.js';
 import type { SyncQueueStatus } from '../lib/local-db/index.js';
 import { Card } from './ui/Card.js';
+import { ConfirmDialog } from './ui/ConfirmDialog.js';
 import { PrimaryButton } from './ui/PrimaryButton.js';
 import { ScreenHeader } from './ui/ScreenHeader.js';
 
@@ -128,6 +121,8 @@ export function PendingSyncList({ fallbackRoute }: PendingSyncListProps) {
   const { items, loading, pendingCount, isSyncing, retryItem, discardItem, syncNow } =
     usePendingSyncItems();
 
+  const [discardTarget, setDiscardTarget] = useState<PendingSyncItem | null>(null);
+
   const handleBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -136,22 +131,9 @@ export function PendingSyncList({ fallbackRoute }: PendingSyncListProps) {
     router.replace(fallbackRoute as never);
   };
 
-  const confirmDiscard = (item: PendingSyncItem) => {
-    const dialog = getDiscardKeys(item);
-    Alert.alert(t(dialog.titleKey), t(dialog.messageKey), [
-      {
-        text: t('pendingSync.discardCancelAction'),
-        style: 'cancel',
-      },
-      {
-        text: t('pendingSync.discardConfirmAction'),
-        style: 'destructive',
-        onPress: () => {
-          void discardItem(item.id);
-        },
-      },
-    ]);
-  };
+  const confirmDiscard = (item: PendingSyncItem) => setDiscardTarget(item);
+
+  const discardKeys = discardTarget ? getDiscardKeys(discardTarget) : null;
 
   const offlineBannerText =
     pendingCount > 0
@@ -288,6 +270,22 @@ export function PendingSyncList({ fallbackRoute }: PendingSyncListProps) {
           />
         </View>
       </View>
+      <ConfirmDialog
+        visible={discardTarget !== null}
+        tone="danger"
+        icon="trash-outline"
+        title={discardKeys ? t(discardKeys.titleKey) : ''}
+        message={discardKeys ? t(discardKeys.messageKey) : ''}
+        confirmLabel={t('pendingSync.discardConfirmAction')}
+        cancelLabel={t('pendingSync.discardCancelAction')}
+        onConfirm={() => {
+          const target = discardTarget;
+          setDiscardTarget(null);
+          if (target) void discardItem(target.id);
+        }}
+        onCancel={() => setDiscardTarget(null)}
+        testID="pending-sync-discard-dialog"
+      />
     </SafeAreaView>
   );
 }

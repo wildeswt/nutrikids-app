@@ -3,13 +3,14 @@ import { useCallback, useRef, useState } from 'react';
 import i18n from '../i18n/index.js';
 import {
   cancelErasureRequest,
-  fetchChildExport,
+  fetchChildWorkbook,
   fetchErasureRequests,
   isNotLegalRepresentativeError,
   rectifyChild,
+  removeChild,
   requestErasure,
 } from '../lib/data-rights-api.js';
-import { buildHistoryCsv, deliverHistoryCsv, historyFileName } from '../lib/history-export.js';
+import { deliverHistoryWorkbook } from '../lib/history-export.js';
 
 export type DataRightsStatus =
   | 'idle'
@@ -38,7 +39,9 @@ export function useDataRights(childId: string | null) {
     requests: [],
     error: null,
   });
-  const [busy, setBusy] = useState<'erasure' | 'cancel' | 'export' | 'rectify' | null>(null);
+  const [busy, setBusy] = useState<'erasure' | 'cancel' | 'export' | 'rectify' | 'remove' | null>(
+    null,
+  );
   const latestLoad = useRef(0);
 
   const load = useCallback(async (): Promise<ErasureRequestResponse[] | null> => {
@@ -93,6 +96,16 @@ export function useDataRights(childId: string | null) {
     [childId, run],
   );
 
+  /** Soft-deletes the child: it stops showing in the app. */
+  const remove = useCallback(
+    (): Promise<void> =>
+      run('remove', async () => {
+        if (!childId) throw new Error(i18n.t('errors:dataRights.missingChild'));
+        await removeChild(childId);
+      }),
+    [childId, run],
+  );
+
   const cancelDeletion = useCallback(
     (requestId: string): Promise<ErasureRequestResponse> =>
       run('cancel', async () => {
@@ -107,13 +120,13 @@ export function useDataRights(childId: string | null) {
     [childId, run],
   );
 
-  /** Downloads the data of the child and hands the history over as a CSV. */
+  /** Downloads the history of the child as an Excel file and hands it over. */
   const exportHistory = useCallback(
     (): Promise<void> =>
       run('export', async () => {
         if (!childId) throw new Error(i18n.t('errors:dataRights.missingChild'));
-        const data = await fetchChildExport(childId);
-        await deliverHistoryCsv(historyFileName(data.child.firstName), buildHistoryCsv(data));
+        const { fileName, data } = await fetchChildWorkbook(childId);
+        await deliverHistoryWorkbook(fileName, data);
       }),
     [childId, run],
   );
@@ -137,6 +150,7 @@ export function useDataRights(childId: string | null) {
     load,
     requestDeletion,
     cancelDeletion,
+    remove,
     exportHistory,
     rectify,
   };

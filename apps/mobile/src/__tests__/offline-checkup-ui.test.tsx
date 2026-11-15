@@ -1,6 +1,5 @@
 import React from 'react';
 import { renderToString } from 'react-dom/server';
-import { Alert } from 'react-native';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CaregiverCheckupListItem } from '../lib/offline-cache.js';
 import type { PendingSyncItem } from '../lib/offline-checkup.js';
@@ -44,6 +43,7 @@ vi.mock('expo-router', () => ({
     canGoBack: mocks.canGoBack,
   }),
   useLocalSearchParams: () => mocks.searchParams,
+  useFocusEffect: vi.fn(),
 }));
 
 vi.mock('@expo/vector-icons', () => ({
@@ -327,11 +327,6 @@ describe('NK-61 parte B UI: control guardado, pendientes de envío, evolución y
     mocks.isOnline = false;
     mocks.pendingItems = samplePendingItems();
 
-    const alertSpy = vi.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      const destructive = buttons?.find((btn) => btn.style === 'destructive');
-      destructive?.onPress?.();
-    });
-
     const { html, tree } = renderScreen(PendingSyncScreen);
 
     expect(html).toContain('Pendientes de envío');
@@ -357,14 +352,10 @@ describe('NK-61 parte B UI: control guardado, pendientes de envío, evolución y
     expect(mocks.retryItem).toHaveBeenCalledWith('item-error');
 
     discardBtn?.props?.onPress?.();
-    expect(alertSpy).toHaveBeenCalledWith(
-      '¿Descartar este control?',
-      'Este control no se enviará y se borrará de este dispositivo',
-      expect.any(Array),
-    );
-    expect(mocks.discardItem).toHaveBeenCalledWith('item-error');
-
-    alertSpy.mockRestore();
+    // Pressing only opens the ConfirmDialog; nothing is discarded until the user confirms.
+    expect(mocks.discardItem).not.toHaveBeenCalled();
+    const dialog = findElementByTestId(tree, 'pending-sync-discard-dialog');
+    expect(dialog?.props?.['tone']).toBe('danger');
   });
 
   it('PendingSyncScreen habilita Sincronizar ahora en línea y muestra estado vacío', () => {

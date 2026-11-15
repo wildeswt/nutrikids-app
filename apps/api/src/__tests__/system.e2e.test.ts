@@ -312,8 +312,8 @@ describe('Pruebas de sistema (NK-46)', { timeout: 90000 }, () => {
     const after = await admin.query(`SELECT * FROM checkups WHERE id = $1`, [original.id]);
     expect(after.rows[0]).toEqual(before.rows[0]);
 
-    // No hay ruta para editar ni borrar un control
-    for (const method of ['put', 'patch', 'delete'] as const) {
+    // No hay ruta para editar un control (se corrige) y DELETE es solo eliminación lógica
+    for (const method of ['put', 'patch'] as const) {
       const res = await request(app)
         [method](`/checkups/${original.id}`)
         .set('Authorization', caregiver.auth)

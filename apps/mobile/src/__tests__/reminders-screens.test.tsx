@@ -247,10 +247,10 @@ describe('RemindersScreen («Recordatorios»)', () => {
     expect(html).not.toContain(t('caregiver:reminders.todayTitle'));
   });
 
-  it('shows that notifications are enabled', () => {
+  it('shows no notifications card when they are enabled', () => {
     const html = render(RemindersScreen);
 
-    expect(html).toContain(t('caregiver:reminders.notifications.enabled'));
+    expect(html).not.toContain('reminders-notifications-status');
     expect(html).not.toContain(t('caregiver:reminders.notifications.enable'));
   });
 
@@ -348,6 +348,7 @@ describe('RemindersScreen («Recordatorios»)', () => {
   });
 
   it('shows the back header, subtitle and places notification status below the list', () => {
+    mocks.permission = 'denied';
     const tree = renderTree(RemindersScreen as () => unknown);
     const html = render(RemindersScreen);
 
@@ -355,7 +356,7 @@ describe('RemindersScreen («Recordatorios»)', () => {
     expect(html).toContain('reminders-header-back');
     expect(html).toContain(t('caregiver:reminders.subtitle'));
     expect(html.indexOf(String(t('caregiver:reminders.upcomingTitle')))).toBeLessThan(
-      html.indexOf(String(t('caregiver:reminders.notifications.enabled'))),
+      html.indexOf(String(t('caregiver:reminders.notifications.disabled'))),
     );
   });
 

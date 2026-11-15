@@ -8,6 +8,7 @@ import { CARD_SHADOW, RADIUS_PILL } from '../constants/layout.js';
 import { font } from '../constants/typography.js';
 import { formatChildAge } from '../lib/children-api.js';
 import { professionalInitials } from '../lib/professionals-api.js';
+import { CardMenuButton } from './CardMenuButton.js';
 import { ChildGrowthStatus } from './ChildGrowthStatus.js';
 
 export interface CaregiverChildCardProps {
@@ -22,6 +23,9 @@ export interface CaregiverChildCardProps {
   professionals?: readonly ProfessionalAssignmentResponse[];
   onLinkProfessional?: () => void;
   onOpenProfessionals?: () => void;
+  /** Con `onEdit` y/o `onRemove` la tarjeta muestra el menú de tres puntos con esas operaciones. */
+  onEdit?: () => void;
+  onRemove?: () => void;
 }
 
 /**
@@ -36,6 +40,8 @@ export function CaregiverChildCard({
   professionals,
   onLinkProfessional,
   onOpenProfessionals,
+  onEdit,
+  onRemove,
 }: CaregiverChildCardProps) {
   const { t } = useTranslation('caregiver');
   const { t: tCommon } = useTranslation('common');
@@ -53,6 +59,30 @@ export function CaregiverChildCard({
       })
     : '';
 
+  const menuActions = [
+    ...(onEdit
+      ? [
+          {
+            id: 'edit-child',
+            label: t('myChildren.editChild'),
+            icon: 'create-outline' as const,
+            onPress: onEdit,
+          },
+        ]
+      : []),
+    ...(onRemove
+      ? [
+          {
+            id: 'remove-child',
+            label: t('myChildren.removeChild'),
+            icon: 'person-remove-outline' as const,
+            destructive: true,
+            onPress: onRemove,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <View style={styles.card}>
       <Pressable
@@ -66,7 +96,7 @@ export function CaregiverChildCard({
           <Ionicons name={isGirl ? 'woman' : 'body'} size={50} color={PALETTE.text.light} />
         </View>
 
-        <View style={styles.infoWrapper}>
+        <View style={[styles.infoWrapper, menuActions.length > 0 && styles.infoWrapperWithMenu]}>
           <Text style={styles.nameTitle}>
             {t('home.childSummary', {
               name: `${child.firstName} ${child.lastName}`,
@@ -84,6 +114,17 @@ export function CaregiverChildCard({
           </View>
         </View>
       </Pressable>
+
+      {menuActions.length > 0 ? (
+        <CardMenuButton
+          tone="light"
+          style={styles.menuButton}
+          actions={menuActions}
+          title={`${child.firstName} ${child.lastName}`}
+          accessibilityLabel={t('myChildren.menuA11y', { name: child.firstName })}
+          testID={`${baseTestID}-menu`}
+        />
+      ) : null}
 
       {onLinkProfessional ? (
         firstProfessional ? (
@@ -209,6 +250,14 @@ const styles = StyleSheet.create({
   },
   infoWrapper: {
     flex: 1,
+  },
+  infoWrapperWithMenu: {
+    paddingRight: 28,
+  },
+  menuButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
   nameTitle: {
     fontFamily: font('semibold'),

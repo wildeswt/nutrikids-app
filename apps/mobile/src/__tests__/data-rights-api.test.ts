@@ -17,11 +17,12 @@ vi.mock('expo-secure-store', () => ({
 import {
   DataRightsApiError,
   cancelErasureRequest,
-  fetchChildExport,
+  fetchChildWorkbook,
   fetchErasureRequests,
   isIdentityLockedError,
   isNotLegalRepresentativeError,
   rectifyChild,
+  removeChild,
   requestErasure,
 } from '../lib/data-rights-api.js';
 
@@ -120,36 +121,26 @@ describe('data-rights-api', () => {
     });
   });
 
-  describe('fetchChildExport', () => {
-    const exportBody = {
-      exportedAt: '2026-11-14T10:00:00.000Z',
-      child,
-      caregivers: [{ name: 'Andrea Silva', email: 'a@example.com' }],
-      checkups: [
-        {
-          id: 'c1',
-          measuredAt: '2026-10-01T15:00:00.000Z',
-          weightKg: '13.4',
-          lengthHeightCm: '91.5',
-          position: 'STANDING',
-          origin: 'CAREGIVER',
-          correctedCheckupId: null,
-          results: [{ indicator: 'WEIGHT_FOR_AGE', zScore: '-1.2' }],
-        },
-      ],
-      feedingLogs: [],
-    };
+  describe('fetchChildWorkbook', () => {
+    const bytes = new Uint8Array([80, 75, 3, 4]).buffer;
 
-    it('requests GET /children/:childId/export and keeps only what the app reads', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(jsonResponse(exportBody));
+    it('requests GET /children/:childId/export.xlsx and keeps the file name of the API', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response(bytes, {
+          status: 200,
+          headers: {
+            'Content-Disposition':
+              'attachment; filename="nutrikids-historial-mateo-2026-11-14.xlsx"',
+          },
+        }),
+      );
       vi.stubGlobal('fetch', mockFetch);
 
-      const result = await fetchChildExport(CHILD_ID);
+      const result = await fetchChildWorkbook(CHILD_ID);
 
-      expect(String(mockFetch.mock.calls[0]![0])).toContain(`/children/${CHILD_ID}/export`);
-      expect(result.checkups).toHaveLength(1);
-      expect(result.checkups[0]).not.toHaveProperty('results');
-      expect(result).not.toHaveProperty('caregivers');
+      expect(String(mockFetch.mock.calls[0]![0])).toContain(`/children/${CHILD_ID}/export.xlsx`);
+      expect(result.fileName).toBe('nutrikids-historial-mateo-2026-11-14.xlsx');
+      expect(new Uint8Array(result.data)).toEqual(new Uint8Array([80, 75, 3, 4]));
     });
 
     it('throws a 403 error for a caregiver who is not the legal representative', async () => {
@@ -160,7 +151,7 @@ describe('data-rights-api', () => {
           .mockResolvedValue(jsonResponse({ error: 'Forbidden', message: 'Sin permiso' }, 403)),
       );
 
-      const error = await fetchChildExport(CHILD_ID).catch((err: unknown) => err);
+      const error = await fetchChildWorkbook(CHILD_ID).catch((err: unknown) => err);
 
       expect(isNotLegalRepresentativeError(error)).toBe(true);
     });
@@ -235,6 +226,22 @@ describe('data-rights-api', () => {
         expect.objectContaining({ method: 'DELETE' }),
       );
       expect(result.status).toBe('cancelled');
+    });
+    it('removeChild sends DELETE /children/:childId and fails with the API status', async () => {
+      const ok = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+      vi.stubGlobal('fetch', ok);
+      await removeChild(CHILD_ID);
+      expect(ok).toHaveBeenCalledWith(
+        expect.stringContaining(`/children/${CHILD_ID}`),
+        expect.objectContaining({ method: 'DELETE' }),
+      );
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ error: { message: 'no' } }, 403)),
+      );
+      const error = await removeChild(CHILD_ID).catch((err: unknown) => err);
+      expect(isNotLegalRepresentativeError(error)).toBe(true);
     });
   });
 });

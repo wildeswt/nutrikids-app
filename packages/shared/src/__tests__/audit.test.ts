@@ -12,7 +12,8 @@ describe('Audit Schemas (NK-21)', () => {
     expect(AuditActionSchema.safeParse('READ').success).toBe(true);
     expect(AuditActionSchema.safeParse('REVIEW').success).toBe(true);
     expect(AuditActionSchema.safeParse('REVOKE').success).toBe(true);
-    expect(AuditActionSchema.safeParse('DELETE').success).toBe(false);
+    expect(AuditActionSchema.safeParse('DELETE').success).toBe(true);
+    expect(AuditActionSchema.safeParse('DROP').success).toBe(false);
   });
 
   it('valida entidades de salud auditadas', () => {

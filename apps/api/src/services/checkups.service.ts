@@ -483,6 +483,39 @@ export async function correctCheckup(
 }
 
 /**
+ * Soft-deletes a checkup: the row stays for audit, RLS hides it (with its results and alerts).
+ * If it was a correction, the corrected checkup becomes current again. Allowed to whoever recorded
+ * it and to the child's legal representative.
+ */
+export async function deleteCheckup(auth: AuthContext, checkupId: string): Promise<void> {
+  await withUser(auth.userId, async (tx) => {
+    const checkup = await tx.checkup.findUnique({
+      where: { id: checkupId },
+      select: { childId: true, recordedById: true },
+    });
+    if (!checkup) {
+      throw HttpError.notFound('Control no encontrado');
+    }
+
+    const isRecorder = checkup.recordedById === auth.userId;
+    const link = isRecorder
+      ? null
+      : await tx.caregiverChild.findUnique({
+          where: { caregiverId_childId: { caregiverId: auth.userId, childId: checkup.childId } },
+          select: { isLegalRepresentative: true },
+        });
+    if (!isRecorder && !link?.isLegalRepresentative) {
+      throw HttpError.forbidden(
+        'Solo quien registró el control o el representante legal del niño puede eliminarlo',
+      );
+    }
+
+    // SECURITY DEFINER function: RLS would reject an UPDATE whose new row is invisible.
+    await tx.$executeRaw`SELECT soft_delete_checkup(${checkupId}::uuid, ${auth.userId}::uuid)`;
+  });
+}
+
+/**
  * Complete checkup history of child (including superseded checkups), in descending measuredAt order.
  * `onlyCurrent` returns only active checkups (used by charts and alerts).
  */

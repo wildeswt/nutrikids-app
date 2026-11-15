@@ -68,9 +68,7 @@ interface TabScreenElement {
   };
 }
 
-function findTabsElement(
-  node: React.ReactNode,
-): React.ReactElement<{
+function findTabsElement(node: React.ReactNode): React.ReactElement<{
   children?: React.ReactNode;
   screenOptions?: { headerShown?: boolean };
 }> | null {

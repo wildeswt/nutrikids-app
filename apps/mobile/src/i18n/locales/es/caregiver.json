@@ -104,7 +104,7 @@
     "registerFeeding": "Registrar alimentación",
     "registerFeedingA11y": "Registrar alimentación de {{name}}",
     "messageLoading": "Cargando mensajes...",
-    "messageEmpty": "Aún no tienes mensajes de tu equipo de salud.",
+    "messageEmpty": "No tienes mensajes nuevos.",
     "messageError": "No pudimos cargar tu último mensaje.",
     "checkupLoading": "Cargando próximo control...",
     "checkupEmpty": "No tienes controles próximos agendados.",
@@ -116,6 +116,9 @@
     "timeHoursAgo_other": "Hace {{count}} h"
   },
   "myChildren": {
+    "menuA11y": "Más opciones de {{name}}",
+    "editChild": "Editar datos",
+    "removeChild": "Eliminar",
     "title": "Mis niños",
     "selectChildA11y": "Elegir a {{name}} como niño activo",
     "linkProfessional": "Vincular profesional",
@@ -213,11 +216,12 @@
     "goToConsent": "Ir al consentimiento",
     "errors": {
       "invalid": "Revisa los datos de la alimentación e intenta de nuevo."
-    }
+    },
+    "editTitle": "Editar alimentación",
+    "mealsDayLabel": "Comidas del día"
   },
   "feedingHistory": {
     "title": "Historial de comidas",
-    "subtitle": "Últimos {{days}} días · {{count}} registros",
     "subtitleLoading": "Últimos {{days}} días",
     "today": "Hoy · {{date}}",
     "yesterday": "Ayer · {{date}}",
@@ -229,7 +233,22 @@
     "emptyTitle": "Aún no hay registros",
     "emptySubtitle": "Cuando registres la alimentación de tu niño, la verás aquí.",
     "register": "Registrar alimentación",
-    "seeHistory": "Ver historial"
+    "seeHistory": "Ver historial",
+    "menuA11y": "Más opciones del registro",
+    "edit": "Editar registro",
+    "delete": "Eliminar registro",
+    "deleteTitle": "¿Eliminar este registro?",
+    "deleteMessage": "El registro del {{date}} dejará de verse en el historial.",
+    "deleteConfirm": "Sí, eliminar",
+    "deleteErrorTitle": "No pudimos eliminar el registro",
+    "detailTitle": "Detalle del día",
+    "detailMeals": "Comidas del día",
+    "detailNotes": "Notas",
+    "detailNoMeals": "Sin comidas marcadas",
+    "detailClose": "Cerrar",
+    "openDetailA11y": "Ver el detalle del {{date}}",
+    "subtitle_one": "Últimos {{days}} días · {{count}} registro",
+    "subtitle_other": "Últimos {{days}} días · {{count}} registros"
   },
   "checkupHistory": {
     "title": "Historial de controles",
@@ -312,15 +331,12 @@
     "zoneLabels": {
       "upper": "Por encima de lo esperado",
       "normal": "Rango esperado (OMS)",
-      "lower": "Por debajo de lo esperado"
+      "lower": "Por debajo de lo esperado",
+      "outer": "Por encima/debajo de lo esperado"
     },
     "nonDiagnosticNotice": "Esta gráfica apoya la valoración del crecimiento y no es un diagnóstico médico.",
     "tapPointHint": "Toca cualquier punto de la curva para ver el detalle de ese control.",
     "selectedRecordTitle": "Detalle del control seleccionado",
-    "trendSummaryTitle": "Resumen del crecimiento",
-    "trendSummaryFavorable": "La evolución reciente muestra una tendencia favorable en este indicador.",
-    "trendSummarySteady": "Seguimos acompañando el crecimiento registrado en cada control.",
-    "favorableTrend": "Tendencia favorable",
     "lastRecordTitle": "Último control",
     "lastRecord": "Último control - {{date}}",
     "weight": "Peso",
@@ -359,8 +375,7 @@
     "filterAllA11y": "Ver todos los mensajes",
     "filterUnread": "Sin leer ({{count}})",
     "filterUnreadA11y": "Ver mensajes sin leer",
-    "childTeam": "Equipo de {{name}}",
-    "teamSubtitle": "{{specialty}} · {{professional}}",
+    "teamSubtitle": "{{specialty}} · {{child}}",
     "healthCenter": "Centro de salud",
     "healthCenterSubtitle": "Atención al usuario",
     "threadA11y": "Mensaje de {{title}}",
@@ -388,7 +403,6 @@
   },
   "chat": {
     "back": "Volver",
-    "title": "Equipo de {{name}}",
     "titleFallback": "Conversación",
     "professional": "{{name}} · {{specialty}}",
     "about": "Sobre {{name}}",
@@ -548,8 +562,6 @@
       "completed": "Realizado"
     },
     "notifications": {
-      "enabled": "Notificaciones activadas",
-      "enabledHint": "Te avisaremos antes de cada cita.",
       "disabled": "Notificaciones desactivadas",
       "disabledHint": "Actívalas para que te avisemos antes de cada cita.",
       "unavailable": "En este dispositivo no podemos revisar las notificaciones.",
@@ -700,10 +712,25 @@
       "forbidden": "Solo el representante legal de {{name}} puede corregir sus datos."
     }
   },
+  "checkupActions": {
+    "menuA11y": "Más opciones del control",
+    "menuTitle": "Control",
+    "correct": "Corregir control",
+    "delete": "Eliminar control",
+    "deleteTitle": "¿Eliminar este control?",
+    "deleteMessage": "El control del {{date}} dejará de verse en el historial y en las gráficas. Si solo te equivocaste en un dato, mejor usa «Corregir control».",
+    "deleteConfirm": "Sí, eliminar",
+    "deleteErrorTitle": "No pudimos eliminar el control",
+    "correctTitle": "Corregir control"
+  },
   "privacy": {
     "back": "Volver",
     "title": "Privacidad e historial",
     "intro": "Aquí decides sobre los datos de tus niños. Solo el representante legal puede usar estas opciones.",
+    "removeChildConfirmTitle": "¿Eliminar a {{name}}?",
+    "removeChildConfirmMessage": "Dejarás de ver a {{name}}, sus controles y su historial, y los profesionales vinculados tampoco podrán verlos.",
+    "removeChildConfirm": "Sí, eliminar",
+    "removeChildErrorTitle": "No pudimos eliminar al niño",
     "consentTitle": "Permiso para guardar los datos",
     "consentStatusActive": "Vigente",
     "consentAcceptedOn": "Aceptado el {{date}}",
@@ -718,8 +745,8 @@
     "backToMyData": "Volver a mis datos",
     "selectChildA11y": "Elegir niño para gestionar su privacidad",
     "exportTitle": "Historial de crecimiento",
-    "exportDescription": "Descarga los controles de {{name}} en un archivo CSV, que se abre en cualquier hoja de cálculo.",
-    "exportButton": "Exportar historial (CSV)",
+    "exportDescription": "Descarga el historial de {{name}} en un archivo de Excel: resumen, controles, alimentación y permisos.",
+    "exportButton": "Exportar a Excel",
     "exporting": "Preparando...",
     "exportErrorTitle": "No se pudo exportar",
     "deleteTitle": "Eliminar los datos",
@@ -747,17 +774,7 @@
     "retry": "Intentar de nuevo",
     "noChildrenTitle": "Aún no tienes niños vinculados",
     "noChildrenSubtitle": "Cuando registres a un niño podrás gestionar aquí sus datos.",
-    "childSubtitle": "{{age}}",
-    "csv": {
-      "date": "Fecha del control",
-      "weight": "Peso (kg)",
-      "height": "Estatura (cm)",
-      "position": "Cómo se midió",
-      "recordedBy": "Quién lo anotó",
-      "correction": "Corrige un control anterior",
-      "yes": "Sí",
-      "no": "No"
-    }
+    "childSubtitle": "{{age}}"
   },
   "linkProfessional": {
     "title": "Vincular profesional",

@@ -89,7 +89,7 @@ function makeConversation(
     lastMessage: overrides.lastMessage ?? {
       id: '44444444-4444-4444-8444-444444444444',
       childId: CHILD_ID,
-      senderId: USER_A,
+      senderId: overrides.participant?.userId ?? USER_A,
       recipientId: USER_B,
       kind: 'message',
       body: overrides.body ?? 'Sigamos ofreciendo agua durante el día',
@@ -146,6 +146,22 @@ describe('useHomeSummary (NK-66)', () => {
       const selected = selectLatestConversation([older, newer]);
       expect(selected?.lastMessage.body).toBe('Mensaje más reciente');
       expect(selected?.participant.firstName).toBe('Lic. Jorge');
+    });
+  });
+
+  describe('selectLatestConversation filtering', () => {
+    it('ignores messages sent by the caregiver and already-read messages', () => {
+      const base = makeConversation();
+      const sentByMe = {
+        ...base,
+        lastMessage: { ...base.lastMessage, senderId: USER_B, recipientId: USER_A },
+      };
+      const read = {
+        ...base,
+        lastMessage: { ...base.lastMessage, readAt: '2026-11-12T11:00:00.000Z' },
+      };
+      expect(selectLatestConversation([sentByMe, read])).toBeNull();
+      expect(selectLatestConversation([sentByMe, read, base])).toBe(base);
     });
   });
 

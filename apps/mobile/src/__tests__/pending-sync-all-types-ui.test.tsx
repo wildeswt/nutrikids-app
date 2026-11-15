@@ -1,6 +1,5 @@
 import React from 'react';
 import { renderToString } from 'react-dom/server';
-import { Alert } from 'react-native';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_ROUTES } from '../constants/routes.js';
 import type { PendingSyncItem } from '../hooks/usePendingSyncItems.js';
@@ -201,10 +200,6 @@ describe('Pendientes de envío común y perfil profesional (NK-62B)', () => {
 
   it('muestra los tres tipos (control, seguimiento con próximo control, alimentación) y permite reintentar y descartar', () => {
     mocks.pendingItems = mixedSampleItems();
-    const alertSpy = vi.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
-      const destructive = buttons?.find((btn) => btn.style === 'destructive');
-      destructive?.onPress?.();
-    });
 
     const { html, tree } = renderScreen(CaregiverPendingSyncScreen);
 
@@ -220,23 +215,11 @@ describe('Pendientes de envío común y perfil profesional (NK-62B)', () => {
 
     const discardFollowUp = findElementByTestId(tree, 'pending-sync-discard-item-followup');
     (discardFollowUp?.props?.onPress as (() => void) | undefined)?.();
-    expect(alertSpy).toHaveBeenCalledWith(
-      '¿Descartar este seguimiento?',
-      'Este seguimiento no se enviará y se borrará de este dispositivo',
-      expect.any(Array),
-    );
-    expect(mocks.discardItem).toHaveBeenCalledWith('item-followup');
-
     const discardFeeding = findElementByTestId(tree, 'pending-sync-discard-item-feeding');
     (discardFeeding?.props?.onPress as (() => void) | undefined)?.();
-    expect(alertSpy).toHaveBeenCalledWith(
-      '¿Descartar esta alimentación?',
-      'Este registro no se enviará y se borrará de este dispositivo',
-      expect.any(Array),
-    );
-    expect(mocks.discardItem).toHaveBeenCalledWith('item-feeding');
-
-    alertSpy.mockRestore();
+    // Pressing only opens the ConfirmDialog; nothing is discarded until the user confirms.
+    expect(mocks.discardItem).not.toHaveBeenCalled();
+    expect(findElementByTestId(tree, 'pending-sync-discard-dialog')).not.toBeNull();
   });
 
   it('la ruta del profesional usa PendingSyncList con respaldo a Bandeja de Alertas', () => {

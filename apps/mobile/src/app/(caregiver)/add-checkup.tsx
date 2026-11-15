@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { CHECKUP_NOTES_MAX, type Position } from '@nutrikids/shared';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -20,9 +20,10 @@ import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useCheckups } from '../../hooks/useCheckups.js';
+import { useClearParamsOnBlur } from '../../hooks/useClearParamsOnBlur.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { formatDecimal, formatLongDate } from '../../i18n/format.js';
-import { isConsentRequiredError } from '../../lib/checkups-api.js';
+import { correctChildCheckup, isConsentRequiredError } from '../../lib/checkups-api.js';
 import {
   buildCreateCheckupInput,
   calculateLocalWhoResults,
@@ -51,7 +52,29 @@ export default function AddCheckupScreen({
   const isProfessional = roleMode === 'PROFESSIONAL';
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'professional', 'common']);
-  const params = useLocalSearchParams<{ childId?: string }>();
+  const params = useLocalSearchParams<{
+    childId?: string;
+    /** Correction mode: the checkup being replaced and its current values (prefill). */
+    correctsCheckupId?: string;
+    measuredAt?: string;
+    weightKg?: string;
+    heightCm?: string;
+    position?: string;
+    notes?: string;
+    /** Where «Volver» goes after correcting: `checkup-history` or, by default, the previous screen. */
+    returnTo?: string;
+  }>();
+  const correctsCheckupId = params.correctsCheckupId ?? null;
+  // Leaving the screen ends correction mode (tabs remember their params).
+  useClearParamsOnBlur([
+    'returnTo',
+    'correctsCheckupId',
+    'measuredAt',
+    'weightKg',
+    'heightCm',
+    'position',
+    'notes',
+  ]);
 
   const {
     status: childrenStatus,
@@ -64,24 +87,69 @@ export default function AddCheckupScreen({
   const activeChild = children.find((child) => child.id === selectedChildId) ?? children[0] ?? null;
   const { create, saving } = useCheckups(activeChild?.id ?? null, { autoLoad: false });
 
-  const [measuredDateText, setMeasuredDateText] = useState(() => formatDateInput(new Date()));
+  const [measuredDateText, setMeasuredDateText] = useState(() =>
+    formatDateInput(params.measuredAt ? new Date(params.measuredAt) : new Date()),
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [position, setPosition] = useState<Position>('STANDING');
+  const [position, setPosition] = useState<Position>(
+    params.position === 'RECUMBENT' ? 'RECUMBENT' : 'STANDING',
+  );
   const [showPositionMenu, setShowPositionMenu] = useState(false);
-  const [weightText, setWeightText] = useState('');
-  const [heightText, setHeightText] = useState('');
-  const [observations, setObservations] = useState('');
+  const [weightText, setWeightText] = useState(params.weightKg ?? '');
+  const [heightText, setHeightText] = useState(params.heightCm ?? '');
+  const [observations, setObservations] = useState(params.notes ?? '');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [outlierWarning, setOutlierWarning] = useState<string | null>(null);
   const [confirmedOutlier, setConfirmedOutlier] = useState(false);
   const [consentRequired, setConsentRequired] = useState(false);
   const [selectModalVisible, setSelectModalVisible] = useState(false);
+  const [correcting, setCorrecting] = useState(false);
   /** Same id for every retry of the same data, so a lost response never duplicates the checkup. */
   const attemptId = useRef<string | null>(null);
 
   useEffect(() => {
     void loadChildren();
   }, [loadChildren]);
+
+  // The tabs keep their screens mounted: when the screen is shown with other params (correcting
+  // another checkup, or back to a new one) the form starts again from them.
+  const lastParamsKey = useRef<string | null>(null);
+  const paramsKey = [
+    params.childId,
+    params.correctsCheckupId,
+    params.measuredAt,
+    params.weightKg,
+    params.heightCm,
+    params.position,
+    params.notes,
+  ].join('|');
+  useFocusEffect(
+    useCallback(() => {
+      if (paramsKey === lastParamsKey.current) return;
+      lastParamsKey.current = paramsKey;
+      setSelectedChildId(params.childId ?? null);
+      setMeasuredDateText(
+        formatDateInput(params.measuredAt ? new Date(params.measuredAt) : new Date()),
+      );
+      setPosition(params.position === 'RECUMBENT' ? 'RECUMBENT' : 'STANDING');
+      setWeightText(params.weightKg ?? '');
+      setHeightText(params.heightCm ?? '');
+      setObservations(params.notes ?? '');
+      attemptId.current = null;
+      setErrorMessage(null);
+      setOutlierWarning(null);
+      setConfirmedOutlier(false);
+      setConsentRequired(false);
+    }, [
+      paramsKey,
+      params.childId,
+      params.measuredAt,
+      params.position,
+      params.weightKg,
+      params.heightCm,
+      params.notes,
+    ]),
+  );
 
   const selectedPositionLabel = t(`addCheckup.positions.${position}`);
 
@@ -112,6 +180,14 @@ export default function AddCheckupScreen({
   };
 
   const handleBack = () => {
+    // Correcting a checkup always returns to the history it was opened from.
+    if (correctsCheckupId && params.returnTo === 'checkup-history') {
+      router.navigate({
+        pathname: APP_ROUTES.CAREGIVER.CHECKUP_HISTORY as never,
+        params: activeChild ? { childId: activeChild.id } : {},
+      });
+      return;
+    }
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -141,7 +217,7 @@ export default function AddCheckupScreen({
   };
 
   const handleSaveAndCalculate = async () => {
-    if (!activeChild || saving) return;
+    if (!activeChild || saving || correcting) return;
     setErrorMessage(null);
     setConsentRequired(false);
 
@@ -176,8 +252,28 @@ export default function AddCheckupScreen({
     setOutlierWarning(null);
 
     try {
+      if (correctsCheckupId) {
+        // Correction: needs a connection; the server stores a new checkup that replaces the old one.
+        setCorrecting(true);
+        try {
+          await correctChildCheckup(correctsCheckupId, result.input);
+        } finally {
+          setCorrecting(false);
+        }
+        attemptId.current = null;
+        handleBack();
+        return;
+      }
       const checkup = await create(result.input);
       attemptId.current = null;
+      // Back from «Control guardado» must not show the saved data again (it could be re-sent).
+      setMeasuredDateText(formatDateInput(new Date()));
+      setWeightText('');
+      setHeightText('');
+      setObservations('');
+      setPosition('STANDING');
+      setOutlierWarning(null);
+      setConfirmedOutlier(false);
       router.push({
         pathname: APP_ROUTES.CAREGIVER.CHECKUP_SAVED as never,
         params: toCheckupSavedParams(activeChild, checkup, {
@@ -231,7 +327,13 @@ export default function AddCheckupScreen({
 
   const header = (
     <ScreenHeader
-      title={isProfessional ? t('professional:addCheckup.title') : t('addCheckup.title')}
+      title={
+        correctsCheckupId
+          ? t('checkupActions.correctTitle')
+          : isProfessional
+            ? t('professional:addCheckup.title')
+            : t('addCheckup.title')
+      }
       backLabel={t('addCheckup.back')}
       onBack={handleBack}
       style={styles.header}
@@ -332,29 +434,31 @@ export default function AddCheckupScreen({
             birthDate: formatLongDate(activeChild.birthDate),
           })}
         >
-          <View style={styles.bannerActionsRow}>
-            <Pressable
-              style={({ pressed }) => [styles.bannerActionBtn, pressed && styles.pressed]}
-              onPress={() =>
-                router.push({
-                  pathname: (isProfessional
-                    ? APP_ROUTES.PROFESSIONAL.CHECKUP_HISTORY
-                    : APP_ROUTES.CAREGIVER.CHECKUP_HISTORY) as never,
-                  params: { childId: activeChild.id },
-                })
-              }
-              accessibilityRole="button"
-              accessibilityLabel={t('addCheckup.seeHistory')}
-              testID="checkup-see-history"
-            >
-              <Ionicons name="time-outline" size={15} color="#FFFFFF" />
-              <Text style={styles.bannerActionText}>{t('addCheckup.seeHistory')}</Text>
-            </Pressable>
-          </View>
+          {!correctsCheckupId ? (
+            <View style={styles.bannerActionsRow}>
+              <Pressable
+                style={({ pressed }) => [styles.bannerActionBtn, pressed && styles.pressed]}
+                onPress={() =>
+                  router.push({
+                    pathname: (isProfessional
+                      ? APP_ROUTES.PROFESSIONAL.CHECKUP_HISTORY
+                      : APP_ROUTES.CAREGIVER.CHECKUP_HISTORY) as never,
+                    params: { childId: activeChild.id },
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityLabel={t('addCheckup.seeHistory')}
+                testID="checkup-see-history"
+              >
+                <Ionicons name="time-outline" size={15} color="#FFFFFF" />
+                <Text style={styles.bannerActionText}>{t('addCheckup.seeHistory')}</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </ChildBanner>
 
-        {/* Enlace Cambiar paciente (solo con más de un niño) */}
-        {children.length > 1 ? (
+        {/* Enlace Cambiar paciente (solo con más de un niño y fuera de corrección) */}
+        {children.length > 1 && !correctsCheckupId ? (
           <View style={styles.changePatientRow}>
             <Pressable
               style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
@@ -654,10 +758,10 @@ export default function AddCheckupScreen({
 
         {/* Botón Guardar y calcular */}
         <PrimaryButton
-          label={saving ? t('addCheckup.saving') : t('addCheckup.submit')}
+          label={saving || correcting ? t('addCheckup.saving') : t('addCheckup.submit')}
           onPress={() => void handleSaveAndCalculate()}
-          loading={saving}
-          disabled={saving}
+          loading={saving || correcting}
+          disabled={saving || correcting}
           accessibilityLabel={t('addCheckup.submit')}
           testID="submit-checkup-button"
           style={styles.submitButton}

@@ -138,7 +138,10 @@
     "types": {
       "alert_new": "Nueva alerta de crecimiento",
       "alert_pending_review": "Alerta pendiente de revisión",
-      "alert_overdue": "Alerta vencida sin revisar"
+      "alert_overdue": "Alerta vencida sin revisar",
+      "reminder_due": "Recordatorio pendiente",
+      "message_new": "Nuevo mensaje recibido",
+      "referral_new": "Nueva derivación recibida"
     }
   },
   "signOutPending": {

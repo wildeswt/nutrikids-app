@@ -24,7 +24,8 @@ export interface HomeSummaryState {
 }
 
 /**
- * Selects the conversation with the most recent message timestamp.
+ * Selects the conversation whose last message is the most recent one received from a professional
+ * and not yet read. Messages sent by the caregiver or already read are ignored.
  */
 export function selectLatestConversation(
   conversations: readonly ConversationResponse[],
@@ -33,6 +34,9 @@ export function selectLatestConversation(
   let latestTime = Number.NEGATIVE_INFINITY;
 
   for (const item of conversations) {
+    const { lastMessage, participant } = item;
+    if (participant.role !== 'PROFESSIONAL') continue;
+    if (lastMessage.senderId !== participant.userId || lastMessage.readAt !== null) continue;
     const time = new Date(item.lastMessage.sentAt).getTime();
     if (Number.isNaN(time)) continue;
     if (time > latestTime) {
@@ -41,7 +45,7 @@ export function selectLatestConversation(
     }
   }
 
-  return latest ?? conversations[0] ?? null;
+  return latest;
 }
 
 /**

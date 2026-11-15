@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { FEEDING_DETAILS_MAX, MEALS_PER_DAY_MAX, MEALS_PER_DAY_MIN } from '@nutrikids/shared';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -21,9 +21,14 @@ import {
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useChildren } from '../../hooks/useChildren.js';
+import { useClearParamsOnBlur } from '../../hooks/useClearParamsOnBlur.js';
 import { useFeedingLog } from '../../hooks/useFeedingLog.js';
 import { formatLongDate } from '../../i18n/format.js';
-import { isConsentRequiredError, isFeedingNetworkError } from '../../lib/feeding-api.js';
+import {
+  isConsentRequiredError,
+  isFeedingNetworkError,
+  updateChildFeedingLog,
+} from '../../lib/feeding-api.js';
 import {
   MEAL_OPTIONS,
   buildCreateFeedingLogInput,
@@ -33,6 +38,7 @@ import {
   type MealId,
   type MealOption,
 } from '../../lib/feeding-form.js';
+import { parseFeedingDetails } from '../../lib/feeding-history.js';
 import { generateUuid } from '../../lib/uuid.js';
 
 const MEAL_ROWS: readonly (readonly [MealOption, MealOption | null])[] = [
@@ -46,7 +52,18 @@ const SAVE_REDIRECT_DELAY_MS = 800;
 export default function FeedingScreen() {
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'errors']);
-  const params = useLocalSearchParams<{ childId?: string }>();
+  const params = useLocalSearchParams<{
+    childId?: string;
+    /** Edit mode: the feeding log being edited and its current values (prefill). */
+    editLogId?: string;
+    logDate?: string;
+    mealsPerDay?: string;
+    details?: string;
+  }>();
+  const editLogId = params.editLogId ?? null;
+  // Leaving the screen ends edit mode (tabs remember their params).
+  useClearParamsOnBlur(['editLogId', 'logDate', 'mealsPerDay', 'details']);
+  const [initialEdit] = useState(() => parseFeedingDetails(params.details ?? null));
 
   const {
     status: childrenStatus,
@@ -58,9 +75,11 @@ export default function FeedingScreen() {
   const activeChild = children.find((child) => child.id === selectedChildId) ?? children[0] ?? null;
   const { create, saving } = useFeedingLog(activeChild?.id ?? null);
 
-  const [selectedMeals, setSelectedMeals] = useState<MealId[]>([]);
-  const [mealsPerDay, setMealsPerDay] = useState<number>(MEALS_PER_DAY_MIN);
-  const [notes, setNotes] = useState('');
+  const [selectedMeals, setSelectedMeals] = useState<MealId[]>(initialEdit.meals);
+  const [mealsPerDay, setMealsPerDay] = useState<number>(
+    params.mealsPerDay ? Number(params.mealsPerDay) : MEALS_PER_DAY_MIN,
+  );
+  const [notes, setNotes] = useState(initialEdit.text);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [consentRequired, setConsentRequired] = useState(false);
   const [savedMode, setSavedMode] = useState<'none' | 'online' | 'offline'>('none');
@@ -89,17 +108,58 @@ export default function FeedingScreen() {
     setSavedMode('none');
   };
 
+  // The tabs keep their screens mounted: the form is started again from the route params every
+  // time the screen is shown with other params (edit mode) or after a save, so it never stays
+  // frozen in the "saved" state of the previous visit.
+  const lastParamsKey = useRef<string | null>(null);
+  const savedRef = useRef(false);
+  savedRef.current = savedSuccess;
+  const paramsKey = [
+    params.childId,
+    params.editLogId,
+    params.logDate,
+    params.mealsPerDay,
+    params.details,
+  ].join('|');
+  useFocusEffect(
+    useCallback(() => {
+      if (paramsKey === lastParamsKey.current && !savedRef.current) return;
+      lastParamsKey.current = paramsKey;
+      if (redirectTimer.current !== null) {
+        clearTimeout(redirectTimer.current);
+        redirectTimer.current = null;
+      }
+      const parsed = parseFeedingDetails(params.details ?? null);
+      setSelectedMeals(parsed.meals);
+      setMealsPerDay(params.mealsPerDay ? Number(params.mealsPerDay) : MEALS_PER_DAY_MIN);
+      setNotes(parsed.text);
+      setSelectedChildId(params.childId ?? null);
+      attemptId.current = null;
+      setErrorMessage(null);
+      setConsentRequired(false);
+      setSavedMode('none');
+    }, [paramsKey, params.details, params.mealsPerDay, params.childId]),
+  );
+
   const handleBack = useCallback(() => {
     if (redirectTimer.current !== null) {
       clearTimeout(redirectTimer.current);
       redirectTimer.current = null;
+    }
+    // Editing a log always returns to the history it was opened from.
+    if (editLogId) {
+      router.navigate({
+        pathname: APP_ROUTES.CAREGIVER.FEEDING_HISTORY as never,
+        params: activeChild ? { childId: activeChild.id } : {},
+      });
+      return;
     }
     if (router.canGoBack()) {
       router.back();
     } else {
       router.replace(APP_ROUTES.CAREGIVER.HOME);
     }
-  }, [router]);
+  }, [router, editLogId, activeChild]);
 
   const handleSwitchChild = () => {
     if (!activeChild || children.length < 2) return;
@@ -141,9 +201,14 @@ export default function FeedingScreen() {
     setConsentRequired(false);
 
     attemptId.current ??= generateUuid();
+    // Editing keeps the day of the log; a new log is always for today.
+    const editDay = editLogId && params.logDate ? params.logDate.split('-').map(Number) : null;
     const result = buildCreateFeedingLogInput(
       { selectedMeals, mealsPerDay, freeText: notes },
-      { id: attemptId.current },
+      {
+        id: attemptId.current,
+        ...(editDay ? { now: new Date(editDay[0]!, editDay[1]! - 1, editDay[2]!, 12) } : {}),
+      },
     );
 
     if (!result.ok) {
@@ -152,6 +217,17 @@ export default function FeedingScreen() {
     }
 
     try {
+      if (editLogId) {
+        // Edit: needs a connection (not queued offline).
+        const { id: _id, ...changes } = result.input;
+        await updateChildFeedingLog(activeChild.id, editLogId, changes);
+        attemptId.current = null;
+        setSavedMode('online');
+        redirectTimer.current = setTimeout(() => {
+          handleBack();
+        }, SAVE_REDIRECT_DELAY_MS);
+        return;
+      }
       const created = await create(result.input);
       attemptId.current = null;
       setSavedMode(created?.savedLocally ? 'offline' : 'online');
@@ -169,6 +245,11 @@ export default function FeedingScreen() {
     }
   };
 
+  // The day shown is today for a new log, and the day of the log when editing one.
+  const recordDate = (() => {
+    const [y, m, d] = (editLogId && params.logDate ? params.logDate : '').split('-').map(Number);
+    return y && m && d ? new Date(y, m - 1, d) : new Date();
+  })();
   const detailsPreview = buildFeedingDetails(selectedMeals, notes);
   const canDecrease = mealsPerDay > MEALS_PER_DAY_MIN && !saving && !savedSuccess;
   const canIncrease = mealsPerDay < MEALS_PER_DAY_MAX && !saving && !savedSuccess;
@@ -187,7 +268,9 @@ export default function FeedingScreen() {
         <Text style={styles.backText}>{t('feeding.back')}</Text>
       </Pressable>
 
-      <Text style={styles.screenTitle}>{t('feeding.title')}</Text>
+      <Text style={styles.screenTitle}>
+        {editLogId ? t('feeding.editTitle') : t('feeding.title')}
+      </Text>
     </>
   );
 
@@ -246,26 +329,28 @@ export default function FeedingScreen() {
 
         <ChildBanner
           name={`${activeChild.firstName} ${activeChild.lastName}`}
-          subtitle={t('feeding.childSubtitle', { date: formatLongDate(new Date()) })}
+          subtitle={t('feeding.childSubtitle', { date: formatLongDate(recordDate) })}
           style={styles.childBanner}
         />
 
         <View style={[styles.linksRow, children.length <= 1 && styles.linksRowSingle]}>
-          <Pressable
-            style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
-            onPress={() =>
-              router.push({
-                pathname: APP_ROUTES.CAREGIVER.FEEDING_HISTORY as never,
-                params: { childId: activeChild.id },
-              })
-            }
-            accessibilityRole="button"
-            accessibilityLabel={t('feedingHistory.seeHistory')}
-            testID="feeding-see-history"
-          >
-            <Text style={styles.changeChildText}>{t('feedingHistory.seeHistory')}</Text>
-          </Pressable>
-          {children.length > 1 ? (
+          {editLogId ? null : (
+            <Pressable
+              style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
+              onPress={() =>
+                router.push({
+                  pathname: APP_ROUTES.CAREGIVER.FEEDING_HISTORY as never,
+                  params: { childId: activeChild.id },
+                })
+              }
+              accessibilityRole="button"
+              accessibilityLabel={t('feedingHistory.seeHistory')}
+              testID="feeding-see-history"
+            >
+              <Text style={styles.changeChildText}>{t('feedingHistory.seeHistory')}</Text>
+            </Pressable>
+          )}
+          {children.length > 1 && !editLogId ? (
             <Pressable
               style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
               onPress={handleSwitchChild}
@@ -315,7 +400,9 @@ export default function FeedingScreen() {
 
         {/* Comidas de hoy */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('feeding.mealsTodayLabel')}</Text>
+          <Text style={styles.sectionLabel}>
+            {editLogId ? t('feeding.mealsDayLabel') : t('feeding.mealsTodayLabel')}
+          </Text>
           <View style={styles.mealsGrid}>
             {MEAL_ROWS.map(([leftMeal, rightMeal]) => (
               <View key={leftMeal.id} style={styles.mealRow}>

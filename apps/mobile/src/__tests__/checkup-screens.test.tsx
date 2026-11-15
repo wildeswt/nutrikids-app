@@ -145,6 +145,8 @@ vi.mock('expo-router', () => ({
     canGoBack: () => true,
   }),
   useLocalSearchParams: () => mocks.params,
+  useFocusEffect: vi.fn(),
+  useNavigation: () => ({ setParams: vi.fn() }),
 }));
 
 vi.mock('@expo/vector-icons', () => ({

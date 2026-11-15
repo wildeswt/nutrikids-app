@@ -3,7 +3,7 @@ import type { ChildResponse } from '@nutrikids/shared';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import {
@@ -13,6 +13,7 @@ import {
 import { AgeNotice } from '../../components/child-form/AgeNotice.js';
 import { BirthDateField } from '../../components/child-form/BirthDateField.js';
 import { SexSelector } from '../../components/child-form/SexSelector.js';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.js';
 import { PillField } from '../../components/ui/PillField.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
@@ -54,6 +55,7 @@ export function EditChildForm({
   const { rectify, busy } = useDataRights(child.id);
   const [form, setForm] = useState<RectifyFormData>(() => rectifyFormFromChild(child));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [savedName, setSavedName] = useState<string | null>(null);
   const saving = busy === 'rectify';
 
   const update = (patch: Partial<RectifyFormData>) => {
@@ -78,11 +80,7 @@ export function EditChildForm({
 
     try {
       await rectify(result.input);
-      Alert.alert(
-        t('editChild.successTitle'),
-        t('editChild.successMessage', { name: result.input.firstName ?? child.firstName }),
-        [{ text: t('common:actions.accept'), onPress: onBack }],
-      );
+      setSavedName(result.input.firstName ?? child.firstName);
     } catch (err) {
       setErrorMessage(
         isNotLegalRepresentativeError(err)
@@ -205,6 +203,17 @@ export function EditChildForm({
           testID="edit-child-submit"
         />
       </View>
+      <ConfirmDialog
+        visible={savedName !== null}
+        tone="primary"
+        icon="checkmark-circle-outline"
+        title={t('editChild.successTitle')}
+        message={t('editChild.successMessage', { name: savedName ?? '' })}
+        confirmLabel={t('common:actions.accept')}
+        onConfirm={onBack}
+        onCancel={onBack}
+        testID="edit-child-saved-dialog"
+      />
     </KeyboardAwareScrollView>
   );
 }

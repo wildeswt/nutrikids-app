@@ -63,7 +63,7 @@ export function ChatThread({
   participantName,
   participantRole,
   participantSpecialty,
-  childFirstName,
+  childFirstName: _childFirstName,
   childFullName,
   fallbackRoute,
 }: ChatThreadProps) {
@@ -197,11 +197,10 @@ export function ChatThread({
     : null;
 
   const screenTitle =
-    mode === 'caregiver'
-      ? childFirstName
-        ? t('caregiver:chat.title', { name: childFirstName })
-        : t('caregiver:chat.titleFallback')
-      : resolvedParticipant?.name || t('professional:messages.chatTitleFallback');
+    resolvedParticipant?.name ||
+    (mode === 'caregiver'
+      ? t('caregiver:chat.titleFallback')
+      : t('professional:messages.chatTitleFallback'));
 
   const headerPrimary = displaySpecialty
     ? t('caregiver:chat.professional', { name: displayName, specialty: displaySpecialty })

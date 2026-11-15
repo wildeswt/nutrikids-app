@@ -217,9 +217,12 @@ describe('Messages & Chat Screens (NK-50)', () => {
 
       const html = renderToString(React.createElement(CaregiverMessagesScreen));
 
-      expect(html).toContain('Equipo de Mateo');
-      expect(html).toContain('Nutrición · Laura Pérez');
-      expect(html).toContain('Enfermería · Ana Torres');
+      expect(html).not.toContain('Equipo de');
+      // Title: the professional; below, their specialty and the child.
+      expect(html).toContain('Laura Pérez');
+      expect(html).toContain('Nutrición · Mateo');
+      expect(html).toContain('Ana Torres');
+      expect(html).toContain('Enfermería · Mateo');
       expect(html).toContain('Sin leer (2)');
       expect(html).toContain(i18n.t('caregiver:messages.emergencyNotice'));
       expect(html).toContain('Nuevo mensaje');
@@ -449,7 +452,7 @@ describe('Messages & Chat Screens (NK-50)', () => {
 
       const html = renderToString(React.createElement(CaregiverChatDetailScreen));
 
-      expect(html).toContain('Equipo de Mateo');
+      expect(html).not.toContain('Equipo de');
       expect(html).toContain('Laura Pérez · Nutrición');
       expect(html).toContain('Sobre Mateo Gómez');
       expect(html).toContain('18 de octubre de 2026');

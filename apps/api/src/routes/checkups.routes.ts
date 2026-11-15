@@ -8,6 +8,7 @@ import { authenticate } from '../middlewares/authenticate.js';
 import { validateRequest } from '../middlewares/validate.js';
 import {
   correctCheckup,
+  deleteCheckup,
   getCheckupChildId,
   getCheckupResults,
 } from '../services/checkups.service.js';
@@ -72,6 +73,28 @@ export function createCheckupsRouter(): Router {
       res.locals.auditEntityId = checkup.id;
       res.locals.auditHasNotes = checkup.notes !== null;
       res.status(created ? 201 : 200).json(checkup);
+    },
+  );
+
+  /**
+   * DELETE /checkups/:checkupId
+   * Soft delete: the checkup disappears from the app but stays in the database for audit.
+   * Only who recorded it or the child's legal representative (checked in the service).
+   */
+  router.delete(
+    '/:checkupId',
+    requirePermission('checkup:create'),
+    validateRequest({ params: CheckupParamsSchema }),
+    loadCheckupChild,
+    requireLink(checkupChildId),
+    auditHealth({
+      action: 'DELETE',
+      entityType: 'checkups',
+      getEntityId: (req) => req.params.checkupId as string,
+    }),
+    async (req, res) => {
+      await deleteCheckup(req.auth!, req.params.checkupId as string);
+      res.status(204).end();
     },
   );
 

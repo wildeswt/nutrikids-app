@@ -12,6 +12,8 @@ export default function CaregiverTabsLayout() {
   return (
     <ConnectionBarLayout role={USER_ROLES.CAREGIVER}>
       <Tabs
+        // «Atrás» (botón del teléfono o router.back) vuelve a la pantalla anterior, no a Inicio.
+        backBehavior="history"
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: PALETTE.primary,
@@ -256,6 +258,17 @@ export default function CaregiverTabsLayout() {
           options={{
             title: t('tabs.myChildren'),
             headerTitle: t('tabs.myChildrenHeader'),
+            tabBarStyle: { display: 'none' },
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
+          }}
+        />
+        <Tabs.Screen
+          name="checkup-history"
+          options={{
+            title: t('tabs.checkupHistory'),
+            headerTitle: t('tabs.checkupHistory'),
+            headerShown: false,
             tabBarStyle: { display: 'none' },
             tabBarItemStyle: { display: 'none' },
             tabBarButton: () => null,

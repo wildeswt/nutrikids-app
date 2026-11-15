@@ -1,0 +1,1287 @@
+﻿namespace,clave,es,qu_actual,estado,notas
+auth,selectRole.title,¿Con qué perfil deseas registrarte?,¿Ima shina killkakatinata munanki?,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,selectRole.subtitle,Selecciona el tipo de cuenta para adaptar tu experiencia en NutriKids.,"NutriKids-pi ima rurakta kanki, akllay.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,selectRole.caregiverA11y,Soy Cuidador o Representante,Ñukaka wawa kamakmi kani,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,selectRole.caregiverTitle,Soy Cuidador,Wawa kamakmi kani,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,selectRole.caregiverDescription,"Madre, padre o representante legal para registrar y consultar el crecimiento de mis niños.","Mama, yaya, wawata kamak: ñuka wawakunapak wiñayta killkankapak, rikunkapak.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,selectRole.professionalTitle,Soy Profesional de Salud,Hampikmi kani,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,selectRole.professionalDescription,"Pediatría, nutrición o enfermería para seguimiento clínico y gestión de alertas.","Wawa hampi, mikuy hampi, unkuk kamay: wawakunata katinkapak, yuyachikkunata rikunkapak.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,selectRole.haveAccount,¿Ya tienes una cuenta?,¿Ñachu kikinpak kuentata charinki?,revisar,sin respaldo: kuentata
+auth,login.title,Iniciar Sesión,Yaykuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,login.twoFactorTitle,Verificación en Dos Pasos,Ishkay kutin chaninchiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,login.emailLabel,Correo Electrónico,Correo electrónico,revisar,"sin respaldo: electr, nico"
+auth,login.emailPlaceholder,Ingrese su correo,Kikinpak correota killkay,revisar,sin respaldo: correota
+auth,login.passwordLabel,Contraseña,Pakalla shimi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,login.passwordPlaceholder,Ingrese su contraseña,Kikinpak pakalla shimita killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,login.forgotPassword,¿Olvidó su contraseña?,¿Pakalla shimita kunkarirkankichu?,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,login.submit,Iniciar Sesión,Yaykuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,login.twoFactorDescription,Tu cuenta profesional requiere verificación en dos pasos. Ingresa el código de 6 dígitos de tu aplicación autenticadora.,Hampik kuentaka ishkay kutin chaninchinatami mutsun. Kikinpak autenticadora app-pak 6 yupayta killkay.,revisar,"sin respaldo: kuentaka, autenticadora"
+auth,login.totpLabel,Código de autenticación (6 dígitos),Chaninchina yupay (6 yupay),traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,login.totpPlaceholder,123456,123456,no se traduce,
+auth,login.recoveryLabel,Código de recuperación,Tikrachina yupay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,login.recoveryPlaceholder,Ingresa tu código de respaldo,Kikinpak waki yupayta killkay,revisar,sin respaldo: waki
+auth,login.useAuthenticator,Usar código de la aplicación autenticadora,Autenticadora app-pak yupayta hapiy,revisar,sin respaldo: autenticadora
+auth,login.useRecovery,"No tengo acceso a mi app, usar código de recuperación","App-man mana yaykuy ushanichu, tikrachina yupayta hapisha",revisar,sin respaldo: man
+auth,login.verifySubmit,Verificar e Iniciar Sesión,Chaninchishpa yaykuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,login.backToLogin,Volver al inicio de sesión,Yaykunaman tikray,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,login.noAccount,¿No tienes una cuenta?,¿Manarak kuentata charinkichu?,revisar,sin respaldo: kuentata
+auth,login.registerLink,Regístrate,Killkakatiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,login.invalidCode,Código incorrecto o vencido. Inténtalo nuevamente.,"Yupayka pantashkami, mana kashpaka ña tukurishkami. Kutin rurapay.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,login.setupTitle,Activa la Verificación en Dos Pasos,Ishkay kutin chaninchiyta kallarichiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,login.setupDescription,"Tu cuenta profesional debe usar una aplicación autenticadora (Google Authenticator, Microsoft Authenticator u otra). Escanea el código QR o ingresa la clave manualmente y luego escribe el código de 6 dígitos que muestra la aplicación.","Hampik kuentaka autenticadora app-ta (Google Authenticator, Microsoft Authenticator shukkunapash) mutsun. QR yupayta rikuchiy, mana kashpaka pakalla yupayta killkay, kipaka app rikuchishka 6 yupayta killkay.",revisar,"sin respaldo: kuentaka, autenticadora, google, authenticator, microsoft, authenticator"
+auth,login.qrA11y,Código QR para agregar NutriKids a tu aplicación autenticadora,NutriKids-ta autenticadora app-man yapachinkapak QR yupay,revisar,"sin respaldo: autenticadora, man"
+auth,login.manualKeyLabel,Clave para ingresar manualmente,Makiwan killkanapak pakalla yupay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,login.openAuthenticator,Abrir en la aplicación autenticadora,Autenticadora app-pi paskay,revisar,sin respaldo: autenticadora
+auth,login.openAuthenticatorError,No encontramos una aplicación autenticadora en este dispositivo. Ingresa la clave manualmente.,Kay antawapi autenticadora app-ta mana tarinchikchu. Pakalla yupayta makiwan killkay.,revisar,sin respaldo: autenticadora
+auth,login.activateSubmit,Activar e Iniciar Sesión,"Kallarichiy, yaykuy",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,register.title,Crear Cuenta,Kuentata rurana,revisar,sin respaldo: kuentata
+auth,register.roleBadge,Perfil: {{role}},Ruray: {{role}},traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,register.changeRole,Cambiar perfil,Rurayta tikray,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,register.firstNameLabel,Nombre,Shuti,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,register.firstNamePlaceholder,Ingrese su nombre,Kikinpak shutita killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,register.lastNameLabel,Apellido,Ayllu shuti,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,register.lastNamePlaceholder,Ingrese su apellido,Kikinpak ayllu shutita killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,register.emailLabel,Correo Electrónico,Correo electrónico,revisar,"sin respaldo: electr, nico"
+auth,register.emailPlaceholder,Ingrese su correo,Kikinpak correota killkay,revisar,sin respaldo: correota
+auth,register.phoneLabel,Teléfono (opcional),Karurimay (munashpa),traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,register.phonePlaceholder,Ej: +584120000001,Shina: +584120000001,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,register.specialtyLabel,Especialidad,Hampi yachay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,register.licenseLabel,Número de Licencia / Matrícula,Hampik killka yupay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,register.licensePlaceholder,Ej: MED-12345,Shina: MED-12345,revisar,sin respaldo: med
+auth,register.invitationLabel,Código de Invitación Profesional,Hampikpak kayana yupay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,register.invitationPlaceholder,Código provisto por su institución,Kikinpak tantanakuy kushka yupay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,register.passwordLabel,Contraseña,Pakalla shimi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,register.passwordPlaceholder,Ingrese su contraseña,Kikinpak pakalla shimita killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,register.confirmPasswordLabel,Confirmar Contraseña,Pakalla shimita kutin killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,register.confirmPasswordPlaceholder,Ingrese nuevamente su contraseña,Pakalla shimita kutin killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,register.submit,Crear Cuenta,Kuentata rurana,revisar,sin respaldo: kuentata
+auth,register.haveAccount,¿Ya tienes una cuenta?,¿Ñachu kikinpak kuentata charinki?,revisar,sin respaldo: kuentata
+auth,register.passwordsMismatch,Las contraseñas no coinciden,Pakalla shimikunaka mana kikinchu kan,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,forgotPassword.title,Recuperar Contraseña,Pakalla shimita tikrachina,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,forgotPassword.successTitle,Solicitud Enviada,Mañayka kachashkami,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,forgotPassword.enterToken,Ingresar Token de Recuperación,Tikrachina yupayta killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,forgotPassword.backToLogin,Volver al inicio de sesión,Yaykunaman tikray,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,forgotPassword.instructions,Ingresa el correo electrónico asociado a tu cuenta y te enviaremos las instrucciones y el token para restablecer tu contraseña.,"Kikinpak correota killkay. Pakalla shimita mushukyachinkapak yachachikkunata, yupaytapash kachashunmi.",revisar,sin respaldo: correota
+auth,forgotPassword.emailLabel,Correo electrónico,Correo electrónico,pendiente,igual al español
+auth,forgotPassword.emailPlaceholder,ejemplo@correo.com,shina@correo.com,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,forgotPassword.submit,Enviar Instrucciones,Yachachikkunata kachay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,resetPassword.title,Nueva Contraseña,Mushuk pakalla shimi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,resetPassword.successTitle,Contraseña Restablecida,Pakalla shimika mushukyachishkami,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,resetPassword.successMessage,Tu contraseña ha sido restablecida exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.,Pakalla shimika allimi mushukyarka. Kunanka mushuk pakalla shimiwan yaykuy ushankimi.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,resetPassword.instructions,Ingresa el token de recuperación recibido por correo y tu nueva contraseña.,"Correopi chaskishka yupayta, mushuk pakalla shimitapash killkay.",revisar,sin respaldo: correopi
+auth,resetPassword.tokenLabel,Token de recuperación,Tikrachina yupay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,resetPassword.tokenPlaceholder,Pega el código recibido,Chaskishka yupayta churay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,resetPassword.newPasswordLabel,Nueva contraseña,Mushuk pakalla shimi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,resetPassword.newPasswordPlaceholder,Mínimo 8 caracteres,Ashtawan 8 killkakuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,resetPassword.showNewPassword,Mostrar nueva contraseña,Mushuk pakalla shimita rikuchiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,resetPassword.hideNewPassword,Ocultar nueva contraseña,Mushuk pakalla shimita pakay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,resetPassword.confirmPasswordLabel,Confirmar nueva contraseña,Mushuk pakalla shimita kutin killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,resetPassword.confirmPasswordPlaceholder,Repite la nueva contraseña,Mushuk pakalla shimita kutin killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,resetPassword.submit,Actualizar Contraseña,Pakalla shimita mushukyachiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,resetPassword.backToLogin,Volver al inicio de sesión,Yaykunaman tikray,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+auth,resetPassword.passwordsMismatch,Las contraseñas no coinciden,Pakalla shimikunaka mana kikinchu kan,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,recoveryCodes.title,Guarda tus Códigos de Recuperación,Tikrachina yupaykunata wakichiy,revisar,sin respaldo: wakichiy
+auth,recoveryCodes.description,"Si pierdes acceso a tu aplicación autenticadora, podrás iniciar sesión con uno de estos códigos. Cada código sirve una sola vez y no volverán a mostrarse.","Autenticadora app-ta chinkachishpaka, kay yupaykunawan yaykuy ushankiwan. Sapan yupayka shuk kutillami sirvin, manatak kutin rikurinkachu.",revisar,"sin respaldo: autenticadora, sirvin"
+auth,recoveryCodes.listA11y,Códigos de recuperación,Tikrachina yupaykuna,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+auth,recoveryCodes.share,Compartir o guardar los códigos,"Yupaykunata kachay, wakichiy",revisar,sin respaldo: wakichiy
+auth,recoveryCodes.shareMessage,Códigos de recuperación de NutriKids (cada uno sirve una sola vez): {{codes}},NutriKids tikrachina yupaykuna (sapanka shuk kutillami sirvin): {{codes}},revisar,sin respaldo: sirvin
+auth,recoveryCodes.saved,"Ya los guardé, continuar","Ña wakichirkani, katiy",revisar,sin respaldo: wakichirkani
+caregiver,tabs.home,Inicio,Kallari,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.homeHeader,Mis niños,Ñuka wawakuna,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,tabs.evolution,Evolución,Wiñay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.evolutionHeader,Cómo va creciendo,Imashina wiñakun,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.addCheckup,Control,Kamay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.addCheckupHeader,Anotar un control,Kamayta killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,tabs.checkupSaved,Control guardado,Kamayka wakaychishkami,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.feeding,Alimentación,Alimentación,pendiente,igual al español
+caregiver,tabs.feedingHeader,Alimentación,Alimentación,pendiente,igual al español
+caregiver,tabs.messages,Mensajes,Willaykuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.messagesHeader,Mensajes y avisos,"Willaykuna, yuyachikkunapash",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.chat,Chat,Rimanakuy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,tabs.profile,Perfil,Ñukamanta,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.profileHeader,Mi perfil,Ñukamanta,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.consent,Permiso,Ari nina,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,tabs.consentHeader,Consentimiento informado,Yachashpa ari nina,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,tabs.addChild,Registrar niño,Wawata killkakatiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.addChildHeader,Registrar niño,Wawata killkakatiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.notifications,Notificaciones,Willaykuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.notificationsHeader,Notificaciones,Willaykuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,tabs.reminders,Recordatorios,Recordatorios,pendiente,igual al español
+caregiver,tabs.remindersHeader,Recordatorios,Recordatorios,pendiente,igual al español
+caregiver,tabs.addReminder,Nuevo recordatorio,Nuevo recordatorio,pendiente,igual al español
+caregiver,tabs.addReminderHeader,Nuevo recordatorio,Nuevo recordatorio,pendiente,igual al español
+caregiver,tabs.learn,Aprende en casa,Wasipi yachay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,tabs.learnHeader,Aprende en casa,Wasipi yachay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,tabs.learnArticle,Artículo,Artículo,pendiente,igual al español
+caregiver,tabs.learnArticleHeader,Artículo,Artículo,pendiente,igual al español
+caregiver,tabs.myData,Mis datos,Mis datos,pendiente,igual al español
+caregiver,tabs.myDataHeader,Mis datos,Mis datos,pendiente,igual al español
+caregiver,tabs.editChild,Corregir datos,Corregir datos,pendiente,igual al español
+caregiver,tabs.editChildHeader,Corregir datos del niño,Corregir datos del niño,pendiente,igual al español
+caregiver,tabs.privacy,Privacidad e historial,Privacidad e historial,pendiente,igual al español
+caregiver,tabs.privacyHeader,Privacidad e historial,Privacidad e historial,pendiente,igual al español
+caregiver,tabs.myChildren,Mis niños,Ñuka wawakuna,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,tabs.myChildrenHeader,Mis niños,Ñuka wawakuna,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,tabs.pendingSync,Pendientes de envío,Pendientes de envío,pendiente,igual al español
+caregiver,tabs.pendingSyncHeader,Pendientes de envío,Pendientes de envío,pendiente,igual al español
+caregiver,tabs.linkProfessional,Vincular profesional,Vincular profesional,pendiente,igual al español
+caregiver,tabs.linkProfessionalHeader,Vincular profesional,Vincular profesional,pendiente,igual al español
+caregiver,tabs.feedingHistory,Historial de comidas,Historial de comidas,pendiente,igual al español
+caregiver,tabs.feedingHistoryHeader,Historial de comidas,Historial de comidas,pendiente,igual al español
+caregiver,tabs.childRegistered,Niño registrado,Niño registrado,pendiente,igual al español
+caregiver,tabs.childRegisteredHeader,Niño registrado,Niño registrado,pendiente,igual al español
+caregiver,tabs.childProfessionals,Profesionales del niño,Profesionales del niño,pendiente,igual al español
+caregiver,tabs.childProfessionalsHeader,Profesionales del niño,Profesionales del niño,pendiente,igual al español
+caregiver,home.notifications,Avisos,Yuyachikkuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.greeting,"¡Hola, {{name}}!","¡Imanalla, {{name}}!",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.childSummary,{{name}} - {{age}},{{name}} - {{age}},no se traduce,
+caregiver,home.childSubtitle,Tu niño está creciendo,Kikinpak wawaka wiñakunmi,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.statusOk,Todo va bien,Tukuy allimi rin,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.seeMore,Ver cómo va creciendo,Imashina wiñakunta rikuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.forYou,Para ti,Kanpak,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.seeAll,Ver todo,Tukuyta rikuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.messageTitle,Mensaje de tu equipo de salud,Hampik tantanakuypak willay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.messageQuote,“{{text}}”,“{{text}}”,no se traduce,
+caregiver,home.messageMeta,{{when}} - {{author}},{{when}} - {{author}},no se traduce,
+caregiver,home.nextCheckup,Próximo control,Shamuk kamay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.schedule,Agendar,Punchata churay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.checkupTitle,Control de crecimiento,Wiñay kamay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.checkupPlace,{{place}} - {{time}},{{place}} - {{time}},no se traduce,
+caregiver,home.checkupDetails,Ver detalles,Ashtawan rikuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.learnAtHome,Aprende en casa,Wasipi yachay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.articleSnacks,Ideas de meriendas nutritivas,Alli ichilla mikuykuna,revisar,sin respaldo: ichilla
+caregiver,home.articleSnacksMeta,Se lee en 3 minutos,3 uchilla pachapi ñawinchinki,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.articleFeeding,Alimentación a los 3 años,3 watayuk wawapak mikuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.articleFeedingMeta,Guía práctica,Ruranapak yachay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.registerChild,+ Registrar nuevo niño,+ Mushuk wawata killkakatiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.registerChildA11y,Registrar nuevo niño,Mushuk wawata killkakatiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.consentNotice,"Antes de anotar los datos de tu niño, te pediremos leer y aceptar el consentimiento informado (tu permiso para guardar y revisar sus datos).","Kikinpak wawapak willaykunata killkanamanta ñawpaka, ari ninata ñawinchishpa chaskinatami mañashun (paypak willaykunata wakaychinkapak, rikunkapakpash ari nina).",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.greetingFallback,Familia,Ayllu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.loading,Cargando a tus niños...,Wawakunata rikuchikunmi...,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.loadError,No pudimos cargar a tus niños.,Wawakunata mana rikuchiy usharkanchikchu.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.retry,Intentar de nuevo,Kutin rurapay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.retryA11y,Volver a cargar la lista de niños,Wawakunapak shutikunata kutin rikuchiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.emptyTitle,Aún no tienes niños registrados,Manarakmi wawakunata killkakatishkankichu,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.emptySubtitle,Registra a tu niño para seguir su crecimiento y sus controles.,"Kikinpak wawata killkakatiy, paypak wiñayta, kamaykunatapash katinkapak.",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.addChild,Agregar niño,Wawata yapay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.seeMoreA11y,Ver cómo crece {{name}},Imashina {{name}} wiñakunta rikuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,home.linkedNotice,Solo ves a los niños vinculados a tu cuenta.,Solo ves a los niños vinculados a tu cuenta.,pendiente,igual al español
+caregiver,home.checkupDate,Fecha: {{date}},Puncha: {{date}},traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.logFeeding,Alimentación,Alimentación,pendiente,igual al español
+caregiver,home.logFeedingA11y,Registrar alimentación de {{name}},Registrar alimentación de {{name}},pendiente,igual al español
+caregiver,home.growth.reviewedPill,Revisado por tu profesional,Revisado por tu profesional,pendiente,igual al español
+caregiver,home.growth.below,Tu profesional revisó los últimos controles de {{name}}: su crecimiento está por debajo de lo esperado para su edad.,Tu profesional revisó los últimos controles de {{name}}: su crecimiento está por debajo de lo esperado para su edad.,pendiente,igual al español
+caregiver,home.growth.above,Tu profesional revisó los últimos controles de {{name}}: su crecimiento está por encima de lo esperado para su edad.,Tu profesional revisó los últimos controles de {{name}}: su crecimiento está por encima de lo esperado para su edad.,pendiente,igual al español
+caregiver,home.growth.reviewed,Tu profesional revisó los últimos controles de {{name}}.,Tu profesional revisó los últimos controles de {{name}}.,pendiente,igual al español
+caregiver,home.growth.recommendation,Recomendación: {{text}},Recomendación: {{text}},pendiente,igual al español
+caregiver,home.growth.nextCheckup,Próximo control: {{date}},Próximo control: {{date}},pendiente,igual al español
+caregiver,home.learnLoading,Buscando artículos para ti...,Buscando artículos para ti...,pendiente,igual al español
+caregiver,home.learnConnect,Conéctate una vez para descargar los artículos.,Conéctate una vez para descargar los artículos.,pendiente,igual al español
+caregiver,home.learnEmpty,Pronto habrá artículos para esta edad.,Pronto habrá artículos para esta edad.,pendiente,igual al español
+caregiver,home.articleA11y,Leer el artículo: {{title}},Leer el artículo: {{title}},pendiente,igual al español
+caregiver,home.myChildrenLink,Mis niños,Ñuka wawakuna,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,home.myChildrenA11y,Ver todos mis niños,Ver todos mis niños,pendiente,igual al español
+caregiver,home.registerFeeding,Registrar alimentación,Registrar alimentación,pendiente,igual al español
+caregiver,home.registerFeedingA11y,Registrar alimentación de {{name}},Registrar alimentación de {{name}},pendiente,igual al español
+caregiver,home.messageLoading,Cargando mensajes...,Cargando mensajes...,pendiente,igual al español
+caregiver,home.messageEmpty,No tienes mensajes nuevos.,No tienes mensajes nuevos.,pendiente,igual al español
+caregiver,home.messageError,No pudimos cargar tu último mensaje.,No pudimos cargar tu último mensaje.,pendiente,igual al español
+caregiver,home.checkupLoading,Cargando próximo control...,Cargando próximo control...,pendiente,igual al español
+caregiver,home.checkupEmpty,No tienes controles próximos agendados.,No tienes controles próximos agendados.,pendiente,igual al español
+caregiver,home.checkupError,No pudimos cargar tu próximo control.,No pudimos cargar tu próximo control.,pendiente,igual al español
+caregiver,home.timeJustNow,Hace un momento,Hace un momento,pendiente,igual al español
+caregiver,home.timeMinutesAgo_one,Hace {{count}} min,Hace {{count}} min,pendiente,igual al español
+caregiver,home.timeMinutesAgo_other,Hace {{count}} min,Hace {{count}} min,pendiente,igual al español
+caregiver,home.timeHoursAgo_one,Hace {{count}} h,Hace {{count}} h,pendiente,igual al español
+caregiver,home.timeHoursAgo_other,Hace {{count}} h,Hace {{count}} h,pendiente,igual al español
+caregiver,myChildren.title,Mis niños,Ñuka wawakuna,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,myChildren.selectChildA11y,Elegir a {{name}} como niño activo,Elegir a {{name}} como niño activo,pendiente,igual al español
+caregiver,myChildren.linkProfessional,Vincular profesional,Vincular profesional,pendiente,igual al español
+caregiver,myChildren.linkProfessionalA11y,Vincular un profesional a {{name}},Vincular un profesional a {{name}},pendiente,igual al español
+caregiver,myChildren.openProfessionalsA11y,Ver los profesionales de {{name}},Ver los profesionales de {{name}},pendiente,igual al español
+caregiver,myChildren.professionalLinked,{{specialty}} · Profesional vinculado,{{specialty}} · Profesional vinculado,pendiente,igual al español
+caregiver,myChildren.moreProfessionals,y {{count}} más,y {{count}} más,no se traduce,
+caregiver,addCheckup.seeHistory,Ver historial,Ver historial,pendiente,igual al español
+caregiver,addCheckup.back,Volver,Tikray,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.title,Anotar un nuevo control,Mushuk kamayta killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.childSubtitle,{{age}},{{age}},no se traduce,
+caregiver,addCheckup.changeChild,Cambiar de niño,Shuk wawata akllay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.dateLabel,Fecha del control,Kamay puncha,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.datePlaceholder,Ej. {{example}},Shina: {{example}},traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.openDatePicker,Abrir selector de fecha,Abrir selector de fecha,pendiente,igual al español
+caregiver,addCheckup.closeDatePicker,Listo,Listo,pendiente,igual al español
+caregiver,addCheckup.positionLabel,¿Cómo lo mediste?,¿Imashinata tupurkanki?,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.positions.STANDING,De pie,Shayarishka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.positions.RECUMBENT,Acostado,Sirishka,traducido,todas las palabras respaldadas (Killkan); falta revisión nativa
+caregiver,addCheckup.weightLabel,Peso (kg),Llasay (kg),revisar,sin respaldo: llasay
+caregiver,addCheckup.weightA11y,Peso en kilos,Llasay kilokunapi,revisar,"sin respaldo: llasay, kilokunapi"
+caregiver,addCheckup.heightLabel,Estatura (cm),Hatunkay (cm),traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.heightA11y,Estatura en centímetros,Hatunkay centímetrokunapi,revisar,"sin respaldo: cent, metrokunapi"
+caregiver,addCheckup.decimalPlaceholder,"0,0","0,0",no se traduce,
+caregiver,addCheckup.notesLabel,Notas,Yuyaykuna,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.notesPlaceholder,Ejemplo: qué comió hoy...,Shina: kunan punchapi imata mikurka...,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.notesCounter,{{count}}/{{max}},{{count}}/{{max}},no se traduce,
+caregiver,addCheckup.submit,Guardar y calcular,Wakaychishpa yupay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.localPreviewTitle,Cálculo local (OMS),Kaypi yupashka (OMS),traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.localPreviewNormal,Las medidas están dentro del rango esperado.,Tupuykunaka shuyashka ukullapimi kan.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.localPreviewAlert,Se detectó un indicador fuera del rango esperado; podrás revisarlo al guardar.,Shuk tupuyka shuyashkamanta hawapi o urapimi kan; wakaychishpa rikuy.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.errors.dateRequired,Escribe la fecha del control.,Kamay punchata killkay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.errors.weightRange,El peso debe estar entre {{min}} y {{max}} kg.,Llasayka {{min}} kg-manta {{max}} kg-kamanmi kana.,revisar,sin respaldo: llasayka
+caregiver,addCheckup.errors.heightRange,La estatura debe estar entre {{min}} y {{max}} cm.,Hatunkayka {{min}} cm-manta {{max}} cm-kamanmi kana.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.errors.notesTooLong,Las observaciones no pueden pasar de {{max}} caracteres.,Las observaciones no pueden pasar de {{max}} caracteres.,pendiente,igual al español
+caregiver,addCheckup.errors.outlier,"El peso o la estatura parece poco común para su edad. Revisa la medida. Si está bien, toca otra vez «Guardar y calcular».","Llasaypash hatunkaypash paypak watakunapakka shuk shinami rikurin. Tupushkata kutin rikuy. Alli kashpaka, kutin «Wakaychishpa yupay» nishkata llapiy.",revisar,sin respaldo: llasaypash
+caregiver,addCheckup.errors.dateInvalid,Escribe la fecha como día/mes/año. Ejemplo: {{example}}.,Punchata shinami killkay: punchakuna/killa/wata. Shina: {{example}}.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.errors.dateFuture,La fecha del control no puede ser de un día que aún no llega.,Kamay punchaka mana shamukpi punchachu kana.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.errors.dateBeforeBirth,La fecha del control no puede ser anterior al nacimiento.,Kamay punchaka wacharishka punchamanta ñawpachu kana.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.errors.invalid,Revisa los datos del control e intenta de nuevo.,"Kamaypak willaykunata kutin rikuy, shinashpa kutin rurapay.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.loading,Cargando a tus niños...,Wawakunata rikuchikunmi...,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.loadError,No pudimos cargar a tus niños.,Wawakunata mana rikuchiy usharkanchikchu.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.retry,Intentar de nuevo,Kutin rurapay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.emptyTitle,Aún no tienes niños registrados,Manarakmi wawakunata killkakatishkankichu,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.emptySubtitle,Registra a tu niño para poder anotar sus controles.,"Kikinpak wawata killkakatiy, paypak kamaykunata killkankapak.",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.addChild,Agregar niño,Wawata yapay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.saving,Guardando...,Wakaychikunmi...,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addCheckup.consentRequired,Para anotar controles de {{name}} necesitamos su consentimiento informado vigente (tu permiso para guardar sus datos).,"{{name}}-pak kamaykunata killkankapakka, kunan ari ninata mutsunchikmi (paypak willaykunata wakaychinkapak kikinpak ari nina).",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addCheckup.goToConsent,Ir al consentimiento,Ari ninaman rina,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,feeding.back,Volver,Tikray,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,feeding.title,Alimentación,Alimentación,pendiente,igual al español
+caregiver,feeding.childSubtitle,Registro del {{date}},Registro del {{date}},pendiente,igual al español
+caregiver,feeding.changeChild,Cambiar de niño,Shuk wawata akllay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,feeding.mealsTodayLabel,Comidas de hoy,Comidas de hoy,pendiente,igual al español
+caregiver,feeding.meals.breakfast,Desayuno,Desayuno,pendiente,igual al español
+caregiver,feeding.meals.morningSnack,Merienda am,Merienda am,pendiente,igual al español
+caregiver,feeding.meals.lunch,Almuerzo,Almuerzo,pendiente,igual al español
+caregiver,feeding.meals.afternoonSnack,Merienda pm,Merienda pm,pendiente,igual al español
+caregiver,feeding.meals.dinner,Cena,Cena,pendiente,igual al español
+caregiver,feeding.mealsCountLabel,¿Cuántas veces comió?,¿Cuántas veces comió?,pendiente,igual al español
+caregiver,feeding.decreaseMealsA11y,Disminuir cantidad de comidas,Disminuir cantidad de comidas,pendiente,igual al español
+caregiver,feeding.increaseMealsA11y,Aumentar cantidad de comidas,Aumentar cantidad de comidas,pendiente,igual al español
+caregiver,feeding.mealUnit_one,comida,comida,pendiente,igual al español
+caregiver,feeding.mealUnit_other,comidas,comidas,pendiente,igual al español
+caregiver,feeding.notesLabel,¿Qué comió?,¿Qué comió?,pendiente,igual al español
+caregiver,feeding.notesPlaceholder,"Ej: arroz con pollo, ensalada y jugo de naranja…","Ej: arroz con pollo, ensalada y jugo de naranja…",pendiente,igual al español
+caregiver,feeding.detailsTruncatedWarning,Con las comidas marcadas se superan los {{max}} caracteres; se recortará el texto adicional al guardar.,Con las comidas marcadas se superan los {{max}} caracteres; se recortará el texto adicional al guardar.,pendiente,igual al español
+caregiver,feeding.submit,Guardar alimentación,Guardar alimentación,pendiente,igual al español
+caregiver,feeding.saving,Guardando...,Wakaychikunmi...,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,feeding.savedSuccess,¡Alimentación guardada!,¡Alimentación guardada!,pendiente,igual al español
+caregiver,feeding.savedOffline,Sin conexión · se guardó en este dispositivo y se enviará al reconectar,Sin conexión · se guardó en este dispositivo y se enviará al reconectar,pendiente,igual al español
+caregiver,feeding.loading,Cargando a tus niños...,Wawakunata rikuchikunmi...,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,feeding.loadError,No pudimos cargar a tus niños.,Wawakunata mana rikuchiy usharkanchikchu.,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,feeding.retry,Intentar de nuevo,Kutin rurapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,feeding.emptyTitle,Aún no tienes niños registrados,Manarakmi wawakunata killkakatishkankichu,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,feeding.emptySubtitle,Registra a tu niño para poder anotar su alimentación.,Registra a tu niño para poder anotar su alimentación.,pendiente,igual al español
+caregiver,feeding.addChild,Agregar niño,Wawata yapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,feeding.consentRequired,Para registrar la alimentación de {{name}} necesitamos su consentimiento informado vigente (tu permiso para guardar sus datos).,Para registrar la alimentación de {{name}} necesitamos su consentimiento informado vigente (tu permiso para guardar sus datos).,pendiente,igual al español
+caregiver,feeding.goToConsent,Ir al consentimiento,Ir al consentimiento,pendiente,igual al español
+caregiver,feeding.errors.invalid,Revisa los datos de la alimentación e intenta de nuevo.,Revisa los datos de la alimentación e intenta de nuevo.,pendiente,igual al español
+caregiver,feedingHistory.title,Historial de comidas,Historial de comidas,pendiente,igual al español
+caregiver,feedingHistory.subtitle,Últimos {{days}} días · {{count}} registros,Últimos {{days}} días · {{count}} registros,pendiente,igual al español
+caregiver,feedingHistory.subtitleLoading,Últimos {{days}} días,Últimos {{days}} días,pendiente,igual al español
+caregiver,feedingHistory.today,Hoy · {{date}},Hoy · {{date}},pendiente,igual al español
+caregiver,feedingHistory.yesterday,Ayer · {{date}},Ayer · {{date}},pendiente,igual al español
+caregiver,feedingHistory.mealsCount_one,{{count}} comida,{{count}} comida,pendiente,igual al español
+caregiver,feedingHistory.mealsCount_other,{{count}} comidas,{{count}} comidas,pendiente,igual al español
+caregiver,feedingHistory.loading,Cargando el historial...,Cargando el historial...,pendiente,igual al español
+caregiver,feedingHistory.loadError,No pudimos cargar el historial de alimentación.,No pudimos cargar el historial de alimentación.,pendiente,igual al español
+caregiver,feedingHistory.retry,Intentar de nuevo,Kutin rurapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,feedingHistory.emptyTitle,Aún no hay registros,Aún no hay registros,pendiente,igual al español
+caregiver,feedingHistory.emptySubtitle,"Cuando registres la alimentación de tu niño, la verás aquí.","Cuando registres la alimentación de tu niño, la verás aquí.",pendiente,igual al español
+caregiver,feedingHistory.register,Registrar alimentación,Registrar alimentación,pendiente,igual al español
+caregiver,feedingHistory.seeHistory,Ver historial,Ver historial,pendiente,igual al español
+caregiver,checkupSaved.title,¡Control guardado!,¡Kamayka wakaychishkami!,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,checkupSaved.subtitle,{{name}} - {{age}},{{name}} - {{age}},no se traduce,
+caregiver,checkupSaved.lastRecord,Último control · {{date}},Kipa kamay · {{date}},traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,checkupSaved.weight,Peso,Llasay,revisar,sin respaldo: llasay
+caregiver,checkupSaved.height,Estatura,Hatunkay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,checkupSaved.position,Posición,Imashina tupushka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,checkupSaved.teamNote,Tu equipo de salud revisará este control. Te avisaremos si necesitan algo más.,Kikinpak hampik tantanakuymi kay kamayta rikunka. Ima mutsushkata willashunmi.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,checkupSaved.localResultTitle,Resultado calculado (OMS),Kaypi yupashka (OMS),traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,checkupSaved.localResultNormal,Los indicadores evaluados están dentro del rango esperado para su edad y estatura.,"Tukuy tupuykunaka paypak wata, hatunkaypak shuyashka ukullapimi kan.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,checkupSaved.localResultAlert,Uno o más indicadores están fuera del rango esperado. Tu equipo de salud lo revisará.,Shuk o ashka tupuykunaka shuyashkamanta anchushkami kan. Kikinpak hampik tantanakuymi rikunka.,revisar,sin respaldo: ashka
+caregiver,checkupSaved.whoNotice,Cálculo preliminar realizado en este dispositivo con patrones OMS.,Kay celularkunapillatak OMS kamachiykunawan ñawpa yupashkami.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,checkupSaved.pendingSyncNotice,Sin conexión · se enviará al reconectar,Sin conexión · se enviará al reconectar,pendiente,igual al español
+caregiver,checkupSaved.seeEvolution,Ver cómo va creciendo,Imashina wiñakunta rikuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,checkupSaved.goHome,Volver al inicio,Kallariman tikray,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,checkupSaved.missing,No encontramos el control que acabas de guardar.,Kunallan wakaychishka kamayta mana tarirkanchikchu.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.title,Cómo crece {{name}},Imashina {{name}} wiñakun,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.childSubtitle,{{age}},{{age}},no se traduce,
+caregiver,evolution.chartInfo,Qué muestra esta gráfica,Kay rikuchikka imata rikuchin,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.chartSubtitle,Comparado con lo esperado por la OMS,OMS-pak shuyashkawan chimpapurashka,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.indicators.PE.code,P/E,P/E,no se traduce,
+caregiver,evolution.indicators.PE.short,Peso,Llasay,revisar,sin respaldo: llasay
+caregiver,evolution.indicators.PE.name,¿Su peso va bien para su edad?,¿Paypak llasayka watakunapak allichu kan?,revisar,sin respaldo: llasayka
+caregiver,evolution.indicators.TE.code,T/E,T/E,no se traduce,
+caregiver,evolution.indicators.TE.short,Estatura,Hatunkay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.indicators.TE.name,¿Su estatura va bien para su edad?,¿Paypak hatunkayka watakunapak allichu kan?,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.indicators.PT.code,P/T,P/T,no se traduce,
+caregiver,evolution.indicators.PT.short,Peso/Estatura,Llasay/Hatunkay,revisar,sin respaldo: llasay
+caregiver,evolution.indicators.PT.name,¿Su peso va bien para su estatura?,¿Paypak llasayka hatunkaypak allichu kan?,revisar,sin respaldo: llasayka
+caregiver,evolution.indicators.IMCE.code,IMC/E,IMC/E,no se traduce,
+caregiver,evolution.indicators.IMCE.short,IMC,IMC,no se traduce,
+caregiver,evolution.indicators.IMCE.name,¿Su IMC (peso y estatura juntos) va bien para su edad?,¿Paypak IMC (llasaypash hatunkaypash) watakunapak allichu kan?,revisar,sin respaldo: llasaypash
+caregiver,evolution.legendReference,Lo esperado (OMS),Shuyashka (OMS),traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.zoneLabels.upper,Por encima de lo esperado,Shuyashkamanta hawa,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.zoneLabels.normal,Rango esperado (OMS),Shuyashka tupuy (OMS),traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.zoneLabels.lower,Por debajo de lo esperado,Shuyashkamanta ura,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.zoneLabels.outer,Por encima/debajo de lo esperado,Shuyashkamanta hawa/ura,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.nonDiagnosticNotice,Esta gráfica apoya la valoración del crecimiento y no es un diagnóstico médico.,"Kay rikuchikka wiñayta rikunkapak yanapanmi, mana hampik diagnósticochu kan.",revisar,"sin respaldo: diagn, sticochu"
+caregiver,evolution.tapPointHint,Toca cualquier punto de la curva para ver el detalle de ese control.,Maykan iñuta llapiy chay kamaymanta rikunkapak.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.selectedRecordTitle,Detalle del control seleccionado,Akllashka kamaymanta,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.trendSummaryTitle,Resumen del crecimiento,Wiñay imashina rikurikun,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.trendSummaryFavorable,La evolución reciente muestra una tendencia favorable en este indicador.,Kipa kamaykunapika alliman wiñakushkatami rikuchin.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.trendSummarySteady,Seguimos acompañando el crecimiento registrado en cada control.,Tukuy kamaykunapi wiñashkata katikunchik.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.favorableTrend,Tendencia favorable,Tendencia favorable,pendiente,igual al español
+caregiver,evolution.lastRecordTitle,Último control,Último control,pendiente,igual al español
+caregiver,evolution.lastRecord,Último control - {{date}},Kipa kamay - {{date}},traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.weight,Peso,Llasay,revisar,sin respaldo: llasay
+caregiver,evolution.height,Estatura,Hatunkay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.position,Posición,Imashina tupushka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.recordedBy,Registró,Killkarka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.notes,Observaciones,Observaciones,pendiente,igual al español
+caregiver,evolution.unitKgM2,kg/m²,kg/m²,no se traduce,
+caregiver,evolution.loading,Cargando la evolución...,Wiñayta rikuchikunmi...,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.loadError,No pudimos cargar la evolución.,Wiñayta mana rikuchiy usharkanchikchu.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.retry,Intentar de nuevo,Kutin rurapay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.emptyChildrenTitle,Aún no tienes niños registrados,Manarakmi wawakunata killkakatishkankichu,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.emptyChildrenSubtitle,Registra a tu niño para ver cómo crece.,"Kikinpak wawata killkakatiy, imashina wiñakunta rikunkapak.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.noCheckupsTitle,Aún no hay controles de {{name}},Manarakmi {{name}}-pak kamaykuna kanchu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.noCheckupsSubtitle,Anota el primer control para ver su evolución.,"Ñawpa kamayta killkay, paypak wiñayta rikunkapak.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.addCheckup,Anotar un control,Kamayta killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.origin.CAREGIVER,Tú,Kikin,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,evolution.origin.PROFESSIONAL,Equipo de salud,Hampik tantanakuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.chartLoading,Cargando la gráfica...,Rikuchikka shamukun...,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,evolution.infoModal.title,¿Qué muestra esta gráfica?,¿Qué muestra esta gráfica?,pendiente,igual al español
+caregiver,evolution.infoModal.whoBandTitle,Banda verde: lo esperado (OMS),Banda verde: lo esperado (OMS),pendiente,igual al español
+caregiver,evolution.infoModal.whoBand,Muestra el rango esperado por la Organización Mundial de la Salud según la edad o estatura. Las líneas punteadas marcan los bordes superior e inferior.,Muestra el rango esperado por la Organización Mundial de la Salud según la edad o estatura. Las líneas punteadas marcan los bordes superior e inferior.,pendiente,igual al español
+caregiver,evolution.infoModal.childLineTitle,Línea naranja: tu niño,Línea naranja: tu niño,pendiente,igual al español
+caregiver,evolution.infoModal.childLine,Cada punto es un control registrado y la línea muestra cómo va cambiando con el tiempo.,Cada punto es un control registrado y la línea muestra cómo va cambiando con el tiempo.,pendiente,igual al español
+caregiver,evolution.infoModal.close,Entendido,Hamutashkanimi,traducido,reutilizado de otra clave; todas las palabras respaldadas (dic); falta revisión nativa
+caregiver,messages.back,Volver,Tikray,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,messages.title,Mensajes,Willaykuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,messages.banner,Escribe a tu equipo de salud.,Kikinpak hampik tantanakuyman killkay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.filterAll,Todos,Tukuy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.filterAllA11y,Ver todos los mensajes,Tukuy willaykunata rikuy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.filterUnread,Sin leer ({{count}}),Mana ñawinchishka ({{count}}),traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.filterUnreadA11y,Ver mensajes sin leer,Mana ñawinchishka willaykunata rikuy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.childTeam,Equipo de {{name}},{{name}}-pak tantanakuy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.teamSubtitle,{{specialty}} · {{professional}},{{specialty}} · {{professional}},no se traduce,
+caregiver,messages.healthCenter,Centro de salud,Hampi wasi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.healthCenterSubtitle,Atención al usuario,Runakunata uyana,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,messages.threadA11y,Mensaje de {{title}},{{title}}-pak willay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.emergencyNotice,"Aquí no se atienden urgencias. Si tu niño necesita ayuda ya, ve a tu centro de salud.","Kaypika utka unkuykunataka mana rikunchu. Kikinpak wawa kunanlla yanapayta mutsushpaka, hampi wasiman riy.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.newMessage,Nuevo mensaje,Mushuk willay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.loading,Cargando tus conversaciones...,Cargando tus conversaciones...,pendiente,igual al español
+caregiver,messages.loadError,No pudimos cargar tus conversaciones.,No pudimos cargar tus conversaciones.,pendiente,igual al español
+caregiver,messages.retry,Intentar de nuevo,Kutin rurapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,messages.emptyTitle,Aún no tienes conversaciones,Aún no tienes conversaciones,pendiente,igual al español
+caregiver,messages.emptySubtitle,"Cuando escribas a tu equipo de salud o recibas un mensaje, aparecerá aquí.","Cuando escribas a tu equipo de salud o recibas un mensaje, aparecerá aquí.",pendiente,igual al español
+caregiver,messages.emptyUnreadTitle,No tienes mensajes sin leer,No tienes mensajes sin leer,pendiente,igual al español
+caregiver,messages.emptyUnreadSubtitle,Estás al día con tus conversaciones.,Estás al día con tus conversaciones.,pendiente,igual al español
+caregiver,messages.newMessageModal.title,Nuevo mensaje,Mushuk willay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.newMessageModal.chooseChild,Elige para qué niño,Elige para qué niño,pendiente,igual al español
+caregiver,messages.newMessageModal.chooseProfessional,Elige un profesional de {{name}},Elige un profesional de {{name}},pendiente,igual al español
+caregiver,messages.newMessageModal.changeChild,Cambiar de niño,Shuk wawata akllay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,messages.newMessageModal.loading,Buscando profesionales vinculados...,Buscando profesionales vinculados...,pendiente,igual al español
+caregiver,messages.newMessageModal.noChildren,Aún no tienes niños registrados.,Aún no tienes niños registrados.,pendiente,igual al español
+caregiver,messages.newMessageModal.noProfessionals,Este niño aún no tiene profesionales vinculados.,Este niño aún no tiene profesionales vinculados.,pendiente,igual al español
+caregiver,messages.newMessageModal.noProfessionalsHint,"Cuando un profesional se vincule a {{name}}, podrás escribirle desde aquí.","Cuando un profesional se vincule a {{name}}, podrás escribirle desde aquí.",pendiente,igual al español
+caregiver,messages.newMessageModal.close,Cerrar,Cerrar,pendiente,igual al español
+caregiver,messages.newMessageModal.professionalFallback,Profesional de salud,Profesional de salud,pendiente,igual al español
+caregiver,chat.back,Volver,Tikray,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,chat.title,Equipo de {{name}},{{name}}-pak tantanakuy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,chat.titleFallback,Conversación,Conversación,pendiente,igual al español
+caregiver,chat.professional,{{name}} · {{specialty}},{{name}} · {{specialty}},no se traduce,
+caregiver,chat.about,Sobre {{name}},{{name}}-manta,traducido,todas las palabras respaldadas (dic); falta revisión nativa
+caregiver,chat.me,Tú,Kan,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,chat.status.read,Leído,Ñawinchishka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,chat.status.sent,Enviado,Kachashka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,chat.status.sending,Enviando...,Enviando...,pendiente,igual al español
+caregiver,chat.status.failed,No se pudo enviar,No se pudo enviar,pendiente,igual al español
+caregiver,chat.inputPlaceholder,Escribe un mensaje...,Willayta killkay...,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,chat.inputA11y,Escribe un mensaje,Willayta killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,chat.send,Enviar,Kachay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,chat.sendA11y,Enviar mensaje,Willayta kachay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,chat.privacy,Solo tú y tu equipo de salud pueden ver esta conversación.,"Kanllami, kikinpak hampik tantanakuyllami kay rimanakuyta rikuy ushankichik.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,chat.loading,Cargando mensajes...,Cargando mensajes...,pendiente,igual al español
+caregiver,chat.loadError,No pudimos cargar la conversación.,No pudimos cargar la conversación.,pendiente,igual al español
+caregiver,chat.retry,Intentar de nuevo,Kutin rurapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,chat.retrySend,Reintentar,Reintentar,pendiente,igual al español
+caregiver,chat.empty,Aún no hay mensajes en esta conversación. Escribe el primero abajo.,Aún no hay mensajes en esta conversación. Escribe el primero abajo.,pendiente,igual al español
+caregiver,chat.loadOlder,Cargar mensajes anteriores,Cargar mensajes anteriores,pendiente,igual al español
+caregiver,chat.loadingOlder,Cargando anteriores...,Cargando anteriores...,pendiente,igual al español
+caregiver,chat.missingParams,No encontramos la conversación que intentas abrir.,No encontramos la conversación que intentas abrir.,pendiente,igual al español
+caregiver,chat.charCount,{{count}}/{{max}},{{count}}/{{max}},no se traduce,
+caregiver,profile.title,Mi perfil,Ñukamanta,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,profile.name,Nombre:,Shuti:,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,profile.email,Correo:,Correo:,no se traduce,
+caregiver,profile.activeRole,Perfil activo:,Kunan ruray:,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,profile.activeBadge,Activo,Kachkan,revisar,posible quechua del sur: kachkan
+caregiver,profile.account,Mi cuenta,Cuentayqa,revisar,sin respaldo: cuentayqa
+caregiver,profile.switchToProfessional,Cambiar a vista Profesional,Hampik rikuchikman tikray,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,profile.consentsTitle,Permisos de tus niños,Wawakunapak ari ninakuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,profile.consentsRowDescription,Ver y cambiar el permiso de datos,"Ari ninata rikuy, tikrachiy",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,profile.consentsDescription,Aquí ves y cambias el permiso que diste para guardar y revisar los datos de crecimiento de tus niños.,"Kaypimi wawakunapak wiñay willaykunata wakaychinkapak, rikunkapakpash kushka ari ninata rikunki, tikrachinkipash.",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,profile.noChildren,"Aún no tienes niños registrados. Cuando registres uno, te pediremos tu permiso primero.","Manarakmi wawakunata killkakatishkankichu. Shukta killkakatishpaka, ñawpaka ari ninatami mañashun.",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,profile.dataNote,Pronto podrás descargar o borrar tus datos desde aquí.,"Shamuk punchakunapika kikinpak willaykunata kaymanta urayachiy, anchuchiypash ushankimi.",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,profile.logout,Cerrar sesión,Llukshiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,profile.myData,Mis datos,Mis datos,pendiente,igual al español
+caregiver,profile.myDataDescription,Tu cuenta y los niños vinculados,Tu cuenta y los niños vinculados,pendiente,igual al español
+caregiver,profile.privacy,Privacidad e historial,Privacidad e historial,pendiente,igual al español
+caregiver,profile.privacyDescription,"Permisos, historial y borrado de datos","Permisos, historial y borrado de datos",pendiente,igual al español
+caregiver,profile.pendingSync,Pendientes de envío ({{count}}),Pendientes de envío ({{count}}),pendiente,igual al español
+caregiver,profile.pendingSyncDescription,Registros guardados en este dispositivo,Registros guardados en este dispositivo,pendiente,igual al español
+caregiver,pendingSync.back,Volver,Tikray,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,pendingSync.title,Pendientes de envío,Pendientes de envío,pendiente,igual al español
+caregiver,pendingSync.offlineBanner_one,Sin conexión · {{count}} control por enviar,Sin conexión · {{count}} control por enviar,pendiente,igual al español
+caregiver,pendingSync.offlineBanner_other,Sin conexión · {{count}} controles por enviar,Sin conexión · {{count}} controles por enviar,pendiente,igual al español
+caregiver,pendingSync.offlineBannerZero,Sin conexión · Sin controles pendientes,Sin conexión · Sin controles pendientes,pendiente,igual al español
+caregiver,pendingSync.recordSummary,Control del {{date}} · {{weight}} kg · {{height}} cm,Control del {{date}} · {{weight}} kg · {{height}} cm,pendiente,igual al español
+caregiver,pendingSync.followUpSummary_one,Seguimiento clínico · {{count}} tipo,Seguimiento clínico · {{count}} tipo,pendiente,igual al español
+caregiver,pendingSync.followUpSummary_other,Seguimiento clínico · {{count}} tipos,Seguimiento clínico · {{count}} tipos,pendiente,igual al español
+caregiver,pendingSync.followUpNextCheckup,Próximo control: {{date}},Próximo control: {{date}},pendiente,igual al español
+caregiver,pendingSync.feedingSummary_one,Alimentación del {{date}} · {{count}} comida,Alimentación del {{date}} · {{count}} comida,pendiente,igual al español
+caregiver,pendingSync.feedingSummary_other,Alimentación del {{date}} · {{count}} comidas,Alimentación del {{date}} · {{count}} comidas,pendiente,igual al español
+caregiver,pendingSync.childFallback,Paciente,Hampichikuk wawa,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,pendingSync.status.local,Guardado en este dispositivo,Guardado en este dispositivo,pendiente,igual al español
+caregiver,pendingSync.status.sending,Enviando...,Enviando...,pendiente,igual al español
+caregiver,pendingSync.status.error,Error,Pantay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,pendingSync.status.sent,Enviado,Kachashka,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,pendingSync.retry,Reintentar,Reintentar,pendiente,igual al español
+caregiver,pendingSync.discard,Descartar,Descartar,pendiente,igual al español
+caregiver,pendingSync.syncNow,Sincronizar ahora,Sincronizar ahora,pendiente,igual al español
+caregiver,pendingSync.syncing,Sincronizando...,Sincronizando...,pendiente,igual al español
+caregiver,pendingSync.emptyTitle,No tienes controles pendientes,No tienes controles pendientes,pendiente,igual al español
+caregiver,pendingSync.emptySubtitle,"Cuando anotes un control sin conexión, aparecerá aquí hasta enviarse.","Cuando anotes un control sin conexión, aparecerá aquí hasta enviarse.",pendiente,igual al español
+caregiver,pendingSync.loading,Cargando controles pendientes...,Cargando controles pendientes...,pendiente,igual al español
+caregiver,pendingSync.discardConfirmTitle,¿Descartar este control?,¿Descartar este control?,pendiente,igual al español
+caregiver,pendingSync.discardConfirmMessage,Este control no se enviará y se borrará de este dispositivo,Este control no se enviará y se borrará de este dispositivo,pendiente,igual al español
+caregiver,pendingSync.discardFollowUpTitle,¿Descartar este seguimiento?,¿Descartar este seguimiento?,pendiente,igual al español
+caregiver,pendingSync.discardFollowUpMessage,Este seguimiento no se enviará y se borrará de este dispositivo,Este seguimiento no se enviará y se borrará de este dispositivo,pendiente,igual al español
+caregiver,pendingSync.discardFeedingTitle,¿Descartar esta alimentación?,¿Descartar esta alimentación?,pendiente,igual al español
+caregiver,pendingSync.discardFeedingMessage,Este registro no se enviará y se borrará de este dispositivo,Este registro no se enviará y se borrará de este dispositivo,pendiente,igual al español
+caregiver,pendingSync.discardConfirmAction,Descartar,Descartar,pendiente,igual al español
+caregiver,pendingSync.discardCancelAction,Cancelar,Cancelar,pendiente,igual al español
+caregiver,pendingSync.errorFallback,No se pudo enviar este control.,No se pudo enviar este control.,pendiente,igual al español
+caregiver,consentItem.badgeActive,ACTIVO,KAWSAKUN,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,consentItem.badgeRevoked,RETIRADO,KICHUSHKA,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,consentItem.badgeNone,SIN PERMISO,ARI NINA ILLAN,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,consentItem.version,Versión aceptada: ,Chaskishka killka: ,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,consentItem.date,Fecha: ,Puncha: ,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,consentItem.revokedOn,Retirado el: ,Kichushka puncha: ,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,consentItem.viewDocument,Ver documento,Killkata rikuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,consentItem.revoke,Retirar permiso,Ari ninata kichuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,consentItem.revokeTitle,Retirar permiso,Ari ninata kichuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,consentItem.revokeMessage,"¿Quieres retirar tu permiso para {{name}}? Mientras no lo vuelvas a dar, no se podrán anotar nuevos controles.","¿{{name}}-pak ari ninata kichunata munankichu? Kutin ari nishkakaman, mushuk kamaykunataka mana killkay ushankichu.",revisar,sin respaldo: nishkakaman
+caregiver,consentItem.revokeConfirm,Retirar,Kichuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,consentItem.revokeSuccessTitle,Listo,Tukurishkami,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,consentItem.revokeSuccessMessage,Retiraste el permiso.,Ari ninata kichurkanki.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,consentItem.revokeErrorTitle,No se pudo retirar,Mana kichuy usharkanchu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,consentItem.revokeErrorMessage,Intenta de nuevo.,Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addChild.title,Registrar niño,Wawata killkakatiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addChild.subtitle,Escribe los datos de tu niño para seguir su crecimiento con las tablas de la OMS.,"OMS-pak tupuykunawan paypak wiñayta katinkapak, kikinpak wawapak willaykunata killkay.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.firstNameLabel,Nombre,Shuti,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addChild.firstNamePlaceholder,Ej: Mateo,Shina: Mateo,revisar,sin respaldo: mateo
+caregiver,addChild.lastNameLabel,Apellido,Ayllu shuti,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.lastNamePlaceholder,Ej: Rodríguez,Shina: Rodríguez,revisar,"sin respaldo: rodr, guez"
+caregiver,addChild.sexLabel,Sexo,Kari warmi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.sexMale,Niño,Kari wawa,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.sexFemale,Niña,Warmi wawa,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.sexMaleA11y,Elegir niño,Kari wawata akllay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.sexFemaleA11y,Elegir niña,Warmi wawata akllay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.birthDateLabel,Fecha de nacimiento,Wacharishka puncha,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.birthDatePlaceholder,Ej. {{example}},Ej. {{example}},no se traduce,
+caregiver,addChild.birthDateInvalid,Escribe la fecha como día/mes/año. Ejemplo: {{example}}.,Punchata shinami killkay: punchakuna/killa/wata. Shina: {{example}}.,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.openDatePicker,Abrir selector de fecha,Abrir selector de fecha,pendiente,igual al español
+caregiver,addChild.closeDatePicker,Listo,Listo,pendiente,igual al español
+caregiver,addChild.ageRangeHelper,Puede tener entre {{min}} y {{max}} meses (de 1 a 5 años).,{{min}} killamanta {{max}} killakaman kana (1 watamanta 5 watakaman).,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addChild.day,Día,Puncha,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.dayPlaceholder,DD,PP,traducido,todas las palabras respaldadas (); falta revisión nativa
+caregiver,addChild.month,Mes,Killa,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.monthPlaceholder,MM,KK,traducido,todas las palabras respaldadas (); falta revisión nativa
+caregiver,addChild.year,Año,Wata,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addChild.yearPlaceholder,AAAA,WWWW,revisar,sin respaldo: wwww
+caregiver,addChild.calculatedAge,Edad: {{age}} ({{months}} meses),Watakuna: {{age}} ({{months}} killa),traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.ageInRangeNotice,Edad: {{age}}. Está dentro del rango de 1 a 5 años que atiende NutriKids.,Edad: {{age}}. Está dentro del rango de 1 a 5 años que atiende NutriKids.,pendiente,igual al español
+caregiver,addChild.linkedAccountNotice,Quedará vinculado a tu cuenta: {{name}} (cuidador/a).,Quedará vinculado a tu cuenta: {{name}} (cuidador/a).,pendiente,igual al español
+caregiver,addChild.relationshipLabel,¿Qué eres del niño?,¿Wawapak imatak kanki?,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.legalRepA11y,Soy el representante legal del niño,Ñukami wawapak kamachik kamak kani,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.legalRepLabel,Soy el representante legal del niño y puedo dar permiso para registrar sus datos.,"Ñukami wawapak kamachik kamak kani, paypak willaykunata killkakatinkapak ari ninata ushani.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addChild.submit,Guardar niño,Wawata wakaychiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,reminders.title,Recordatorios,Recordatorios,pendiente,igual al español
+caregiver,reminders.subtitle,"Tus cuidados, a tiempo.","Tus cuidados, a tiempo.",pendiente,igual al español
+caregiver,reminders.tabUpcoming,Próximos ({{count}}),Próximos ({{count}}),pendiente,igual al español
+caregiver,reminders.tabCompleted,Completados ({{count}}),Completados ({{count}}),pendiente,igual al español
+caregiver,reminders.todayTitle,Para hoy,Para hoy,pendiente,igual al español
+caregiver,reminders.todayOverdue,Quedó pendiente,Quedó pendiente,pendiente,igual al español
+caregiver,reminders.markDone,Marcar como realizado,Marcar como realizado,pendiente,igual al español
+caregiver,reminders.markDoneA11y,Marcar como realizado: {{title}},Marcar como realizado: {{title}},pendiente,igual al español
+caregiver,reminders.marking,Guardando...,Wakaychikunmi...,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,reminders.markError,No pudimos marcar el recordatorio. Intenta de nuevo.,No pudimos marcar el recordatorio. Intenta de nuevo.,pendiente,igual al español
+caregiver,reminders.upcomingTitle,Próximas citas,Próximas citas,pendiente,igual al español
+caregiver,reminders.viewAppointment,Ver cita,Ver cita,pendiente,igual al español
+caregiver,reminders.hideAppointment,Ocultar,Ocultar,pendiente,igual al español
+caregiver,reminders.viewAppointmentA11y,Ver la cita: {{title}},Ver la cita: {{title}},pendiente,igual al español
+caregiver,reminders.forChild,Para {{name}},Para {{name}},pendiente,igual al español
+caregiver,reminders.types.checkup,Control de crecimiento,Control de crecimiento,pendiente,igual al español
+caregiver,reminders.types.activity,Actividad,Actividad,pendiente,igual al español
+caregiver,reminders.types.next_checkup,Próximo control,Próximo control,pendiente,igual al español
+caregiver,reminders.types.other,Recordatorio,Recordatorio,pendiente,igual al español
+caregiver,reminders.status.pending,Pendiente,Pendiente,pendiente,igual al español
+caregiver,reminders.status.sent,Te avisamos,Te avisamos,pendiente,igual al español
+caregiver,reminders.status.completed,Realizado,Realizado,pendiente,igual al español
+caregiver,reminders.notifications.enabled,Notificaciones activadas,Notificaciones activadas,pendiente,igual al español
+caregiver,reminders.notifications.enabledHint,Te avisaremos antes de cada cita.,Te avisaremos antes de cada cita.,pendiente,igual al español
+caregiver,reminders.notifications.disabled,Notificaciones desactivadas,Notificaciones desactivadas,pendiente,igual al español
+caregiver,reminders.notifications.disabledHint,Actívalas para que te avisemos antes de cada cita.,Actívalas para que te avisemos antes de cada cita.,pendiente,igual al español
+caregiver,reminders.notifications.unavailable,En este dispositivo no podemos revisar las notificaciones.,En este dispositivo no podemos revisar las notificaciones.,pendiente,igual al español
+caregiver,reminders.notifications.enable,Activar notificaciones,Activar notificaciones,pendiente,igual al español
+caregiver,reminders.create,Crear recordatorio,Crear recordatorio,pendiente,igual al español
+caregiver,reminders.emptyUpcomingTitle,No tienes citas próximas,No tienes citas próximas,pendiente,igual al español
+caregiver,reminders.emptyUpcomingSubtitle,Crea un recordatorio para no olvidar el próximo control de tu niño.,Crea un recordatorio para no olvidar el próximo control de tu niño.,pendiente,igual al español
+caregiver,reminders.emptyCompletedTitle,Aún no has completado recordatorios,Aún no has completado recordatorios,pendiente,igual al español
+caregiver,reminders.emptyCompletedSubtitle,"Cuando marques uno como realizado, lo verás aquí.","Cuando marques uno como realizado, lo verás aquí.",pendiente,igual al español
+caregiver,reminders.loading,Cargando tus recordatorios...,Cargando tus recordatorios...,pendiente,igual al español
+caregiver,reminders.loadError,No pudimos cargar tus recordatorios.,No pudimos cargar tus recordatorios.,pendiente,igual al español
+caregiver,reminders.retry,Intentar de nuevo,Kutin rurapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addReminder.back,Volver,Tikray,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addReminder.title,Crear un recordatorio,Crear un recordatorio,pendiente,igual al español
+caregiver,addReminder.childLabel,¿Para qué niño?,¿Para qué niño?,pendiente,igual al español
+caregiver,addReminder.typeLabel,¿Qué quieres recordar?,¿Qué quieres recordar?,pendiente,igual al español
+caregiver,addReminder.dateLabel,Fecha,Fecha,pendiente,igual al español
+caregiver,addReminder.datePlaceholder,Ej. {{example}},Ej. {{example}},no se traduce,
+caregiver,addReminder.timeLabel,Hora,Hora,pendiente,igual al español
+caregiver,addReminder.timePlaceholder,Ej. {{example}},Ej. {{example}},no se traduce,
+caregiver,addReminder.timeHint,"Escribe la hora de 0 a 23, por ejemplo 15:30.","Escribe la hora de 0 a 23, por ejemplo 15:30.",pendiente,igual al español
+caregiver,addReminder.submit,Guardar recordatorio,Guardar recordatorio,pendiente,igual al español
+caregiver,addReminder.saving,Guardando...,Wakaychikunmi...,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addReminder.loading,Cargando a tus niños...,Wawakunata rikuchikunmi...,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addReminder.loadError,No pudimos cargar a tus niños.,Wawakunata mana rikuchiy usharkanchikchu.,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addReminder.retry,Intentar de nuevo,Kutin rurapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addReminder.emptyTitle,Aún no tienes niños registrados,Manarakmi wawakunata killkakatishkankichu,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addReminder.emptySubtitle,Registra a tu niño para poder crear recordatorios.,Registra a tu niño para poder crear recordatorios.,pendiente,igual al español
+caregiver,addReminder.addChild,Agregar niño,Wawata yapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,addReminder.consentRequired,Para crear recordatorios de {{name}} necesitamos su consentimiento informado vigente (tu permiso para guardar sus datos).,Para crear recordatorios de {{name}} necesitamos su consentimiento informado vigente (tu permiso para guardar sus datos).,pendiente,igual al español
+caregiver,addReminder.goToConsent,Ir al consentimiento,Ir al consentimiento,pendiente,igual al español
+caregiver,addReminder.errors.childRequired,Elige el niño del recordatorio.,Elige el niño del recordatorio.,pendiente,igual al español
+caregiver,addReminder.errors.dateRequired,Escribe la fecha del recordatorio.,Escribe la fecha del recordatorio.,pendiente,igual al español
+caregiver,addReminder.errors.dateInvalid,Escribe la fecha como día/mes/año. Ejemplo: {{example}}.,Punchata shinami killkay: punchakuna/killa/wata. Shina: {{example}}.,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,addReminder.errors.timeRequired,Escribe la hora del recordatorio.,Escribe la hora del recordatorio.,pendiente,igual al español
+caregiver,addReminder.errors.timeInvalid,Escribe la hora así: 09:30.,Escribe la hora así: 09:30.,pendiente,igual al español
+caregiver,addReminder.errors.pastDate,Elige una fecha y una hora que aún no hayan pasado.,Elige una fecha y una hora que aún no hayan pasado.,pendiente,igual al español
+caregiver,addReminder.errors.invalid,Revisa los datos del recordatorio e intenta de nuevo.,Revisa los datos del recordatorio e intenta de nuevo.,pendiente,igual al español
+caregiver,learn.back,Volver,Tikray,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,learn.title,Aprende en casa,Wasipi yachay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,learn.bannerSubtitle,Artículos para {{age}},Artículos para {{age}},pendiente,igual al español
+caregiver,learn.filterLabel,Edad del niño,Edad del niño,pendiente,igual al español
+caregiver,learn.filterAll,Todos,Todos,pendiente,igual al español
+caregiver,learn.ageRange,De {{min}} a {{max}} meses,De {{min}} a {{max}} meses,pendiente,igual al español
+caregiver,learn.readTime_one,Se lee en {{count}} minuto,Se lee en {{count}} minuto,pendiente,igual al español
+caregiver,learn.readTime_other,Se lee en {{count}} minutos,Se lee en {{count}} minutos,pendiente,igual al español
+caregiver,learn.readA11y,Leer el artículo: {{title}},Leer el artículo: {{title}},pendiente,igual al español
+caregiver,learn.loading,Cargando los artículos...,Cargando los artículos...,pendiente,igual al español
+caregiver,learn.loadError,No pudimos cargar los artículos.,No pudimos cargar los artículos.,pendiente,igual al español
+caregiver,learn.retry,Intentar de nuevo,Kutin rurapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,learn.needsConnectionTitle,Conéctate una vez para descargar,Conéctate una vez para descargar,pendiente,igual al español
+caregiver,learn.needsConnectionSubtitle,Con internet se guardan los artículos en tu teléfono y después los puedes leer sin conexión.,Con internet se guardan los artículos en tu teléfono y después los puedes leer sin conexión.,pendiente,igual al español
+caregiver,learn.offlineNotice,Sin conexión: estás leyendo los artículos guardados en tu teléfono.,Sin conexión: estás leyendo los artículos guardados en tu teléfono.,pendiente,igual al español
+caregiver,learn.languageFallback,Por ahora estos artículos solo están en español.,Por ahora estos artículos solo están en español.,pendiente,igual al español
+caregiver,learn.emptyCatalogTitle,Todavía no hay artículos,Todavía no hay artículos,pendiente,igual al español
+caregiver,learn.emptyCatalogSubtitle,Vuelve pronto: estamos preparando consejos para ti.,Vuelve pronto: estamos preparando consejos para ti.,pendiente,igual al español
+caregiver,learn.emptyForAgeTitle,Aún no hay artículos para {{age}},Aún no hay artículos para {{age}},pendiente,igual al español
+caregiver,learn.emptyForAgeSubtitle,Mira los artículos de otras edades.,Mira los artículos de otras edades.,pendiente,igual al español
+caregiver,learn.showAll,Ver todos,Ver todos,pendiente,igual al español
+caregiver,learn.article.notFoundTitle,No encontramos este artículo,No encontramos este artículo,pendiente,igual al español
+caregiver,learn.article.notFoundSubtitle,Puede que ya no esté disponible. Vuelve a la lista de artículos.,Puede que ya no esté disponible. Vuelve a la lista de artículos.,pendiente,igual al español
+caregiver,learn.article.backToList,Ver todos los artículos,Ver todos los artículos,pendiente,igual al español
+caregiver,myData.back,Volver,Tikray,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,myData.title,Mis datos,Mis datos,pendiente,igual al español
+caregiver,myData.bannerTitle,{{name}} · {{role}},{{name}} · {{role}},no se traduce,
+caregiver,myData.bannerSubtitle,Gestiona tu cuenta y tu información.,Gestiona tu cuenta y tu información.,pendiente,igual al español
+caregiver,myData.accountTitle,Mi cuenta,Mi cuenta,pendiente,igual al español
+caregiver,myData.name,Nombre,Shuti,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,myData.email,Correo,Correo,no se traduce,
+caregiver,myData.phone,Teléfono de contacto,Teléfono de contacto,pendiente,igual al español
+caregiver,myData.phoneUnavailable,No disponible,No disponible,pendiente,igual al español
+caregiver,myData.editAccount,Editar mis datos,Editar mis datos,pendiente,igual al español
+caregiver,myData.accountLocked,"Por ahora no puedes cambiar tu nombre, tu correo ni tu teléfono desde la app: esa opción todavía no está lista.","Por ahora no puedes cambiar tu nombre, tu correo ni tu teléfono desde la app: esa opción todavía no está lista.",pendiente,igual al español
+caregiver,myData.childrenTitle,Niños vinculados,Niños vinculados,pendiente,igual al español
+caregiver,myData.childrenDescription,Solo ves a los niños vinculados a tu cuenta.,Solo ves a los niños vinculados a tu cuenta.,pendiente,igual al español
+caregiver,myData.childSummary,{{age}},{{age}},no se traduce,
+caregiver,myData.fixData,Corregir datos,Corregir datos,pendiente,igual al español
+caregiver,myData.fixDataA11y,Corregir los datos de {{name}},Corregir los datos de {{name}},pendiente,igual al español
+caregiver,myData.privacyLink,Privacidad e historial,Privacidad e historial,pendiente,igual al español
+caregiver,myData.privacySubtitle,"Consentimiento, exportación y eliminación","Consentimiento, exportación y eliminación",pendiente,igual al español
+caregiver,myData.loading,Cargando tus datos...,Cargando tus datos...,pendiente,igual al español
+caregiver,myData.loadError,No pudimos cargar a tus niños.,Wawakunata mana rikuchiy usharkanchikchu.,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,myData.retry,Intentar de nuevo,Kutin rurapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,myData.emptyTitle,Aún no tienes niños vinculados,Aún no tienes niños vinculados,pendiente,igual al español
+caregiver,myData.emptySubtitle,Cuando registres a un niño lo verás aquí.,Cuando registres a un niño lo verás aquí.,pendiente,igual al español
+caregiver,myData.addChild,Agregar niño,Wawata yapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,myData.account.edit,Editar mis datos,Editar mis datos,pendiente,igual al español
+caregiver,myData.account.cancel,Cancelar,Cancelar,pendiente,igual al español
+caregiver,myData.account.save,Guardar cambios,Guardar cambios,pendiente,igual al español
+caregiver,myData.account.saving,Guardando…,Guardando…,pendiente,igual al español
+caregiver,myData.account.saved,Tus datos se guardaron.,Tus datos se guardaron.,pendiente,igual al español
+caregiver,myData.account.firstName,Nombre,Shuti,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,myData.account.lastName,Apellido,Ayllu shuti,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,myData.account.email,Correo,Correo,no se traduce,
+caregiver,myData.account.phone,Teléfono de contacto,Teléfono de contacto,pendiente,igual al español
+caregiver,myData.account.phoneHint,Opcional,Opcional,pendiente,igual al español
+caregiver,myData.account.currentPassword,Contraseña actual,Contraseña actual,pendiente,igual al español
+caregiver,myData.account.currentPasswordHint,"Para cambiar el correo, escribe tu contraseña actual.","Para cambiar el correo, escribe tu contraseña actual.",pendiente,igual al español
+caregiver,myData.account.nothingChanged,No cambiaste ningún dato.,No cambiaste ningún dato.,pendiente,igual al español
+caregiver,myData.account.wrongPassword,La contraseña actual no es correcta.,La contraseña actual no es correcta.,pendiente,igual al español
+caregiver,myData.account.emailTaken,Ese correo ya está en uso.,Ese correo ya está en uso.,pendiente,igual al español
+caregiver,myData.account.loadError,No pudimos cargar tus datos.,No pudimos cargar tus datos.,pendiente,igual al español
+caregiver,myData.account.retry,Reintentar,Reintentar,pendiente,igual al español
+caregiver,myData.noProfessionals,Todavía no hay profesionales vinculados.,Todavía no hay profesionales vinculados.,pendiente,igual al español
+caregiver,myData.unlinkProfessional,Desvincular,Desvincular,pendiente,igual al español
+caregiver,myData.unlinkConfirmTitle,¿Desvincular a {{name}}?,¿Desvincular a {{name}}?,pendiente,igual al español
+caregiver,myData.unlinkConfirmMessage,{{name}} dejará de ver los controles y alertas de {{child}}.,{{name}} dejará de ver los controles y alertas de {{child}}.,pendiente,igual al español
+caregiver,myData.unlinkConfirm,Desvincular,Desvincular,pendiente,igual al español
+caregiver,myData.unlinkError,No pudimos desvincular al profesional.,No pudimos desvincular al profesional.,pendiente,igual al español
+caregiver,editChild.back,Volver,Tikray,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,editChild.title,Corregir datos,Corregir datos,pendiente,igual al español
+caregiver,editChild.childSubtitle,{{age}},{{age}},no se traduce,
+caregiver,editChild.firstNameLabel,Nombres,Nombres,pendiente,igual al español
+caregiver,editChild.lastNameLabel,Apellidos,Apellidos,pendiente,igual al español
+caregiver,editChild.birthDateLabel,Fecha de nacimiento,Wacharishka puncha,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,editChild.datePlaceholder,Ej. {{example}},Ej. {{example}},no se traduce,
+caregiver,editChild.sexLabel,Sexo,Kari warmi,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,editChild.checking,Revisando si se puede cambiar la fecha de nacimiento y el sexo...,Revisando si se puede cambiar la fecha de nacimiento y el sexo...,pendiente,igual al español
+caregiver,editChild.locked,La fecha de nacimiento y el sexo no se pueden cambiar porque {{name}} ya tiene controles anotados: sus resultados dependen de esos datos.,La fecha de nacimiento y el sexo no se pueden cambiar porque {{name}} ya tiene controles anotados: sus resultados dependen de esos datos.,pendiente,igual al español
+caregiver,editChild.submit,Guardar cambios,Guardar cambios,pendiente,igual al español
+caregiver,editChild.saving,Guardando...,Wakaychikunmi...,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,editChild.successTitle,Datos actualizados,Datos actualizados,pendiente,igual al español
+caregiver,editChild.successMessage,Guardamos los cambios de {{name}}.,Guardamos los cambios de {{name}}.,pendiente,igual al español
+caregiver,editChild.notFoundTitle,No encontramos a este niño,No encontramos a este niño,pendiente,igual al español
+caregiver,editChild.notFoundSubtitle,Vuelve a la lista de tus niños.,Vuelve a la lista de tus niños.,pendiente,igual al español
+caregiver,editChild.backToList,Ver mis niños,Ver mis niños,pendiente,igual al español
+caregiver,editChild.errors.firstNameRequired,Escribe los nombres del niño.,Escribe los nombres del niño.,pendiente,igual al español
+caregiver,editChild.errors.lastNameRequired,Escribe los apellidos del niño.,Escribe los apellidos del niño.,pendiente,igual al español
+caregiver,editChild.errors.dateInvalid,Escribe la fecha como día/mes/año. Ejemplo: {{example}}.,Punchata shinami killkay: punchakuna/killa/wata. Shina: {{example}}.,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,editChild.errors.noChanges,No cambiaste ningún dato.,No cambiaste ningún dato.,pendiente,igual al español
+caregiver,editChild.errors.identityLocked,No se pudo cambiar la fecha de nacimiento ni el sexo porque el niño ya tiene controles anotados.,No se pudo cambiar la fecha de nacimiento ni el sexo porque el niño ya tiene controles anotados.,pendiente,igual al español
+caregiver,editChild.errors.forbidden,Solo el representante legal de {{name}} puede corregir sus datos.,Solo el representante legal de {{name}} puede corregir sus datos.,pendiente,igual al español
+caregiver,privacy.back,Volver,Tikray,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,privacy.title,Privacidad e historial,Privacidad e historial,pendiente,igual al español
+caregiver,privacy.intro,Aquí decides sobre los datos de tus niños. Solo el representante legal puede usar estas opciones.,Aquí decides sobre los datos de tus niños. Solo el representante legal puede usar estas opciones.,pendiente,igual al español
+caregiver,privacy.consentTitle,Permiso para guardar los datos,Permiso para guardar los datos,pendiente,igual al español
+caregiver,privacy.consentStatusActive,Vigente,Vigente,pendiente,igual al español
+caregiver,privacy.consentAcceptedOn,Aceptado el {{date}},Aceptado el {{date}},pendiente,igual al español
+caregiver,privacy.consentStatusRevoked,Retirado,Retirado,pendiente,igual al español
+caregiver,privacy.consentRevokedOn,Retirado el {{date}},Retirado el {{date}},pendiente,igual al español
+caregiver,privacy.consentStatusNone,Sin consentimiento registrado,Sin consentimiento registrado,pendiente,igual al español
+caregiver,privacy.consentActiveHint,Puedes retirar la autorización para el tratamiento de los datos de {{name}}.,Puedes retirar la autorización para el tratamiento de los datos de {{name}}.,pendiente,igual al español
+caregiver,privacy.consentRevokedHint,"Mientras no vuelvas a autorizarlo, no se podrán anotar nuevos controles de {{name}}.","Mientras no vuelvas a autorizarlo, no se podrán anotar nuevos controles de {{name}}.",pendiente,igual al español
+caregiver,privacy.readConsent,Leer consentimiento,Leer consentimiento,pendiente,igual al español
+caregiver,privacy.revokeConsent,Revocar consentimiento,Revocar consentimiento,pendiente,igual al español
+caregiver,privacy.grantConsent,Dar consentimiento,Dar consentimiento,pendiente,igual al español
+caregiver,privacy.backToMyData,Volver a mis datos,Volver a mis datos,pendiente,igual al español
+caregiver,privacy.selectChildA11y,Elegir niño para gestionar su privacidad,Elegir niño para gestionar su privacidad,pendiente,igual al español
+caregiver,privacy.exportTitle,Historial de crecimiento,Historial de crecimiento,pendiente,igual al español
+caregiver,privacy.exportDescription,"Descarga los controles de {{name}} en un archivo CSV, que se abre en cualquier hoja de cálculo.","Descarga los controles de {{name}} en un archivo CSV, que se abre en cualquier hoja de cálculo.",pendiente,igual al español
+caregiver,privacy.exportButton,Exportar historial (CSV),Exportar historial (CSV),pendiente,igual al español
+caregiver,privacy.exporting,Preparando...,Preparando...,pendiente,igual al español
+caregiver,privacy.exportErrorTitle,No se pudo exportar,No se pudo exportar,pendiente,igual al español
+caregiver,privacy.deleteTitle,Eliminar los datos,Eliminar los datos,pendiente,igual al español
+caregiver,privacy.deleteDescription,"Si lo pides, el nombre de {{name}} se borra y sus datos dejan de poder ligarse a una persona. Podrás cancelar la solicitud antes de que se haga.","Si lo pides, el nombre de {{name}} se borra y sus datos dejan de poder ligarse a una persona. Podrás cancelar la solicitud antes de que se haga.",pendiente,igual al español
+caregiver,privacy.deleteButton,Solicitar eliminación,Solicitar eliminación,pendiente,igual al español
+caregiver,privacy.deleteConfirmTitle,¿Eliminar los datos de {{name}}?,¿Eliminar los datos de {{name}}?,pendiente,igual al español
+caregiver,privacy.deleteConfirmMessage,En unos días (máximo {{days}}) se borrará su nombre y dejarás de ver sus datos en la app. Después ya no se puede deshacer. Mientras tanto puedes cancelar la solicitud.,En unos días (máximo {{days}}) se borrará su nombre y dejarás de ver sus datos en la app. Después ya no se puede deshacer. Mientras tanto puedes cancelar la solicitud.,pendiente,igual al español
+caregiver,privacy.deleteConfirm,"Sí, solicitar","Sí, solicitar",pendiente,igual al español
+caregiver,privacy.deleteErrorTitle,No se pudo pedir,No se pudo pedir,pendiente,igual al español
+caregiver,privacy.requestedTitle,Solicitud enviada,Solicitud enviada,pendiente,igual al español
+caregiver,privacy.requestedMessage,Eliminaremos los datos de {{name}}. Puedes cancelar la solicitud mientras tanto.,Eliminaremos los datos de {{name}}. Puedes cancelar la solicitud mientras tanto.,pendiente,igual al español
+caregiver,privacy.pendingTitle,Solicitud en curso,Solicitud en curso,pendiente,igual al español
+caregiver,privacy.pendingMessage,Pediste eliminar los datos de {{name}} el {{requestedAt}}. Se harán a más tardar el {{dueAt}}. Puedes cancelarla hasta entonces.,Pediste eliminar los datos de {{name}} el {{requestedAt}}. Se harán a más tardar el {{dueAt}}. Puedes cancelarla hasta entonces.,pendiente,igual al español
+caregiver,privacy.cancelButton,Cancelar solicitud,Cancelar solicitud,pendiente,igual al español
+caregiver,privacy.cancelConfirmTitle,¿Cancelar la solicitud?,¿Cancelar la solicitud?,pendiente,igual al español
+caregiver,privacy.cancelConfirmMessage,No se eliminarán los datos de {{name}}.,No se eliminarán los datos de {{name}}.,pendiente,igual al español
+caregiver,privacy.cancelConfirm,"Sí, cancelar","Sí, cancelar",pendiente,igual al español
+caregiver,privacy.keepRequest,"No, mantenerla","No, mantenerla",pendiente,igual al español
+caregiver,privacy.cancelErrorTitle,No se pudo cancelar,No se pudo cancelar,pendiente,igual al español
+caregiver,privacy.cancelledTitle,Solicitud cancelada,Solicitud cancelada,pendiente,igual al español
+caregiver,privacy.cancelledMessage,No se eliminarán los datos de {{name}}.,No se eliminarán los datos de {{name}}.,pendiente,igual al español
+caregiver,privacy.forbidden,"Solo el representante legal de {{name}} puede exportar, corregir o eliminar sus datos. Tu cuenta no está vinculada como representante legal.","Solo el representante legal de {{name}} puede exportar, corregir o eliminar sus datos. Tu cuenta no está vinculada como representante legal.",pendiente,igual al español
+caregiver,privacy.loading,Cargando...,Cargando...,pendiente,igual al español
+caregiver,privacy.loadError,No pudimos cargar las opciones de privacidad.,No pudimos cargar las opciones de privacidad.,pendiente,igual al español
+caregiver,privacy.retry,Intentar de nuevo,Kutin rurapay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,privacy.noChildrenTitle,Aún no tienes niños vinculados,Aún no tienes niños vinculados,pendiente,igual al español
+caregiver,privacy.noChildrenSubtitle,Cuando registres a un niño podrás gestionar aquí sus datos.,Cuando registres a un niño podrás gestionar aquí sus datos.,pendiente,igual al español
+caregiver,privacy.childSubtitle,{{age}},{{age}},no se traduce,
+caregiver,privacy.csv.date,Fecha del control,Fecha del control,pendiente,igual al español
+caregiver,privacy.csv.weight,Peso (kg),Peso (kg),pendiente,igual al español
+caregiver,privacy.csv.height,Estatura (cm),Hatunkay (cm),traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,privacy.csv.position,Cómo se midió,Cómo se midió,pendiente,igual al español
+caregiver,privacy.csv.recordedBy,Quién lo anotó,Quién lo anotó,pendiente,igual al español
+caregiver,privacy.csv.correction,Corrige un control anterior,Corrige un control anterior,pendiente,igual al español
+caregiver,privacy.csv.yes,Sí,Sí,no se traduce,
+caregiver,privacy.csv.no,No,No,no se traduce,
+caregiver,linkProfessional.title,Vincular profesional,Vincular profesional,pendiente,igual al español
+caregiver,linkProfessional.back,Volver,Tikray,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+caregiver,linkProfessional.childSubtitle,{{age}},{{age}},no se traduce,
+caregiver,linkProfessional.licenseLabel,Registro profesional,Registro profesional,pendiente,igual al español
+caregiver,linkProfessional.licenseHint,Te lo da tu profesional de salud.,Te lo da tu profesional de salud.,pendiente,igual al español
+caregiver,linkProfessional.licensePlaceholder,Ej. 1234567890,Ej. 1234567890,no se traduce,
+caregiver,linkProfessional.search,Buscar profesional,Buscar profesional,pendiente,igual al español
+caregiver,linkProfessional.searching,Buscando…,Buscando…,pendiente,igual al español
+caregiver,linkProfessional.resultDetail,{{specialty}} · {{license}},{{specialty}} · {{license}},no se traduce,
+caregiver,linkProfessional.resultNote,Podrá ver los controles y alertas de {{child}}.,Podrá ver los controles y alertas de {{child}}.,pendiente,igual al español
+caregiver,linkProfessional.link,Vincular a {{child}},Vincular a {{child}},pendiente,igual al español
+caregiver,linkProfessional.linking,Vinculando…,Vinculando…,pendiente,igual al español
+caregiver,linkProfessional.cancel,Cancelar,Cancelar,pendiente,igual al español
+caregiver,linkProfessional.licenseRequired,Escribe el registro profesional.,Escribe el registro profesional.,pendiente,igual al español
+caregiver,linkProfessional.consentRequired,{{child}} no tiene un consentimiento informado vigente. Concédelo para poder vincular a un profesional.,{{child}} no tiene un consentimiento informado vigente. Concédelo para poder vincular a un profesional.,pendiente,igual al español
+caregiver,linkProfessional.goToConsent,Ir al consentimiento,Ir al consentimiento,pendiente,igual al español
+caregiver,linkProfessional.notLegalRepresentative,Solo el representante legal puede vincular profesionales.,Solo el representante legal puede vincular profesionales.,pendiente,igual al español
+caregiver,linkProfessional.successTitle,Profesional vinculado,Profesional vinculado,pendiente,igual al español
+caregiver,linkProfessional.successMessage,{{name}} ya puede ver los controles y alertas de {{child}}.,{{name}} ya puede ver los controles y alertas de {{child}}.,pendiente,igual al español
+caregiver,linkProfessional.ok,Entendido,Hamutashkanimi,traducido,reutilizado de otra clave; todas las palabras respaldadas (dic); falta revisión nativa
+caregiver,linkProfessional.missingChild,Elige primero a un niño.,Elige primero a un niño.,pendiente,igual al español
+caregiver,childRegistered.title,¡Niño registrado!,¡Niño registrado!,pendiente,igual al español
+caregiver,childRegistered.subtitle,{{name}} - {{age}},{{name}} - {{age}},no se traduce,
+caregiver,childRegistered.cardTitle,¿Quieres vincular a su profesional?,¿Quieres vincular a su profesional?,pendiente,igual al español
+caregiver,childRegistered.cardBody,Así podrá ver los controles y las alertas de {{name}}. Solo necesitas su registro profesional.,Así podrá ver los controles y las alertas de {{name}}. Solo necesitas su registro profesional.,pendiente,igual al español
+caregiver,childRegistered.later,También puedes hacerlo después desde Mis niños.,También puedes hacerlo después desde Mis niños.,pendiente,igual al español
+caregiver,childRegistered.link,Vincular profesional,Vincular profesional,pendiente,igual al español
+caregiver,childRegistered.notNow,Ahora no,Kunanka mana,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+caregiver,childRegistered.missing,No pudimos mostrar los datos del niño registrado.,No pudimos mostrar los datos del niño registrado.,pendiente,igual al español
+caregiver,childRegistered.goHome,Ir al inicio,Ir al inicio,pendiente,igual al español
+caregiver,childProfessionals.title,Profesionales,Profesionales,pendiente,igual al español
+caregiver,childProfessionals.loadError,No pudimos cargar los profesionales.,No pudimos cargar los profesionales.,pendiente,igual al español
+caregiver,childProfessionals.linkAnother,Vincular otro profesional,Vincular otro profesional,pendiente,igual al español
+common,appName,NutriKids,NutriKids,no se traduce,
+common,brand.slogan,"Cuidar su crecimiento, juntos.","Paykunapak wiñayta, tukuylla kamashun.",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,brand.logoLabel,Logo de NutriKids,NutriKids unancha,traducido,todas las palabras respaldadas (dic); falta revisión nativa
+common,brand.copyright,NutriKids © {{year}},NutriKids © {{year}},no se traduce,
+common,actions.back,Volver,Tikray,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,actions.goBack,Volver a la pantalla anterior,Ñawpa pankaman tikray,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,actions.cancel,Cancelar,Sakiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,actions.accept,Aceptar,Chaskiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,actions.continue,Continuar,Katiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,actions.understood,Entendido,Hamutashkanimi,traducido,todas las palabras respaldadas (dic); falta revisión nativa
+common,actions.send,Enviar,Kachay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,actions.seeAll,Ver todo,Tukuyta rikuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,actions.logout,Cerrar sesión,Llukshiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,actions.login,Iniciar Sesión,Yaykuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,actions.register,Registrarse,Killkakatiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,password.show,Mostrar contraseña,Pakalla shimita rikuchiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,password.hide,Ocultar contraseña,Pakalla shimita pakay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,password.showConfirmation,Mostrar confirmación,Kutin killkashkata rikuchiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,password.hideConfirmation,Ocultar confirmación,Kutin killkashkata pakay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,roles.CAREGIVER,Cuidador,Wawa kamak,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,roles.PROFESSIONAL,Profesional de Salud,Hampik,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,specialties.pediatrics,Pediatría,Wawa hampi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,specialties.nutrition,Nutrición,Mikuy hampi,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,specialties.nursing,Enfermería,Unkuk kamay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,units.kg,kg,kg,no se traduce,
+common,units.cm,cm,cm,no se traduce,
+common,units.weightValue,{{value}} kg,{{value}} kg,no se traduce,
+common,units.heightValue,{{value}} cm,{{value}} cm,no se traduce,
+common,status.error,Error,Pantay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,age.years_one,{{count}} año,{{count}} wata,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,age.years_other,{{count}} años,{{count}} wata,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,age.months_one,{{count}} mes,{{count}} killa,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,age.months_other,{{count}} meses,{{count}} killa,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,age.yearsAndMonths,{{years}} y {{months}},{{years}} {{months}},traducido,todas las palabras respaldadas (); falta revisión nativa
+common,age.yearsAndMonthsShort,{{years}} {{months}}m,{{years}} {{months}}k,traducido,todas las palabras respaldadas (); falta revisión nativa
+common,age.newborn,Recién nacido,Mushuk wachashka,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,time.yesterday,Ayer,Kayna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,time.daysAgo_one,Hace {{count}} día,{{count}} puncha ñawpa,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,time.daysAgo_other,Hace {{count}} días,{{count}} puncha ñawpa,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,time.dateAtTime,{{date}} a las {{time}},"{{date}}, {{time}} pachapi",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,offline.dataNotice,Datos guardados en este dispositivo · actualizados hace {{time}},Datos guardados en este dispositivo · actualizados hace {{time}},pendiente,igual al español
+common,offline.dataNoticeNoTime,Datos guardados en este dispositivo,Datos guardados en este dispositivo,pendiente,igual al español
+common,offline.noDataMessage,Conéctate a internet una vez para descargar tu información,Conéctate a internet una vez para descargar tu información,pendiente,igual al español
+common,offline.localOnlyBadge,Guardado en este dispositivo,Guardado en este dispositivo,pendiente,igual al español
+common,offline.elapsed.lessThanMinute,menos de 1 minuto,menos de 1 minuto,pendiente,igual al español
+common,offline.elapsed.minutes_one,{{count}} minuto,{{count}} minuto,pendiente,igual al español
+common,offline.elapsed.minutes_other,{{count}} minutos,{{count}} minutos,pendiente,igual al español
+common,offline.elapsed.hours_one,{{count}} hora,{{count}} hora,pendiente,igual al español
+common,offline.elapsed.hours_other,{{count}} horas,{{count}} horas,pendiente,igual al español
+common,offline.elapsed.days_one,{{count}} día,{{count}} día,no se traduce,
+common,offline.elapsed.days_other,{{count}} días,{{count}} días,no se traduce,
+common,connectionBar.offline,Sin conexión,Sin conexión,pendiente,igual al español
+common,connectionBar.offlineWithCount_one,Sin conexión · {{count}} registro por enviar,Sin conexión · {{count}} registro por enviar,pendiente,igual al español
+common,connectionBar.offlineWithCount_other,Sin conexión · {{count}} registros por enviar,Sin conexión · {{count}} registros por enviar,pendiente,igual al español
+common,connectionBar.sending_one,Enviando {{count}} registro…,Enviando {{count}} registro…,pendiente,igual al español
+common,connectionBar.sending_other,Enviando {{count}} registros…,Enviando {{count}} registros…,pendiente,igual al español
+common,connectionBar.error_one,{{count}} registro no se pudo enviar,{{count}} registro no se pudo enviar,pendiente,igual al español
+common,connectionBar.error_other,{{count}} registros no se pudieron enviar,{{count}} registros no se pudieron enviar,pendiente,igual al español
+common,connectionBar.errorAction,Ver,Ver,pendiente,igual al español
+common,connectionBar.synced,Todo sincronizado,Todo sincronizado,pendiente,igual al español
+common,language.title,Idioma,Shimi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,language.description,Elige en qué idioma quieres ver la app.,"Ima shimipi app-ta rikunata munanki, akllay.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,language.selectA11y,Cambiar el idioma a {{language}},Shimita {{language}} shimiman tikrachiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,language.draftNotice,Esta traducción todavía está en revisión.,Kay tikrachishkaka kunanrak allichikun.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,date.long,{{day}} de {{month}} de {{year}},{{day}} {{month}} killa {{year}},traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,date.medium,{{day}} {{month}} {{year}},{{day}} {{month}} {{year}},no se traduce,
+common,date.short,{{day}} {{month}},{{day}} {{month}},no se traduce,
+common,date.months.1,enero,kulla,traducido,todas las palabras respaldadas (dic); falta revisión nativa
+common,date.months.2,febrero,panchi,revisar,sin respaldo: panchi
+common,date.months.3,marzo,pawkar,revisar,sin respaldo: pawkar
+common,date.months.4,abril,ayriwa,traducido,todas las palabras respaldadas (dic); falta revisión nativa
+common,date.months.5,mayo,aymuray,revisar,sin respaldo: aymuray
+common,date.months.6,junio,raymi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,date.months.7,julio,sitwa,revisar,sin respaldo: sitwa
+common,date.months.8,agosto,karwa,revisar,sin respaldo: karwa
+common,date.months.9,septiembre,kuski,revisar,posible quechua del sur: kuski
+common,date.months.10,octubre,wayru,traducido,todas las palabras respaldadas (dic); falta revisión nativa
+common,date.months.11,noviembre,sasi,traducido,todas las palabras respaldadas (dic); falta revisión nativa
+common,date.months.12,diciembre,kapak,traducido,todas las palabras respaldadas (dic+libro/infantil); falta revisión nativa
+common,date.monthsShort.1,ene,kulla,traducido,todas las palabras respaldadas (dic); falta revisión nativa
+common,date.monthsShort.2,feb,panchi,revisar,sin respaldo: panchi
+common,date.monthsShort.3,mar,pawkar,revisar,sin respaldo: pawkar
+common,date.monthsShort.4,abr,ayriwa,traducido,todas las palabras respaldadas (dic); falta revisión nativa
+common,date.monthsShort.5,may,aymuray,revisar,sin respaldo: aymuray
+common,date.monthsShort.6,jun,raymi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,date.monthsShort.7,jul,sitwa,revisar,sin respaldo: sitwa
+common,date.monthsShort.8,ago,karwa,revisar,sin respaldo: karwa
+common,date.monthsShort.9,sept,kuski,revisar,posible quechua del sur: kuski
+common,date.monthsShort.10,oct,wayru,traducido,todas las palabras respaldadas (dic); falta revisión nativa
+common,date.monthsShort.11,nov,sasi,traducido,todas las palabras respaldadas (dic); falta revisión nativa
+common,date.monthsShort.12,dic,kapak,traducido,todas las palabras respaldadas (dic+libro/infantil); falta revisión nativa
+common,relationships.MOTHER,Madre,Mama,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,relationships.FATHER,Padre,Yaya,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,relationships.LEGAL_GUARDIAN,Tutor legal,Kamachik kamak,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,notifications.title,Notificaciones,Willaykuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,notifications.empty,No tienes notificaciones por el momento,Kunan pachapi mana willaykuna kanchu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,notifications.emptyDescription,Aquí recibirás avisos sobre alertas de crecimiento y recordatorios.,Kaypi wiñaymanta willaykunata chaskinki.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,notifications.loading,Cargando notificaciones...,Willaykunata kargachkan...,revisar,posible quechua del sur: kargachkan
+common,notifications.errorLoading,No se pudieron cargar las notificaciones,Manam willaykunata kargayta atikurchu,revisar,sin respaldo: kargayta
+common,notifications.unreadBadge,No leída,Mana ñawinchasqa,revisar,posible quechua del sur: ñawinchasqa
+common,notifications.retry,Reintentar,Kutichiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,notifications.types.alert_new,Nueva alerta de crecimiento,Wiñaymanta musuq willay,revisar,posible quechua del sur: musuq
+common,notifications.types.alert_pending_review,Alerta pendiente de revisión,Qawanapaq willay,revisar,posible quechua del sur: qawanapaq
+common,notifications.types.alert_overdue,Alerta vencida sin revisar,Pacha yallisqa willay,revisar,posible quechua del sur: yallisqa
+common,notifications.types.reminder_due,Recordatorio pendiente,Yuyarinapaq willay,revisar,posible quechua del sur: yuyarinapaq
+common,notifications.types.message_new,Nuevo mensaje recibido,Musuq chaskishka willay,revisar,posible quechua del sur: musuq
+common,notifications.types.referral_new,Nueva derivación recibida,Musuq kachashka willay,revisar,posible quechua del sur: musuq
+common,signOutPending.title_one,Tienes 1 registro sin enviar,1 mana kachasqa killkaymi tiyan,revisar,posible quechua del sur: kachasqa
+common,signOutPending.title_other,Tienes {{count}} registros sin enviar,{{count}} mana kachasqa killkaykunam tiyan,revisar,posible quechua del sur: kachasqa
+common,signOutPending.body,Si cierras sesión sin enviarlos se borrarán de este teléfono. Sincroniza primero para no perderlos.,Mana kachaspa lluqsikpika kay karurimana ukhumanta pichasqam kanka. Mana chinkachinapaq ñawpaqta kachay.,revisar,"posible quechua del sur: chinkachinapaq, lluqsikpika, pichasqam, ukhumanta"
+common,signOutPending.syncAndSignOut,Sincronizar y salir,Kachay hinaspa lluqsiy,revisar,posible quechua del sur: lluqsiy
+common,signOutPending.syncing,Sincronizando...,Kachachkan...,revisar,posible quechua del sur: kachachkan
+common,signOutPending.offlineHint,Necesitas conexión para enviarlos,Kachanapaq internetmi minishtirin,revisar,posible quechua del sur: kachanapaq
+common,signOutPending.syncFailed_one,No se pudo enviar 1 registro,Manam 1 killkayta kachayta atikurchu,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,signOutPending.syncFailed_other,No se pudieron enviar {{count}} registros,Manam {{count}} killkaykunata kachayta atikurchu,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+common,signOutPending.goToPendingSync,Ir a Pendientes de envío,Kachanapaq suyachkaqkunaman riy,revisar,"posible quechua del sur: kachanapaq, suyachkaqkunaman"
+common,signOutPending.signOutAndDelete,Salir y borrar datos,Lluqsiy hinaspa willaykunata pichay,revisar,posible quechua del sur: lluqsiy
+common,signOutPending.signingOut,Cerrando sesión...,Lluqsichkan...,revisar,posible quechua del sur: lluqsichkan
+common,signOutPending.confirmDeleteTitle,Confirmar cierre de sesión,Lluqsinapaq allichay,revisar,posible quechua del sur: lluqsinapaq
+common,signOutPending.confirmDeleteBody_one,Se perderá 1 registro que no se ha enviado. Esta acción no se puede deshacer,1 mana kachasqa killkaymi chinkanka. Kay ruraytaqa manam kutichiy atikunchu,revisar,posible quechua del sur: kachasqa
+common,signOutPending.confirmDeleteBody_other,Se perderán {{count}} registros que no se han enviado. Esta acción no se puede deshacer,{{count}} mana kachasqa killkaykunam chinkanka. Kay ruraytaqa manam kutichiy atikunchu,revisar,posible quechua del sur: kachasqa
+common,signOutPending.confirmDeleteAction,Salir y borrar datos,Lluqsiy hinaspa willaykunata pichay,revisar,posible quechua del sur: lluqsiy
+common,signOutPending.cancel,Cancelar,Mana ari,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+common,signOutPending.closeA11y,Cancelar cierre de sesión,Lluqsiyta saqiy,revisar,"posible quechua del sur: lluqsiyta, saqiy"
+consent,screen.title,Consentimiento,Ari nina,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.registerSubtitle,Antes de registrar a tu niño o niña necesitamos tu permiso para cuidar sus datos.,"Kikinpak wawata killkakatinamanta ñawpaka, paypak willaykunata kamankapak ari ninaykitami mutsunchik.",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,screen.childFallback,tu niño o niña,kikinpak wawa,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.versionLabel,Versión aceptada:,Chaskishka killka:,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.grantedAtLabel,Fecha en que aceptaste:,Ari nishka puncha:,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.statusLabel,Estado:,Imashina kan:,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.statusActive,ACTIVO,KAWSAKUN,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,screen.statusRevoked,RETIRADO,KICHUSHKA,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,screen.revokedAtLabel,Fecha en que lo retiraste:,Kichushka puncha:,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.accept,Acepto y continuar,Ari nishpa katiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,screen.revoke,Retirar mi permiso,Ñuka ari ninata kichuy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.renew,Dar mi permiso otra vez,Kutin ari niy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,screen.back,Volver,Tikray,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,screen.documentInSpanish,El documento legal se muestra en español mientras se revisa su traducción.,"Kamachik killkaka ishpañol shimipimi rikurin, tikrachishkata allichikukpi.",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,screen.representative,Representante legal: {{name}},Kamachik kamak: {{name}},traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,screen.authorizeTitle,¿Qué autorizas?,¿Imatatak ari ninki?,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,screen.points.store,"Guardar el peso, la estatura y la alimentación de {{name}}.","{{name}}-pak llasayta, hatunkayta, mikuytapash wakaychina.",revisar,sin respaldo: llasayta
+consent,screen.points.who,"Ver cómo crece, comparando con las tablas de la OMS (Organización Mundial de la Salud).",OMS-pak tupuykunawan chimpapurashpa imashina wiñakunta rikuna.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.points.share,Compartir estos datos solo con su equipo de salud.,Kay willaykunataka paypak hampik tantanakuywan kamanlla rikuchina.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.readFull,Leer el texto completo,Tukuy killkata ñawinchiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.hideFull,Ocultar el texto completo,Tukuy killkata pakay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.readFullA11y,Leer el texto completo del consentimiento,Ari ninapak tukuy killkata ñawinchiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.checkLegal,Soy el representante legal de {{name}} y doy permiso para usar sus datos de salud.,"Ñukami {{name}}-pak kamachik kamak kani, paypak hampi willaykunata hapinkapak ari ninimi.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.checkLegalA11y,Soy el representante legal y doy permiso para usar los datos,"Ñukami kamachik kamak kani, willaykunata hapinkapak ari ninimi",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.checkRevocation,Entiendo que puedo retirar este permiso cuando quiera desde mi perfil.,"Hamutanimi, kay ari ninataka ñukamanta pankamanta ima pachapash kichuy ushanimi.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.checkRevocationA11y,Entiendo que puedo retirar este permiso,Kay ari ninata kichuy ushanata hamutanimi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,screen.versionLine,Versión {{version}} del texto · {{date}},Versión {{version}} del texto · {{date}},pendiente,igual al español
+consent,screen.notNow,Ahora no,Kunanka mana,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,alerts.grantedTitle,Permiso guardado,Ari ninaka wakaychishkami,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,alerts.grantedMessage,Diste tu permiso. ¡Gracias!,Ari nirkanki. ¡Yupaychani!,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,alerts.errorTitle,Algo salió mal,Imapash pantarirkami,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,alerts.grantError,No pudimos guardar tu permiso. Intenta de nuevo.,Ari ninata mana wakaychiy usharkanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,alerts.revokeTitle,Retirar mi permiso,Ñuka ari ninata kichuy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,alerts.revokeMessage,"¿Seguro que quieres retirar tu permiso para {{name}}? Mientras no lo vuelvas a dar, no se podrán anotar nuevos controles de crecimiento.","¿{{name}}-pak ari ninata kichunata munankichu? Kutin ari nishkakaman, mushuk wiñay kamaykunataka mana killkay ushankichu.",revisar,sin respaldo: nishkakaman
+consent,alerts.revokeConfirm,"Sí, retirar","Ari, kichuy",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,alerts.revokedTitle,Permiso retirado,Ari ninaka kichushkami,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+consent,alerts.revokedMessage,"Retiraste tu permiso. Los controles anteriores se guardan de forma segura, como pide la ley.",Ari ninata kichurkanki. Ñawpa kamaykunaka kamachik nishka shinami alli wakaychishka sakirin.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,alerts.revokeErrorTitle,No se pudo retirar,Mana kichuy usharkanchu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,alerts.revokeError,No pudimos retirar tu permiso. Intenta de nuevo.,Ari ninata mana kichuy usharkanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+consent,documents.v1,"DECLARACIÓN DE CONSENTIMIENTO INFORMADO PARA EL REGISTRO Y SEGUIMIENTO NUTRICIONAL  1. ¿Para qué usamos los datos de tu hijo o hija? Al utilizar NutriKids, los datos antropométricos del niño (peso, talla/longitud y fecha de nacimiento) se emplean exclusivamente para: • Evaluar su crecimiento y estado nutricional comparándolo con los patrones de referencia oficiales de la Organización Mundial de la Salud (OMS). • Detectar oportunamente alertas de riesgo nutricional (como bajo peso, desnutrición o sobrepeso) para orientar el cuidado oportuno. • Facilitar el seguimiento continuo y coordinado junto a su equipo o profesional de salud tratante.  2. Confidencialidad y Seguridad La información registrada es estrictamente confidencial. Se encuentra protegida bajo estrictos estándares de seguridad y cifrado. En ningún caso sus datos serán vendidos, comercializados ni transferidos a terceros con fines ajenos a su salud y bienestar.  3. Derecho de Revocación Como madre, padre o representante legal, puedes revocar este consentimiento en cualquier momento directamente desde la sección ""Mi Perfil"" en la aplicación. La revocación impedirá registrar nuevos controles nutricionales, pero conservará de forma segura el historial previo registrado para fines de trazabilidad clínica y auditoría legal.  4. Aceptación Al pulsar el botón ""Aceptar consentimiento"", confirmas que has leído y comprendido esta información en lenguaje claro y autorizas el tratamiento de los datos para los fines indicados.",,pendiente,falta en qu
+errors,generic,Error al procesar la solicitud. Intenta nuevamente.,Mañaytaka mana rurayta usharkanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,requestFailed,Error al procesar la solicitud.,Mañaytaka mana rurayta usharkanchikchu.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,network,No se pudo conectar con el servidor. Verifica tu conexión a internet.,Servidorwanka mana tinkiy usharkanchu. Kikinpak internetta rikuy.,revisar,sin respaldo: servidorwanka
+errors,timeout,Tiempo agotado conectando a {{url}},{{url}}-wan tinkinkapak pachaka tukurirkami,revisar,sin respaldo: wan
+errors,invalidResponse,La respuesta del servidor no tiene el formato esperado.,Servidorpak kutichikka mana shuyashka shinachu kan.,revisar,sin respaldo: servidorpak
+errors,sessionRefreshNetwork,Error de red al renovar la sesión. Verifica tu conexión.,Yaykushkata mushukyachinkapak internet pantarirkami. Kikinpak internetta rikuy.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+errors,offlineNoData,Conéctate a internet una vez para descargar tu información,Conéctate a internet una vez para descargar tu información,pendiente,igual al español
+errors,http.401,Correo o contraseña incorrectos. Verifica tus credenciales.,Correopash pakalla shimipash pantashkami. Kutin rikuy.,revisar,sin respaldo: correopash
+errors,http.403,Acceso denegado o código de invitación profesional inválido.,"Mana yaykuy ushanichu, mana kashpaka hampikpak kayana yupay pantashkami.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,http.404,El recurso solicitado no fue encontrado.,Mañashkataka mana tarirkanchikchu.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,http.409,El correo electrónico o número de licencia ya se encuentra registrado.,"Kay correo, mana kashpaka hampik killka yupayka ñami killkakatishka kan.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,http.429,"Demasiados intentos fallidos. Por seguridad, espera unos minutos antes de volver a intentar.","Achka kutinmi pantarirkanki. Ashallata shuyapay, kipaka kutin rurapay.",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+errors,http.5xx,"El servidor no se encuentra disponible. Por favor, intenta de nuevo más tarde.",Servidorka kunanka mana kanchu. Kipaka kutin rurapay.,revisar,sin respaldo: servidorka
+errors,auth.login,Error inesperado al iniciar sesión.,Yaykunapika imapash pantarirkami.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+errors,auth.register,Error inesperado al registrar la cuenta.,Kuentata rurakpika imapash pantarirkami.,revisar,sin respaldo: kuentata
+errors,auth.forgotPassword,Error inesperado al solicitar restablecimiento de contraseña.,Pakalla shimita mushukyachinata mañakpika imapash pantarirkami.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,auth.resetPassword,Error inesperado al restablecer la contraseña.,Pakalla shimita mushukyachikpika imapash pantarirkami.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,consent.fetch,No pudimos ver el permiso de este niño. Intenta de nuevo.,Kay wawapak ari ninata mana rikuy usharkanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,consent.grant,No pudimos guardar tu permiso. Intenta de nuevo.,Kikinpak ari ninata mana wakaychiy usharkanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,consent.revoke,No pudimos retirar el permiso. Intenta de nuevo.,Ari ninata mana kichuy usharkanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,consent.load,No pudimos cargar el permiso. Intenta de nuevo.,Ari ninata mana rikuchiy usharkanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,consent.childList,No pudimos cargar la lista de tus niños.,Kikinpak wawakunapak shutikunata mana rikuchiy usharkanchikchu.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,consent.missingChildForGrant,Falta elegir el niño para dar el permiso.,Ari ninkapakka wawata akllanami kan.,revisar,sin respaldo: ninkapakka
+errors,consent.missingChildForRevoke,Falta elegir el niño para retirar el permiso.,Ari ninata kichunkapakka wawata akllanami kan.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,children.create,No pudimos registrar al niño. Intenta de nuevo.,Wawata mana killkakatiy usharkanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,children.fetch,No pudimos cargar los datos del niño. Intenta de nuevo.,No pudimos cargar los datos del niño. Intenta de nuevo.,pendiente,igual al español
+errors,notifications.registerDevice,No se pudo registrar el dispositivo para notificaciones.,Manam willaykunapaq antañikikuta willayta atikurchu.,revisar,posible quechua del sur: willaykunapaq
+errors,notifications.unregisterDevice,No se pudo desregistrar el dispositivo.,Manam antañikikuta anchuchiyta atikurchu.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+errors,notifications.markRead,No se pudo marcar la notificación como leída.,Manam willayta ñawinchasqa nispa churayta atikurchu.,revisar,"posible quechua del sur: nispa, ñawinchasqa"
+errors,checkups.fetch,No pudimos cargar los controles. Intenta de nuevo.,Kamaykunata mana rikuchiy usharkanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,checkups.create,No pudimos guardar el control. Intenta de nuevo.,Kamayta mana wakaychiy usharkanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,checkups.missingChild,Falta elegir el niño para anotar el control.,Kamayta killkankapakka wawata akllana kanmi.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+errors,checkups.offlineNoLocalDb,Necesitas conexión para guardar el control en este dispositivo,Necesitas conexión para guardar el control en este dispositivo,pendiente,igual al español
+errors,growthTrend.fetch,No pudimos cargar la tendencia de crecimiento. Intenta de nuevo.,No pudimos cargar la tendencia de crecimiento. Intenta de nuevo.,pendiente,igual al español
+errors,feeding.create,No pudimos guardar la alimentación. Intenta de nuevo.,No pudimos guardar la alimentación. Intenta de nuevo.,pendiente,igual al español
+errors,feeding.missingChild,Falta elegir el niño para registrar su alimentación.,Falta elegir el niño para registrar su alimentación.,pendiente,igual al español
+errors,feeding.network,Necesitas conexión para guardar la alimentación. Inténtalo de nuevo cuando vuelvas a tener internet.,Necesitas conexión para guardar la alimentación. Inténtalo de nuevo cuando vuelvas a tener internet.,pendiente,igual al español
+errors,reference.fetch,No pudimos cargar las curvas de referencia. Intenta de nuevo.,OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,reference.offlineNoData,Conéctate una vez para descargar las curvas,Conéctate una vez para descargar las curvas,pendiente,igual al español
+errors,alerts.list,No pudimos cargar las alertas. Intenta de nuevo.,Mana yuyachikkunata apamunkapak ushashkanchu. Kutin yachay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,alerts.detail,No pudimos cargar la alerta. Intenta de nuevo.,No pudimos cargar la alerta. Intenta de nuevo.,pendiente,igual al español
+errors,alerts.review,No pudimos marcar la alerta como revisada. Intenta de nuevo.,No pudimos marcar la alerta como revisada. Intenta de nuevo.,pendiente,igual al español
+errors,followUps.create,No pudimos guardar el seguimiento. Intenta de nuevo.,No pudimos guardar el seguimiento. Intenta de nuevo.,pendiente,igual al español
+errors,growth.fetch,No pudimos cargar el estado de crecimiento. Intenta de nuevo.,No pudimos cargar el estado de crecimiento. Intenta de nuevo.,pendiente,igual al español
+errors,reminders.fetch,No pudimos cargar los recordatorios. Intenta de nuevo.,No pudimos cargar los recordatorios. Intenta de nuevo.,pendiente,igual al español
+errors,reminders.create,No pudimos guardar el recordatorio. Intenta de nuevo.,No pudimos guardar el recordatorio. Intenta de nuevo.,pendiente,igual al español
+errors,reminders.complete,No pudimos marcar el recordatorio como realizado. Intenta de nuevo.,No pudimos marcar el recordatorio como realizado. Intenta de nuevo.,pendiente,igual al español
+errors,education.fetch,No pudimos descargar los artículos. Intenta de nuevo.,No pudimos descargar los artículos. Intenta de nuevo.,pendiente,igual al español
+errors,dataRights.rectify,No pudimos guardar los cambios. Intenta de nuevo.,No pudimos guardar los cambios. Intenta de nuevo.,pendiente,igual al español
+errors,dataRights.export,No pudimos preparar el historial. Intenta de nuevo.,No pudimos preparar el historial. Intenta de nuevo.,pendiente,igual al español
+errors,dataRights.erasureRequest,No pudimos enviar la solicitud de eliminación. Intenta de nuevo.,No pudimos enviar la solicitud de eliminación. Intenta de nuevo.,pendiente,igual al español
+errors,dataRights.erasureList,No pudimos ver tus solicitudes de eliminación. Intenta de nuevo.,No pudimos ver tus solicitudes de eliminación. Intenta de nuevo.,pendiente,igual al español
+errors,dataRights.erasureCancel,No pudimos cancelar la solicitud. Intenta de nuevo.,No pudimos cancelar la solicitud. Intenta de nuevo.,pendiente,igual al español
+errors,dataRights.missingChild,Falta elegir el niño.,Falta elegir el niño.,pendiente,igual al español
+errors,account.fetch,No pudimos cargar tu cuenta. Intenta de nuevo.,No pudimos cargar tu cuenta. Intenta de nuevo.,pendiente,igual al español
+errors,account.update,No pudimos guardar tus datos. Intenta de nuevo.,No pudimos guardar tus datos. Intenta de nuevo.,pendiente,igual al español
+errors,referrals.professionals,No pudimos cargar los profesionales vinculados al niño. Intenta de nuevo.,No pudimos cargar los profesionales vinculados al niño. Intenta de nuevo.,pendiente,igual al español
+errors,referrals.create,No pudimos enviar la interconsulta. Intenta de nuevo.,No pudimos enviar la interconsulta. Intenta de nuevo.,pendiente,igual al español
+errors,referrals.forbidden,No tienes permiso para enviar esta interconsulta. Verifica tu vínculo profesional y el consentimiento activo del niño.,No tienes permiso para enviar esta interconsulta. Verifica tu vínculo profesional y el consentimiento activo del niño.,pendiente,igual al español
+errors,referrals.network,No hay conexión con el servidor. Revisa tu internet e intenta de nuevo; lo escrito se conserva.,No hay conexión con el servidor. Revisa tu internet e intenta de nuevo; lo escrito se conserva.,pendiente,igual al español
+errors,messages.conversations,No pudimos cargar tus conversaciones. Intenta de nuevo.,No pudimos cargar tus conversaciones. Intenta de nuevo.,pendiente,igual al español
+errors,messages.thread,No pudimos cargar los mensajes. Intenta de nuevo.,No pudimos cargar los mensajes. Intenta de nuevo.,pendiente,igual al español
+errors,messages.send,No pudimos enviar el mensaje. Intenta de nuevo.,No pudimos enviar el mensaje. Intenta de nuevo.,pendiente,igual al español
+errors,messages.markRead,No pudimos marcar los mensajes como leídos.,No pudimos marcar los mensajes como leídos.,pendiente,igual al español
+errors,messages.professionals,No pudimos cargar el equipo de salud de este niño. Intenta de nuevo.,No pudimos cargar el equipo de salud de este niño. Intenta de nuevo.,pendiente,igual al español
+errors,messages.forbidden,No tienes permiso para acceder o escribir en esta conversación.,No tienes permiso para acceder o escribir en esta conversación.,pendiente,igual al español
+errors,messages.noConsent,No puedes enviar mensajes porque este niño no tiene un consentimiento informado vigente.,No puedes enviar mensajes porque este niño no tiene un consentimiento informado vigente.,pendiente,igual al español
+errors,messages.network,No hay conexión. Verifica tu internet e intenta de nuevo.,No hay conexión. Verifica tu internet e intenta de nuevo.,pendiente,igual al español
+errors,messages.conflict,Este mensaje ya fue enviado con otro contenido.,Este mensaje ya fue enviado con otro contenido.,pendiente,igual al español
+errors,twoFactor.status,No pudimos consultar la verificación en dos pasos.,Ishkay kutin chaninchiyta mana tapuy ushanchikchu.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,twoFactor.regenerate,No pudimos generar nuevos códigos. Intenta de nuevo.,Mushuk yupaykunata mana ruray ushanchikchu. Kutin rurapay.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+errors,professionals.lookup,No pudimos buscar al profesional. Intenta de nuevo.,No pudimos buscar al profesional. Intenta de nuevo.,pendiente,igual al español
+errors,professionals.notFound,No encontramos un profesional con ese registro. Revisa el número e intenta de nuevo.,No encontramos un profesional con ese registro. Revisa el número e intenta de nuevo.,pendiente,igual al español
+errors,professionals.tooManyLookups,Hiciste demasiadas búsquedas. Espera unos minutos e intenta de nuevo.,Hiciste demasiadas búsquedas. Espera unos minutos e intenta de nuevo.,pendiente,igual al español
+errors,professionals.link,No pudimos vincular al profesional. Intenta de nuevo.,No pudimos vincular al profesional. Intenta de nuevo.,pendiente,igual al español
+errors,professionals.list,No pudimos cargar los profesionales.,No pudimos cargar los profesionales.,pendiente,igual al español
+errors,professionals.unlink,No pudimos desvincular al profesional.,No pudimos desvincular al profesional.,pendiente,igual al español
+professional,drawer.specialty,Especialidad: {{specialty}},Hampi yachay: {{specialty}},traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.switchToCaregiver,Vista Cuidador,Wawa kamak rikuchik,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,drawer.logout,Cerrar Sesión,Llukshiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.alerts,Bandeja de alertas,Yuyachikkuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.alertsTitle,Bandeja de Alertas,Yuyachikkuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.children,Niños por riesgo,Llakipi kak wawakuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.childrenTitle,Pacientes por Riesgo,Llakipi kak wawakuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.evolutionTitle,Evolución del paciente,Wawapa wiñaynin,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.addCheckup,Registrar control,Kamayta killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,drawer.addCheckupTitle,Registrar Control,Kamayta killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,drawer.messages,Mensajes y seguimientos,"Willaykuna, katinakunapash",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.messagesTitle,Mensajes y Seguimientos,"Willaykuna, katinakunapash",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.profile,Mi perfil,Ñukamanta,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.profileTitle,Perfil Profesional,Hampikmanta,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.notifications,Notificaciones,Willaykuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.notificationsTitle,Notificaciones,Willaykuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.alertDetailTitle,Detalle de la Alerta,Yuyachikkunamanta,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.followUpTitle,Seguimiento clínico,Seguimiento clínico,pendiente,igual al español
+professional,drawer.referralTitle,Interconsulta,Hampikman willay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,drawer.chatTitle,Conversación,Conversación,pendiente,igual al español
+professional,drawer.pendingSyncTitle,Pendientes de envío,Pendientes de envío,pendiente,igual al español
+professional,alerts.title,Alertas,Yuyachikkuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.subtitle,Controles que requieren tu revisión.,Rikuyta munashka kamaykuna.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alerts.filtersA11y,Filtrar alertas por estado,Yuyachikkunata ima kashkaman akllay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alerts.filters.OPEN,Sin revisar,Mana rikushka,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alerts.filters.ATTENDED,Atendidas,Rikushka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.status.GENERATED,Generada,Rurashka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.status.PENDING_REVIEW,Pendiente de revisión,Rikuyta shuyan,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.status.REVIEWED,Revisada,Rikushka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.status.FOLLOW_UP_ESTABLISHED,Con seguimiento,Katina churashka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.indicator.WEIGHT_FOR_AGE,Peso para la edad,Llasay wiñaypi,revisar,sin respaldo: llasay
+professional,alerts.indicator.LENGTH_HEIGHT_FOR_AGE,Talla para la edad,Hatunkay wiñaypi,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.indicator.WEIGHT_FOR_LENGTH_HEIGHT,Peso para la talla,Llasay hatunkaypi,revisar,sin respaldo: llasay
+professional,alerts.indicator.BMI_FOR_AGE,IMC para la edad,IMC wiñaypi,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.risk.UNDERWEIGHT,Bajo peso,Pishi llasay,revisar,sin respaldo: llasay
+professional,alerts.risk.STUNTING,Talla baja,Pishi hatunkay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.risk.WASTING,Emaciación,Ñañu kay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alerts.risk.OVERWEIGHT,Sobrepeso,Askha llasay,revisar,"sin respaldo: askha, llasay"
+professional,alerts.risk.OBESITY,Obesidad,Sinchi llasay,revisar,sin respaldo: llasay
+professional,alerts.severe,Grave,Sinchi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alerts.overdue,Vencida,Yallishka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.overdueSummary_one,{{count}} alerta vencida sin revisar,"{{count}} yuyachikkuna yallishka, mana rikushka",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alerts.overdueSummary_other,{{count}} alertas vencidas sin revisar,"{{count}} yuyachikkuna yallishka, mana rikushka",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alerts.today,Hoy,Kunan,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.unknownChild,Niño sin identificar,Mana riksishka wawa,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alerts.loading,Cargando alertas...,Yuyachikkunata apamunkapak...,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.retry,Reintentar,Kutin yachana,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alerts.empty,No hay alertas en este estado,Kay kashkapi mana yuyachikkuna kanchu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alerts.emptyDescription,"Cuando un control genere una alerta de riesgo, aparecerá aquí.","Kamay llakita rikuchishpaka, kaypi rikuchikunka.",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alerts.openA11y,"Abrir alerta de {{child}}: {{indicator}}, {{risk}}","{{child}} yuyachikkunata kichay: {{indicator}}, {{risk}}",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.title,Pacientes Clasificados por Riesgo,Llakipi kak wawakuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.description,Lista de niños vinculados categorizados según el nivel de riesgo antropométrico.,"Kikinwan tinkishka wawakuna, wiñay tupuypi ima llaki kashkamanta ñankuna.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,children.patientLabel,Paciente,Hampichikuk wawa,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,children.childSubtitle,{{age}} · Nació el {{birthDate}},{{age}} · {{birthDate}} punchapi wacharirka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.chartSubtitle,"Curvas de referencia OMS (−3, −2, 0, +2 y +3 DE)","OMS rikuchik ñankuna (−3, −2, 0, +2, +3 DE)",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,children.legendReference,Curvas OMS (−3 a +3 DE),OMS ñankuna (−3 manta +3 DE kama),traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.zoneLabels.upper,Zona +2 a +3 DE,Zona +2 a +3 DE,pendiente,igual al español
+professional,children.zoneLabels.normal,Rango esperado (−2 a +2 DE),Shuyashka tupuy (−2 a +2 DE),traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.zoneLabels.lower,Zona −2 a −3 DE,Zona −2 a −3 DE,pendiente,igual al español
+professional,children.nonDiagnosticNotice,Esta gráfica apoya la valoración clínica del crecimiento y no es un diagnóstico por sí sola.,"Kay rikuchikka wiñayta rikunkapak yanapanmi, mana kikinllamanta diagnósticochu kan.",revisar,"sin respaldo: diagn, sticochu"
+professional,children.tapPointHint,Toca un punto de la curva para ver el detalle técnico del control.,Maykan iñuta llapiy chay kamaymanta tukuy tupuyta rikunkapak.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,children.trendSummaryTitle,Resumen de la tendencia,Wiñay imashina rikurikun,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.trendSummaryFavorable,Tendencia favorable en este indicador según la evolución de los controles.,Kay tupuyka kipa kamaykunapi alliman wiñakushkatami rikuchin.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,children.trendSummarySteady,Trayectoria antropométrica en seguimiento clínico.,Hampik katikuywan wiñay ñanta rikukunchik.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.trendDelta,Variación z: {{delta}},z tikray: {{delta}},traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.selectedRecordTitle,Detalle del control seleccionado,Akllashka kamaymanta,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.lastRecordTitle,Último registro,Kipa kamay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.weight,Peso,Llasay,revisar,sin respaldo: llasay
+professional,children.height,Talla / Longitud,Hatunkay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.bmi,IMC,IMC,no se traduce,
+professional,children.position,Posición,Imashina tupushka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.zScore,Puntaje z,Puntaje z,pendiente,igual al español
+professional,children.percentile,Percentil,Percentil,pendiente,igual al español
+professional,children.classification,Clasificación técnica,Clasificación técnica,pendiente,igual al español
+professional,children.recordedBy,Registró,Killkarka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.notes,Observaciones,Observaciones,pendiente,igual al español
+professional,children.loading,Cargando evolución clínica...,Wiñay tupuykunata apamukun...,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.loadError,No pudimos cargar los datos del paciente.,Wawapak tupuykunata mana apamuy usharkanchikchu.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,children.retry,Reintentar,Kutin yachana,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,children.emptyTitle,Sin pacientes vinculados,Mana tinkishka wawakuna kanchu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,children.emptySubtitle,"Cuando tengas niños vinculados, podrás analizar sus curvas OMS aquí.","Tinkishka wawakunata charishpaka, kaypimi OMS ñankunata rikunki.",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.noCheckupsTitle,Sin controles registrados para {{name}},Manarakmi {{name}}-pak kamaykuna kanchu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,children.noCheckupsSubtitle,Aún no existen mediciones antropométricas para graficar.,Manarakmi tupuykuna rikuchinkapak kanchu.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,children.classifications.SEVERE_UNDERWEIGHT,Bajo peso grave (< −3 DE),Bajo peso grave (< −3 DE),pendiente,igual al español
+professional,children.classifications.UNDERWEIGHT,Bajo peso (−3 a −2 DE),Bajo peso (−3 a −2 DE),pendiente,igual al español
+professional,children.classifications.MODERATE_UNDERWEIGHT,Bajo peso moderado (−3 a −2 DE),Bajo peso moderado (−3 a −2 DE),pendiente,igual al español
+professional,children.classifications.SEVERE_STUNTING,Talla baja severa (< −3 DE),Talla baja severa (< −3 DE),pendiente,igual al español
+professional,children.classifications.STUNTING,Talla baja (−3 a −2 DE),Talla baja (−3 a −2 DE),pendiente,igual al español
+professional,children.classifications.MODERATE_STUNTING,Talla baja moderada (−3 a −2 DE),Talla baja moderada (−3 a −2 DE),pendiente,igual al español
+professional,children.classifications.SEVERE_WASTING,Emaciación grave (< −3 DE),Emaciación grave (< −3 DE),pendiente,igual al español
+professional,children.classifications.WASTING,Emaciación (−3 a −2 DE),Emaciación (−3 a −2 DE),pendiente,igual al español
+professional,children.classifications.MODERATE_WASTING,Emaciación moderada (−3 a −2 DE),Emaciación moderada (−3 a −2 DE),pendiente,igual al español
+professional,children.classifications.NORMAL,Adecuado (−2 a +2 DE),Adecuado (−2 a +2 DE),pendiente,igual al español
+professional,children.classifications.OVERWEIGHT_RISK,Riesgo de sobrepeso (+1 a +2 DE),Riesgo de sobrepeso (+1 a +2 DE),pendiente,igual al español
+professional,children.classifications.POSSIBLE_RISK_OVERWEIGHT,Posible riesgo de sobrepeso (+1 a +2 DE),Posible riesgo de sobrepeso (+1 a +2 DE),pendiente,igual al español
+professional,children.classifications.OVERWEIGHT,Sobrepeso (+2 a +3 DE),Sobrepeso (+2 a +3 DE),pendiente,igual al español
+professional,children.classifications.OBESITY,Obesidad (> +3 DE),Obesidad (> +3 DE),pendiente,igual al español
+professional,children.registerCheckup,Registrar control,Kamayta killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,messages.title,Mensajes y Seguimientos,"Willaykuna, katinakunapash",traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,messages.description,Comunicación asistencial con cuidadores y registro de planes de seguimiento nutricional.,"Wawa kamakkunawan rimanakuy, mikuymanta katina yuyaykunatapash killkana.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,messages.banner,Conversa con cuidadores y otros profesionales vinculados.,Conversa con cuidadores y otros profesionales vinculados.,pendiente,igual al español
+professional,messages.emergencyNotice,"Este canal no atiende urgencias. Si el niño requiere atención inmediata, acude a un centro de salud.","Este canal no atiende urgencias. Si el niño requiere atención inmediata, acude a un centro de salud.",pendiente,igual al español
+professional,messages.emptySubtitle,"Cuando inicies o recibas mensajes sobre un niño vinculado, aparecerán aquí.","Cuando inicies o recibas mensajes sobre un niño vinculado, aparecerán aquí.",pendiente,igual al español
+professional,messages.chatTitleFallback,Conversación,Conversación,pendiente,igual al español
+professional,messages.chatPrivacy,Solo tú y los participantes vinculados al niño pueden ver esta conversación.,Solo tú y los participantes vinculados al niño pueden ver esta conversación.,pendiente,igual al español
+professional,profile.title,Perfil Profesional,Hampikmanta,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,profile.name,Nombre:,Shuti:,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,profile.email,Correo:,Correo:,no se traduce,
+professional,profile.specialty,Especialidad:,Hampi yachay:,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,profile.noSpecialty,No asignada,Mana churashkachu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,profile.licenseNumber,Registro profesional:,Registro profesional:,pendiente,igual al español
+professional,profile.activeRole,Perfil activo:,Kunan ruray:,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,profile.switchToCaregiver,Cambiar a vista Cuidador,Wawa kamak rikuchikman tikray,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,profile.pendingSync,Pendientes de envío ({{count}}),Pendientes de envío ({{count}}),pendiente,igual al español
+professional,profile.pendingSyncDescription,Registros guardados en este dispositivo,Registros guardados en este dispositivo,pendiente,igual al español
+professional,profile.logout,Cerrar Sesión,Llukshiy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,profile.twoFactor.title,Verificación en dos pasos,Ishkay kutin chaninchiy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,profile.twoFactor.statusEnabled,Activa,Kawsanmi,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,profile.twoFactor.statusLoading,Consultando estado...,Tapuykun...,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,profile.twoFactor.remaining,Códigos de recuperación disponibles: {{count}},Tikrachina yupaykuna tiyan: {{count}},traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,profile.twoFactor.lowCodes,Te quedan pocos códigos de recuperación. Genera nuevos.,Ashalla tikrachina yupaykunami sakirin. Mushukkunata rurapay.,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,profile.twoFactor.regenerate,Generar nuevos códigos de recuperación,Mushuk tikrachina yupaykunata ruray,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,profile.twoFactor.regenerateDescription,Ingresa el código actual de tu aplicación autenticadora. Los códigos anteriores dejarán de funcionar.,Autenticadora app-pak kunan yupayta killkay. Ñawpa yupaykunaka manañami sirvinkachu.,revisar,"sin respaldo: autenticadora, sirvinkachu"
+professional,profile.twoFactor.totpLabel,Código de autenticación (6 dígitos),Chaninchina yupay (6 yupay),traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,profile.twoFactor.confirm,Generar códigos,Yupaykunata ruray,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,profile.twoFactor.done,Listo,Tukurishka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,profile.twoFactor.invalidCode,Código incorrecto o ya usado. Espera el siguiente código e inténtalo nuevamente.,"Yupayka pantashkami, mana kashpaka ña hapishkami. Katik yupayta shuyay, kutin rurapay.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alertDetail.title,Detalle de alerta,Detalle de alerta,pendiente,igual al español
+professional,alertDetail.loading,Cargando la alerta...,Cargando la alerta...,pendiente,igual al español
+professional,alertDetail.retry,Reintentar,Reintentar,pendiente,igual al español
+professional,alertDetail.unknownChild,Niño sin identificar,Mana riksishka wawa,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,alertDetail.childSubtitle,{{age}} · {{birthDate}},{{age}} · {{birthDate}},no se traduce,
+professional,alertDetail.rows.indicator,Indicador,Indicador,pendiente,igual al español
+professional,alertDetail.rows.checkup,Control,Control,pendiente,igual al español
+professional,alertDetail.rows.result,Resultado,Resultado,pendiente,igual al español
+professional,alertDetail.rows.reason,Motivo,Motivo,pendiente,igual al español
+professional,alertDetail.checkupValue,{{date}} · {{weight}} · {{height}},{{date}} · {{weight}} · {{height}},no se traduce,
+professional,alertDetail.checkupRecordedBy,Registrado por {{name}},Registrado por {{name}},pendiente,igual al español
+professional,alertDetail.checkupNotes,Observaciones: {{notes}},Observaciones: {{notes}},pendiente,igual al español
+professional,alertDetail.checkupUnknown,Control no disponible,Control no disponible,pendiente,igual al español
+professional,alertDetail.result.below,Puntaje z por debajo de −{{limit}},Puntaje z por debajo de −{{limit}},pendiente,igual al español
+professional,alertDetail.result.above,Puntaje z por encima de +{{limit}},Puntaje z por encima de +{{limit}},pendiente,igual al español
+professional,alertDetail.result.value,Puntaje z = {{z}},Puntaje z = {{z}},pendiente,igual al español
+professional,alertDetail.chart.title,Evolución del indicador,Evolución del indicador,pendiente,igual al español
+professional,alertDetail.chart.subtitle,Puntaje z de {{indicator}} (OMS),Puntaje z de {{indicator}} (OMS),pendiente,igual al español
+professional,alertDetail.chart.legendAlert,Control que originó la alerta,Control que originó la alerta,pendiente,igual al español
+professional,alertDetail.chart.loadError,No pudimos cargar los controles para la gráfica.,No pudimos cargar los controles para la gráfica.,pendiente,igual al español
+professional,alertDetail.chart.empty,Aún no hay controles para graficar.,Aún no hay controles para graficar.,pendiente,igual al español
+professional,alertDetail.chart.a11y,Gráfica de {{indicator}} con {{count}} controles. El control de la alerta tiene z = {{z}}.,Gráfica de {{indicator}} con {{count}} controles. El control de la alerta tiene z = {{z}}.,pendiente,igual al español
+professional,alertDetail.history.title,Historial de estados,Historial de estados,pendiente,igual al español
+professional,alertDetail.history.entry,{{date}} · {{time}},{{date}} · {{time}},no se traduce,
+professional,alertDetail.history.by,Por {{name}},Por {{name}},pendiente,igual al español
+professional,alertDetail.actions.markReviewed,Marcar como revisada,Marcar como revisada,pendiente,igual al español
+professional,alertDetail.actions.marking,Guardando...,Wakaychikunmi...,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,alertDetail.actions.followUp,Registrar seguimiento,Registrar seguimiento,pendiente,igual al español
+professional,alertDetail.actions.referral,Nueva interconsulta,Nueva interconsulta,pendiente,igual al español
+professional,alertDetail.actions.reviewedNote,Ya marcaste esta alerta como revisada.,Ya marcaste esta alerta como revisada.,pendiente,igual al español
+professional,alertDetail.actions.establishedNote,Esta alerta ya tiene seguimiento establecido.,Esta alerta ya tiene seguimiento establecido.,pendiente,igual al español
+professional,alertDetail.pending_one,Tienes {{count}} seguimiento guardado en este teléfono por enviar.,Tienes {{count}} seguimiento guardado en este teléfono por enviar.,pendiente,igual al español
+professional,alertDetail.pending_other,Tienes {{count}} seguimientos guardados en este teléfono por enviar.,Tienes {{count}} seguimientos guardados en este teléfono por enviar.,pendiente,igual al español
+professional,followUp.title,Seguimiento clínico,Seguimiento clínico,pendiente,igual al español
+professional,followUp.context,{{date}} · {{name}} · {{specialty}},{{date}} · {{name}} · {{specialty}},no se traduce,
+professional,followUp.contextNoSpecialty,{{date}} · {{name}},{{date}} · {{name}},no se traduce,
+professional,followUp.childSubtitle,{{age}},{{age}},no se traduce,
+professional,followUp.loading,Cargando el seguimiento...,Cargando el seguimiento...,pendiente,igual al español
+professional,followUp.retry,Reintentar,Reintentar,pendiente,igual al español
+professional,followUp.missingTarget,Abre el seguimiento desde el detalle de una alerta.,Abre el seguimiento desde el detalle de una alerta.,pendiente,igual al español
+professional,followUp.typeLabel,Tipo de seguimiento,Tipo de seguimiento,pendiente,igual al español
+professional,followUp.typePlaceholder,Elige el tipo,Elige el tipo,pendiente,igual al español
+professional,followUp.types.observation,Observación clínica,Observación clínica,pendiente,igual al español
+professional,followUp.types.recommendation,Recomendación,Recomendación,pendiente,igual al español
+professional,followUp.types.intervention,Intervención nutricional,Intervención nutricional,pendiente,igual al español
+professional,followUp.types.referral,Derivación,Derivación,pendiente,igual al español
+professional,followUp.detailsLabel,Detalle del seguimiento,Detalle del seguimiento,pendiente,igual al español
+professional,followUp.detailsPlaceholder.observation,Escribe lo que observaste en el control y en el registro de crecimiento.,Escribe lo que observaste en el control y en el registro de crecimiento.,pendiente,igual al español
+professional,followUp.detailsPlaceholder.recommendation,Escribe las recomendaciones para la familia.,Escribe las recomendaciones para la familia.,pendiente,igual al español
+professional,followUp.detailsPlaceholder.intervention,Describe la intervención que indicas.,Describe la intervención que indicas.,pendiente,igual al español
+professional,followUp.detailsPlaceholder.referral,Indica a quién se deriva al niño y por qué.,Indica a quién se deriva al niño y por qué.,pendiente,igual al español
+professional,followUp.detailsPlaceholder.none,Elige primero el tipo de seguimiento.,Elige primero el tipo de seguimiento.,pendiente,igual al español
+professional,followUp.sections.observationsLabel,Observaciones clínicas,Observaciones clínicas,pendiente,igual al español
+professional,followUp.sections.observationsPlaceholder,Escribe lo que observaste en el control y en el registro de crecimiento...,Escribe lo que observaste en el control y en el registro de crecimiento...,pendiente,igual al español
+professional,followUp.sections.interventionLabel,Intervención nutricional,Intervención nutricional,pendiente,igual al español
+professional,followUp.sections.interventionPlaceholder,Describe la intervención nutricional indicada...,Describe la intervención nutricional indicada...,pendiente,igual al español
+professional,followUp.sections.referralLabel,Derivación,Derivación,pendiente,igual al español
+professional,followUp.sections.referralPlaceholder,Indica a quién se deriva al niño y por qué...,Indica a quién se deriva al niño y por qué...,pendiente,igual al español
+professional,followUp.nextCheckupLabel,Próximo control,Próximo control,pendiente,igual al español
+professional,followUp.nextCheckupPlaceholder,DD/MM/AAAA (opcional),DD/MM/AAAA (opcional),pendiente,igual al español
+professional,followUp.openDatePicker,Elegir fecha en el calendario,Elegir fecha en el calendario,pendiente,igual al español
+professional,followUp.closeDatePicker,Listo,Listo,pendiente,igual al español
+professional,followUp.nextCheckupShortcuts.7,1 semana,1 semana,pendiente,igual al español
+professional,followUp.nextCheckupShortcuts.14,2 semanas,2 semanas,pendiente,igual al español
+professional,followUp.nextCheckupShortcuts.30,1 mes,1 mes,pendiente,igual al español
+professional,followUp.nextCheckupShortcuts.90,3 meses,3 meses,pendiente,igual al español
+professional,followUp.nextCheckupClear,Quitar fecha,Quitar fecha,pendiente,igual al español
+professional,followUp.nextCheckupHint,Se creará un recordatorio para esa fecha.,Se creará un recordatorio para esa fecha.,pendiente,igual al español
+professional,followUp.establishLabel,Marcar la alerta como «seguimiento establecido» al guardar,Marcar la alerta como «seguimiento establecido» al guardar,pendiente,igual al español
+professional,followUp.offline,Sin conexión · Se guardará en este teléfono y se enviará al recuperar la conexión,Sin conexión · Se guardará en este teléfono y se enviará al recuperar la conexión,pendiente,igual al español
+professional,followUp.actions.save,Guardar seguimiento,Guardar seguimiento,pendiente,igual al español
+professional,followUp.actions.saving,Guardando...,Wakaychikunmi...,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,followUp.actions.saveDraft,Guardar como borrador,Guardar como borrador,pendiente,igual al español
+professional,followUp.draftSaved,Borrador guardado en este teléfono.,Borrador guardado en este teléfono.,pendiente,igual al español
+professional,followUp.draftRestored,Recuperamos tu borrador.,Recuperamos tu borrador.,pendiente,igual al español
+professional,followUp.rejected,El servidor no aceptó el seguimiento que estaba guardado en este teléfono: {{reason}},El servidor no aceptó el seguimiento que estaba guardado en este teléfono: {{reason}},pendiente,igual al español
+professional,followUp.alertNotMoved,"El seguimiento se guardó, pero no pudimos actualizar la alerta: {{reason}}","El seguimiento se guardó, pero no pudimos actualizar la alerta: {{reason}}",pendiente,igual al español
+professional,followUp.errors.atLeastOneRequired,"Completa al menos una sección (observaciones, intervención o derivación).","Completa al menos una sección (observaciones, intervención o derivación).",pendiente,igual al español
+professional,followUp.errors.typeRequired,Elige el tipo de seguimiento.,Elige el tipo de seguimiento.,pendiente,igual al español
+professional,followUp.errors.detailsRequired,Escribe el detalle del seguimiento.,Escribe el detalle del seguimiento.,pendiente,igual al español
+professional,followUp.errors.detailsTooLong,El detalle no puede pasar de {{max}} caracteres.,El detalle no puede pasar de {{max}} caracteres.,pendiente,igual al español
+professional,followUp.errors.dateInvalid,Escribe la fecha como DD/MM/AAAA.,Escribe la fecha como DD/MM/AAAA.,pendiente,igual al español
+professional,followUp.errors.datePast,La fecha del próximo control no puede ser anterior a hoy.,La fecha del próximo control no puede ser anterior a hoy.,pendiente,igual al español
+professional,followUp.errors.invalid,Revisa los datos del seguimiento.,Revisa los datos del seguimiento.,pendiente,igual al español
+professional,referral.title,Interconsulta,Hampikman willay,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,referral.bannerTitle,Comunicación entre profesionales,Comunicación entre profesionales,pendiente,igual al español
+professional,referral.bannerSubtitle,{{name}} · {{specialty}},{{name}} · {{specialty}},no se traduce,
+professional,referral.loadingChildren,Cargando pacientes...,Cargando pacientes...,pendiente,igual al español
+professional,referral.loadChildrenError,No pudimos cargar tus pacientes.,Mana wawakunata hapita usharkanchu.,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,referral.retry,Reintentar,Reintentar,pendiente,igual al español
+professional,referral.emptyChildrenTitle,Sin pacientes vinculados,Mana tinkishka wawakuna kanchu,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,referral.emptyChildrenSubtitle,Debes tener al menos un niño vinculado para enviar una interconsulta.,Debes tener al menos un niño vinculado para enviar una interconsulta.,pendiente,igual al español
+professional,referral.patientLabel,Paciente,Hampichikuk wawa,traducido,reutilizado de otra clave; todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,referral.patientPlaceholder,Selecciona un paciente,Selecciona un paciente,pendiente,igual al español
+professional,referral.recipientLabel,Dirigida a,Dirigida a,pendiente,igual al español
+professional,referral.recipientPlaceholder,Selecciona un profesional,Selecciona un profesional,pendiente,igual al español
+professional,referral.loadingRecipients,Cargando profesionales vinculados...,Cargando profesionales vinculados...,pendiente,igual al español
+professional,referral.loadRecipientsError,No pudimos cargar los profesionales vinculados.,No pudimos cargar los profesionales vinculados.,pendiente,igual al español
+professional,referral.noRecipients,Este niño no tiene otros profesionales vinculados,Este niño no tiene otros profesionales vinculados,pendiente,igual al español
+professional,referral.unknownProfessional,Profesional,Profesional,pendiente,igual al español
+professional,referral.reasonLabel,Motivo de la interconsulta,Motivo de la interconsulta,pendiente,igual al español
+professional,referral.reasonPlaceholder,Describe el motivo clínico de la interconsulta...,Describe el motivo clínico de la interconsulta...,pendiente,igual al español
+professional,referral.charCount,{{count}} / {{max}},{{count}} / {{max}},no se traduce,
+professional,referral.priorityLabel,Prioridad,Prioridad,pendiente,igual al español
+professional,referral.priorities.ordinary,Ordinaria,Ordinaria,pendiente,igual al español
+professional,referral.priorities.priority,Prioritaria,Prioritaria,pendiente,igual al español
+professional,referral.actions.submit,Enviar interconsulta,Enviar interconsulta,pendiente,igual al español
+professional,referral.actions.sending,Enviando...,Enviando...,pendiente,igual al español
+professional,referral.actions.saveDraft,Guardar borrador,Guardar borrador,pendiente,igual al español
+professional,referral.draftSaved,Borrador guardado en este dispositivo.,Borrador guardado en este dispositivo.,pendiente,igual al español
+professional,referral.draftRestored,Recuperamos tu borrador.,Recuperamos tu borrador.,pendiente,igual al español
+professional,referral.sentSuccess,Interconsulta enviada.,Interconsulta enviada.,pendiente,igual al español
+professional,referral.errors.childRequired,Selecciona un paciente.,Selecciona un paciente.,pendiente,igual al español
+professional,referral.errors.recipientRequired,Selecciona el profesional destinatario.,Selecciona el profesional destinatario.,pendiente,igual al español
+professional,referral.errors.bodyRequired,Escribe el motivo de la interconsulta.,Escribe el motivo de la interconsulta.,pendiente,igual al español
+professional,referral.errors.bodyTooLong,El motivo no puede pasar de {{max}} caracteres.,El motivo no puede pasar de {{max}} caracteres.,pendiente,igual al español
+professional,referral.errors.invalid,Revisa los datos de la interconsulta.,Revisa los datos de la interconsulta.,pendiente,igual al español
+professional,addCheckup.title,Registrar control antropométrico,Wawapak kamayta killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,addCheckup.changePatient,Cambiar de paciente,Shuk wawata akllay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,addCheckup.submit,Guardar y calcular,Wakaychishpa yupay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,addCheckup.saving,Guardando...,Wakaychikunmi...,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,addCheckup.localResultTitle,Cálculo local (who-growth),Kaypi yupashka (who-growth),revisar,"sin respaldo: who, growth"
+professional,addCheckup.localSummaryNormal,Estado preliminar: dentro del rango esperado (OMS).,Ñawpa yupay: shuyashka ukullapimi kan (OMS).,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,addCheckup.localSummaryAlert,Estado preliminar: alerta detectada ({{risk}}).,Ñawpa yupay: llakimi rikurin ({{risk}}).,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,addCheckup.zScoreValue,z = {{value}},z = {{value}},no se traduce,
+professional,addCheckup.percentileValue,p{{value}},p{{value}},no se traduce,
+professional,addCheckup.emptyTitle,Sin pacientes vinculados,Mana tinkishka wawakuna kanchu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,addCheckup.emptySubtitle,Debes tener al menos un paciente vinculado para registrar su control.,Kamayta killkankapakka shuk tinkishka wawata charinami kanki.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,addCheckup.goBackToPatients,Ir a pacientes,Wawakunaman riy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.title,Mis pacientes,Wawakuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.subtitle,"Niños vinculados, ordenados por riesgo.",Tinkishka wawakuna ima llakipi kashkashina.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.sections.severe,Riesgo alto,Yapa llakipi,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.sections.moderate,Riesgo moderado,Llakipi,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.sections.inOrder,En orden,Allillami,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.status.severe,Grave,Yapa sinchi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.status.inOrder,Todo en orden,Tukuy allillami,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.searchPlaceholder,Buscar por nombre o apellido...,Shutiwan maskay...,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.searchA11y,Buscar paciente por nombre o apellido,Wawapa shutita maskay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.filterA11y,Filtrar por nivel de riesgo,Llakipi kashkashina akllay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.filters.ALL,Todos,Tukuykuna,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.filters.SEVERE,Riesgo grave,Yapa llakipi,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.filters.RISK,Riesgo,Llakipi,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.filters.NO_ALERTS,Sin alertas,Mana llakipi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.riskLevels.SEVERE,Riesgo grave,Yapa llakipi,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.riskLevels.RISK,Riesgo,Llakipi,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.riskLevels.NO_ALERTS,Sin alertas,Mana llakipi,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.overdueBadge,Vencida,Pachapi yallishka,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.openAlertsCount_one,{{count}} alerta abierta,{{count}} llaki rikuri,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.openAlertsCount_other,{{count}} alertas abiertas,{{count}} llaki rikurikuna,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.noOpenAlerts,Sin alertas activas,Mana llaki kanchu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.lastAlertLabel,Última alerta: {{indicator}} · {{time}},Kipa llaki: {{indicator}} · {{time}},traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.actions.viewAlert,Ver alerta,Llakita rikuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.actions.newFollowUp,Nuevo seguimiento,Mushuk katinakuy,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.actions.newReferral,Interconsulta,Hampikman willay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.actions.viewEvolution,Ver evolución,Wiñayta rikuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.actions.registerCheckup,Registrar control,Kamayta killkay,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.loading,Cargando lista de pacientes...,Wawakunata apamukun...,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.retry,Reintentar,Kutishpa ruray,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.loadError,No pudimos cargar tus pacientes.,Mana wawakunata hapita usharkanchu.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.emptyTitle,Sin pacientes vinculados,Mana tinkishka wawakuna kanchu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.emptyDescription,"Cuando tengas niños asignados bajo tu atención profesional, los verás ordenados por su nivel de riesgo nutricional aquí.","Kampa makipi wawakuna tiyashpaka, kaypimi rikurinka ima llakipi kashkamanta.",traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.emptySearchTitle,Sin resultados,Mana ima tiyanchu,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.emptySearchDescription,No encontramos pacientes que coincidan con tu búsqueda o filtro seleccionado.,Maskashkashinaka mana wawakunata tarirkanchu.,traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.clearSearch,Limpiar búsqueda,Maskayta pichay,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa
+professional,patients.pagination.showing,Mostrando {{shown}} de {{total}} pacientes,{{shown}} wawakunata rikuchikun (tukuyka {{total}} kan),traducido,todas las palabras respaldadas (Killkan+dic+libro/infantil); falta revisión nativa
+professional,patients.pagination.loadMore,Ver más pacientes,Yalli wawakunata rikuy,traducido,todas las palabras respaldadas (Killkan+dic); falta revisión nativa

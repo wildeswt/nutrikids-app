@@ -2,6 +2,7 @@ import type {
   CreateFeedingLogInput,
   FeedingLogResponse,
   ListFeedingLogsQuery,
+  UpdateFeedingLogInput,
 } from '@nutrikids/shared';
 import type { Prisma } from '../generated/prisma/client.js';
 import { HttpError } from '../lib/http-error.js';
@@ -107,4 +108,65 @@ export async function listFeedingLogs(
     }),
   );
   return rows.map(formatFeedingLog);
+}
+
+/** Validates the day of a feeding log: not in the future, not before the child was born. */
+function assertLogDate(logDate: string, birthDate: Date): void {
+  if (logDate > toDateString(new Date())) {
+    throw HttpError.badRequest('La fecha del registro no puede estar en el futuro');
+  }
+  if (logDate < toDateString(birthDate)) {
+    throw HttpError.badRequest('La fecha del registro no puede ser anterior al nacimiento');
+  }
+}
+
+/** Edits a feeding log of the child (same data as when it is created). */
+export async function updateFeedingLog(
+  auth: AuthContext,
+  childId: string,
+  logId: string,
+  input: UpdateFeedingLogInput,
+): Promise<FeedingLogResponse> {
+  return withUser(auth.userId, async (tx) => {
+    await assertActiveConsent(tx, childId);
+
+    const log = await tx.feedingLog.findFirst({ where: { id: logId, childId } });
+    if (!log) {
+      throw HttpError.notFound('Registro de alimentación no encontrado');
+    }
+    const child = await tx.child.findUnique({
+      where: { id: childId },
+      select: { birthDate: true },
+    });
+    if (!child) {
+      throw HttpError.notFound('Niño no encontrado');
+    }
+    assertLogDate(input.logDate, child.birthDate);
+
+    const updated = await tx.feedingLog.update({
+      where: { id: logId },
+      data: {
+        logDate: new Date(`${input.logDate}T00:00:00.000Z`),
+        mealsPerDay: input.mealsPerDay,
+        details: input.details ?? null,
+      },
+    });
+    return formatFeedingLog(updated);
+  });
+}
+
+/** Soft-deletes a feeding log: it stops showing but stays in the database. */
+export async function deleteFeedingLog(
+  auth: AuthContext,
+  childId: string,
+  logId: string,
+): Promise<void> {
+  await withUser(auth.userId, async (tx) => {
+    const log = await tx.feedingLog.findFirst({ where: { id: logId, childId } });
+    if (!log) {
+      throw HttpError.notFound('Registro de alimentación no encontrado');
+    }
+    // SECURITY DEFINER function: RLS would reject an UPDATE whose new row is invisible.
+    await tx.$executeRaw`SELECT soft_delete_feeding_log(${logId}::uuid)`;
+  });
 }

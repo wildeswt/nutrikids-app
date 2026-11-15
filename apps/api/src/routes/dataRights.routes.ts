@@ -14,10 +14,12 @@ import { validateRequest } from '../middlewares/validate.js';
 import {
   cancelErasureRequest,
   createErasureRequest,
+  deleteChild,
   exportChildData,
   listErasureRequests,
   rectifyChild,
 } from '../services/dataRights.service.js';
+import { buildChildWorkbook, workbookFileName } from '../services/exportWorkbook.service.js';
 
 const ChildParamsSchema = z.object({ childId: UuidSchema });
 
@@ -48,6 +50,18 @@ export function createDataRightsRouter(): Router {
     },
   );
 
+  /** DELETE /children/:childId: eliminación lógica del niño (solo el representante legal). */
+  router.delete(
+    '/:childId',
+    ...guard,
+    validateRequest({ params: ChildParamsSchema }),
+    auditHealth({ action: 'DELETE', entityType: 'children' }),
+    async (req, res) => {
+      await deleteChild(req.auth!, req.params.childId as string);
+      res.status(204).end();
+    },
+  );
+
   /** GET /children/:childId/export: todos los datos del niño como archivo JSON descargable. */
   router.get(
     '/:childId/export',
@@ -59,6 +73,27 @@ export function createDataRightsRouter(): Router {
       const data = await exportChildData(req.auth!, childId);
       res.setHeader('Content-Disposition', `attachment; filename="nutrikids-${childId}.json"`);
       res.status(200).json(data);
+    },
+  );
+
+  /** GET /children/:childId/export.xlsx: el historial del niño como libro de Excel con formato. */
+  router.get(
+    '/:childId/export.xlsx',
+    ...guard,
+    validateRequest({ params: ChildParamsSchema }),
+    auditHealth({ action: 'EXPORT', entityType: 'children' }),
+    async (req, res) => {
+      const data = await exportChildData(req.auth!, req.params.childId as string);
+      const file = await buildChildWorkbook(data);
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${workbookFileName(data.child.firstName, data.exportedAt)}"`,
+      );
+      res.status(200).send(file);
     },
   );
 

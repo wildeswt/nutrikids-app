@@ -38,6 +38,8 @@ vi.mock('expo-router', () => ({
     canGoBack: () => false,
   }),
   useLocalSearchParams: () => mocks.searchParams,
+  useFocusEffect: vi.fn(),
+  useNavigation: () => ({ setParams: vi.fn() }),
 }));
 
 vi.mock('@expo/vector-icons', () => ({

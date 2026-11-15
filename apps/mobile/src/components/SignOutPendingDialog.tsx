@@ -34,7 +34,6 @@ export function SignOutPendingDialog({
   const confirmDeleteLabel = t('signOutPending.confirmDeleteAction');
   const signOutDeleteLabel = t('signOutPending.signOutAndDelete');
   const goQueueLabel = t('signOutPending.goToPendingSync');
-  const cancelLabel = t('signOutPending.cancel');
 
   return (
     <Modal
@@ -106,22 +105,6 @@ export function SignOutPendingDialog({
                     <Text style={styles.confirmDeleteText}>{confirmDeleteLabel}</Text>
                   )}
                 </Pressable>
-
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.cancelLinkButton,
-                    isBusy && styles.disabledTextButton,
-                    pressed && !isBusy && styles.buttonPressed,
-                  ]}
-                  onPress={onCancel}
-                  disabled={isBusy}
-                  accessibilityRole="button"
-                  accessibilityLabel={cancelLabel}
-                  accessibilityState={{ disabled: isBusy }}
-                  testID="sign-out-pending-confirm-cancel-btn"
-                >
-                  <Text style={styles.cancelLinkText}>{cancelLabel}</Text>
-                </Pressable>
               </View>
             </>
           ) : (
@@ -186,22 +169,6 @@ export function SignOutPendingDialog({
                   testID="sign-out-pending-delete-btn"
                 >
                   <Text style={styles.destructiveOutlineText}>{signOutDeleteLabel}</Text>
-                </Pressable>
-
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.cancelLinkButton,
-                    isBusy && styles.disabledTextButton,
-                    pressed && !isBusy && styles.buttonPressed,
-                  ]}
-                  onPress={onCancel}
-                  disabled={isBusy}
-                  accessibilityRole="button"
-                  accessibilityLabel={cancelLabel}
-                  accessibilityState={{ disabled: isBusy }}
-                  testID="sign-out-pending-cancel-btn"
-                >
-                  <Text style={styles.cancelLinkText}>{cancelLabel}</Text>
                 </Pressable>
               </View>
             </>
@@ -338,22 +305,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  cancelLinkButton: {
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
-  cancelLinkText: {
-    fontFamily: font('medium'),
-    fontSize: 14,
-    color: PALETTE.text.muted,
-  },
   disabledButton: {
     opacity: 0.6,
-  },
-  disabledTextButton: {
-    opacity: 0.5,
   },
   buttonPressed: {
     opacity: 0.85,

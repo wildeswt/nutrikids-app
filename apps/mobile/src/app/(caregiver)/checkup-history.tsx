@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { CaregiverCheckupResponse } from '@nutrikids/shared';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CheckupMenuButton } from '../../components/CheckupMenuButton.js';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
@@ -65,6 +66,13 @@ export default function CheckupHistoryScreen({
   const checkupsState = isProfessional ? professionalCheckupsHook : caregiverCheckupsHook;
   const { status, checkups, error, load } = checkupsState;
 
+  // Recarga cada vez que vuelve a mostrarse (por ejemplo, al regresar de corregir un control).
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
+
   const filteredCheckups = useMemo(() => {
     const list = checkups as CaregiverCheckupResponse[];
     if (originFilter === 'ALL') return list;
@@ -115,6 +123,13 @@ export default function CheckupHistoryScreen({
             {`${item.weightKg.toFixed(1)} kg · ${item.lengthHeightCm.toFixed(1)} cm`}
           </Text>
           <Text style={styles.cardDate}>{formatLongDate(item.measuredAt)}</Text>
+          <CheckupMenuButton
+            checkup={item}
+            roleMode={isProfessional ? 'PROFESSIONAL' : 'CAREGIVER'}
+            returnTo="checkup-history"
+            onDeleted={() => void load()}
+            testID={`checkup-history-menu-${item.id}`}
+          />
         </View>
 
         <Text style={styles.recorderText} numberOfLines={1}>
@@ -167,7 +182,6 @@ export default function CheckupHistoryScreen({
         </View>
       );
     }
-
     if (status === 'error') {
       return (
         <View style={styles.stateContainer} testID="checkup-history-error">

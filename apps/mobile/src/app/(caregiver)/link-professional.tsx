@@ -2,7 +2,7 @@ import type { ProfessionalLookupResponse } from '@nutrikids/shared';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import {
@@ -10,6 +10,7 @@ import {
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
 import { ProfessionalResultCard } from '../../components/ProfessionalResultCard.js';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.js';
 import { PillField } from '../../components/ui/PillField.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
@@ -43,6 +44,7 @@ export default function LinkProfessionalScreen() {
   const [linking, setLinking] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [consentRequired, setConsentRequired] = useState(false);
+  const [linkedSuccessName, setLinkedSuccessName] = useState<string | null>(null);
   const busy = useRef(false);
 
   useEffect(() => {
@@ -91,11 +93,7 @@ export default function LinkProfessionalScreen() {
     try {
       await linkProfessional(child.id, result.professional.professionalId);
       const name = `${result.professional.firstName} ${result.professional.lastName}`;
-      Alert.alert(
-        t('linkProfessional.successTitle'),
-        t('linkProfessional.successMessage', { name, child: child.firstName }),
-        [{ text: t('linkProfessional.ok'), onPress: handleBack }],
-      );
+      setLinkedSuccessName(name);
     } catch (err) {
       if (err instanceof ProfessionalApiError && err.status === 403) {
         // 403: falta el consentimiento vigente o el usuario no es representante legal.
@@ -260,6 +258,25 @@ export default function LinkProfessionalScreen() {
           />
         </View>
       </KeyboardAwareScrollView>
+
+      <ConfirmDialog
+        visible={linkedSuccessName !== null}
+        tone="primary"
+        icon="checkmark-circle-outline"
+        title={t('linkProfessional.successTitle')}
+        message={
+          linkedSuccessName
+            ? t('linkProfessional.successMessage', {
+                name: linkedSuccessName,
+                child: child?.firstName ?? '',
+              })
+            : ''
+        }
+        confirmLabel={t('linkProfessional.ok')}
+        onConfirm={handleBack}
+        onCancel={handleBack}
+        testID="link-professional-success-dialog"
+      />
     </SafeAreaView>
   );
 }

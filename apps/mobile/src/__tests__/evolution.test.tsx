@@ -47,6 +47,7 @@ vi.mock('expo-router', () => ({
     push: mocks.push,
   }),
   useLocalSearchParams: () => ({ childId: '11111111-1111-4111-8111-111111111111' }),
+  useFocusEffect: vi.fn(),
 }));
 
 vi.mock('@expo/vector-icons', () => ({
@@ -160,7 +161,7 @@ describe('EvolutionScreen Growth Trend (NK-74)', () => {
     mocks.growthTrends = null;
   });
 
-  it('muestra «Tendencia favorable» SOLO cuando el indicador seleccionado tiene trend FAVORABLE', () => {
+  it('ya no muestra «Tendencia favorable» aunque el indicador tenga trend FAVORABLE', () => {
     mocks.growthTrends = [
       {
         indicator: 'WEIGHT_FOR_AGE',
@@ -182,9 +183,8 @@ describe('EvolutionScreen Growth Trend (NK-74)', () => {
 
     const html = renderToString(React.createElement(Wrapper));
 
-    expect(html).toContain('Tendencia favorable');
-    const trendElement = findElementByTestId(capturedTree, 'evolution-growth-trend');
-    expect(trendElement).not.toBeNull();
+    expect(html.toLowerCase()).not.toContain('tendencia favorable');
+    expect(findElementByTestId(capturedTree, 'evolution-growth-trend')).toBeNull();
   });
 
   it('NO muestra «Tendencia favorable» cuando el indicador seleccionado tiene trend NONE', () => {
@@ -204,7 +204,7 @@ describe('EvolutionScreen Growth Trend (NK-74)', () => {
 
     const html = renderToString(React.createElement(Wrapper));
 
-    expect(html).not.toContain('Tendencia favorable');
+    expect(html.toLowerCase()).not.toContain('tendencia favorable');
     const trendElement = findElementByTestId(capturedTree, 'evolution-growth-trend');
     expect(trendElement).toBeNull();
   });
@@ -220,7 +220,7 @@ describe('EvolutionScreen Growth Trend (NK-74)', () => {
 
     const html = renderToString(React.createElement(Wrapper));
 
-    expect(html).not.toContain('Tendencia favorable');
+    expect(html.toLowerCase()).not.toContain('tendencia favorable');
     expect(findElementByTestId(capturedTree, 'evolution-growth-trend')).toBeNull();
     expect(findElementByTestId(capturedTree, 'evolution-chart-card')).not.toBeNull();
   });
