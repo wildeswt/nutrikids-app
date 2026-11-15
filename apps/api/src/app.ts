@@ -27,6 +27,8 @@ export function createApp(): Express {
   app.use(
     cors({
       origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(','),
+      // The web app reads the file name of downloads (export to Excel).
+      exposedHeaders: ['Content-Disposition'],
     }),
   );
   app.use(express.json());

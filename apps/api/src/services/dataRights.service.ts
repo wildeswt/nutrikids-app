@@ -100,7 +100,10 @@ const exportInclude = {
   consents: true,
   checkups: {
     orderBy: { measuredAt: 'asc' },
-    include: { results: { include: { alerts: { include: { history: true } } } } },
+    include: {
+      recordedBy: true,
+      results: { include: { alerts: { include: { history: true } } } },
+    },
   },
   feedingLogs: { orderBy: { logDate: 'asc' } },
   followUps: { orderBy: { id: 'asc' } },
@@ -149,6 +152,8 @@ export async function exportChildData(auth: AuthContext, childId: string) {
         position: c.position,
         origin: c.origin,
         correctedCheckupId: c.correctedCheckupId,
+        notes: c.notes,
+        recordedBy: name(c.recordedBy),
         results: c.results.map((r) => ({
           indicator: r.indicator,
           zScore: r.zScore.toString(),

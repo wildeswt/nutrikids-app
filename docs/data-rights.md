@@ -11,6 +11,7 @@ Everything here is limited to the **legal representative** of the child (`caregi
 | `GET /children/:childId`                                | Consult the child's identity data (existing endpoint).                            | `READ` / `children`              |
 | `PATCH /children/:childId`                              | Rectify identity data (below).                                                    | `UPDATE` / `children`            |
 | `GET /children/:childId/export`                         | Download all the child's data as a JSON file (`Content-Disposition: attachment`). | `EXPORT` / `children`            |
+| `GET /children/:childId/export.xlsx`                    | Download the child's history as a formatted Excel workbook (below).               | `EXPORT` / `children`            |
 | `POST /children/:childId/erasure-requests`              | Request deletion. `201`; `409` if one is already pending.                         | `CREATE` / `erasure_requests`    |
 | `GET /children/:childId/erasure-requests`               | History of requests (`pending`, `completed`, `cancelled`).                        | -                                |
 | `DELETE /children/:childId/erasure-requests/:requestId` | Cancel a pending request. `409` if it is no longer pending.                       | `REVOKE` / `erasure_requests`    |
@@ -26,6 +27,19 @@ Body (strict, at least one field): `firstName`, `lastName`, `birthDate` (`YYYY-M
 ### Export
 
 One JSON document: `exportedAt`, `child`, `caregivers`, `professionals`, `consents`, `checkups` (with indicator results, alerts and alert status history), `feedingLogs`, `followUps` and `reminders`. For other people it only includes what the representative already sees: a caregiver's name, email and relationship, and a professional's name and specialty. Never password hashes, licence numbers or other users' contact data.
+
+#### Excel workbook (`export.xlsx`)
+
+This is what the "Exportar a Excel" button of the app downloads (RF-20 export / portability). It is built by the API (`services/exportWorkbook.service.ts`, `exceljs`) from the same data as the JSON export, and it only includes what the caregiver already sees in the app (RF-14): no z-scores, percentiles or classifications. Sheets:
+
+| Sheet          | Content                                                                                                                                                                                                                                                                   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Resumen`      | Child (name, birth date, sex, age), legal representative, date of the file, number of checkups, first and last checkup, weight and height gained, feeding logs and the state of the permission.                                                                           |
+| `Controles`    | One row per checkup, oldest first: date, age, weight, height, BMI, change in weight and height since the previous current checkup, how it was measured, who recorded it, state and notes. Replaced (corrected) checkups stay in grey as "Reemplazado por una corrección". |
+| `Alimentación` | Date, meals per day, the meals marked and the free text.                                                                                                                                                                                                                  |
+| `Permisos`     | The dates the permission was accepted and withdrawn, and its state.                                                                                                                                                                                                       |
+
+Only the legal representative can download it (`403` otherwise). Deleted checkups and logs (soft delete) are not included.
 
 ## What "delete" means
 
