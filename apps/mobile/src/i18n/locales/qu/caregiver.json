@@ -37,7 +37,9 @@
     "myChildren": "Mis niños",
     "myChildrenHeader": "Mis niños",
     "pendingSync": "Pendientes de envío",
-    "pendingSyncHeader": "Pendientes de envío"
+    "pendingSyncHeader": "Pendientes de envío",
+    "feedingHistory": "Historial de comidas",
+    "feedingHistoryHeader": "Historial de comidas"
   },
   "home": {
     "notifications": "Yuyachikkuna",
@@ -189,6 +191,22 @@
     "errors": {
       "invalid": "Revisa los datos de la alimentación e intenta de nuevo."
     }
+  },
+  "feedingHistory": {
+    "title": "Historial de comidas",
+    "subtitle": "Últimos {{days}} días · {{count}} registros",
+    "subtitleLoading": "Últimos {{days}} días",
+    "today": "Hoy · {{date}}",
+    "yesterday": "Ayer · {{date}}",
+    "mealsCount_one": "{{count}} comida",
+    "mealsCount_other": "{{count}} comidas",
+    "loading": "Cargando el historial...",
+    "loadError": "No pudimos cargar el historial de alimentación.",
+    "retry": "Intentar de nuevo",
+    "emptyTitle": "Aún no hay registros",
+    "emptySubtitle": "Cuando registres la alimentación de tu niño, la verás aquí.",
+    "register": "Registrar alimentación",
+    "seeHistory": "Ver historial"
   },
   "checkupSaved": {
     "title": "¡Kamayka wakaychishkami!",
