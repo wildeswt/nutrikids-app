@@ -60,7 +60,8 @@ Implementado en `apps/mobile/src/lib/connectivity.ts` sobre `@react-native-commu
 - `resolveConnectivityStatus(state)` mapea el `NetInfoState` a `'online' | 'offline'`:
   - `'online'` únicamente cuando `state.isConnected === true && state.isInternetReachable !== false` (permite `isInternetReachable === null` mientras el sistema termina de sondear, y marca `'offline'` ante redes sin salida a internet como portales cautivos o modo avión).
 - `getConnectivity()`: consulta el estado actual mediante `NetInfo.fetch()`.
-- `subscribeToConnectivity(listener)`: envuelve `NetInfo.addEventListener` emitiendo `'online' | 'offline'` y retorna la función de desuscripción. El contexto React para la UI se implementará en NK-61.
+- `subscribeToConnectivity(listener)`: envuelve `NetInfo.addEventListener` emitiendo `'online' | 'offline'` y retorna la función de desuscripción.
+- `ConnectionProvider` y `useConnection()` (`apps/mobile/src/context/connection-context.tsx`): exponen `{ status: 'online' | 'offline', isOnline }` en la interfaz de usuario; si se invoca `useConnection()` sin proveedor (p. ej. en pruebas aisladas), devuelve `{ status: 'online', isOnline: true }` por defecto.
 
 ## 5. Base de datos local: esquema, aislamiento, migraciones y borrado seguro (NK-59)
 
@@ -191,3 +192,46 @@ La consulta de niños, controles y curvas de referencia sigue el patrón **«pri
 ### Degradación elegante sin SQLCipher
 
 En entornos donde `getLocalDatabase()` falla (Expo Go, web sin soporte nativo de SQLCipher) o ante cualquier error de apertura, validación o escritura local, la capa `tryLocalOperation` captura la excepción, registra únicamente el nombre de la operación mediante `console.warn` (sin datos personales ni cargas útiles) y continúa ejecutando la aplicación normalmente solo con la red.
+
+## 9. Motor de sincronización y contexto de conectividad (NK-61, parte A)
+
+Implementado en `apps/mobile/src/lib/sync/`, `apps/mobile/src/context/connection-context.tsx`, `apps/mobile/src/hooks/useSyncStatus.ts` y montado en `apps/mobile/src/app/_layout.tsx` (alrededor de la aplicación con `ConnectionProvider` y arrancando/deteniendo `syncEngine` según la sesión activa en `AuthProvider`).
+
+### Componentes del módulo `src/lib/sync/`
+
+- **`backoff.ts` (`computeBackoffMs(attempts, random)`):** función pura que calcula la espera creciente exponencial partiendo de **1 s** (`1 s`, `2 s`, `4 s`, `8 s`, `16 s`, `32 s`, `64 s`, `128 s`, `256 s`), con **tope máximo de 5 minutos (`300 000 ms`)** y una **variación aleatoria de ±20 %** (respetando igualmente el tope de 5 minutos).
+- **`sync-api.ts` (`postSyncCheckups(items)`):** cliente HTTP sobre `authFetch('POST /sync/checkups')`. Valida el lote saliente con `SyncCheckupsInputSchema` y la respuesta con `SyncCheckupsResponseSchema`. Emite `SyncApiError` distinguiendo:
+  - **Errores transitorios reintentables (`retryable: true`):** fallo de red (`fetch` lanza `TypeError` u otro error de red) o HTTP `5xx`, `408` y `429`.
+  - **Errores no reintentables del lote (`retryable: false`):** respuestas `4xx` del lote completo (p. ej. `400`, `403`) o respuestas con esquema inválido.
+- **`sync-engine.ts` (`flushCheckupQueue` y `SyncEngine`):** coordina el vaciado de la cola `sync_queue` para `kind = 'checkup'` por usuario (`user_id`), la recuperación tras cierres inesperados, el control de concurrencia y el estado observable.
+
+### Estados y transiciones en `sync_queue`
+
+- **`LOCAL`:** control pendiente de envío (o devuelto para reintento tras fallo transitorio). Pasa a `SENDING` al incluirse en un lote elegible (`next_attempt_at IS NULL` o `<= now`, o al llamar `syncNow()`).
+- **`SENDING`:** incluido en un lote actualmente en vuelo hacia `POST /sync/checkups`. Pasa a `SENT` si el servidor responde `CREATED` o `DUPLICATE`, a `ERROR` si hay rechazo `4xx`, o regresa a `LOCAL` si ocurre fallo de red/`5xx`/`408`/`429` o al recuperarse tras cierre inesperado en `start(userId)`.
+- **`SENT`:** confirmado por el servidor y conciliado en `checkups` mediante `markSent` (estado terminal en la cola con `next_attempt_at = NULL` y `last_error = NULL`).
+- **`ERROR`:** rechazado con `4xx` (p. ej. `400`/`403`/`404`/`409`), conservando `last_error` legible y `next_attempt_at = NULL`, sin reintento automático (ni siquiera con `syncNow()`). Solo un `ERROR` que tenga explícitamente `next_attempt_at` no nulo se considera reintentable.
+
+### Flujo `flushCheckupQueue` y comportamiento ante cada respuesta
+
+1. **Selección y lotes:** obtiene de `sync_queue` los ítems `kind = 'checkup'` del `userId` en estado `LOCAL` (o `ERROR` reintentable con `next_attempt_at` definido) cuyo `next_attempt_at` haya vencido (o todos los `LOCAL`/reintentables si `ignoreSchedule = true` en `syncNow()`), y los divide en lotes de hasta `SYNC_MAX_BATCH_SIZE` (**100**).
+2. **Garantía _single-flight_:** tanto `flushCheckupQueue` (por instancia `LocalDb` y `userId`) como `SyncEngine` impiden ejecuciones paralelas; una solicitud concurrente espera al ciclo en curso sin duplicar peticiones HTTP. Si se llama `syncNow()` durante un ciclo automático en curso, se ejecuta una pasada adicional al terminar el ciclo activo.
+3. **Recuperación tras cierre inesperado:** al llamar `syncEngine.start(userId)`, cualquier fila del usuario que haya quedado en `SENDING` vuelve inmediatamente a `LOCAL` antes de evaluar conectividad o emitir el estado inicial.
+4. **Procesamiento por ítem en respuesta `200 OK`:**
+   - **`CREATED` o `DUPLICATE`:** si viene `checkup` del servidor, sobrescribe el control local llamando a `checkupsRepository.markSent` (dejando `sync_state = 'SENT'` con los valores recalculados por el servidor y respetando la vista por perfil RF-14), actualiza `sync_queue` a `'SENT'` y registra `lastSyncedAt` en `meta`. Reenviar el mismo `id` es seguro e idempotente.
+   - **`ERROR` con estado HTTP `4xx`:** pasa el ítem en `sync_queue` a `'ERROR'` con `last_error` legible y `next_attempt_at = NULL` (sin reintento automático; el usuario decidirá si corregir o descartar en la pantalla de pendientes). Si el estado embebido fuera transitorio (`5xx`/`408`/`429`), programa reintento en `'LOCAL'`.
+5. **Fallo del lote completo (excepción de `postSyncCheckups`):**
+   - **Red (`TypeError`) o `5xx` / `408` / `429`:** todos los ítems del lote vuelven a `'LOCAL'`, incrementan `attempts = attempts + 1`, fijan `next_attempt_at = now + computeBackoffMs(attempts)` y detienen los lotes restantes del ciclo.
+   - **`401`:** devuelve los ítems a `'LOCAL'` sin marcarlos como error definitivo mientras se resuelve la expiración de sesión.
+   - **Otros `4xx` del lote (`400`, `403`, etc.):** marca los ítems del lote en `'ERROR'` con `last_error` legible y sin reintento automático.
+
+### Disparadores, estado observable y degradación
+
+- **Disparadores de `SyncEngine`:**
+  1. **Arranque de sesión (`start(userId)`):** tras recuperar `SENDING` -> `LOCAL`, si hay conectividad `'online'` ejecuta un ciclo; si está `'offline'`, no envía.
+  2. **Recuperación de red (`subscribeToConnectivity`):** cuando pasa a `'online'`, reinicia `next_attempt_at = NULL` en los `'LOCAL'` pendientes (si venía de `'offline'`) y ejecuta un ciclo. Cuando pasa a `'offline'`, cancela el temporizador pendiente.
+  3. **Retorno al primer plano (`AppState` `'active'`):** intenta sincronizar los pendientes elegibles si hay red.
+  4. **Disparo manual (`syncNow()`):** verifica conectividad y, si está en línea, ejecuta el ciclo con `ignoreSchedule = true` (ignorando el `next_attempt_at` pendiente).
+  5. **Temporizador programado:** mientras haya conexión, programa un único `setTimeout` para el menor `next_attempt_at` pendiente entre los controles por reintentar.
+- **Estado observable (`getSyncState()`, `subscribe(listener)` y `useSyncStatus()`):** expone `{ pending, sending, error, lastSyncedAt }` consultados por usuario en `sync_queue` y `meta`, además de `syncNow` en el hook `useSyncStatus()`.
+- **Degradación y privacidad:** si `getLocalDatabase()` falla (Expo Go o web), el motor no lanza errores y permanece inactivo con contadores en cero; los avisos en consola registran únicamente el nombre de la operación, nunca datos personales ni cargas clínicas.
