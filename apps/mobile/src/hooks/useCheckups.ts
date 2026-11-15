@@ -1,13 +1,9 @@
-import type { CreateCheckupInput } from '@nutrikids/shared';
+import type { CheckupResponse, CreateCheckupInput } from '@nutrikids/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useOptionalAuth } from '../context/auth-context.js';
 import { useConnection } from '../context/connection-context.js';
 import i18n from '../i18n/index.js';
-import { fetchChildCheckups } from '../lib/checkups-api.js';
-import {
-  createCheckupWithOfflineFallback,
-  type CreateCheckupResult,
-} from '../lib/offline-checkup.js';
+import { fetchChildCheckups, fetchProfessionalCheckups } from '../lib/checkups-api.js';
 import {
   deleteCachedCaregiverCheckups,
   mergeServerAndLocalCheckups,
@@ -17,6 +13,10 @@ import {
   writeCachedCaregiverCheckups,
   type CaregiverCheckupListItem,
 } from '../lib/offline-cache.js';
+import {
+  createCheckupWithOfflineFallback,
+  type CreateCheckupResult,
+} from '../lib/offline-checkup.js';
 import { classifyLoadError, readThrough, type LoadErrorKind } from '../lib/offline-read.js';
 
 export type CheckupsStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
@@ -207,5 +207,67 @@ export function useCheckups(childId: string | null, options: { autoLoad?: boolea
     saving,
     load,
     create,
+  };
+}
+
+export interface ProfessionalCheckupsHookState {
+  status: CheckupsStatus;
+  checkups: CheckupResponse[];
+  error: string | null;
+}
+
+/**
+ * Current checkups of a child with full technical results (`zScore`, `percentile`, `classification`)
+ * for the professional view (RF-10).
+ */
+export function useProfessionalCheckups(
+  childId: string | null,
+  options: { autoLoad?: boolean } = {},
+) {
+  const autoLoad = options.autoLoad ?? true;
+  const [state, setState] = useState<ProfessionalCheckupsHookState>({
+    status: 'idle',
+    checkups: [],
+    error: null,
+  });
+  const latestLoad = useRef(0);
+
+  const load = useCallback(async (): Promise<CheckupResponse[] | null> => {
+    const requestId = ++latestLoad.current;
+    if (!childId) {
+      setState({ status: 'idle', checkups: [], error: null });
+      return null;
+    }
+
+    setState({ status: 'loading', checkups: [], error: null });
+
+    try {
+      const allCheckups = await fetchProfessionalCheckups(childId);
+      const currentCheckups = allCheckups.filter((item) => item.isCurrent);
+      if (requestId !== latestLoad.current) return currentCheckups;
+      setState({
+        status: currentCheckups.length === 0 ? 'empty' : 'ready',
+        checkups: currentCheckups,
+        error: null,
+      });
+      return currentCheckups;
+    } catch (err) {
+      if (requestId !== latestLoad.current) return null;
+      setState({
+        status: 'error',
+        checkups: [],
+        error: err instanceof Error ? err.message : i18n.t('errors:checkups.fetch'),
+      });
+      return null;
+    }
+  }, [childId]);
+
+  useEffect(() => {
+    if (autoLoad) void load();
+  }, [autoLoad, load]);
+
+  return {
+    ...state,
+    load,
   };
 }

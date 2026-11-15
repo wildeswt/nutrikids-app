@@ -46,6 +46,7 @@ export default function EvolutionScreen() {
   const params = useLocalSearchParams<{ childId?: string }>();
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PE');
   const [showChartInfo, setShowChartInfo] = useState(false);
+  const [selectedCheckupId, setSelectedCheckupId] = useState<string | null>(null);
 
   const {
     status: childrenStatus,
@@ -235,6 +236,15 @@ export default function EvolutionScreen() {
       ? t('common:units.heightValue', { value })
       : formatAgeShort(value);
 
+  const selectedCheckup =
+    (selectedCheckupId ? checkups.find((item) => item.id === selectedCheckupId) : undefined) ??
+    latest;
+  const chartZoneLabels = {
+    upper: t('evolution.zoneLabels.upper'),
+    normal: t('evolution.zoneLabels.normal'),
+    lower: t('evolution.zoneLabels.lower'),
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -315,6 +325,10 @@ export default function EvolutionScreen() {
               points={checkupsToPoints(activeIndicator, checkups, child.birthDate)}
               xAxis={activeIndicator.xAxis}
               formatTick={formatTick}
+              variant="caregiver"
+              zoneLabels={chartZoneLabels}
+              selectedCheckupId={selectedCheckup.id}
+              onSelectPoint={(point) => setSelectedCheckupId(point.checkupId ?? null)}
             />
           ) : curves.status === 'error' ? (
             <View style={styles.chartState} testID="evolution-curves-error">
@@ -351,7 +365,91 @@ export default function EvolutionScreen() {
               </Text>
             ) : null}
           </View>
+
+          <Text style={styles.tapPointHint}>{t('evolution.tapPointHint')}</Text>
         </Card>
+
+        {/* Aviso permanente de que la gráfica apoya la valoración y no es un diagnóstico */}
+        <View style={styles.nonDiagnosticNotice} testID="evolution-non-diagnostic-notice">
+          <Ionicons name="shield-checkmark-outline" size={20} color={PALETTE.primary} />
+          <Text style={styles.nonDiagnosticNoticeText}>{t('evolution.nonDiagnosticNotice')}</Text>
+        </View>
+
+        {/* Resumen de la tendencia en texto */}
+        <Card style={styles.trendSummaryCard} testID="evolution-trend-summary-card">
+          <Text style={styles.trendSummaryTitle}>{t('evolution.trendSummaryTitle')}</Text>
+          <Text style={styles.trendSummaryBody}>
+            {isFavorable ? t('evolution.trendSummaryFavorable') : t('evolution.trendSummarySteady')}
+          </Text>
+        </Card>
+
+        {/* Detalle del control seleccionado al tocar un punto de la gráfica */}
+        {selectedCheckupId ? (
+          <Card style={styles.selectedRecordCard} testID="evolution-selected-checkup-card">
+            <View style={styles.lastRecordHeader}>
+              <Text style={styles.lastRecordTitle}>{t('evolution.selectedRecordTitle')}</Text>
+              <Text style={styles.lastRecordDate}>
+                {formatLongDate(selectedCheckup.measuredAt)}
+              </Text>
+            </View>
+
+            <View style={styles.lastRecordDetailsRow}>
+              <View style={styles.recordDetailItem}>
+                <Ionicons name="barbell-outline" size={24} color={PALETTE.secondary} />
+                <View style={styles.recordDetailText}>
+                  <Text style={styles.recordDetailLabel}>{t('evolution.weight')}</Text>
+                  <Text style={styles.recordDetailValue}>
+                    {t('common:units.weightValue', {
+                      value: formatDecimal(selectedCheckup.weightKg),
+                    })}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.recordDetailItem}>
+                <Ionicons name="resize-outline" size={24} color={PALETTE.secondary} />
+                <View style={styles.recordDetailText}>
+                  <Text style={styles.recordDetailLabel}>{t('evolution.height')}</Text>
+                  <Text style={styles.recordDetailValue}>
+                    {t('common:units.heightValue', {
+                      value: formatDecimal(selectedCheckup.lengthHeightCm),
+                    })}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.lastRecordDivider} />
+
+            <View style={styles.recordedByRow}>
+              <Ionicons name="person" size={18} color={PALETTE.secondary} />
+              <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>
+              <Text style={styles.recordedByValue} numberOfLines={1}>
+                {formatCheckupRecorder({
+                  recorder: selectedCheckup.recordedBy,
+                  origin: selectedCheckup.origin,
+                  currentUserId: user?.id,
+                  t,
+                })}
+              </Text>
+            </View>
+
+            {selectedCheckup.notes ? (
+              <View style={styles.notesRow}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={18}
+                  color={PALETTE.secondary}
+                  style={styles.notesIcon}
+                />
+                <View style={styles.notesContent}>
+                  <Text style={styles.recordedByLabel}>{t('evolution.notes')}</Text>
+                  <Text style={styles.notesValue}>{selectedCheckup.notes}</Text>
+                </View>
+              </View>
+            ) : null}
+          </Card>
+        ) : null}
 
         {/* Tarjeta Inferior de Último Registro */}
         <Card style={styles.lastRecordCard} testID="evolution-last-record-card">
@@ -598,6 +696,56 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#2D5F5A',
+  },
+  tapPointHint: {
+    fontFamily: font('regular'),
+    fontSize: 12,
+    color: PALETTE.text.muted,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  nonDiagnosticNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: PALETTE.primaryLight,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  nonDiagnosticNoticeText: {
+    flex: 1,
+    fontFamily: font('medium'),
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 18,
+    color: PALETTE.primary,
+  },
+  trendSummaryCard: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 16,
+    gap: 4,
+  },
+  trendSummaryTitle: {
+    fontFamily: font('semibold'),
+    fontSize: 15,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+  },
+  trendSummaryBody: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    lineHeight: 20,
+    color: PALETTE.text.body,
+  },
+  selectedRecordCard: {
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: PALETTE.secondary,
   },
   lastRecordCard: {
     paddingHorizontal: 20,

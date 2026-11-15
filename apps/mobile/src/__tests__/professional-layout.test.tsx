@@ -146,6 +146,7 @@ describe('ProfessionalDrawerLayout', () => {
       'follow-up',
       'referral',
       'children',
+      'add-checkup',
       'messages',
       'chat-detail',
       'profile',

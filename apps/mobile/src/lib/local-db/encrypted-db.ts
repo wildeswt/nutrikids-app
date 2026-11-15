@@ -1,3 +1,4 @@
+import { getRandomBytes } from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
@@ -33,17 +34,12 @@ async function assertSecureStoreAvailable(): Promise<void> {
   }
 }
 
-/** Genera una clave aleatoria de 32 bytes (256 bits) codificada en 64 caracteres hexadecimales. */
+/**
+ * Genera una clave aleatoria de 32 bytes (256 bits) codificada en 64 caracteres hexadecimales.
+ * Usa el generador criptográfico nativo de `expo-crypto`: Hermes no expone `crypto.getRandomValues`.
+ */
 function generateHexKey(): string {
-  const cryptoApi = globalThis.crypto;
-  if (!cryptoApi || typeof cryptoApi.getRandomValues !== 'function') {
-    throw new Error(
-      'crypto.getRandomValues no está disponible en este entorno para generar la clave de cifrado.',
-    );
-  }
-
-  const bytes = new Uint8Array(DATABASE_KEY_BYTE_LENGTH);
-  cryptoApi.getRandomValues(bytes);
+  const bytes = getRandomBytes(DATABASE_KEY_BYTE_LENGTH);
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 

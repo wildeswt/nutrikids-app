@@ -144,6 +144,17 @@ export default function ProfessionalDrawerLayout() {
           }}
         />
         <Drawer.Screen
+          name="add-checkup"
+          options={{
+            drawerLabel: t('drawer.addCheckup'),
+            title: t('drawer.addCheckupTitle'),
+            headerShown: false,
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="add-circle-outline" size={size} color={color as string} />
+            ),
+          }}
+        />
+        <Drawer.Screen
           name="messages"
           options={{
             drawerLabel: t('drawer.messages'),
