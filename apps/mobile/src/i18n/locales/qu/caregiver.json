@@ -45,7 +45,8 @@
     "childRegistered": "Niño registrado",
     "childRegisteredHeader": "Niño registrado",
     "childProfessionals": "Profesionales del niño",
-    "childProfessionalsHeader": "Profesionales del niño"
+    "childProfessionalsHeader": "Profesionales del niño",
+    "checkupHistory": "Historial de controles"
   },
   "home": {
     "notifications": "Yuyachikkuna",
@@ -208,7 +209,8 @@
     "goToConsent": "Ir al consentimiento",
     "errors": {
       "invalid": "Revisa los datos de la alimentación e intenta de nuevo."
-    }
+    },
+    "editTitle": "Editar alimentación"
   },
   "feedingHistory": {
     "title": "Historial de comidas",
@@ -224,7 +226,20 @@
     "emptyTitle": "Aún no hay registros",
     "emptySubtitle": "Cuando registres la alimentación de tu niño, la verás aquí.",
     "register": "Registrar alimentación",
-    "seeHistory": "Ver historial"
+    "seeHistory": "Ver historial",
+    "menuA11y": "Más opciones del registro",
+    "edit": "Editar registro",
+    "delete": "Eliminar registro",
+    "deleteTitle": "¿Eliminar este registro?",
+    "deleteMessage": "El registro del {{date}} dejará de verse en el historial.",
+    "deleteConfirm": "Sí, eliminar",
+    "deleteErrorTitle": "No pudimos eliminar el registro",
+    "detailTitle": "Detalle del día",
+    "detailMeals": "Comidas del día",
+    "detailNotes": "Notas",
+    "detailNoMeals": "Sin comidas marcadas",
+    "detailClose": "Cerrar",
+    "openDetailA11y": "Ver el detalle del {{date}}"
   },
   "checkupSaved": {
     "title": "¡Kamayka wakaychishkami!",
@@ -775,5 +790,15 @@
     "correctTitle": "Corregir control",
     "menuA11y": "Más opciones del control",
     "menuTitle": "Control"
+  },
+  "checkupHistory": {
+    "title": "Historial de controles",
+    "subtitle": "{{count}} controles",
+    "loading": "Cargando los controles...",
+    "loadError": "No pudimos cargar el historial de controles.",
+    "retry": "Intentar de nuevo",
+    "emptyTitle": "Aún no hay controles",
+    "emptySubtitle": "Cuando anotes un control de tu niño, lo verás aquí.",
+    "register": "Anotar un control"
   }
 }

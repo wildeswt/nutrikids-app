@@ -23,7 +23,11 @@ import { font } from '../../constants/typography.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { useFeedingLog } from '../../hooks/useFeedingLog.js';
 import { formatLongDate } from '../../i18n/format.js';
-import { isConsentRequiredError, isFeedingNetworkError } from '../../lib/feeding-api.js';
+import {
+  isConsentRequiredError,
+  isFeedingNetworkError,
+  updateChildFeedingLog,
+} from '../../lib/feeding-api.js';
 import {
   MEAL_OPTIONS,
   buildCreateFeedingLogInput,
@@ -33,6 +37,7 @@ import {
   type MealId,
   type MealOption,
 } from '../../lib/feeding-form.js';
+import { parseFeedingDetails } from '../../lib/feeding-history.js';
 import { generateUuid } from '../../lib/uuid.js';
 
 const MEAL_ROWS: readonly (readonly [MealOption, MealOption | null])[] = [
@@ -46,7 +51,16 @@ const SAVE_REDIRECT_DELAY_MS = 800;
 export default function FeedingScreen() {
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'errors']);
-  const params = useLocalSearchParams<{ childId?: string }>();
+  const params = useLocalSearchParams<{
+    childId?: string;
+    /** Edit mode: the feeding log being edited and its current values (prefill). */
+    editLogId?: string;
+    logDate?: string;
+    mealsPerDay?: string;
+    details?: string;
+  }>();
+  const editLogId = params.editLogId ?? null;
+  const [initialEdit] = useState(() => parseFeedingDetails(params.details ?? null));
 
   const {
     status: childrenStatus,
@@ -58,9 +72,11 @@ export default function FeedingScreen() {
   const activeChild = children.find((child) => child.id === selectedChildId) ?? children[0] ?? null;
   const { create, saving } = useFeedingLog(activeChild?.id ?? null);
 
-  const [selectedMeals, setSelectedMeals] = useState<MealId[]>([]);
-  const [mealsPerDay, setMealsPerDay] = useState<number>(MEALS_PER_DAY_MIN);
-  const [notes, setNotes] = useState('');
+  const [selectedMeals, setSelectedMeals] = useState<MealId[]>(initialEdit.meals);
+  const [mealsPerDay, setMealsPerDay] = useState<number>(
+    params.mealsPerDay ? Number(params.mealsPerDay) : MEALS_PER_DAY_MIN,
+  );
+  const [notes, setNotes] = useState(initialEdit.text);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [consentRequired, setConsentRequired] = useState(false);
   const [savedMode, setSavedMode] = useState<'none' | 'online' | 'offline'>('none');
@@ -141,9 +157,14 @@ export default function FeedingScreen() {
     setConsentRequired(false);
 
     attemptId.current ??= generateUuid();
+    // Editing keeps the day of the log; a new log is always for today.
+    const editDay = editLogId && params.logDate ? params.logDate.split('-').map(Number) : null;
     const result = buildCreateFeedingLogInput(
       { selectedMeals, mealsPerDay, freeText: notes },
-      { id: attemptId.current },
+      {
+        id: attemptId.current,
+        ...(editDay ? { now: new Date(editDay[0]!, editDay[1]! - 1, editDay[2]!, 12) } : {}),
+      },
     );
 
     if (!result.ok) {
@@ -152,6 +173,17 @@ export default function FeedingScreen() {
     }
 
     try {
+      if (editLogId) {
+        // Edit: needs a connection (not queued offline).
+        const { id: _id, ...changes } = result.input;
+        await updateChildFeedingLog(activeChild.id, editLogId, changes);
+        attemptId.current = null;
+        setSavedMode('online');
+        redirectTimer.current = setTimeout(() => {
+          handleBack();
+        }, SAVE_REDIRECT_DELAY_MS);
+        return;
+      }
       const created = await create(result.input);
       attemptId.current = null;
       setSavedMode(created?.savedLocally ? 'offline' : 'online');
@@ -187,7 +219,9 @@ export default function FeedingScreen() {
         <Text style={styles.backText}>{t('feeding.back')}</Text>
       </Pressable>
 
-      <Text style={styles.screenTitle}>{t('feeding.title')}</Text>
+      <Text style={styles.screenTitle}>
+        {editLogId ? t('feeding.editTitle') : t('feeding.title')}
+      </Text>
     </>
   );
 
