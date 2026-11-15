@@ -130,6 +130,12 @@
     "title": "Anotar un nuevo control",
     "childSubtitle": "{{age}}",
     "changeChild": "Cambiar de niño",
+    "searchModal": {
+      "titleChild": "Seleccionar niño",
+      "searchPlaceholder": "Buscar por nombre o apellido...",
+      "emptySearch": "No se encontraron resultados con ese nombre.",
+      "current": "Actual"
+    },
     "dateLabel": "Fecha del control",
     "datePlaceholder": "Ej. {{example}}",
     "openDatePicker": "Abrir selector de fecha",

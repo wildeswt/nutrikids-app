@@ -332,6 +332,12 @@
   "addCheckup": {
     "title": "Registrar control antropométrico",
     "changePatient": "Cambiar de paciente",
+    "searchModal": {
+      "titlePatient": "Seleccionar paciente",
+      "searchPlaceholder": "Buscar por nombre o apellido...",
+      "emptySearch": "No se encontraron resultados con ese nombre.",
+      "current": "Actual"
+    },
     "submit": "Guardar y calcular",
     "saving": "Guardando...",
     "localResultTitle": "Cálculo local (who-growth)",

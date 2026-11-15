@@ -11,6 +11,7 @@ import {
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
 import { ChildBanner } from '../../components/ChildBanner.js';
+import { SelectChildModal } from '../../components/SelectChildModal.js';
 import { PillField } from '../../components/ui/PillField.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
@@ -74,6 +75,7 @@ export default function AddCheckupScreen({
   const [outlierWarning, setOutlierWarning] = useState<string | null>(null);
   const [confirmedOutlier, setConfirmedOutlier] = useState(false);
   const [consentRequired, setConsentRequired] = useState(false);
+  const [selectModalVisible, setSelectModalVisible] = useState(false);
   /** Same id for every retry of the same data, so a lost response never duplicates the checkup. */
   const attemptId = useRef<string | null>(null);
 
@@ -121,9 +123,13 @@ export default function AddCheckupScreen({
 
   const handleSwitchPatient = () => {
     if (!activeChild || children.length < 2) return;
-    const index = children.findIndex((child) => child.id === activeChild.id);
-    setSelectedChildId(children[(index + 1) % children.length]!.id);
+    setSelectModalVisible(true);
+  };
+
+  const handleSelectChild = (child: (typeof children)[number]) => {
+    setSelectedChildId(child.id);
     resetAttempt();
+    setSelectModalVisible(false);
   };
 
   const handleGoToConsent = () => {
@@ -651,6 +657,18 @@ export default function AddCheckupScreen({
           style={styles.submitButton}
         />
       </KeyboardAwareScrollView>
+
+      {activeChild ? (
+        <SelectChildModal
+          visible={selectModalVisible}
+          childrenList={children}
+          selectedChildId={activeChild.id}
+          onSelect={handleSelectChild}
+          onClose={() => setSelectModalVisible(false)}
+          isProfessional={isProfessional}
+          testID="select-child-modal"
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

@@ -278,6 +278,29 @@ describe('AddCheckupScreen («Anotar un nuevo control»)', () => {
     expect(findElementByTestId(tree, 'change-child-button')).not.toBeNull();
   });
 
+  it('opens SelectChildModal on «Cambiar de niño» and selects another child', () => {
+    hookStore.enabled = true;
+    mocks.children = { status: 'ready', children: [MATEO, VALENTINA], error: null };
+
+    let tree = renderTree(AddCheckupScreen as () => unknown);
+    expect(findElementByTestId(tree, 'select-child-modal')?.props?.['visible']).toBe(false);
+
+    press(tree, 'change-child-button');
+    tree = renderTree(AddCheckupScreen as () => unknown);
+    expect(findElementByTestId(tree, 'select-child-modal')?.props?.['visible']).toBe(true);
+
+    const modal = findElementByTestId(tree, 'select-child-modal');
+    const onSelect = modal?.props?.['onSelect'] as ((child: typeof VALENTINA) => void) | undefined;
+    expect(onSelect).toBeTypeOf('function');
+    onSelect!(VALENTINA);
+
+    tree = renderTree(AddCheckupScreen as () => unknown);
+    expect(findElementByTestId(tree, 'select-child-modal')?.props?.['visible']).toBe(false);
+    expect(findElementByTestId(tree, 'select-child-modal')?.props?.['selectedChildId']).toBe(
+      VALENTINA.id,
+    );
+  });
+
   it('opens on the child received in the route params', () => {
     mocks.children = { status: 'ready', children: [MATEO, VALENTINA], error: null };
     mocks.params = { childId: VALENTINA.id };

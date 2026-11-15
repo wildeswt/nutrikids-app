@@ -332,6 +332,12 @@
   "addCheckup": {
     "title": "Wawapak kamayta killkay",
     "changePatient": "Shuk wawata akllay",
+    "searchModal": {
+      "titlePatient": "Hampina wawata akllay",
+      "searchPlaceholder": "Shutita mashkay...",
+      "emptySearch": "Mana imapash tarikunchu kay shutiwan.",
+      "current": "Kunan"
+    },
     "submit": "Wakaychishpa yupay",
     "saving": "Wakaychikunmi...",
     "localResultTitle": "Kaypi yupashka (who-growth)",

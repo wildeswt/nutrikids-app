@@ -25,6 +25,7 @@ export interface SelectChildModalProps {
   onClose: () => void;
   title?: string;
   isProfessional?: boolean;
+  testID?: string;
 }
 
 /** Removes diacritics/accents and converts to lower case for flexible search */
@@ -150,6 +151,7 @@ export function SelectChildModal({
             }
             renderItem={({ item }) => {
               const isSelected = item.id === selectedChildId;
+              const fullName = `${item.firstName} ${item.lastName}`.trim();
               const ageLabel = formatChildAge(item.birthDate);
               const birthDateLabel = formatLongDate(item.birthDate);
 
@@ -166,9 +168,7 @@ export function SelectChildModal({
                 >
                   <View style={styles.itemInfo}>
                     <View style={styles.nameRow}>
-                      <Text style={styles.itemTitle}>
-                        {item.firstName} {item.lastName}
-                      </Text>
+                      <Text style={styles.itemTitle}>{fullName}</Text>
                       {isSelected ? (
                         <View style={styles.selectedBadge} testID={`selected-badge-${item.id}`}>
                           <Ionicons name="checkmark" size={12} color={LOCAL_COLORS.white} />

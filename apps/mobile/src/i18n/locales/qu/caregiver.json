@@ -130,6 +130,12 @@
     "title": "Mushuk kamayta killkay",
     "childSubtitle": "{{age}}",
     "changeChild": "Shuk wawata akllay",
+    "searchModal": {
+      "titleChild": "Wawata akllay",
+      "searchPlaceholder": "Shutita mashkay...",
+      "emptySearch": "Mana imapash tarikunchu kay shutiwan.",
+      "current": "Kunan"
+    },
     "dateLabel": "Kamay puncha",
     "datePlaceholder": "Shina: {{example}}",
     "openDatePicker": "Abrir selector de fecha",
