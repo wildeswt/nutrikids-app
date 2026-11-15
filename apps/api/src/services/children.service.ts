@@ -491,8 +491,23 @@ export async function endProfessionalAssignment(
       throw HttpError.notFound('No existe un vínculo vigente con ese profesional para este niño');
     }
 
-    // Un día antes del inicio se permite: cierra un vínculo creado hoy sin dejarlo vigente hoy.
-    if (endDate.getTime() < assignment.startDate.getTime() - 86_400_000) {
+    if (endDate < assignment.startDate) {
+      // Un vínculo que empieza hoy (o después) no se puede cerrar con una fecha anterior a su
+      // inicio (restricción de la tabla): como nunca llegó a regir, se elimina.
+      if (assignment.startDate >= today) {
+        const removed = await tx.professionalChild.delete({
+          where: { id: assignment.id },
+          include: {
+            professional: {
+              select: {
+                specialty: true,
+                user: { select: { firstNameEnc: true, lastNameEnc: true } },
+              },
+            },
+          },
+        });
+        return formatProfessionalAssignmentResponse({ ...removed, endDate: assignment.startDate });
+      }
       throw HttpError.badRequest(
         'La fecha de fin no puede ser anterior a la fecha de inicio del vínculo',
       );
