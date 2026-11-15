@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
+import { OfflineDataNotice } from '../../components/OfflineDataNotice.js';
 import { ZScoreChart } from '../../components/ZScoreChart.js';
 import { Card } from '../../components/ui/Card.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
@@ -257,20 +258,36 @@ function HistoryCard({ history }: { history: AlertDetailResponse['history'] }) {
 
 export default function AlertDetailScreen() {
   const { t } = useTranslation(['professional', 'common']);
+  const auth = useOptionalAuth();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { alertId } = useLocalSearchParams<{ alertId: string }>();
-  const { alert, child, checkups, loading, error, marking, actionError, reload, markReviewed } =
-    useAlertDetail(alertId);
+  const userId = auth?.user?.id ?? null;
+  const detailArgs: [string | undefined, { userId?: string | null }?] = userId
+    ? [alertId, { userId }]
+    : [alertId];
+  const {
+    alert,
+    child,
+    checkups,
+    loading,
+    error,
+    marking,
+    actionError,
+    fromCache,
+    stale,
+    lastSyncedAt,
+    reload,
+    markReviewed,
+  } = useAlertDetail(...detailArgs);
 
-  const { pendingCount, syncPending } = usePendingFollowUps(alertId);
+  const { pendingCount, refreshPending } = usePendingFollowUps(alertId);
 
-  // On focus, send the follow-ups saved without connection and reload: coming back from the
-  // follow-up form shows the new status and history.
+  // El motor general envía en segundo plano; al enfocar refrescamos el contador local y el detalle.
   useFocusEffect(
     useCallback(() => {
-      void syncPending().finally(() => reload());
-    }, [syncPending, reload]),
+      void refreshPending().finally(() => reload());
+    }, [refreshPending, reload]),
   );
 
   const goBack = () => {
@@ -342,9 +359,15 @@ export default function AlertDetailScreen() {
   const actions = (
     <View style={styles.actions} testID="alert-detail-actions">
       {pendingCount > 0 && (
-        <Text style={styles.noteText} testID="alert-detail-pending">
-          {t('alertDetail.pending', { count: pendingCount })}
-        </Text>
+        <Pressable
+          onPress={() => router.push(APP_ROUTES.PROFESSIONAL.PENDING_SYNC as never)}
+          accessibilityRole="link"
+          testID="alert-detail-pending"
+        >
+          <Text style={[styles.noteText, styles.pendingLinkText]}>
+            {t('alertDetail.pending', { count: pendingCount })}
+          </Text>
+        </Pressable>
       )}
       {actionError && (
         <Text style={styles.actionError} testID="alert-detail-action-error">
@@ -409,6 +432,12 @@ export default function AlertDetailScreen() {
                   })
                 : undefined
             }
+          />
+          <OfflineDataNotice
+            fromCache={fromCache}
+            stale={stale}
+            lastSyncedAt={lastSyncedAt}
+            testID="alert-detail-offline-notice"
           />
 
           {wide ? (
@@ -596,6 +625,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: PALETTE.text.muted,
     textAlign: 'center',
+  },
+  pendingLinkText: {
+    color: PALETTE.primary,
+    textDecorationLine: 'underline',
   },
   centerBox: { alignItems: 'center', gap: 12, paddingVertical: 48 },
   mutedText: {

@@ -1,7 +1,14 @@
-import type { CreateFeedingLogInput, FeedingLogResponse } from '@nutrikids/shared';
+import type { CreateFeedingLogInput } from '@nutrikids/shared';
 import { useCallback, useState } from 'react';
+import { useOptionalAuth } from '../context/auth-context.js';
+import { useConnection } from '../context/connection-context.js';
 import i18n from '../i18n/index.js';
-import { createChildFeedingLog } from '../lib/feeding-api.js';
+import {
+  createFeedingWithOfflineFallback,
+  type CreateFeedingResult,
+} from '../lib/offline-feeding.js';
+
+export type { CreateFeedingResult } from '../lib/offline-feeding.js';
 
 const MISSING_CHILD_FALLBACK = 'Falta elegir el niño para registrar su alimentación.';
 
@@ -9,22 +16,30 @@ const MISSING_CHILD_FALLBACK = 'Falta elegir el niño para registrar su alimenta
  * Estado y acción para guardar el registro diario de alimentación de un niño.
  */
 export function useFeedingLog(childId: string | null) {
+  const auth = useOptionalAuth();
+  const userId = auth?.user?.id ?? null;
+  const { isOnline } = useConnection();
   const [saving, setSaving] = useState(false);
 
   const create = useCallback(
-    async (input: CreateFeedingLogInput): Promise<FeedingLogResponse> => {
+    async (input: CreateFeedingLogInput): Promise<CreateFeedingResult> => {
       if (!childId) {
         throw new Error(i18n.t('errors:feeding.missingChild', MISSING_CHILD_FALLBACK));
       }
 
       setSaving(true);
       try {
-        return await createChildFeedingLog(childId, input);
+        return await createFeedingWithOfflineFallback({
+          userId,
+          childId,
+          input,
+          isOnline,
+        });
       } finally {
         setSaving(false);
       }
     },
-    [childId],
+    [childId, isOnline, userId],
   );
 
   return {

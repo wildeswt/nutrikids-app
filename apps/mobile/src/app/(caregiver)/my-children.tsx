@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CaregiverChildCard } from '../../components/CaregiverChildCard.js';
+import { OfflineDataNotice } from '../../components/OfflineDataNotice.js';
 import { Card } from '../../components/ui/Card.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
@@ -22,7 +23,8 @@ import { useChildren } from '../../hooks/useChildren.js';
 export default function MyChildrenScreen() {
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'common']);
-  const { status, children, error, load } = useChildren();
+  const { status, children, error, fromCache, stale, lastSyncedAt, loadError, load } =
+    useChildren();
 
   useFocusEffect(
     useCallback(() => {
@@ -62,6 +64,14 @@ export default function MyChildrenScreen() {
           style={styles.header}
         />
 
+        <OfflineDataNotice
+          fromCache={fromCache}
+          stale={stale}
+          lastSyncedAt={lastSyncedAt}
+          testID="my-children-offline-notice"
+          style={styles.offlineNotice}
+        />
+
         {status === 'loading' && children.length === 0 ? (
           <Card style={styles.stateCard} testID="my-children-loading">
             <ActivityIndicator size="small" color={PALETTE.primary} />
@@ -69,7 +79,19 @@ export default function MyChildrenScreen() {
           </Card>
         ) : null}
 
-        {status === 'error' && children.length === 0 ? (
+        {status === 'error' && children.length === 0 && loadError === 'needs-connection' ? (
+          <Card style={styles.stateCard} testID="my-children-needs-connection">
+            <Ionicons name="cloud-offline-outline" size={28} color={PALETTE.primary} />
+            <Text style={styles.stateText}>{t('common:offline.noDataMessage')}</Text>
+            <PrimaryButton
+              label={t('home.retry')}
+              onPress={() => void load()}
+              accessibilityLabel={t('home.retryA11y')}
+            />
+          </Card>
+        ) : null}
+
+        {status === 'error' && children.length === 0 && loadError !== 'needs-connection' ? (
           <Card style={styles.errorCard} testID="my-children-error">
             <Ionicons name="alert-circle-outline" size={24} color={PALETTE.feedback.error} />
             <Text style={styles.errorText}>{error || t('home.loadError')}</Text>
@@ -131,6 +153,9 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
+  },
+  offlineNotice: {
+    marginBottom: 16,
   },
   stateCard: {
     alignItems: 'center',

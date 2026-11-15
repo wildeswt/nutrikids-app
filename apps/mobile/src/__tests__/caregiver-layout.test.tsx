@@ -1,6 +1,13 @@
+import { USER_ROLES } from '@nutrikids/shared';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { APP_ROUTES } from '../constants/routes.js';
+
+const mocks = vi.hoisted(() => ({
+  push: vi.fn(),
+  isOnline: true,
+}));
 
 vi.mock('expo-router', () => ({
   Tabs: Object.assign(
@@ -10,13 +17,27 @@ vi.mock('expo-router', () => ({
         React.createElement('mock-tabs-screen', props),
     },
   ),
+  useRouter: () => ({
+    push: mocks.push,
+    replace: vi.fn(),
+    back: vi.fn(),
+  }),
 }));
 
 vi.mock('@expo/vector-icons', () => ({
   Ionicons: (props: Record<string, unknown>) => React.createElement('mock-icon', props),
 }));
 
+vi.mock('../context/connection-context.js', () => ({
+  useConnection: () => ({
+    status: mocks.isOnline ? 'online' : 'offline',
+    isOnline: mocks.isOnline,
+  }),
+}));
+
+import { Tabs } from 'expo-router';
 import CaregiverTabsLayout from '../app/(caregiver)/_layout.js';
+import { ConnectionBarLayout } from '../components/ConnectionBar.js';
 
 interface TabScreenElement {
   props: {
@@ -32,7 +53,28 @@ interface TabScreenElement {
   };
 }
 
+function findTabsElement(
+  node: React.ReactNode,
+): React.ReactElement<{ children?: React.ReactNode }> | null {
+  if (!React.isValidElement<{ children?: React.ReactNode }>(node)) {
+    return null;
+  }
+  if (node.type === Tabs) {
+    return node;
+  }
+  for (const child of React.Children.toArray(node.props.children)) {
+    const found = findTabsElement(child);
+    if (found) return found;
+  }
+  return null;
+}
+
 describe('CaregiverTabsLayout', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.isOnline = true;
+  });
+
   function getTabScreens(): TabScreenElement[] {
     let layout!: ReturnType<typeof CaregiverTabsLayout>;
     function Capture() {
@@ -40,7 +82,9 @@ describe('CaregiverTabsLayout', () => {
       return null;
     }
     renderToString(React.createElement(Capture));
-    return React.Children.toArray(layout.props.children) as TabScreenElement[];
+    const tabsElement = findTabsElement(layout);
+    expect(tabsElement).not.toBeNull();
+    return React.Children.toArray(tabsElement!.props.children) as TabScreenElement[];
   }
 
   it('configures exactly the 5 required visible tabs in order and hidden auxiliary screens', () => {
@@ -72,6 +116,7 @@ describe('CaregiverTabsLayout', () => {
       'edit-child',
       'privacy',
       'my-children',
+      'pending-sync',
     ]);
 
     // Auxiliary screens are hidden with `tabBarButton` (not `href: null`, which makes the route
@@ -88,6 +133,7 @@ describe('CaregiverTabsLayout', () => {
       'edit-child',
       'privacy',
       'my-children',
+      'pending-sync',
     ]) {
       const screen = screens.find((s) => s.props.name === name);
       expect(screen).toBeDefined();
@@ -133,5 +179,21 @@ describe('CaregiverTabsLayout', () => {
       focused: true,
     });
     expect(homeIcon).toBeDefined();
+  });
+
+  it('mounts ConnectionBarLayout with caregiver role above the tabs', () => {
+    mocks.isOnline = false;
+    let layout!: ReturnType<typeof CaregiverTabsLayout>;
+    function Capture() {
+      layout = CaregiverTabsLayout();
+      return layout;
+    }
+    const html = renderToString(React.createElement(Capture));
+
+    expect(layout.type).toBe(ConnectionBarLayout);
+    expect(layout.props.role).toBe(USER_ROLES.CAREGIVER);
+    expect(html).toContain('Sin conexión');
+    expect(html).toContain('connection-bar');
+    expect(APP_ROUTES.CAREGIVER.PENDING_SYNC).toBe('/(caregiver)/pending-sync');
   });
 });

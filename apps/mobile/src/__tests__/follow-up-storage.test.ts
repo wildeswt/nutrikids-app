@@ -2,6 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const secure = vi.hoisted(() => ({ values: new Map<string, string>() }));
 
+vi.mock('expo-sqlite', () => ({
+  openDatabaseAsync: vi.fn(async () => {
+    throw new Error('SQLite unavailable');
+  }),
+  deleteDatabaseAsync: vi.fn(async () => {}),
+}));
+
 vi.mock('expo-secure-store', () => ({
   isAvailableAsync: vi.fn(async () => true),
   getItemAsync: vi.fn(async (key: string) => secure.values.get(key) ?? null),

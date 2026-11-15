@@ -16,7 +16,8 @@
     "alertDetailTitle": "Detalle de la Alerta",
     "followUpTitle": "Seguimiento clínico",
     "referralTitle": "Interconsulta",
-    "chatTitle": "Conversación"
+    "chatTitle": "Conversación",
+    "pendingSyncTitle": "Pendientes de envío"
   },
   "alerts": {
     "title": "Alertas",
@@ -128,6 +129,8 @@
     "noSpecialty": "No asignada",
     "activeRole": "Perfil activo:",
     "switchToCaregiver": "Cambiar a vista Cuidador",
+    "pendingSync": "Pendientes de envío ({{count}})",
+    "pendingSyncDescription": "Registros guardados en este dispositivo",
     "logout": "Cerrar Sesión"
   },
   "alertDetail": {
