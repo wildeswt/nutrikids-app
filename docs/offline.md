@@ -159,3 +159,35 @@ Las pruebas automatizadas en Node/Vitest validan los módulos contra mocks de `e
 3. Activar el **Modo avión** en el dispositivo y confirmar en los logs de Metro/Logcat la transición inmediata a `'offline'`.
 4. Conectar únicamente a una red local sin acceso a internet (si está disponible) y confirmar que reporta `'offline'` cuando `isInternetReachable === false`.
 5. Desactivar el modo avión y confirmar la transición de regreso a `'online'`.
+
+## 8. Lectura sin conexión (NK-60)
+
+La consulta de niños, controles y curvas de referencia sigue el patrón **«primero lo local, luego refrescar»** mediante el helper genérico `readThrough` en `apps/mobile/src/lib/offline-read.ts` y las operaciones tipadas de `apps/mobile/src/lib/offline-cache.ts`. El servidor continúa siendo la fuente de verdad.
+
+### Flujo `readThrough`
+
+1. **Lectura local inmediata:** antes de esperar a la red, lee la copia local en SQLCipher. Si existe, la entrega inmediatamente (`onLocalData`) con `fromCache: true` y la fecha `lastSyncedAt`.
+2. **Refresco en línea:** verifica conectividad con `getConnectivity()`. Si no hay red y existe copia local, devuelve la copia local marcada como `stale: true`; si no existe copia local, lanza `OfflineNoDataError` (`loadError = 'needs-connection'`).
+3. **Reemplazo atómico:** cuando el servidor responde, persiste el conjunto completo dentro de una transacción (`replaceAll` en niños o `replaceSentByChild` en controles). Cualquier registro que dejó de llegar (por ejemplo, un niño desvinculado) se elimina de la copia local.
+4. **Manejo de errores remotos:**
+   - Error de red o `5xx`: si hay copia local, la conserva y marca `fromCache: true, stale: true`; si no hay copia, propaga el error.
+   - `401 / 403 / 404`: nunca se trata como «sin conexión» y siempre se propaga. En `403` y `404`, además se elimina la copia local del recurso para no conservar información cuyo acceso fue revocado o eliminado.
+
+### Qué se guarda localmente y reglas de visibilidad (RF-14)
+
+- **Niños (`children`):** particionados por `user_id` del usuario autenticado (`useOptionalAuth`). Si no hay usuario autenticado, no se lee ni se escribe caché.
+- **Controles (`checkups`):** particionados por `user_id` y `child_id`. Se combinan los controles pendientes con `sync_state = 'LOCAL'` (marcados con `localOnly: true` para la UI) y los sincronizados con `sync_state = 'SENT'`, ordenados del más reciente al más antiguo.
+- **Regla RF-14 (cuidador):** los controles del cuidador se validan con `CaregiverCheckupResponseSchema` antes de persistirse y al leerse; nunca se almacenan ni se muestran `results`, puntajes z ni clasificaciones en la copia del cuidador. Las lecturas del perfil profesional (`useAlertDetail`) guardan su propia copia en el registro de alertas/controles solo para usuarios autenticados.
+- **Curvas OMS (`reference_curves`):** indexadas por `(indicator, sex, position)` con marca temporal `fetched_at` y caducidad de **24 horas** (`REFERENCE_CURVES_TTL_MS`).
+  - Si la copia local tiene menos de 24 h, se usa directamente sin consultar al servidor (`fromCache: true, stale: false`).
+  - Si tiene 24 h o más, intenta refrescar desde el servidor; si falla la red o hay `5xx`, conserva la copia vencida como respaldo (`fromCache: true, stale: true`).
+  - Sin copia local ni conexión, expone el error claro «Conéctate una vez para descargar las curvas».
+
+### Aviso en pantalla y estado vacío sin conexión
+
+- `OfflineDataNotice` (`apps/mobile/src/components/OfflineDataNotice.tsx`) se muestra cuando `fromCache && stale` con el texto `Datos guardados en este dispositivo · actualizados hace <tiempo>` (formateado por `formatElapsedTime` en `apps/mobile/src/lib/relative-time.ts`) en Inicio del cuidador, Mis niños, Evolución y Detalle de alerta profesional.
+- Si no hay copia local ni conexión (`loadError === 'needs-connection'`), las pantallas muestran un estado vacío diferenciado indicando que se requiere conexión al menos una vez para descargar la información.
+
+### Degradación elegante sin SQLCipher
+
+En entornos donde `getLocalDatabase()` falla (Expo Go, web sin soporte nativo de SQLCipher) o ante cualquier error de apertura, validación o escritura local, la capa `tryLocalOperation` captura la excepción, registra únicamente el nombre de la operación mediante `console.warn` (sin datos personales ni cargas útiles) y continúa ejecutando la aplicación normalmente solo con la red.

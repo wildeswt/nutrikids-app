@@ -8,7 +8,7 @@ import {
 } from '@nutrikids/shared';
 import { z } from 'zod';
 import { nowUtcIso, parseStoredPayload, serializePayload, toUtcIso } from './payload-codec.js';
-import type { LocalDb } from './types.js';
+import type { LocalDb, SyncCheckupState } from './types.js';
 
 const TABLE_NAME = 'checkups';
 
@@ -30,8 +30,21 @@ export const StoredCheckupSchema = z.union([
 ]);
 export type StoredCheckup = CheckupResponse | CaregiverCheckupResponse | SyncCheckupItem;
 
+/** Control almacenado localmente junto con su estado de sincronización y fecha de creación. */
+export interface CheckupEntry {
+  checkup: StoredCheckup;
+  syncState: SyncCheckupState;
+  createdAt: string;
+}
+
 interface PayloadRow {
   payload: string;
+}
+
+interface CheckupEntryRow {
+  payload: string;
+  sync_state: SyncCheckupState;
+  created_at: string;
 }
 
 /**
@@ -176,11 +189,103 @@ export async function deleteCheckup(db: LocalDb, userId: string, id: string): Pr
   return result.changes > 0;
 }
 
+/**
+ * Lista los controles de un niño con su `sync_state`, ordenados del más reciente al más antiguo.
+ */
+export async function listCheckupEntriesByChild(
+  db: LocalDb,
+  userId: string,
+  childId: string,
+): Promise<CheckupEntry[]> {
+  const rows = await db.getAllAsync<CheckupEntryRow>(
+    `SELECT payload, sync_state, created_at
+     FROM checkups
+     WHERE user_id = ? AND child_id = ?
+     ORDER BY measured_at DESC, created_at DESC, id ASC;`,
+    [userId, childId],
+  );
+
+  const entries: CheckupEntry[] = [];
+  for (const row of rows) {
+    const parsed = parseStoredPayload(TABLE_NAME, row.payload, StoredCheckupSchema);
+    if (parsed !== null) {
+      entries.push({
+        checkup: parsed,
+        syncState: row.sync_state,
+        createdAt: row.created_at,
+      });
+    }
+  }
+  return entries;
+}
+
+/**
+ * Reemplaza atómicamente en transacción los controles `'SENT'` de un niño para el usuario dado,
+ * conservando intactos los controles locales pendientes de envío (`sync_state = 'LOCAL'`).
+ */
+export async function replaceSentCheckupsForChild(
+  db: LocalDb,
+  userId: string,
+  childId: string,
+  checkups: readonly ServerCheckup[],
+): Promise<void> {
+  const prepared = checkups.map((checkup) => {
+    const validated = ServerCheckupSchema.parse(checkup);
+    return {
+      id: validated.id,
+      childId: validated.childId,
+      measuredAt: toUtcIso(validated.measuredAt),
+      createdAt: toUtcIso(validated.createdAt),
+      payload: serializePayload(validated, ServerCheckupSchema),
+    };
+  });
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      "DELETE FROM checkups WHERE user_id = ? AND child_id = ? AND sync_state = 'SENT';",
+      [userId, childId],
+    );
+
+    for (const item of prepared) {
+      await db.runAsync(
+        `INSERT INTO checkups (
+           user_id, id, child_id, measured_at, payload, sync_state, created_at
+         )
+         VALUES (?, ?, ?, ?, ?, 'SENT', ?)
+         ON CONFLICT(user_id, id) DO UPDATE SET
+           child_id = excluded.child_id,
+           measured_at = excluded.measured_at,
+           payload = excluded.payload,
+           sync_state = 'SENT',
+           created_at = excluded.created_at;`,
+        [userId, item.id, item.childId, item.measuredAt, item.payload, item.createdAt],
+      );
+    }
+  });
+}
+
+/**
+ * Elimina los controles `'SENT'` en caché de un niño (usado cuando el servidor responde 403/404).
+ */
+export async function deleteSentCheckupsForChild(
+  db: LocalDb,
+  userId: string,
+  childId: string,
+): Promise<void> {
+  await db.runAsync(
+    "DELETE FROM checkups WHERE user_id = ? AND child_id = ? AND sync_state = 'SENT';",
+    [userId, childId],
+  );
+}
+
 /** Repositorio tipado para la tabla local `checkups`. */
 export const checkupsRepository = {
   upsertMany: upsertManyCheckups,
+  replaceSentByChild: replaceSentCheckupsForChild,
   listByChild: listCheckupsByChild,
+  listEntriesByChild: listCheckupEntriesByChild,
   insertLocal: insertLocalCheckup,
   markSent: markCheckupSent,
   delete: deleteCheckup,
+  deleteSentByChild: deleteSentCheckupsForChild,
 };

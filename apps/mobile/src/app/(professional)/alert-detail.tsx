@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
+import { OfflineDataNotice } from '../../components/OfflineDataNotice.js';
 import { ZScoreChart } from '../../components/ZScoreChart.js';
 import { Card } from '../../components/ui/Card.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
@@ -257,11 +258,28 @@ function HistoryCard({ history }: { history: AlertDetailResponse['history'] }) {
 
 export default function AlertDetailScreen() {
   const { t } = useTranslation(['professional', 'common']);
+  const auth = useOptionalAuth();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { alertId } = useLocalSearchParams<{ alertId: string }>();
-  const { alert, child, checkups, loading, error, marking, actionError, reload, markReviewed } =
-    useAlertDetail(alertId);
+  const userId = auth?.user?.id ?? null;
+  const detailArgs: [string | undefined, { userId?: string | null }?] = userId
+    ? [alertId, { userId }]
+    : [alertId];
+  const {
+    alert,
+    child,
+    checkups,
+    loading,
+    error,
+    marking,
+    actionError,
+    fromCache,
+    stale,
+    lastSyncedAt,
+    reload,
+    markReviewed,
+  } = useAlertDetail(...detailArgs);
 
   const { pendingCount, syncPending } = usePendingFollowUps(alertId);
 
@@ -409,6 +427,12 @@ export default function AlertDetailScreen() {
                   })
                 : undefined
             }
+          />
+          <OfflineDataNotice
+            fromCache={fromCache}
+            stale={stale}
+            lastSyncedAt={lastSyncedAt}
+            testID="alert-detail-offline-notice"
           />
 
           {wide ? (

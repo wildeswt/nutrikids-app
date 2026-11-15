@@ -70,6 +70,15 @@ vi.mock('expo-file-system', () => {
   return { File, Paths: { document: { uri: 'file:///documents' } }, __files: files };
 });
 
+// expo-secure-store depende del runtime nativo de expo; se provee un mock en memoria por defecto.
+vi.mock('expo-secure-store', () => ({
+  isAvailableAsync: vi.fn(async () => true),
+  getItemAsync: vi.fn(async () => null),
+  setItemAsync: vi.fn(async () => {}),
+  deleteItemAsync: vi.fn(async () => {}),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 1,
+}));
+
 // expo-sqlite es un módulo nativo; se provee un mock mínimo en memoria para Node/Vitest.
 vi.mock('expo-sqlite', () => ({
   openDatabaseAsync: vi.fn(async (databaseName: string) => {

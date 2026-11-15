@@ -107,8 +107,29 @@ export async function putReferenceCurve(
   );
 }
 
+/**
+ * Elimina una curva de referencia en caché por indicador, sexo y posición.
+ */
+export async function deleteReferenceCurve(
+  db: LocalDb,
+  indicator: Indicator,
+  sex: Sex,
+  position?: Position | null,
+): Promise<boolean> {
+  const validIndicator = IndicatorSchema.parse(indicator);
+  const validSex = SexSchema.parse(sex);
+  const positionKey = normalizePositionKey(position);
+
+  const result = await db.runAsync(
+    'DELETE FROM reference_curves WHERE indicator = ? AND sex = ? AND position = ?;',
+    [validIndicator, validSex, positionKey],
+  );
+  return result.changes > 0;
+}
+
 /** Repositorio tipado para la tabla pública local `reference_curves`. */
 export const referenceCurvesRepository = {
   get: getReferenceCurve,
   put: putReferenceCurve,
+  delete: deleteReferenceCurve,
 };

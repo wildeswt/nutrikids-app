@@ -90,6 +90,39 @@ export async function getChild(
 }
 
 /**
+ * Reemplaza atómicamente todo el conjunto de niños del usuario dentro de una transacción
+ * (los niños que ya no llegan del servidor, p. ej. desvinculados, se eliminan de la copia local).
+ */
+export async function replaceAllChildren(
+  db: LocalDb,
+  userId: string,
+  children: readonly ChildResponse[],
+  updatedAt: string = nowUtcIso(),
+): Promise<void> {
+  const serializedEntries = children.map((child) => {
+    const validated = ChildResponseSchema.parse(child);
+    return {
+      id: validated.id,
+      payload: serializePayload(validated, ChildResponseSchema),
+    };
+  });
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM children WHERE user_id = ?;', [userId]);
+    for (const entry of serializedEntries) {
+      await db.runAsync(
+        `INSERT INTO children (user_id, id, payload, updated_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(user_id, id) DO UPDATE SET
+           payload = excluded.payload,
+           updated_at = excluded.updated_at;`,
+        [userId, entry.id, entry.payload, updatedAt],
+      );
+    }
+  });
+}
+
+/**
  * Elimina todos los niños en caché del usuario indicado sin afectar a otros usuarios.
  */
 export async function clearChildren(db: LocalDb, userId: string): Promise<void> {
@@ -99,6 +132,7 @@ export async function clearChildren(db: LocalDb, userId: string): Promise<void> 
 /** Repositorio tipado para la tabla local `children`. */
 export const childrenRepository = {
   upsertMany: upsertManyChildren,
+  replaceAll: replaceAllChildren,
   list: listChildren,
   get: getChild,
   clear: clearChildren,

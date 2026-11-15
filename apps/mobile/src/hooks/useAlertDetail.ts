@@ -4,6 +4,15 @@ import i18n from '../i18n/index.js';
 import { fetchAlertDetail, updateAlertStatus } from '../lib/alerts-api.js';
 import { fetchProfessionalCheckups } from '../lib/checkups-api.js';
 import { fetchChild } from '../lib/children-api.js';
+import {
+  deleteCachedChild,
+  deleteCachedProfessionalCheckups,
+  readCachedChild,
+  readCachedProfessionalCheckups,
+  upsertCachedChild,
+  writeCachedProfessionalCheckups,
+} from '../lib/offline-cache.js';
+import { readThrough, type ReadThroughResult } from '../lib/offline-read.js';
 
 export interface UseAlertDetailResult {
   alert: AlertDetailResponse | null;
@@ -18,6 +27,9 @@ export interface UseAlertDetailResult {
   marking: boolean;
   /** The review failed (invalid transition, concurrent change, no connection...). */
   actionError: string | null;
+  fromCache?: boolean;
+  stale?: boolean;
+  lastSyncedAt?: string | null;
   reload: () => Promise<void>;
   markReviewed: () => Promise<boolean>;
 }
@@ -26,7 +38,11 @@ export interface UseAlertDetailResult {
  * Alert detail for the professional: the alert with its history, plus the child and their
  * checkups for the chart. Only the alert is required; the other two degrade to a generic name / a notice.
  */
-export function useAlertDetail(alertId: string | undefined): UseAlertDetailResult {
+export function useAlertDetail(
+  alertId: string | undefined,
+  options: { userId?: string | null } = {},
+): UseAlertDetailResult {
+  const userId = options.userId ?? null;
   const [alert, setAlert] = useState<AlertDetailResponse | null>(null);
   const [child, setChild] = useState<ChildResponse | null>(null);
   const [checkups, setCheckups] = useState<CheckupResponse[] | null>(null);
@@ -34,6 +50,9 @@ export function useAlertDetail(alertId: string | undefined): UseAlertDetailResul
   const [error, setError] = useState<string | null>(null);
   const [marking, setMarking] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [fromCache, setFromCache] = useState(false);
+  const [stale, setStale] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   // Only the latest request may write state (the alert can change while one is in flight).
   const requestId = useRef(0);
 
@@ -50,21 +69,68 @@ export function useAlertDetail(alertId: string | undefined): UseAlertDetailResul
 
     try {
       const detail = await fetchAlertDetail(alertId);
-      const [childResult, checkupsResult] = await Promise.allSettled([
-        fetchChild(detail.childId),
-        fetchProfessionalCheckups(detail.childId),
-      ]);
+
+      const loadChild = (): Promise<ReadThroughResult<ChildResponse>> =>
+        userId
+          ? readThrough({
+              operationName: 'useAlertDetail.child',
+              readLocal: () => readCachedChild(userId, detail.childId),
+              fetchRemote: () => fetchChild(detail.childId),
+              writeLocal: (data) => upsertCachedChild(userId, data),
+              deleteLocal: () => deleteCachedChild(userId, detail.childId),
+            })
+          : fetchChild(detail.childId).then((data) => ({
+              data,
+              fromCache: false,
+              stale: false,
+              lastSyncedAt: null,
+            }));
+
+      const loadCheckups = (): Promise<ReadThroughResult<CheckupResponse[]>> =>
+        userId
+          ? readThrough({
+              operationName: 'useAlertDetail.checkups',
+              readLocal: () => readCachedProfessionalCheckups(userId, detail.childId),
+              fetchRemote: () => fetchProfessionalCheckups(detail.childId),
+              writeLocal: (data) => writeCachedProfessionalCheckups(userId, detail.childId, data),
+              deleteLocal: () => deleteCachedProfessionalCheckups(userId, detail.childId),
+            })
+          : fetchProfessionalCheckups(detail.childId).then((data) => ({
+              data,
+              fromCache: false,
+              stale: false,
+              lastSyncedAt: null,
+            }));
+
+      const [childResult, checkupsResult] = await Promise.allSettled([loadChild(), loadCheckups()]);
       if (id !== requestId.current) return;
+
+      const childRes = childResult.status === 'fulfilled' ? childResult.value : null;
+      const checkupsRes = checkupsResult.status === 'fulfilled' ? checkupsResult.value : null;
+      const usedCache = Boolean(childRes?.fromCache || checkupsRes?.fromCache);
+      const isStale = Boolean(
+        (childRes?.fromCache && childRes.stale) || (checkupsRes?.fromCache && checkupsRes.stale),
+      );
+      const syncedAt =
+        (checkupsRes?.fromCache && checkupsRes.stale ? checkupsRes.lastSyncedAt : null) ??
+        (childRes?.fromCache && childRes.stale ? childRes.lastSyncedAt : null) ??
+        checkupsRes?.lastSyncedAt ??
+        childRes?.lastSyncedAt ??
+        null;
+
       setAlert(detail);
-      setChild(childResult.status === 'fulfilled' ? childResult.value : null);
-      setCheckups(checkupsResult.status === 'fulfilled' ? checkupsResult.value : null);
+      setChild(childRes ? childRes.data : null);
+      setCheckups(checkupsRes ? checkupsRes.data : null);
+      setFromCache(usedCache);
+      setStale(isStale);
+      setLastSyncedAt(syncedAt);
     } catch (err) {
       if (id !== requestId.current) return;
       setError(err instanceof Error ? err.message : i18n.t('errors:alerts.detail'));
     } finally {
       if (id === requestId.current) setLoading(false);
     }
-  }, [alertId]);
+  }, [alertId, userId]);
 
   const markReviewed = useCallback(async (): Promise<boolean> => {
     if (!alertId) return false;
@@ -82,5 +148,18 @@ export function useAlertDetail(alertId: string | undefined): UseAlertDetailResul
     }
   }, [alertId]);
 
-  return { alert, child, checkups, loading, error, marking, actionError, reload, markReviewed };
+  return {
+    alert,
+    child,
+    checkups,
+    loading,
+    error,
+    marking,
+    actionError,
+    fromCache,
+    stale,
+    lastSyncedAt,
+    reload,
+    markReviewed,
+  };
 }

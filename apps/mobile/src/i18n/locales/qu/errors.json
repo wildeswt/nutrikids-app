@@ -5,6 +5,7 @@
   "timeout": "{{url}}-wan tinkinkapak pachaka tukurirkami",
   "invalidResponse": "Servidorpak kutichikka mana shuyashka shinachu kan.",
   "sessionRefreshNetwork": "Yaykushkata mushukyachinkapak internet pantarirkami. Kikinpak internetta rikuy.",
+  "offlineNoData": "Conéctate a internet una vez para descargar tu información",
   "http": {
     "401": "Correopash pakalla shimipash pantashkami. Kutin rikuy.",
     "403": "Mana yaykuy ushanichu, mana kashpaka hampikpak kayana yupay pantashkami.",
@@ -51,7 +52,8 @@
     "network": "Necesitas conexión para guardar la alimentación. Inténtalo de nuevo cuando vuelvas a tener internet."
   },
   "reference": {
-    "fetch": "OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay."
+    "fetch": "OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay.",
+    "offlineNoData": "Conéctate una vez para descargar las curvas"
   },
   "alerts": {
     "list": "Mana yuyachikkunata apamunkapak ushashkanchu. Kutin yachay.",
