@@ -1,34 +1,37 @@
-import {
-  IsoDateTimeSchema,
-  SYNC_MAX_BATCH_SIZE,
-  SyncCheckupsResponseSchema,
-  type SyncCheckupItem,
-  type SyncCheckupResult,
-  type SyncCheckupsResponse,
-} from '@nutrikids/shared';
+import { IsoDateTimeSchema } from '@nutrikids/shared';
 import { AppState, type AppStateStatus } from 'react-native';
-import i18n from '../../i18n/index.js';
 import {
   getConnectivity,
   subscribeToConnectivity,
   type ConnectivityStatus,
 } from '../connectivity.js';
-import {
-  checkupsRepository,
-  metaRepository,
-  syncQueueRepository,
-  type LocalDb,
-  type SyncQueueRecord,
-} from '../local-db/index.js';
+import { sendFollowUpBatchAndAlert } from '../follow-up-alert.js';
+import { migrateLegacyFollowUpStorage } from '../follow-up-migration.js';
+import { metaRepository, type LocalDb, type SyncQueueKind } from '../local-db/index.js';
 import { nowUtcIso, toUtcIso } from '../local-db/payload-codec.js';
-import { getHttpStatus, tryGetLocalDatabase } from '../offline-read.js';
-import { computeBackoffMs } from './backoff.js';
-import { isRetryableHttpStatus, isRetryableSyncError, postSyncCheckups } from './sync-api.js';
+import { tryGetLocalDatabase } from '../offline-read.js';
+import { processCheckupQueue } from './checkup-processor.js';
+import { processFollowUpQueue } from './follow-up-processor.js';
+import {
+  createEmptyFlushSummary,
+  mergeFlushSummaries,
+  syncLastSyncedMetaKey,
+  type FlushQueueSummary,
+  type PostSyncCheckupsFn,
+  type SendFollowUpBatchFn,
+  type SyncQueueProcessor,
+} from './queue-processor.js';
+import { postSyncCheckups } from './sync-api.js';
 
-type CheckupQueueRecord = Extract<SyncQueueRecord, { kind: 'checkup' }>;
+export type { PostSyncCheckupsFn, SendFollowUpBatchFn } from './queue-processor.js';
 
-/** Firma de la función de transporte que envía un lote de controles al servidor. */
-export type PostSyncCheckupsFn = (items: SyncCheckupItem[]) => Promise<SyncCheckupsResponse>;
+/** Mapa extensible de procesadores por tipo de elemento en `sync_queue`. */
+export const SYNC_QUEUE_PROCESSORS: Partial<Record<SyncQueueKind, SyncQueueProcessor>> = {
+  checkup: processCheckupQueue,
+  'follow-up': processFollowUpQueue,
+};
+
+const REGISTERED_PROCESSOR_KINDS = Object.keys(SYNC_QUEUE_PROCESSORS) as SyncQueueKind[];
 
 /** Estado observable del motor de sincronización para la interfaz de usuario. */
 export interface SyncState {
@@ -41,30 +44,34 @@ export interface SyncState {
 /** Callback suscrito a los cambios de estado del motor de sincronización. */
 export type SyncStateListener = (state: SyncState) => void;
 
-/** Opciones de ejecución de un ciclo de vaciado de cola (`flushCheckupQueue`). */
-export interface FlushCheckupQueueOptions {
+/** Opciones de ejecución de un ciclo de vaciado de cola (`flushSyncQueue`). */
+export interface FlushSyncQueueOptions {
   db: LocalDb;
   userId: string;
   now?: string;
+  kinds?: readonly SyncQueueKind[];
   post?: PostSyncCheckupsFn;
+  sendFollowUp?: SendFollowUpBatchFn;
   ignoreSchedule?: boolean;
   random?: () => number;
   onProgress?: () => void | Promise<void>;
 }
 
+/** Opciones de ejecución de vaciado restringido a controles (`flushCheckupQueue`). */
+export type FlushCheckupQueueOptions = Omit<FlushSyncQueueOptions, 'kinds' | 'sendFollowUp'>;
+
+/** Opciones de ejecución de vaciado restringido a seguimientos (`flushFollowUpQueue`). */
+export type FlushFollowUpQueueOptions = Omit<FlushSyncQueueOptions, 'kinds' | 'post'>;
+
 /** Resumen numérico del ciclo de sincronización ejecutado. */
-export interface FlushCheckupQueueResult {
-  attempted: number;
-  synced: number;
-  failedPermanent: number;
-  deferredRetry: number;
-  batches: number;
-}
+export type FlushCheckupQueueResult = FlushQueueSummary;
 
 /** Dependencias inyectables del motor de sincronización para facilitar pruebas unitarias. */
 export interface SyncEngineDependencies {
   getDb?: () => Promise<LocalDb | null>;
   post?: PostSyncCheckupsFn;
+  sendFollowUp?: SendFollowUpBatchFn;
+  migrateLegacyFollowUps?: (db: LocalDb, userId: string) => Promise<unknown>;
   getConnectivity?: () => Promise<ConnectivityStatus>;
   subscribeToConnectivity?: (listener: (status: ConnectivityStatus) => void) => () => void;
   subscribeToAppState?: (listener: (state: AppStateStatus) => void) => () => void;
@@ -82,14 +89,9 @@ const DEFAULT_SYNC_STATE: SyncState = {
 };
 
 const MAX_TIMEOUT_MS = 2_147_483_647;
-const DEFAULT_ITEM_ERROR = 'No se pudo sincronizar este control.';
 
-/** Mutex por instancia de base local y usuario para garantizar single-flight en `flushCheckupQueue`. */
-const inFlightFlushes = new WeakMap<LocalDb, Map<string, Promise<FlushCheckupQueueResult>>>();
-
-function syncLastSyncedMetaKey(userId: string): string {
-  return `sync:checkups:lastSyncedAt:${userId}`;
-}
+/** Mutex por instancia de base local y usuario para garantizar single-flight en `flushSyncQueue`. */
+const inFlightFlushes = new WeakMap<LocalDb, Map<string, Promise<FlushQueueSummary>>>();
 
 function defaultSubscribeToAppState(listener: (state: AppStateStatus) => void): () => void {
   if (typeof AppState?.addEventListener !== 'function') {
@@ -101,13 +103,6 @@ function defaultSubscribeToAppState(listener: (state: AppStateStatus) => void): 
   };
 }
 
-function getReadableSyncError(error: unknown): string {
-  if (error instanceof Error && error.message.trim().length > 0) {
-    return error.message.trim();
-  }
-  return i18n.t('errors:requestFailed');
-}
-
 function isSameSyncState(a: SyncState, b: SyncState): boolean {
   return (
     a.pending === b.pending &&
@@ -115,65 +110,6 @@ function isSameSyncState(a: SyncState, b: SyncState): boolean {
     a.error === b.error &&
     a.lastSyncedAt === b.lastSyncedAt
   );
-}
-
-function sortQueueRecords(records: readonly CheckupQueueRecord[]): CheckupQueueRecord[] {
-  return [...records].sort((a, b) => {
-    const aTime = a.nextAttemptAt ? Date.parse(a.nextAttemptAt) : Number.NEGATIVE_INFINITY;
-    const bTime = b.nextAttemptAt ? Date.parse(b.nextAttemptAt) : Number.NEGATIVE_INFINITY;
-    if (aTime !== bTime) {
-      return aTime - bTime;
-    }
-    const createdCmp = a.createdAt.localeCompare(b.createdAt);
-    if (createdCmp !== 0) {
-      return createdCmp;
-    }
-    return a.id.localeCompare(b.id);
-  });
-}
-
-async function listDueCheckupItems(
-  db: LocalDb,
-  userId: string,
-  normalizedNow: string,
-  ignoreSchedule: boolean,
-): Promise<CheckupQueueRecord[]> {
-  const localRecords = ignoreSchedule
-    ? await syncQueueRepository.listByStatus(db, userId, 'LOCAL')
-    : await syncQueueRepository.listDue(db, userId, normalizedNow);
-
-  const errorRecords = await syncQueueRepository.listByStatus(db, userId, 'ERROR');
-
-  const dueById = new Map<string, CheckupQueueRecord>();
-
-  for (const record of localRecords) {
-    if (record.kind === 'checkup') {
-      dueById.set(record.id, record);
-    }
-  }
-
-  for (const record of errorRecords) {
-    if (record.kind !== 'checkup') continue;
-    // Un ERROR sin `nextAttemptAt` es definitivo (4xx) y nunca se reintenta automáticamente.
-    if (record.nextAttemptAt === null) continue;
-    if (ignoreSchedule || record.nextAttemptAt <= normalizedNow) {
-      dueById.set(record.id, record);
-    }
-  }
-
-  return sortQueueRecords(Array.from(dueById.values()));
-}
-
-function matchBatchResult(
-  item: CheckupQueueRecord,
-  index: number,
-  results: readonly SyncCheckupResult[],
-): SyncCheckupResult | undefined {
-  const positional = results[index];
-  if (positional && (positional.id === item.id || positional.id === null)) {
-    return positional;
-  }
-  return results.find((entry) => entry.id === item.id);
 }
 
 /**
@@ -191,15 +127,22 @@ export async function recoverStuckSendingItems(db: LocalDb, userId: string): Pro
 }
 
 /**
- * Reinicia `next_attempt_at` de los controles `'LOCAL'` pendientes del usuario
+ * Reinicia `next_attempt_at` de los elementos `'LOCAL'` pendientes de tipos registrados
  * al recuperar conectividad para procesarlos de inmediato.
  */
 async function clearLocalRetryTimers(db: LocalDb, userId: string): Promise<void> {
+  if (REGISTERED_PROCESSOR_KINDS.length === 0) {
+    return;
+  }
+  const placeholders = REGISTERED_PROCESSOR_KINDS.map(() => '?').join(', ');
   await db.runAsync(
     `UPDATE sync_queue
      SET next_attempt_at = NULL, updated_at = ?
-     WHERE user_id = ? AND kind = 'checkup' AND status = 'LOCAL' AND next_attempt_at IS NOT NULL;`,
-    [nowUtcIso(), userId],
+     WHERE user_id = ?
+       AND kind IN (${placeholders})
+       AND status = 'LOCAL'
+       AND next_attempt_at IS NOT NULL;`,
+    [nowUtcIso(), userId, ...REGISTERED_PROCESSOR_KINDS],
   );
 }
 
@@ -233,26 +176,30 @@ export async function readSyncStateFromDb(db: LocalDb, userId: string): Promise<
 }
 
 async function readEarliestRetryAt(db: LocalDb, userId: string): Promise<string | null> {
+  if (REGISTERED_PROCESSOR_KINDS.length === 0) {
+    return null;
+  }
+  const placeholders = REGISTERED_PROCESSOR_KINDS.map(() => '?').join(', ');
   const row = await db.getFirstAsync<{ next_at: string | null }>(
     `SELECT MIN(next_attempt_at) AS next_at
      FROM sync_queue
      WHERE user_id = ?
-       AND kind = 'checkup'
+       AND kind IN (${placeholders})
        AND next_attempt_at IS NOT NULL
        AND status IN ('LOCAL', 'ERROR');`,
-    [userId],
+    [userId, ...REGISTERED_PROCESSOR_KINDS],
   );
   return row?.next_at ?? null;
 }
 
-async function executeFlushCheckupQueue(
-  options: FlushCheckupQueueOptions,
-): Promise<FlushCheckupQueueResult> {
+async function executeFlushSyncQueue(options: FlushSyncQueueOptions): Promise<FlushQueueSummary> {
   const {
     db,
     userId,
     now = nowUtcIso(),
+    kinds = REGISTERED_PROCESSOR_KINDS,
     post = postSyncCheckups,
+    sendFollowUp = sendFollowUpBatchAndAlert,
     ignoreSchedule = false,
     random = Math.random,
     onProgress,
@@ -260,153 +207,39 @@ async function executeFlushCheckupQueue(
 
   const normalizedNow = toUtcIso(IsoDateTimeSchema.parse(now));
   const nowMs = Date.parse(normalizedNow);
+  const summary = createEmptyFlushSummary();
 
-  const dueItems = await listDueCheckupItems(db, userId, normalizedNow, ignoreSchedule);
-  const summary: FlushCheckupQueueResult = {
-    attempted: 0,
-    synced: 0,
-    failedPermanent: 0,
-    deferredRetry: 0,
-    batches: 0,
-  };
+  for (const kind of kinds) {
+    const processor = SYNC_QUEUE_PROCESSORS[kind];
+    if (!processor) {
+      continue;
+    }
 
-  if (dueItems.length === 0) {
-    return summary;
-  }
-
-  for (let offset = 0; offset < dueItems.length; offset += SYNC_MAX_BATCH_SIZE) {
-    const batch = dueItems.slice(offset, offset + SYNC_MAX_BATCH_SIZE);
-    summary.batches += 1;
-    summary.attempted += batch.length;
-
-    await db.withTransactionAsync(async () => {
-      for (const item of batch) {
-        await syncQueueRepository.updateStatus(db, userId, item.id, 'SENDING');
-      }
+    const kindSummary = await processor({
+      db,
+      userId,
+      normalizedNow,
+      nowMs,
+      ignoreSchedule,
+      random,
+      onProgress,
+      post,
+      sendFollowUp,
     });
-
-    if (onProgress) {
-      await onProgress();
-    }
-
-    let response: SyncCheckupsResponse;
-    try {
-      const rawResponse = await post(batch.map((item) => item.payload));
-      response = SyncCheckupsResponseSchema.parse(rawResponse);
-    } catch (error) {
-      const readableError = getReadableSyncError(error);
-
-      if (isRetryableSyncError(error)) {
-        await db.withTransactionAsync(async () => {
-          for (const item of batch) {
-            const delayMs = computeBackoffMs(item.attempts, random);
-            const nextAttemptAt = new Date(nowMs + delayMs).toISOString();
-            await syncQueueRepository.updateStatus(db, userId, item.id, 'LOCAL', {
-              attempts: item.attempts + 1,
-              nextAttemptAt,
-              lastError: readableError,
-            });
-          }
-        });
-        summary.deferredRetry += batch.length;
-      } else if (getHttpStatus(error) === 401) {
-        // Si la sesión expiró durante el envío, no se marcan como error definitivo del control.
-        await db.withTransactionAsync(async () => {
-          for (const item of batch) {
-            await syncQueueRepository.updateStatus(db, userId, item.id, 'LOCAL');
-          }
-        });
-        summary.deferredRetry += batch.length;
-      } else {
-        await db.withTransactionAsync(async () => {
-          for (const item of batch) {
-            await syncQueueRepository.updateStatus(db, userId, item.id, 'ERROR', {
-              nextAttemptAt: null,
-              lastError: readableError,
-            });
-          }
-        });
-        summary.failedPermanent += batch.length;
-      }
-
-      if (onProgress) {
-        await onProgress();
-      }
-      break;
-    }
-
-    let syncedInBatch = 0;
-    for (let i = 0; i < batch.length; i += 1) {
-      const item = batch[i];
-      if (!item) continue;
-
-      const result = matchBatchResult(item, i, response.results);
-      if (!result) {
-        const delayMs = computeBackoffMs(item.attempts, random);
-        await syncQueueRepository.updateStatus(db, userId, item.id, 'LOCAL', {
-          attempts: item.attempts + 1,
-          nextAttemptAt: new Date(nowMs + delayMs).toISOString(),
-          lastError: i18n.t('errors:invalidResponse'),
-        });
-        summary.deferredRetry += 1;
-        continue;
-      }
-
-      if (result.status === 'CREATED' || result.status === 'DUPLICATE') {
-        if (result.checkup) {
-          await checkupsRepository.markSent(db, userId, item.payload.id, result.checkup);
-        }
-        await syncQueueRepository.updateStatus(db, userId, item.id, 'SENT', {
-          nextAttemptAt: null,
-          lastError: null,
-        });
-        syncedInBatch += 1;
-        summary.synced += 1;
-        continue;
-      }
-
-      const itemStatus = result.error?.status;
-      const itemMessage = result.error?.message?.trim() || DEFAULT_ITEM_ERROR;
-
-      if (typeof itemStatus === 'number' && isRetryableHttpStatus(itemStatus)) {
-        const delayMs = computeBackoffMs(item.attempts, random);
-        await syncQueueRepository.updateStatus(db, userId, item.id, 'LOCAL', {
-          attempts: item.attempts + 1,
-          nextAttemptAt: new Date(nowMs + delayMs).toISOString(),
-          lastError: itemMessage,
-        });
-        summary.deferredRetry += 1;
-      } else {
-        await syncQueueRepository.updateStatus(db, userId, item.id, 'ERROR', {
-          nextAttemptAt: null,
-          lastError: itemMessage,
-        });
-        summary.failedPermanent += 1;
-      }
-    }
-
-    if (syncedInBatch > 0) {
-      await metaRepository.set(db, syncLastSyncedMetaKey(userId), normalizedNow);
-    }
-
-    if (onProgress) {
-      await onProgress();
-    }
+    mergeFlushSummaries(summary, kindSummary);
   }
 
   return summary;
 }
 
 /**
- * Envía en lotes (hasta `SYNC_MAX_BATCH_SIZE`) los controles pendientes del usuario hacia el servidor.
+ * Ejecuta el vaciado de la cola general `sync_queue` despachando por cada tipo registrado.
  * Garantiza ejecución single-flight por base de datos y usuario.
  */
-export async function flushCheckupQueue(
-  options: FlushCheckupQueueOptions,
-): Promise<FlushCheckupQueueResult> {
+export async function flushSyncQueue(options: FlushSyncQueueOptions): Promise<FlushQueueSummary> {
   let byUser = inFlightFlushes.get(options.db);
   if (!byUser) {
-    byUser = new Map<string, Promise<FlushCheckupQueueResult>>();
+    byUser = new Map<string, Promise<FlushQueueSummary>>();
     inFlightFlushes.set(options.db, byUser);
   }
 
@@ -415,7 +248,7 @@ export async function flushCheckupQueue(
     return existing;
   }
 
-  const promise = executeFlushCheckupQueue(options).finally(() => {
+  const promise = executeFlushSyncQueue(options).finally(() => {
     const currentMap = inFlightFlushes.get(options.db);
     if (currentMap?.get(options.userId) === promise) {
       currentMap.delete(options.userId);
@@ -427,11 +260,32 @@ export async function flushCheckupQueue(
 }
 
 /**
+ * Envía en lotes (hasta `SYNC_MAX_BATCH_SIZE`) los controles pendientes del usuario hacia el servidor.
+ * Garantiza ejecución single-flight por base de datos y usuario.
+ */
+export async function flushCheckupQueue(
+  options: FlushCheckupQueueOptions,
+): Promise<FlushCheckupQueueResult> {
+  return flushSyncQueue({ ...options, kinds: ['checkup'] });
+}
+
+/**
+ * Envía uno a uno los seguimientos clínicos pendientes del usuario en `sync_queue`.
+ * Garantiza ejecución single-flight por base de datos y usuario.
+ */
+export async function flushFollowUpQueue(
+  options: FlushFollowUpQueueOptions,
+): Promise<FlushQueueSummary> {
+  return flushSyncQueue({ ...options, kinds: ['follow-up'] });
+}
+
+/**
  * Motor reactivo de sincronización sin conexión:
+ * - Migra datos heredados de seguimientos (SecureStore → SQLite) al iniciar.
  * - Recupera elementos `'SENDING'` interrumpidos al iniciar.
  * - Escucha conectividad (`NetInfo`), retorno al primer plano (`AppState`), botón manual (`syncNow`)
  *   y temporizador programado al siguiente `next_attempt_at`.
- * - Mantiene estado observable por usuario y degrada sin errores si SQLCipher no está disponible.
+ * - Despacha cada tipo en `sync_queue` mediante `SYNC_QUEUE_PROCESSORS`.
  */
 export class SyncEngine {
   private readonly deps: Required<SyncEngineDependencies>;
@@ -452,6 +306,10 @@ export class SyncEngine {
     this.deps = {
       getDb: dependencies.getDb ?? (() => tryGetLocalDatabase('sync-engine')),
       post: dependencies.post ?? postSyncCheckups,
+      sendFollowUp: dependencies.sendFollowUp ?? sendFollowUpBatchAndAlert,
+      migrateLegacyFollowUps:
+        dependencies.migrateLegacyFollowUps ??
+        ((db, userId) => migrateLegacyFollowUpStorage(db, userId)),
       getConnectivity: dependencies.getConnectivity ?? getConnectivity,
       subscribeToConnectivity: dependencies.subscribeToConnectivity ?? subscribeToConnectivity,
       subscribeToAppState: dependencies.subscribeToAppState ?? defaultSubscribeToAppState,
@@ -475,7 +333,7 @@ export class SyncEngine {
     };
   };
 
-  /** Inicia el motor para el usuario autenticado, recupera interrupciones y sincroniza si hay red. */
+  /** Inicia el motor para el usuario autenticado, migra cola antigua, recupera y sincroniza. */
   start = async (userId: string): Promise<void> => {
     if (this.activeUserId === userId) {
       if (this.startPromise) {
@@ -502,6 +360,18 @@ export class SyncEngine {
       } catch {
         console.warn('[sync-engine] Error de almacenamiento local en sync-engine.recover');
         return;
+      }
+
+      if (myGeneration !== this.generation || this.activeUserId !== userId) {
+        return;
+      }
+
+      try {
+        await this.deps.migrateLegacyFollowUps(db, userId);
+      } catch {
+        console.warn(
+          '[sync-engine] Error de almacenamiento local en sync-engine.migrateLegacyFollowUps',
+        );
       }
 
       if (myGeneration !== this.generation || this.activeUserId !== userId) {
@@ -672,11 +542,12 @@ export class SyncEngine {
       this.clearRetryTimer();
 
       try {
-        await flushCheckupQueue({
+        await flushSyncQueue({
           db,
           userId,
           now: new Date(this.deps.now()).toISOString(),
           post: this.deps.post,
+          sendFollowUp: this.deps.sendFollowUp,
           ignoreSchedule,
           random: this.deps.random,
           onProgress: () => this.refreshStateFromDb(db, userId, myGeneration),

@@ -267,3 +267,25 @@ Implementado en `apps/mobile/src/lib/offline-checkup.ts`, `apps/mobile/src/hooks
   - Muestra cada tarjeta con estado («Guardado en este dispositivo», «Error» o «Enviado» sin acciones) y el `lastError` cuando existe.
   - **Reintentar (`retryOfflineCheckup`):** devuelve el ítem de `sync_queue` a `'LOCAL'` con `attempts = 0`, `next_attempt_at = null` y `last_error = null`, y llama a `syncEngine.syncNow()`.
   - **Descartar (`discardOfflineCheckup`):** solicita confirmación («Este control no se enviará y se borrará de este dispositivo») y, al confirmar, elimina el registro de `sync_queue` y el control `LOCAL` en `checkups` dentro de una única transacción SQLite.
+
+## 11. Seguimientos clínicos en la cola general (NK-62, parte A)
+
+Implementado en `apps/mobile/src/lib/sync/queue-processor.ts`, `follow-up-processor.ts`, `follow-up-alert.ts`, `follow-up-migration.ts`, `follow-up-storage.ts` y `follow-up-sync.ts`, manteniendo intacta la API pública (`submitFollowUp`, `flushPendingFollowUps`, `listPending`, `getDraft`, `saveDraft`, `clearDraft`, `clearDrafts`) que consumen las pantallas.
+
+### Procesadores por tipo en `sync_queue`
+
+- **`SYNC_QUEUE_PROCESSORS` (`sync-engine.ts`):** mapa extensible por `kind` (`checkup`, `follow-up`, preparado para añadir `feeding` en la parte B sin reescribir el motor ni los temporizadores).
+- **Ejecución de `follow-up` (`processFollowUpQueue`):** los lotes NK-75 (`{ childId, alertId?, establish, batch }`) se envían **uno a uno** mediante `POST /children/:childId/follow-ups/batch` y, cuando aplica, `establishAlert(alertId)`.
+- **Idempotencia al mover la alerta:** si el lote ya se guardó en el servidor (`200`/`201`) pero falla la red o hay un error transitorio al cambiar el estado de la alerta, el elemento permanece en `'LOCAL'` con espera creciente y al reintentar el lote responde `200 OK` sin duplicar seguimientos ni recordatorios antes de reintentar `establishAlert`.
+- **Estados por elemento en `sync_queue`:**
+  - **Éxito:** pasa a `'SENT'` y actualiza `lastSyncedAt` en `meta`.
+  - **Rechazo `4xx` definitivo** (`400`/`403`/`404`/`409`/`422`): pasa a `'ERROR'` con el mensaje legible del servidor y `next_attempt_at = NULL`, **sin reintento automático**. Al abrir el formulario sin borrador previo (`useFollowUpForm`), `getLatestRejectedFollowUp` restaura el seguimiento en `'ERROR'` con `rejectedReason` para poder corregirlo y reenviarlo o guardarlo como borrador (momento en que se limpia la fila `'ERROR'`).
+  - **`401`:** vuelve a `'LOCAL'` sin marcar error definitivo ni consumir espera creciente.
+  - **Red / `5xx` / `408` / `429`:** vuelve a `'LOCAL'` incrementando `attempts`, calcula `next_attempt_at` con `computeBackoffMs` y detiene la tanda actual de seguimientos sin interferir con otros tipos (`checkup`).
+- **Conteos y disparadores:** `SyncEngine` cuenta controles y seguimientos juntos en `useSyncStatus()` (`pending`, `sending`, `error`) y los dispara automáticamente al arrancar, al recuperar conectividad, al volver al primer plano, mediante `syncNow()` o al vencer el temporizador de reintento. Las pantallas (`useFollowUpForm` y `alert-detail.tsx`) ya no vacían la cola al enfocar; `usePendingFollowUps` observa `useSyncStatus()` para actualizar el aviso de seguimientos pendientes de la alerta.
+
+### Borradores en `meta`, migración y degradación
+
+- **Borradores en `meta`:** cuando la base local cifrada está disponible, `saveDraft`/`getDraft`/`clearDraft`/`clearDrafts` leen y escriben JSON validado con Zod en `meta` bajo la clave `followup-draft:<userId>:<draftKey>`.
+- **Migración idempotente al arrancar (`migrateLegacyFollowUpStorage`):** en `syncEngine.start(userId)`, si no existe la marca `followup-migration:v1:<userId>` en `meta`, migra los pendientes y borradores de ese `userId` desde `nutrikids.followups` (SecureStore) hacia `sync_queue` y `meta` junto con la marca de migración dentro de **una sola transacción SQLite**. El almacén antiguo de ese usuario solo se limpia tras confirmar la escritura nueva (respetando los datos de otros usuarios); si falla a mitad, SQLite revierte todo y SecureStore permanece intacto.
+- **Degradación sin SQLCipher (Expo Go / web):** cuando `tryGetLocalDatabase()` devuelve `null`, `follow-up-storage.ts` y `follow-up-sync.ts` conservan en tiempo de ejecución la implementación heredada sobre SecureStore sin romper el flujo de seguimiento ni los borradores.

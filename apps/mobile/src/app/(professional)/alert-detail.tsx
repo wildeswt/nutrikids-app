@@ -281,14 +281,13 @@ export default function AlertDetailScreen() {
     markReviewed,
   } = useAlertDetail(...detailArgs);
 
-  const { pendingCount, syncPending } = usePendingFollowUps(alertId);
+  const { pendingCount, refreshPending } = usePendingFollowUps(alertId);
 
-  // On focus, send the follow-ups saved without connection and reload: coming back from the
-  // follow-up form shows the new status and history.
+  // El motor general envía en segundo plano; al enfocar refrescamos el contador local y el detalle.
   useFocusEffect(
     useCallback(() => {
-      void syncPending().finally(() => reload());
-    }, [syncPending, reload]),
+      void refreshPending().finally(() => reload());
+    }, [refreshPending, reload]),
   );
 
   const goBack = () => {
