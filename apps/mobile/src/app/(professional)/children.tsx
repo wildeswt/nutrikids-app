@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { CheckupResponse } from '@nutrikids/shared';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -10,6 +10,7 @@ import { GrowthChart } from '../../components/GrowthChart.js';
 import { Card } from '../../components/ui/Card.js';
 import { PALETTE } from '../../constants/colors.js';
 import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
+import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useOptionalAuth } from '../../context/auth-context.js';
 import { useProfessionalCheckups } from '../../hooks/useCheckups.js';
@@ -39,6 +40,7 @@ function latestProfessionalCheckup(
 
 export default function ProfessionalChildrenScreen() {
   const { t } = useTranslation(['professional', 'caregiver', 'common']);
+  const router = useRouter();
   const auth = useOptionalAuth();
   const user = auth?.user ?? null;
   const params = useLocalSearchParams<{ childId?: string }>();
@@ -166,6 +168,20 @@ export default function ProfessionalChildrenScreen() {
           {t('children.noCheckupsTitle', { name: child.firstName })}
         </Text>
         <Text style={styles.stateText}>{t('children.noCheckupsSubtitle')}</Text>
+        <Pressable
+          style={({ pressed }) => [styles.registerCheckupButton, pressed && styles.pressed]}
+          onPress={() =>
+            router.push({
+              pathname: APP_ROUTES.PROFESSIONAL.ADD_CHECKUP as never,
+              params: { childId: child.id },
+            })
+          }
+          accessibilityRole="button"
+          testID="professional-register-checkup-empty"
+        >
+          <Ionicons name="add-circle-outline" size={18} color={PALETTE.text.light} />
+          <Text style={styles.registerCheckupButtonText}>{t('children.registerCheckup')}</Text>
+        </Pressable>
       </>,
       'professional-evolution-no-checkups',
     );
@@ -233,6 +249,22 @@ export default function ProfessionalChildrenScreen() {
             birthDate: formatLongDate(child.birthDate),
           })}
         />
+
+        <Pressable
+          style={({ pressed }) => [styles.registerCheckupButton, pressed && styles.pressed]}
+          onPress={() =>
+            router.push({
+              pathname: APP_ROUTES.PROFESSIONAL.ADD_CHECKUP as never,
+              params: { childId: child.id },
+            })
+          }
+          accessibilityRole="button"
+          accessibilityLabel={t('children.registerCheckup')}
+          testID="professional-register-checkup"
+        >
+          <Ionicons name="add-circle-outline" size={18} color={PALETTE.text.light} />
+          <Text style={styles.registerCheckupButtonText}>{t('children.registerCheckup')}</Text>
+        </Pressable>
 
         {/* Selector de los 4 indicadores OMS: P/E, T/E, P/T, IMC/E */}
         <View style={styles.indicatorTabsContainer}>
@@ -510,7 +542,25 @@ const styles = StyleSheet.create({
     color: PALETTE.text.light,
   },
   childBanner: {
-    marginBottom: 18,
+    marginBottom: 12,
+  },
+  registerCheckupButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: PALETTE.primary,
+    borderRadius: RADIUS_PILL,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    marginBottom: 16,
+    alignSelf: 'flex-start',
+  },
+  registerCheckupButtonText: {
+    fontFamily: font('semibold'),
+    fontSize: 14,
+    fontWeight: '600',
+    color: PALETTE.text.light,
   },
   indicatorTabsContainer: {
     flexDirection: 'row',
