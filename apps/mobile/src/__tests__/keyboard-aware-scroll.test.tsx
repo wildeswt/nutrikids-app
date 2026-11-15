@@ -10,6 +10,7 @@ vi.mock('expo-router', () => ({
     canGoBack: () => true,
   }),
   useFocusEffect: vi.fn(),
+  useNavigation: () => ({ setParams: vi.fn() }),
   useLocalSearchParams: () => ({
     childId: '11111111-1111-4111-8111-111111111111',
     withUserId: '33333333-3333-4333-8333-333333333333',
