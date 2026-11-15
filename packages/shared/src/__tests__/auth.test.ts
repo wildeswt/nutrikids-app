@@ -144,6 +144,7 @@ describe('AuthUserSchema (lista blanca)', () => {
       'firstName',
       'id',
       'lastName',
+      'licenseNumber',
       'roles',
       'specialty',
     ]);
