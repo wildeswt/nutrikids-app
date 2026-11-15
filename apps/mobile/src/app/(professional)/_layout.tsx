@@ -151,6 +151,13 @@ export default function ProfessionalDrawerLayout() {
           }}
         />
         <Drawer.Screen
+          name="checkup-history"
+          options={{
+            title: t('drawer.checkupHistoryTitle'),
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
+        <Drawer.Screen
           name="add-checkup"
           options={{
             drawerLabel: t('drawer.addCheckup'),

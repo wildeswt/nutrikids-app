@@ -329,23 +329,22 @@ export default function AddCheckupScreen({
 
         {/* Enlace Cambiar paciente (solo con más de un niño) y Ver historial */}
         <View style={[styles.linksRow, children.length <= 1 && styles.linksRowSingle]}>
-          {/* El historial de comidas es del cuidador; el profesional solo cambia de paciente. */}
-          {!isProfessional ? (
-            <Pressable
-              style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
-              onPress={() =>
-                router.push({
-                  pathname: APP_ROUTES.CAREGIVER.FEEDING_HISTORY as never,
-                  params: { childId: activeChild.id },
-                })
-              }
-              accessibilityRole="button"
-              accessibilityLabel={t('addCheckup.seeHistory')}
-              testID="checkup-see-history"
-            >
-              <Text style={styles.changePatientText}>{t('addCheckup.seeHistory')}</Text>
-            </Pressable>
-          ) : null}
+          <Pressable
+            style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
+            onPress={() =>
+              router.push({
+                pathname: (isProfessional
+                  ? APP_ROUTES.PROFESSIONAL.CHECKUP_HISTORY
+                  : APP_ROUTES.CAREGIVER.CHECKUP_HISTORY) as never,
+                params: { childId: activeChild.id },
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel={t('addCheckup.seeHistory')}
+            testID="checkup-see-history"
+          >
+            <Text style={styles.changePatientText}>{t('addCheckup.seeHistory')}</Text>
+          </Pressable>
           {children.length > 1 ? (
             <Pressable
               style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}

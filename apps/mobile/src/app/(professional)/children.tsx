@@ -66,6 +66,18 @@ export default function ProfessionalPatientsScreen() {
         },
       },
       {
+        id: 'history',
+        label: t('drawer.checkupHistoryTitle'),
+        icon: 'time-outline',
+        onPress: () => {
+          closePatientActions();
+          router.push({
+            pathname: APP_ROUTES.PROFESSIONAL.CHECKUP_HISTORY as never,
+            params: { childId: child.id },
+          });
+        },
+      },
+      {
         id: 'checkup',
         label: t('patients.actions.registerCheckup'),
         icon: 'add-circle-outline',

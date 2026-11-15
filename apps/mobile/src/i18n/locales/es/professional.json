@@ -8,6 +8,7 @@
     "children": "Niños por riesgo",
     "childrenTitle": "Pacientes por Riesgo",
     "evolutionTitle": "Evolución del paciente",
+    "checkupHistoryTitle": "Historial de controles",
     "addCheckup": "Registrar control",
     "addCheckupTitle": "Registrar Control",
     "messages": "Mensajes y seguimientos",
