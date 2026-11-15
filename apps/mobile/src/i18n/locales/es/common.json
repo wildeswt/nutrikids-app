@@ -72,6 +72,17 @@
       "days_other": "{{count}} días"
     }
   },
+  "connectionBar": {
+    "offline": "Sin conexión",
+    "offlineWithCount_one": "Sin conexión · {{count}} registro por enviar",
+    "offlineWithCount_other": "Sin conexión · {{count}} registros por enviar",
+    "sending_one": "Enviando {{count}} registro…",
+    "sending_other": "Enviando {{count}} registros…",
+    "error_one": "{{count}} registro no se pudo enviar",
+    "error_other": "{{count}} registros no se pudieron enviar",
+    "errorAction": "Ver",
+    "synced": "Todo sincronizado"
+  },
   "language": {
     "title": "Idioma",
     "description": "Elige en qué idioma quieres ver la app.",

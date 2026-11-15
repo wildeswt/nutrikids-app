@@ -2,6 +2,20 @@ import { USER_ROLES } from '@nutrikids/shared';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { APP_ROUTES } from '../constants/routes.js';
+
+const mocks = vi.hoisted(() => ({
+  push: vi.fn(),
+  isOnline: true,
+}));
+
+vi.mock('expo-router', () => ({
+  useRouter: () => ({
+    push: mocks.push,
+    replace: vi.fn(),
+    back: vi.fn(),
+  }),
+}));
 
 // Mocks for expo-router/drawer and react-navigation
 vi.mock('expo-router/drawer', () => ({
@@ -49,9 +63,23 @@ vi.mock('../context/auth-context.js', () => ({
     signOut: mockSignOut,
     switchRole: mockSwitchRole,
   }),
+  useOptionalAuth: () => ({
+    status: 'authenticated',
+    user: mockAuthUser,
+    activeRole: USER_ROLES.PROFESSIONAL,
+  }),
 }));
 
+vi.mock('../context/connection-context.js', () => ({
+  useConnection: () => ({
+    status: mocks.isOnline ? 'online' : 'offline',
+    isOnline: mocks.isOnline,
+  }),
+}));
+
+import { Drawer } from 'expo-router/drawer';
 import ProfessionalDrawerLayout, { CustomDrawerContent } from '../app/(professional)/_layout.js';
+import { ConnectionBarLayout } from '../components/ConnectionBar.js';
 
 interface DrawerScreenElement {
   props: {
@@ -66,9 +94,26 @@ interface DrawerScreenElement {
   };
 }
 
+function findDrawerElement(
+  node: React.ReactNode,
+): React.ReactElement<{ children?: React.ReactNode }> | null {
+  if (!React.isValidElement<{ children?: React.ReactNode }>(node)) {
+    return null;
+  }
+  if (node.type === Drawer) {
+    return node;
+  }
+  for (const child of React.Children.toArray(node.props.children)) {
+    const found = findDrawerElement(child);
+    if (found) return found;
+  }
+  return null;
+}
+
 describe('ProfessionalDrawerLayout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.isOnline = true;
     mockAuthUser = {
       id: 'prof-id',
       email: 'dr.pediatra@example.com',
@@ -86,7 +131,9 @@ describe('ProfessionalDrawerLayout', () => {
       return null;
     }
     renderToString(React.createElement(Capture));
-    return React.Children.toArray(layout.props.children) as DrawerScreenElement[];
+    const drawerElement = findDrawerElement(layout);
+    expect(drawerElement).not.toBeNull();
+    return React.Children.toArray(drawerElement!.props.children) as DrawerScreenElement[];
   }
 
   it('configures the required drawer screens with alerts inbox as first screen', () => {
@@ -139,5 +186,21 @@ describe('ProfessionalDrawerLayout', () => {
     }
     renderToString(React.createElement(Capture));
     expect(content).not.toBeNull();
+  });
+
+  it('mounts ConnectionBarLayout with professional role above the drawer', () => {
+    mocks.isOnline = false;
+    let layout!: ReturnType<typeof ProfessionalDrawerLayout>;
+    function Capture() {
+      layout = ProfessionalDrawerLayout();
+      return layout;
+    }
+    const html = renderToString(React.createElement(Capture));
+
+    expect(layout.type).toBe(ConnectionBarLayout);
+    expect(layout.props.role).toBe(USER_ROLES.PROFESSIONAL);
+    expect(html).toContain('Sin conexión');
+    expect(html).toContain('connection-bar');
+    expect(APP_ROUTES.PROFESSIONAL.PENDING_SYNC).toBe('/(professional)/pending-sync');
   });
 });

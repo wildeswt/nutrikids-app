@@ -4,6 +4,7 @@ import { Drawer, DrawerContentScrollView, DrawerItemList } from 'expo-router/dra
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ConnectionBarLayout } from '../../components/ConnectionBar.js';
 import { SignOutPendingDialog } from '../../components/SignOutPendingDialog.js';
 import { PALETTE } from '../../constants/colors.js';
 import { RADIUS_PILL } from '../../constants/layout.js';
@@ -81,116 +82,118 @@ export function CustomDrawerContent(props: DrawerContentProps) {
 export default function ProfessionalDrawerLayout() {
   const { t } = useTranslation('professional');
   return (
-    <Drawer
-      defaultStatus="closed"
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
-      screenOptions={{
-        headerStyle: { backgroundColor: PALETTE.primary },
-        headerTintColor: PALETTE.text.light,
-        headerTitleStyle: { fontFamily: font('semibold'), fontWeight: '600' },
-        drawerActiveTintColor: PALETTE.primary,
-        drawerInactiveTintColor: PALETTE.text.body,
-        drawerStyle: { backgroundColor: PALETTE.background },
-      }}
-    >
-      <Drawer.Screen
-        name="index"
-        options={{
-          drawerLabel: t('drawer.alerts'),
-          title: t('drawer.alertsTitle'),
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="warning-outline" size={size} color={color as string} />
-          ),
+    <ConnectionBarLayout role={USER_ROLES.PROFESSIONAL}>
+      <Drawer
+        defaultStatus="closed"
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
+        screenOptions={{
+          headerStyle: { backgroundColor: PALETTE.primary },
+          headerTintColor: PALETTE.text.light,
+          headerTitleStyle: { fontFamily: font('semibold'), fontWeight: '600' },
+          drawerActiveTintColor: PALETTE.primary,
+          drawerInactiveTintColor: PALETTE.text.body,
+          drawerStyle: { backgroundColor: PALETTE.background },
         }}
-      />
-      <Drawer.Screen
-        name="alert-detail"
-        options={{
-          title: t('drawer.alertDetailTitle'),
-          // The screen draws its own back button and title.
-          headerShown: false,
-          // Reachable only by tapping an alert card, so it has no drawer entry.
-          drawerItemStyle: { display: 'none' },
-        }}
-      />
-      <Drawer.Screen
-        name="follow-up"
-        options={{
-          title: t('drawer.followUpTitle'),
-          headerShown: false,
-          // Reachable only from the alert detail.
-          drawerItemStyle: { display: 'none' },
-        }}
-      />
-      <Drawer.Screen
-        name="referral"
-        options={{
-          title: t('drawer.referralTitle'),
-          headerShown: false,
-          // Reachable from the alert detail; hidden from the drawer menu.
-          drawerItemStyle: { display: 'none' },
-        }}
-      />
-      <Drawer.Screen
-        name="children"
-        options={{
-          drawerLabel: t('drawer.children'),
-          title: t('drawer.childrenTitle'),
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color as string} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="messages"
-        options={{
-          drawerLabel: t('drawer.messages'),
-          title: t('drawer.messagesTitle'),
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles-outline" size={size} color={color as string} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="chat-detail"
-        options={{
-          title: t('drawer.chatTitle'),
-          // The screen draws its own back button and title.
-          headerShown: false,
-          // Reachable only by tapping a conversation, so it has no drawer entry.
-          drawerItemStyle: { display: 'none' },
-        }}
-      />
-      <Drawer.Screen
-        name="profile"
-        options={{
-          drawerLabel: t('drawer.profile'),
-          title: t('drawer.profileTitle'),
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color as string} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="notifications"
-        options={{
-          drawerLabel: t('drawer.notifications'),
-          title: t('drawer.notificationsTitle'),
-          headerShown: false,
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="notifications-outline" size={size} color={color as string} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="pending-sync"
-        options={{
-          title: t('drawer.pendingSyncTitle'),
-          headerShown: false,
-          drawerItemStyle: { display: 'none' },
-        }}
-      />
-    </Drawer>
+      >
+        <Drawer.Screen
+          name="index"
+          options={{
+            drawerLabel: t('drawer.alerts'),
+            title: t('drawer.alertsTitle'),
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="warning-outline" size={size} color={color as string} />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="alert-detail"
+          options={{
+            title: t('drawer.alertDetailTitle'),
+            // The screen draws its own back button and title.
+            headerShown: false,
+            // Reachable only by tapping an alert card, so it has no drawer entry.
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
+        <Drawer.Screen
+          name="follow-up"
+          options={{
+            title: t('drawer.followUpTitle'),
+            headerShown: false,
+            // Reachable only from the alert detail.
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
+        <Drawer.Screen
+          name="referral"
+          options={{
+            title: t('drawer.referralTitle'),
+            headerShown: false,
+            // Reachable from the alert detail; hidden from the drawer menu.
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
+        <Drawer.Screen
+          name="children"
+          options={{
+            drawerLabel: t('drawer.children'),
+            title: t('drawer.childrenTitle'),
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="people-outline" size={size} color={color as string} />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="messages"
+          options={{
+            drawerLabel: t('drawer.messages'),
+            title: t('drawer.messagesTitle'),
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="chatbubbles-outline" size={size} color={color as string} />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="chat-detail"
+          options={{
+            title: t('drawer.chatTitle'),
+            // The screen draws its own back button and title.
+            headerShown: false,
+            // Reachable only by tapping a conversation, so it has no drawer entry.
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
+        <Drawer.Screen
+          name="profile"
+          options={{
+            drawerLabel: t('drawer.profile'),
+            title: t('drawer.profileTitle'),
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="person-outline" size={size} color={color as string} />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="notifications"
+          options={{
+            drawerLabel: t('drawer.notifications'),
+            title: t('drawer.notificationsTitle'),
+            headerShown: false,
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="notifications-outline" size={size} color={color as string} />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="pending-sync"
+          options={{
+            title: t('drawer.pendingSyncTitle'),
+            headerShown: false,
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
+      </Drawer>
+    </ConnectionBarLayout>
   );
 }
 

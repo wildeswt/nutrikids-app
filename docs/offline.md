@@ -344,3 +344,20 @@ Implementado en `apps/mobile/src/lib/local-wipe.ts`, `apps/mobile/src/lib/sync/s
   - **Si hay pendientes:** **NO se borra la base cifrada ni la cola.** El envío ya no es posible sin sesión válida y descartar trabajo clínico sin avisar sería peor que conservarlo cifrado; como toda la base y `sync_queue` están aisladas por `user_id`, los registros permanecen protegidos en disco hasta que ese mismo usuario vuelva a iniciar sesión y se sincronicen automáticamente.
   - **Si no hay pendientes:** se ejecuta el borrado completo (`wipeUserLocalStorage`).
 - **Otro usuario en el mismo teléfono:** todas las lecturas y vaciados de `sync_queue`, cachés y borradores filtran estrictamente por `user_id`, de modo que un segundo usuario no ve ni envía registros pendientes dejados por una sesión expirada previa.
+
+## 14. Barra de estado de conexión siempre visible (NK-29)
+
+Implementada en `apps/mobile/src/lib/connection-bar.ts`, `apps/mobile/src/hooks/useConnectionBarState.ts`, `apps/mobile/src/components/ConnectionBar.tsx` y montada en ambos layouts autenticados (`apps/mobile/src/app/(caregiver)/_layout.tsx` y `apps/mobile/src/app/(professional)/_layout.tsx`) mediante `ConnectionBarLayout`.
+
+### Estados y prioridad (`deriveConnectionBarState`)
+
+1. **`offline`** (`!isOnline`): fondo `#575757`, icono `cloud-offline-outline`. Muestra «Sin conexión · N registros por enviar» (o «Sin conexión» cuando `N = pending + sending + error === 0`).
+2. **`error`** (`isOnline && error > 0`): fondo `#E14100`, icono `alert-circle-outline`. Muestra «N registros no se pudieron enviar» con la acción «Ver» a la derecha.
+3. **`sending`** (`isOnline && error === 0 && (sending > 0 || pending > 0)`): fondo `#F77E4D`, icono `sync-outline`. Muestra «Enviando N registros…» (`N = sending + pending`).
+4. **`synced`** (`isOnline && pending + sending + error === 0 && justSynced`): fondo `#2D5F5A`, icono `checkmark-circle-outline`. Muestra «Todo sincronizado» durante **3 segundos** (`SYNCED_BANNER_DURATION_MS = 3000`) cuando `useConnectionBarState()` detecta que el total pendiente pasa de `> 0` a `0` estando con conexión.
+5. **`hidden`**: en cualquier otro caso (en línea y sin pendientes), la barra permanece oculta.
+
+### Navegación, accesibilidad y montaje en layouts
+
+- Toda la píldora (`maxWidth: 368`, radio `25`, texto `14 px` semibold `#FBFBFB`) es tocable (`accessibilityRole="button"`, `accessibilityLiveRegion="polite"`, `testID="connection-bar"`) y navega a `APP_ROUTES.CAREGIVER.PENDING_SYNC` o `APP_ROUTES.PROFESSIONAL.PENDING_SYNC` según el rol activo.
+- `ConnectionBarLayout` reserva el espacio en el flujo normal del layout dentro del área segura superior (`SafeAreaInsetsContext`) y ajusta `top: 0` en el contexto hacia las pantallas hijas para no tapar encabezados ni duplicar el relleno superior. Anima la aparición y desaparición (`maxHeight` y `opacity`) respetando «reducir movimiento» (`AccessibilityInfo.isReduceMotionEnabled`) y no se monta en las pantallas de `(auth)`.
