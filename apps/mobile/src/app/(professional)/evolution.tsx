@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { CheckupResponse } from '@nutrikids/shared';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState, type ReactNode } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CheckupMenuButton } from '../../components/CheckupMenuButton.js';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { GrowthChart } from '../../components/GrowthChart.js';
 import { Card } from '../../components/ui/Card.js';
@@ -69,7 +70,15 @@ export default function ProfessionalChildrenScreen() {
     load: loadCheckups,
   } = useProfessionalCheckups(child?.id ?? null);
 
-  const { trends: growthTrends } = useGrowthTrend(child?.id ?? null);
+  const { trends: growthTrends, load: loadGrowthTrend } = useGrowthTrend(child?.id ?? null);
+
+  // Reloads when coming back (after correcting a checkup).
+  useFocusEffect(
+    useCallback(() => {
+      void loadCheckups();
+      void loadGrowthTrend();
+    }, [loadCheckups, loadGrowthTrend]),
+  );
 
   const activeIndicator =
     INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[0]!;
@@ -77,6 +86,12 @@ export default function ProfessionalChildrenScreen() {
   const isFavorable = activeTrend?.trend === 'FAVORABLE';
   const latest = latestProfessionalCheckup(checkups);
   const position = curvesPositionFor(activeIndicator, latest);
+
+  const reloadAfterDelete = () => {
+    setSelectedCheckupId(null);
+    void loadCheckups();
+    void loadGrowthTrend();
+  };
 
   const curves = useReferenceCurves(
     child && latest
@@ -366,8 +381,16 @@ export default function ProfessionalChildrenScreen() {
           testID="professional-evolution-selected-checkup-card"
         >
           <View style={styles.recordHeader}>
-            <Text style={styles.recordTitle}>{t('children.selectedRecordTitle')}</Text>
-            <Text style={styles.recordDate}>{formatLongDate(selectedCheckup.measuredAt)}</Text>
+            <View style={styles.recordHeaderText}>
+              <Text style={styles.recordTitle}>{t('children.selectedRecordTitle')}</Text>
+              <Text style={styles.recordDate}>{formatLongDate(selectedCheckup.measuredAt)}</Text>
+            </View>
+            <CheckupMenuButton
+              checkup={selectedCheckup}
+              roleMode="PROFESSIONAL"
+              onDeleted={reloadAfterDelete}
+              testID="professional-selected-checkup-menu"
+            />
           </View>
 
           <View style={styles.metricsRow}>
@@ -444,8 +467,16 @@ export default function ProfessionalChildrenScreen() {
         {/* Último registro con la persona que lo hizo */}
         <Card style={styles.lastRecordCard} testID="professional-evolution-last-record-card">
           <View style={styles.recordHeader}>
-            <Text style={styles.recordTitle}>{t('children.lastRecordTitle')}</Text>
-            <Text style={styles.recordDate}>{formatLongDate(latest.measuredAt)}</Text>
+            <View style={styles.recordHeaderText}>
+              <Text style={styles.recordTitle}>{t('children.lastRecordTitle')}</Text>
+              <Text style={styles.recordDate}>{formatLongDate(latest.measuredAt)}</Text>
+            </View>
+            <CheckupMenuButton
+              checkup={latest}
+              roleMode="PROFESSIONAL"
+              onDeleted={reloadAfterDelete}
+              testID="professional-last-record-menu"
+            />
           </View>
 
           <View style={styles.metricsRow}>
@@ -716,6 +747,13 @@ const styles = StyleSheet.create({
   },
   recordHeader: {
     marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  recordHeaderText: {
+    flex: 1,
   },
   recordTitle: {
     fontFamily: font('semibold'),

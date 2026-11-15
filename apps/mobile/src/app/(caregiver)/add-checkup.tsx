@@ -21,7 +21,7 @@ import { font } from '../../constants/typography.js';
 import { useCheckups } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { formatDecimal, formatLongDate } from '../../i18n/format.js';
-import { isConsentRequiredError } from '../../lib/checkups-api.js';
+import { correctChildCheckup, isConsentRequiredError } from '../../lib/checkups-api.js';
 import {
   buildCreateCheckupInput,
   calculateLocalWhoResults,
@@ -50,7 +50,17 @@ export default function AddCheckupScreen({
   const isProfessional = roleMode === 'PROFESSIONAL';
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'professional', 'common']);
-  const params = useLocalSearchParams<{ childId?: string }>();
+  const params = useLocalSearchParams<{
+    childId?: string;
+    /** Correction mode: the checkup being replaced and its current values (prefill). */
+    correctsCheckupId?: string;
+    measuredAt?: string;
+    weightKg?: string;
+    heightCm?: string;
+    position?: string;
+    notes?: string;
+  }>();
+  const correctsCheckupId = params.correctsCheckupId ?? null;
 
   const {
     status: childrenStatus,
@@ -63,17 +73,22 @@ export default function AddCheckupScreen({
   const activeChild = children.find((child) => child.id === selectedChildId) ?? children[0] ?? null;
   const { create, saving } = useCheckups(activeChild?.id ?? null, { autoLoad: false });
 
-  const [measuredDateText, setMeasuredDateText] = useState(() => formatDateInput(new Date()));
+  const [measuredDateText, setMeasuredDateText] = useState(() =>
+    formatDateInput(params.measuredAt ? new Date(params.measuredAt) : new Date()),
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [position, setPosition] = useState<Position>('STANDING');
+  const [position, setPosition] = useState<Position>(
+    params.position === 'RECUMBENT' ? 'RECUMBENT' : 'STANDING',
+  );
   const [showPositionMenu, setShowPositionMenu] = useState(false);
-  const [weightText, setWeightText] = useState('');
-  const [heightText, setHeightText] = useState('');
-  const [observations, setObservations] = useState('');
+  const [weightText, setWeightText] = useState(params.weightKg ?? '');
+  const [heightText, setHeightText] = useState(params.heightCm ?? '');
+  const [observations, setObservations] = useState(params.notes ?? '');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [outlierWarning, setOutlierWarning] = useState<string | null>(null);
   const [confirmedOutlier, setConfirmedOutlier] = useState(false);
   const [consentRequired, setConsentRequired] = useState(false);
+  const [correcting, setCorrecting] = useState(false);
   /** Same id for every retry of the same data, so a lost response never duplicates the checkup. */
   const attemptId = useRef<string | null>(null);
 
@@ -135,7 +150,7 @@ export default function AddCheckupScreen({
   };
 
   const handleSaveAndCalculate = async () => {
-    if (!activeChild || saving) return;
+    if (!activeChild || saving || correcting) return;
     setErrorMessage(null);
     setConsentRequired(false);
 
@@ -170,6 +185,18 @@ export default function AddCheckupScreen({
     setOutlierWarning(null);
 
     try {
+      if (correctsCheckupId) {
+        // Correction: needs a connection; the server stores a new checkup that replaces the old one.
+        setCorrecting(true);
+        try {
+          await correctChildCheckup(correctsCheckupId, result.input);
+        } finally {
+          setCorrecting(false);
+        }
+        attemptId.current = null;
+        handleBack();
+        return;
+      }
       const checkup = await create(result.input);
       attemptId.current = null;
       router.push({
@@ -225,7 +252,13 @@ export default function AddCheckupScreen({
 
   const header = (
     <ScreenHeader
-      title={isProfessional ? t('professional:addCheckup.title') : t('addCheckup.title')}
+      title={
+        correctsCheckupId
+          ? t('checkupActions.correctTitle')
+          : isProfessional
+            ? t('professional:addCheckup.title')
+            : t('addCheckup.title')
+      }
       backLabel={t('addCheckup.back')}
       onBack={handleBack}
       style={styles.header}
@@ -643,10 +676,10 @@ export default function AddCheckupScreen({
 
         {/* Botón Guardar y calcular */}
         <PrimaryButton
-          label={saving ? t('addCheckup.saving') : t('addCheckup.submit')}
+          label={saving || correcting ? t('addCheckup.saving') : t('addCheckup.submit')}
           onPress={() => void handleSaveAndCalculate()}
-          loading={saving}
-          disabled={saving}
+          loading={saving || correcting}
+          disabled={saving || correcting}
           accessibilityLabel={t('addCheckup.submit')}
           testID="submit-checkup-button"
           style={styles.submitButton}

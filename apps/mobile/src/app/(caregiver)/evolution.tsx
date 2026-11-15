@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CheckupMenuButton } from '../../components/CheckupMenuButton.js';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { GrowthChart } from '../../components/GrowthChart.js';
 import { OfflineDataNotice } from '../../components/OfflineDataNotice.js';
@@ -93,6 +94,12 @@ export default function EvolutionScreen() {
   const isFavorable = activeTrend?.trend === 'FAVORABLE';
   const latest = latestCheckup(checkups);
   const position = curvesPositionFor(activeIndicator, latest);
+
+  const reloadAfterDelete = () => {
+    setSelectedCheckupId(null);
+    void loadCheckups();
+    void loadGrowthTrend();
+  };
 
   // The reference curves are requested once the child has at least one checkup to plot.
   const curves = useReferenceCurves(
@@ -407,13 +414,21 @@ export default function EvolutionScreen() {
         <Card style={styles.lastRecordCard} testID="evolution-last-record-card">
           <View style={styles.lastRecordHeader}>
             <View style={styles.lastRecordTitleRow}>
-              <Text style={styles.lastRecordTitle}>{t('evolution.lastRecordTitle')}</Text>
-              {'localOnly' in latest && latest.localOnly ? (
-                <View style={styles.localOnlyPill} testID="evolution-local-only-badge">
-                  <Ionicons name="cloud-upload-outline" size={13} color="#E06A39" />
-                  <Text style={styles.localOnlyText}>{t('common:offline.localOnlyBadge')}</Text>
-                </View>
-              ) : null}
+              <View style={styles.lastRecordTitleGroup}>
+                <Text style={styles.lastRecordTitle}>{t('evolution.lastRecordTitle')}</Text>
+                {'localOnly' in latest && latest.localOnly ? (
+                  <View style={styles.localOnlyPill} testID="evolution-local-only-badge">
+                    <Ionicons name="cloud-upload-outline" size={13} color="#E06A39" />
+                    <Text style={styles.localOnlyText}>{t('common:offline.localOnlyBadge')}</Text>
+                  </View>
+                ) : null}
+              </View>
+              <CheckupMenuButton
+                checkup={latest}
+                roleMode="CAREGIVER"
+                onDeleted={reloadAfterDelete}
+                testID="evolution-last-record-menu"
+              />
             </View>
             <Text style={styles.lastRecordDate}>{formatLongDate(latest.measuredAt)}</Text>
           </View>
@@ -556,6 +571,15 @@ export default function EvolutionScreen() {
                     {formatLongDate(modalCheckup.measuredAt)}
                   </Text>
                 </View>
+                <CheckupMenuButton
+                  checkup={modalCheckup}
+                  roleMode="CAREGIVER"
+                  onDeleted={() => {
+                    setModalCheckup(null);
+                    reloadAfterDelete();
+                  }}
+                  testID="evolution-modal-menu"
+                />
                 <Pressable
                   onPress={() => setModalCheckup(null)}
                   style={({ pressed }) => [styles.closeIconButton, pressed && styles.pressed]}
@@ -855,6 +879,12 @@ const styles = StyleSheet.create({
   },
   lastRecordHeader: {
     marginBottom: 16,
+  },
+  lastRecordTitleGroup: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   lastRecordTitleRow: {
     flexDirection: 'row',
