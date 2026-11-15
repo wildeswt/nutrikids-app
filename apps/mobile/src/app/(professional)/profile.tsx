@@ -20,7 +20,7 @@ import { useSyncStatus } from '../../hooks/useSyncStatus.js';
 export default function ProfessionalProfileScreen() {
   const { t } = useTranslation(['professional', 'common']);
   const router = useRouter();
-  const { user, activeRole, switchRole } = useAuth();
+  const { user, switchRole } = useAuth();
   const syncStatus = useSyncStatus();
   const signOutFlow = useSignOutFlow({
     onGoToPendingSync: () => router.push(APP_ROUTES.PROFESSIONAL.PENDING_SYNC as never),
@@ -63,11 +63,6 @@ export default function ProfessionalProfileScreen() {
             </Text>
           </View>
         ) : null}
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>{t('profile.activeRole')}</Text>
-          <Text style={styles.badge}>{activeRole ? t(`common:roles.${activeRole}`) : '-'}</Text>
-        </View>
 
         {hasDualRole && (
           <PrimaryButton
@@ -161,16 +156,6 @@ const styles = StyleSheet.create({
     fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.body,
-  },
-  badge: {
-    fontFamily: font('semibold'),
-    fontSize: 12,
-    fontWeight: '600',
-    color: PALETTE.primary,
-    backgroundColor: PALETTE.primaryLight,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
   },
   switchButton: {
     marginTop: 6,

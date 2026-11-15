@@ -22,7 +22,7 @@ export { ConsentChildItem };
 export default function CaregiverProfileScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
   const router = useRouter();
-  const { user, activeRole, switchRole } = useAuth();
+  const { user, switchRole } = useAuth();
   const syncStatus = useSyncStatus();
   const signOutFlow = useSignOutFlow({
     onGoToPendingSync: () => router.push(APP_ROUTES.CAREGIVER.PENDING_SYNC as never),
@@ -87,16 +87,6 @@ export default function CaregiverProfileScreen() {
           testID="profile-banner"
         />
 
-        <Text style={styles.fieldLabel}>{t('profile.activeRole')}</Text>
-        <View style={styles.activeRow}>
-          <Text style={styles.activeRoleText}>
-            {activeRole ? t(`common:roles.${activeRole}`) : '-'}
-          </Text>
-          <View style={styles.chip}>
-            <Text style={styles.chipText}>{t('profile.activeBadge')}</Text>
-          </View>
-        </View>
-
         {hasDualRole && (
           <Pressable
             style={({ pressed }) => [styles.outlineButton, pressed && styles.pressed]}
@@ -153,12 +143,6 @@ const styles = StyleSheet.create({
   },
   header: { paddingHorizontal: 0, paddingTop: 0, marginBottom: 6 },
   banner: { marginBottom: 14 },
-  fieldLabel: {
-    fontFamily: font('medium'),
-    fontWeight: '500',
-    fontSize: 18,
-    color: PALETTE.text.title,
-  },
   sectionTitle: {
     fontFamily: font('semibold'),
     fontWeight: '600',
@@ -195,36 +179,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontSize: 22,
     color: PALETTE.primary,
-  },
-  activeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: PALETTE.input.background,
-    borderRadius: RADIUS_PILL,
-    borderWidth: 2,
-    borderColor: PALETTE.border.input,
-    paddingLeft: 22,
-    paddingRight: 14,
-    paddingVertical: 12,
-  },
-  activeRoleText: {
-    flex: 1,
-    fontFamily: font('medium'),
-    fontWeight: '500',
-    fontSize: 16,
-    color: PALETTE.text.title,
-  },
-  chip: {
-    backgroundColor: PALETTE.primary,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  chipText: {
-    fontFamily: font('semibold'),
-    fontWeight: '600',
-    fontSize: 13,
-    color: PALETTE.text.light,
   },
   outlineButton: {
     borderWidth: 2,
