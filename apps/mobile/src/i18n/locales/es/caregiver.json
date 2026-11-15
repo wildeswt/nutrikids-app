@@ -302,7 +302,7 @@
     "weight": "Peso",
     "height": "Estatura",
     "position": "Posición",
-    "recordedBy": "Registró",
+    "recordedBy": "Registrado por",
     "notes": "Observaciones",
     "unitKgM2": "kg/m²",
     "loading": "Cargando la evolución...",
@@ -314,7 +314,7 @@
     "noCheckupsSubtitle": "Anota el primer control para ver su evolución.",
     "addCheckup": "Anotar un control",
     "origin": {
-      "CAREGIVER": "Tú",
+      "CAREGIVER": "ti",
       "PROFESSIONAL": "Equipo de salud"
     },
     "chartLoading": "Cargando la gráfica...",

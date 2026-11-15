@@ -13,11 +13,11 @@ export interface FormatCheckupRecorderOptions {
  * Formatea el texto de quién registró un control antropométrico (NK-73).
  *
  * Reglas:
- * 1. Si `recordedBy` es el propio usuario (`currentUserId`), devuelve «Tú».
+ * 1. Si `recordedBy` es el propio usuario (`currentUserId`), devuelve «ti» (para «Registrado por ti»).
  * 2. Si `recordedBy` es otra persona, devuelve su nombre y apellido, añadiendo la especialidad
  *    si es profesional («{nombre} {apellido} · {especialidad}»).
  *    Para evitar suponer género, no se antepone «Dra./Dr.».
- * 3. Si `recordedBy` es `null`, usa el texto de respaldo según `origin` («Tú» / «Equipo de salud»).
+ * 3. Si `recordedBy` es `null`, usa el texto de respaldo según `origin` («ti» / «Equipo de salud»).
  */
 export function formatCheckupRecorder({
   recorder,
@@ -28,7 +28,7 @@ export function formatCheckupRecorder({
   const translate = t ?? i18n.t.bind(i18n);
   if (recorder) {
     if (currentUserId && recorder.userId === currentUserId) {
-      return translate('caregiver:evolution.origin.CAREGIVER', { defaultValue: 'Tú' });
+      return translate('caregiver:evolution.origin.CAREGIVER', { defaultValue: 'ti' });
     }
     const fullName = `${recorder.firstName} ${recorder.lastName}`.trim();
     if (recorder.specialty) {
@@ -40,6 +40,6 @@ export function formatCheckupRecorder({
   }
 
   return translate(`caregiver:evolution.origin.${origin}`, {
-    defaultValue: origin === 'CAREGIVER' ? 'Tú' : 'Equipo de salud',
+    defaultValue: origin === 'CAREGIVER' ? 'ti' : 'Equipo de salud',
   });
 }

@@ -7,7 +7,7 @@ describe('formatCheckupRecorder (NK-73)', () => {
     'common:specialties.pediatrics': 'Pediatría',
     'common:specialties.nutrition': 'Nutrición',
     'common:specialties.nursing': 'Enfermería',
-    'caregiver:evolution.origin.CAREGIVER': 'Tú',
+    'caregiver:evolution.origin.CAREGIVER': 'ti',
     'caregiver:evolution.origin.PROFESSIONAL': 'Equipo de salud',
   };
 
@@ -53,24 +53,24 @@ describe('formatCheckupRecorder (NK-73)', () => {
     expect(text).toBe('María López');
   });
 
-  it('returns "Tú" when recordedBy is the current user (caregiver)', () => {
+  it('returns "ti" when recordedBy is the current user (caregiver)', () => {
     const text = formatCheckupRecorder({
       recorder: caregiverRecorder,
       origin: 'CAREGIVER',
       currentUserId: caregiverRecorder.userId,
       t,
     });
-    expect(text).toBe('Tú');
+    expect(text).toBe('ti');
   });
 
-  it('returns "Tú" when recordedBy is the current user (professional)', () => {
+  it('returns "ti" when recordedBy is the current user (professional)', () => {
     const text = formatCheckupRecorder({
       recorder: proRecorder,
       origin: 'PROFESSIONAL',
       currentUserId: proRecorder.userId,
       t,
     });
-    expect(text).toBe('Tú');
+    expect(text).toBe('ti');
   });
 
   it('falls back to "Equipo de salud" when recorder is null and origin is PROFESSIONAL', () => {
@@ -83,14 +83,14 @@ describe('formatCheckupRecorder (NK-73)', () => {
     expect(text).toBe('Equipo de salud');
   });
 
-  it('falls back to "Tú" when recorder is null and origin is CAREGIVER', () => {
+  it('falls back to "ti" when recorder is null and origin is CAREGIVER', () => {
     const text = formatCheckupRecorder({
       recorder: null,
       origin: 'CAREGIVER',
       currentUserId: 'different-user',
       t,
     });
-    expect(text).toBe('Tú');
+    expect(text).toBe('ti');
   });
 
   it('works with Quechua translations', () => {

@@ -10,7 +10,7 @@
     "statusRevoked": "RETIRADO",
     "revokedAtLabel": "Fecha en que lo retiraste:",
     "accept": "Acepto y continuar",
-    "revoke": "Retirar mi permiso",
+    "revoke": "Revocar consentimiento",
     "renew": "Dar mi permiso otra vez",
     "back": "Volver",
     "documentInSpanish": "El documento legal se muestra en español mientras se revisa su traducción.",
@@ -36,13 +36,13 @@
     "grantedMessage": "Diste tu permiso. ¡Gracias!",
     "errorTitle": "Algo salió mal",
     "grantError": "No pudimos guardar tu permiso. Intenta de nuevo.",
-    "revokeTitle": "Retirar mi permiso",
-    "revokeMessage": "¿Seguro que quieres retirar tu permiso para {{name}}? Mientras no lo vuelvas a dar, no se podrán anotar nuevos controles de crecimiento.",
-    "revokeConfirm": "Sí, retirar",
-    "revokedTitle": "Permiso retirado",
-    "revokedMessage": "Retiraste tu permiso. Los controles anteriores se guardan de forma segura, como pide la ley.",
-    "revokeErrorTitle": "No se pudo retirar",
-    "revokeError": "No pudimos retirar tu permiso. Intenta de nuevo."
+    "revokeTitle": "Revocar consentimiento",
+    "revokeMessage": "¿Seguro que quieres revocar el consentimiento para {{name}}? Mientras no lo vuelvas a dar, no se podrán anotar nuevos controles de crecimiento.",
+    "revokeConfirm": "Sí, revocar",
+    "revokedTitle": "Consentimiento revocado",
+    "revokedMessage": "Revocaste tu consentimiento. Los controles anteriores se guardan de forma segura, como pide la ley.",
+    "revokeErrorTitle": "No se pudo revocar",
+    "revokeError": "No pudimos revocar el consentimiento. Intenta de nuevo."
   },
   "documents": {
     "v1": "DECLARACIÓN DE CONSENTIMIENTO INFORMADO PARA EL REGISTRO Y SEGUIMIENTO NUTRICIONAL\n\n1. ¿Para qué usamos los datos de tu hijo o hija?\nAl utilizar NutriKids, los datos antropométricos del niño (peso, talla/longitud y fecha de nacimiento) se emplean exclusivamente para:\n• Evaluar su crecimiento y estado nutricional comparándolo con los patrones de referencia oficiales de la Organización Mundial de la Salud (OMS).\n• Detectar oportunamente alertas de riesgo nutricional (como bajo peso, desnutrición o sobrepeso) para orientar el cuidado oportuno.\n• Facilitar el seguimiento continuo y coordinado junto a su equipo o profesional de salud tratante.\n\n2. Confidencialidad y Seguridad\nLa información registrada es estrictamente confidencial. Se encuentra protegida bajo estrictos estándares de seguridad y cifrado. En ningún caso sus datos serán vendidos, comercializados ni transferidos a terceros con fines ajenos a su salud y bienestar.\n\n3. Derecho de Revocación\nComo madre, padre o representante legal, puedes revocar este consentimiento en cualquier momento directamente desde la sección \"Mi Perfil\" en la aplicación.\nLa revocación impedirá registrar nuevos controles nutricionales, pero conservará de forma segura el historial previo registrado para fines de trazabilidad clínica y auditoría legal.\n\n4. Aceptación\nAl pulsar el botón \"Aceptar consentimiento\", confirmas que has leído y comprendido esta información en lenguaje claro y autorizas el tratamiento de los datos para los fines indicados."

@@ -85,7 +85,7 @@
     "zScore": "Puntaje z",
     "percentile": "Percentil",
     "classification": "Clasificación técnica",
-    "recordedBy": "Registró",
+    "recordedBy": "Registrado por",
     "notes": "Observaciones",
     "loading": "Cargando evolución clínica...",
     "loadError": "No pudimos cargar los datos del paciente.",
