@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +17,7 @@ import { ProfessionalResultCard } from '../../components/ProfessionalResultCard.
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
-import { SCREEN_MARGIN } from '../../constants/layout.js';
+import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useChildren } from '../../hooks/useChildren.js';
@@ -155,15 +156,19 @@ export default function ChildProfessionalsScreen() {
               }
               note={t('linkProfessional.resultNote', { child: child?.firstName ?? '' })}
               testID={`child-professional-${item.professionalId}`}
+              footer={
+                <Pressable
+                  style={({ pressed }) => [styles.unlinkButton, pressed && styles.unlinkPressed]}
+                  onPress={() => confirmUnlink(item)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t('myData.unlinkProfessional')} ${item.firstName ?? ''} ${item.lastName ?? ''}`}
+                  testID={`child-professional-unlink-${item.professionalId}`}
+                >
+                  <Ionicons name="person-remove-outline" size={16} color={PALETTE.feedback.error} />
+                  <Text style={styles.unlinkText}>{t('myData.unlinkProfessional')}</Text>
+                </Pressable>
+              }
             />
-            <Pressable
-              onPress={() => confirmUnlink(item)}
-              accessibilityRole="button"
-              accessibilityLabel={`${t('myData.unlinkProfessional')} ${item.firstName ?? ''} ${item.lastName ?? ''}`}
-              testID={`child-professional-unlink-${item.professionalId}`}
-            >
-              <Text style={styles.unlink}>{t('myData.unlinkProfessional')}</Text>
-            </Pressable>
           </View>
         ))}
 
@@ -184,14 +189,26 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: SCREEN_MARGIN, paddingTop: 12, paddingBottom: 36 },
   header: { paddingHorizontal: 0, paddingTop: 0, marginBottom: 16 },
   banner: { marginBottom: 24 },
-  item: { gap: 8, marginBottom: 18 },
-  unlink: {
-    alignSelf: 'flex-end',
-    fontFamily: font('medium'),
-    fontWeight: '500',
-    fontSize: 14,
+  item: { marginBottom: 16 },
+  unlinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: RADIUS_PILL,
+    borderWidth: 1,
+    borderColor: PALETTE.feedback.errorBorder,
+    backgroundColor: PALETTE.feedback.errorBg,
+  },
+  unlinkPressed: {
+    opacity: 0.85,
+  },
+  unlinkText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 13,
     color: PALETTE.feedback.error,
-    textDecorationLine: 'underline',
   },
   actions: { alignItems: 'center', marginTop: 24 },
   stateBox: { alignItems: 'center', gap: 10, paddingVertical: 24 },

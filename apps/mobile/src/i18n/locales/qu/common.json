@@ -138,7 +138,10 @@
     "types": {
       "alert_new": "Wiñaymanta musuq willay",
       "alert_pending_review": "Qawanapaq willay",
-      "alert_overdue": "Pacha yallisqa willay"
+      "alert_overdue": "Pacha yallisqa willay",
+      "reminder_due": "Yuyarinapaq willay",
+      "message_new": "Musuq chaskishka willay",
+      "referral_new": "Musuq kachashka willay"
     }
   },
   "signOutPending": {

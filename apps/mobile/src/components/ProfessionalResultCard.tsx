@@ -12,6 +12,8 @@ interface ProfessionalResultCardProps {
   detail: string;
   /** Texto de lo que podrá ver el profesional. */
   note: string;
+  /** Acción opcional integrada al pie de la tarjeta (p. ej. botón «Desvincular»). */
+  footer?: React.ReactNode;
   testID?: string;
 }
 
@@ -21,6 +23,7 @@ export function ProfessionalResultCard({
   lastName,
   detail,
   note,
+  footer,
   testID = 'professional-result',
 }: ProfessionalResultCardProps) {
   return (
@@ -35,6 +38,7 @@ export function ProfessionalResultCard({
         </View>
       </View>
       <Text style={styles.note}>{note}</Text>
+      {footer ? <View style={styles.footer}>{footer}</View> : null}
     </Card>
   );
 }
@@ -65,4 +69,11 @@ const styles = StyleSheet.create({
   },
   detail: { fontFamily: font('regular'), fontSize: 13, color: PALETTE.text.muted },
   note: { fontFamily: font('regular'), fontSize: 13, color: PALETTE.text.body },
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: PALETTE.border.subtle,
+    paddingTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
 });
