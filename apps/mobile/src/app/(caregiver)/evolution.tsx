@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import React, { useEffect, useState, type ReactNode } from 'react';
+import React, { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -75,7 +75,16 @@ export default function EvolutionScreen() {
     load: loadCheckups,
   } = useCheckups(child?.id ?? null);
 
-  const { trends: growthTrends } = useGrowthTrend(child?.id ?? null);
+  const { trends: growthTrends, load: loadGrowthTrend } = useGrowthTrend(child?.id ?? null);
+
+  // Recarga niños, controles y tendencia al enfocar la pestaña Evolución (NK-74)
+  useFocusEffect(
+    useCallback(() => {
+      void loadChildren();
+      void loadCheckups();
+      void loadGrowthTrend();
+    }, [loadChildren, loadCheckups, loadGrowthTrend]),
+  );
 
   const activeIndicator =
     INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[0]!;
@@ -243,6 +252,7 @@ export default function EvolutionScreen() {
     upper: t('evolution.zoneLabels.upper'),
     normal: t('evolution.zoneLabels.normal'),
     lower: t('evolution.zoneLabels.lower'),
+    outer: t('evolution.zoneLabels.outer'),
   };
 
   return (
@@ -346,8 +356,9 @@ export default function EvolutionScreen() {
           )}
 
           {/* Leyenda del gráfico */}
-          <View style={styles.legendRow}>
-            <View style={styles.legendGroup}>
+          <View style={styles.legendGrid} testID="evolution-chart-legend">
+            {/* Fila 1: Niño y Rango esperado OMS */}
+            <View style={styles.legendRow}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, styles.legendDotChild]} />
                 <Text style={styles.legendText}>{child.firstName}</Text>
@@ -355,32 +366,33 @@ export default function EvolutionScreen() {
 
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, styles.legendDotOms]} />
-                <Text style={styles.legendText}>{t('evolution.legendReference')}</Text>
+                <Text testID="growth-chart-zone-label-normal" style={styles.legendText}>
+                  {chartZoneLabels.normal}
+                </Text>
               </View>
             </View>
 
-            {isFavorable ? (
-              <Text style={styles.favorableTrendText} testID="evolution-growth-trend">
-                {t('evolution.favorableTrend')}
-              </Text>
-            ) : null}
+            {/* Fila 2: Línea naranja de referencia */}
+            <View style={styles.legendRow}>
+              <View style={styles.legendItem}>
+                <View style={styles.legendDashRow}>
+                  <View style={styles.legendDash} />
+                  <View style={styles.legendDash} />
+                </View>
+                <Text testID="growth-chart-zone-label-upper" style={styles.legendTextSecondary}>
+                  {chartZoneLabels.outer}
+                </Text>
+              </View>
+
+              {isFavorable ? (
+                <Text style={styles.favorableTrendText} testID="evolution-growth-trend">
+                  {t('evolution.favorableTrend')}
+                </Text>
+              ) : null}
+            </View>
           </View>
 
           <Text style={styles.tapPointHint}>{t('evolution.tapPointHint')}</Text>
-        </Card>
-
-        {/* Aviso permanente de que la gráfica apoya la valoración y no es un diagnóstico */}
-        <View style={styles.nonDiagnosticNotice} testID="evolution-non-diagnostic-notice">
-          <Ionicons name="shield-checkmark-outline" size={20} color={PALETTE.primary} />
-          <Text style={styles.nonDiagnosticNoticeText}>{t('evolution.nonDiagnosticNotice')}</Text>
-        </View>
-
-        {/* Resumen de la tendencia en texto */}
-        <Card style={styles.trendSummaryCard} testID="evolution-trend-summary-card">
-          <Text style={styles.trendSummaryTitle}>{t('evolution.trendSummaryTitle')}</Text>
-          <Text style={styles.trendSummaryBody}>
-            {isFavorable ? t('evolution.trendSummaryFavorable') : t('evolution.trendSummarySteady')}
-          </Text>
         </Card>
 
         {/* Detalle del control seleccionado al tocar un punto de la gráfica */}
@@ -656,28 +668,28 @@ const styles = StyleSheet.create({
   infoIconWrapper: {
     padding: 2,
   },
+  legendGrid: {
+    borderTopWidth: 1,
+    borderTopColor: PALETTE.border.subtle,
+    paddingTop: 12,
+    gap: 8,
+  },
   legendRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: PALETTE.border.subtle,
-    paddingTop: 14,
-  },
-  legendGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
+    gap: 12,
   },
   legendItem: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   legendDotChild: {
     backgroundColor: PALETTE.secondary,
@@ -685,11 +697,28 @@ const styles = StyleSheet.create({
   legendDotOms: {
     backgroundColor: '#7FA89E',
   },
+  legendDashRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    width: 10,
+  },
+  legendDash: {
+    width: 4,
+    height: 2,
+    backgroundColor: '#D9825B',
+    borderRadius: 1,
+  },
   legendText: {
     fontFamily: font('medium'),
     fontSize: 12,
     color: PALETTE.text.body,
     fontWeight: '500',
+  },
+  legendTextSecondary: {
+    fontFamily: font('regular'),
+    fontSize: 11,
+    color: PALETTE.text.muted,
   },
   favorableTrendText: {
     fontFamily: font('semibold'),

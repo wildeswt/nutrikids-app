@@ -70,6 +70,8 @@ export interface GrowthChartProps {
   variant?: 'caregiver' | 'professional';
   /** Custom localized zone labels between the curves. */
   zoneLabels?: GrowthChartZoneLabels;
+  /** Whether to show text labels directly inside the chart plot area (defaults to true only in professional view). */
+  showZoneLabelsInside?: boolean;
   /** ID of the currently selected checkup point (defaults to the latest point). */
   selectedCheckupId?: string | null;
   /** Triggered when the user taps a plotted checkup point. */
@@ -121,6 +123,7 @@ export function GrowthChart({
   formatTick,
   variant = 'caregiver',
   zoneLabels,
+  showZoneLabelsInside = variant === 'professional',
   selectedCheckupId,
   onSelectPoint,
   testID,
@@ -259,28 +262,44 @@ export function GrowthChart({
           testID="growth-chart-lower-extreme"
         />
 
-        {/* Zone text labels between the lines */}
-        <Text
-          testID="growth-chart-zone-label-upper"
-          style={[styles.zoneLabel, styles.zoneLabelOuter, { top: clampTop(zones.upperZoneTop) }]}
-          numberOfLines={1}
-        >
-          {resolvedZoneLabels.upper}
-        </Text>
-        <Text
-          testID="growth-chart-zone-label-normal"
-          style={[styles.zoneLabel, styles.zoneLabelNormal, { top: clampTop(zones.normalZoneTop) }]}
-          numberOfLines={1}
-        >
-          {resolvedZoneLabels.normal}
-        </Text>
-        <Text
-          testID="growth-chart-zone-label-lower"
-          style={[styles.zoneLabel, styles.zoneLabelOuter, { top: clampTop(zones.lowerZoneTop) }]}
-          numberOfLines={1}
-        >
-          {resolvedZoneLabels.lower}
-        </Text>
+        {/* Zone text labels between the lines (hidden by default in caregiver to keep curves clear) */}
+        {showZoneLabelsInside && (
+          <>
+            <Text
+              testID="growth-chart-zone-label-upper"
+              style={[
+                styles.zoneLabel,
+                styles.zoneLabelOuter,
+                { top: clampTop(zones.upperZoneTop) },
+              ]}
+              numberOfLines={1}
+            >
+              {resolvedZoneLabels.upper}
+            </Text>
+            <Text
+              testID="growth-chart-zone-label-normal"
+              style={[
+                styles.zoneLabel,
+                styles.zoneLabelNormal,
+                { top: clampTop(zones.normalZoneTop) },
+              ]}
+              numberOfLines={1}
+            >
+              {resolvedZoneLabels.normal}
+            </Text>
+            <Text
+              testID="growth-chart-zone-label-lower"
+              style={[
+                styles.zoneLabel,
+                styles.zoneLabelOuter,
+                { top: clampTop(zones.lowerZoneTop) },
+              ]}
+              numberOfLines={1}
+            >
+              {resolvedZoneLabels.lower}
+            </Text>
+          </>
+        )}
 
         {/* Technical z-score curve labels ONLY in professional view */}
         {variant === 'professional' &&

@@ -271,7 +271,8 @@
     "zoneLabels": {
       "upper": "Por encima de lo esperado",
       "normal": "Rango esperado (OMS)",
-      "lower": "Por debajo de lo esperado"
+      "lower": "Por debajo de lo esperado",
+      "outer": "Por encima/debajo de lo esperado"
     },
     "nonDiagnosticNotice": "Esta gráfica apoya la valoración del crecimiento y no es un diagnóstico médico.",
     "tapPointHint": "Toca cualquier punto de la curva para ver el detalle de ese control.",
