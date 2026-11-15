@@ -100,9 +100,13 @@ async function runLocalSafely<T>(
 ): Promise<T | typeof LOCAL_OP_FAILED> {
   try {
     return await fn();
-  } catch {
+  } catch (error) {
     // Se registra únicamente el nombre de la operación para no exponer datos personales ni clínicos.
     console.warn(`[offline-read] Error de almacenamiento local en ${operationName}`);
+    // Solo en desarrollo: el mensaje del error (apertura, cifrado, migración) ayuda a diagnosticar.
+    if (typeof __DEV__ !== 'undefined' && __DEV__ && error instanceof Error) {
+      console.info(`[offline-read] Causa (solo desarrollo): ${error.message}`);
+    }
     return LOCAL_OP_FAILED;
   }
 }

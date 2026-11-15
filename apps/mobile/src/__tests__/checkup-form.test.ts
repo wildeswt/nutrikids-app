@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildCreateCheckupInput,
+  calculateLocalWhoResults,
   formatDateInput,
   measuredAtFromIsoDate,
   parseDateInput,
@@ -77,6 +78,7 @@ describe('buildCreateCheckupInput', () => {
 
     expect(result).toEqual({
       ok: true,
+      localEvaluation: null,
       input: {
         id: CHILD_ID_FIELDS.id,
         measuredAt: '2026-11-10T12:00:00.000Z',
@@ -181,5 +183,40 @@ describe('buildCreateCheckupInput', () => {
       ok: false,
       error: { code: 'notesTooLong', max: 500 },
     });
+  });
+
+  it('computes all 4 WHO indicators locally when sex is provided', () => {
+    const result = buildCreateCheckupInput(validForm, {
+      ...CHILD_ID_FIELDS,
+      sex: 'MALE',
+      confirmOutlier: false,
+      now: NOW,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.localEvaluation).not.toBeNull();
+    expect(result.localEvaluation?.primary).toBe('NORMAL');
+    expect(result.localEvaluation?.hasAlert).toBe(false);
+    expect(result.localEvaluation?.results).toHaveLength(4);
+    expect(result.input.results).toEqual(result.localEvaluation?.results);
+  });
+
+  it('detects WHO risk alerts locally when measurements indicate wasting', () => {
+    const evaluation = calculateLocalWhoResults({
+      sex: 'FEMALE',
+      birthDate: '2023-06-15',
+      measuredAt: '2026-11-10T12:00:00.000Z',
+      weightKg: 9.0,
+      lengthHeightCm: 91.5,
+      position: 'STANDING',
+    });
+
+    expect(evaluation).not.toBeNull();
+    expect(evaluation?.hasAlert).toBe(true);
+    expect(evaluation?.primary).not.toBe('NORMAL');
+    const wflh = evaluation?.results.find((r) => r.indicator === 'WEIGHT_FOR_LENGTH_HEIGHT');
+    expect(wflh?.zScore).toBeLessThan(-2);
   });
 });

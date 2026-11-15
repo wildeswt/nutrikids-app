@@ -7,6 +7,8 @@
     "alertsTitle": "Bandeja de Alertas",
     "children": "Niños por riesgo",
     "childrenTitle": "Pacientes por Riesgo",
+    "addCheckup": "Registrar control",
+    "addCheckupTitle": "Registrar Control",
     "messages": "Mensajes y seguimientos",
     "messagesTitle": "Mensajes y Seguimientos",
     "profile": "Mi perfil",
@@ -110,7 +112,8 @@
       "POSSIBLE_RISK_OVERWEIGHT": "Posible riesgo de sobrepeso (+1 a +2 DE)",
       "OVERWEIGHT": "Sobrepeso (+2 a +3 DE)",
       "OBESITY": "Obesidad (> +3 DE)"
-    }
+    },
+    "registerCheckup": "Registrar control"
   },
   "messages": {
     "title": "Mensajes y Seguimientos",
@@ -283,5 +286,19 @@
       "bodyTooLong": "El motivo no puede pasar de {{max}} caracteres.",
       "invalid": "Revisa los datos de la interconsulta."
     }
+  },
+  "addCheckup": {
+    "title": "Registrar control antropométrico",
+    "changePatient": "Cambiar de paciente",
+    "submit": "Guardar y calcular",
+    "saving": "Guardando...",
+    "localResultTitle": "Cálculo local (who-growth)",
+    "localSummaryNormal": "Estado preliminar: dentro del rango esperado (OMS).",
+    "localSummaryAlert": "Estado preliminar: alerta detectada ({{risk}}).",
+    "zScoreValue": "z = {{value}}",
+    "percentileValue": "p{{value}}",
+    "emptyTitle": "Sin pacientes vinculados",
+    "emptySubtitle": "Debes tener al menos un paciente vinculado para registrar su control.",
+    "goBackToPatients": "Ir a pacientes"
   }
 }

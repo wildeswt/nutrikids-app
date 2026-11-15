@@ -1,5 +1,8 @@
 import type { CaregiverCheckupResponse, ChildResponse, Position } from '@nutrikids/shared';
 import { PositionSchema } from '@nutrikids/shared';
+import type { LocalWhoEvaluation } from './checkup-form.js';
+
+export type CheckupRoleMode = 'CAREGIVER' | 'PROFESSIONAL';
 
 /**
  * Route params of `checkup-saved`. Router params are strings, so the checkup returned by the API
@@ -25,6 +28,8 @@ export interface SavedCheckupView {
   lengthHeightCm: number;
   position: Position;
   pendingSync?: boolean;
+  localEvaluation?: LocalWhoEvaluation | null;
+  roleMode?: CheckupRoleMode;
 }
 
 export function toCheckupSavedParams(
@@ -33,6 +38,10 @@ export function toCheckupSavedParams(
     CaregiverCheckupResponse,
     'measuredAt' | 'weightKg' | 'lengthHeightCm' | 'position'
   > & { savedLocally?: boolean; localOnly?: boolean },
+  extra?: {
+    localEvaluation?: LocalWhoEvaluation | null;
+    roleMode?: CheckupRoleMode;
+  },
 ): CheckupSavedParams {
   const isPendingSync = Boolean(checkup.savedLocally || checkup.localOnly);
   const params: CheckupSavedParams = {
@@ -46,6 +55,12 @@ export function toCheckupSavedParams(
   };
   if (isPendingSync) {
     params.pendingSync = '1';
+  }
+  if (extra?.localEvaluation) {
+    params.localEvaluation = JSON.stringify(extra.localEvaluation);
+  }
+  if (extra?.roleMode) {
+    params.roleMode = extra.roleMode;
   }
   return params;
 }
@@ -77,6 +92,21 @@ export function parseCheckupSavedParams(params: RawParams): SavedCheckupView | n
   }
 
   const pendingSync = single(params.pendingSync) === '1';
+  const rawEval = single(params.localEvaluation);
+  let localEvaluation: LocalWhoEvaluation | null = null;
+  if (rawEval) {
+    try {
+      const parsed = JSON.parse(rawEval) as LocalWhoEvaluation;
+      if (parsed && Array.isArray(parsed.results)) {
+        localEvaluation = parsed;
+      }
+    } catch {
+      localEvaluation = null;
+    }
+  }
+  const rawRole = single(params.roleMode);
+  const roleMode: CheckupRoleMode | undefined =
+    rawRole === 'PROFESSIONAL' || rawRole === 'CAREGIVER' ? rawRole : undefined;
 
   return {
     childId,
@@ -87,5 +117,7 @@ export function parseCheckupSavedParams(params: RawParams): SavedCheckupView | n
     lengthHeightCm,
     position: position.data,
     ...(pendingSync ? { pendingSync: true } : {}),
+    ...(localEvaluation ? { localEvaluation } : {}),
+    ...(roleMode ? { roleMode } : {}),
   };
 }
