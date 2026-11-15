@@ -362,15 +362,20 @@ export default function CaregiverHomeScreen() {
           </View>
         ) : null}
 
-        {/* Sección: Para ti */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('home.forYou')}</Text>
-          <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.MESSAGES)}>
-            <Text style={styles.sectionLink}>{t('home.seeAll')}</Text>
-          </Pressable>
-        </View>
+        {/* Solo hay mensajes que mostrar si hay un niño registrado */}
+        {activeChild ? (
+          <>
+            {/* Sección: Para ti */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('home.forYou')}</Text>
+              <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.MESSAGES)}>
+                <Text style={styles.sectionLink}>{t('home.seeAll')}</Text>
+              </Pressable>
+            </View>
 
-        {renderForYouCard()}
+            {renderForYouCard()}
+          </>
+        ) : null}
 
         {/* Acceso a Alimentación en fila propia del Home */}
         <Pressable
@@ -400,15 +405,20 @@ export default function CaregiverHomeScreen() {
           </Card>
         </Pressable>
 
-        {/* Sección: Próximo control */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('home.nextCheckup')}</Text>
-          <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.REMINDERS)}>
-            <Text style={styles.sectionLink}>{t('home.schedule')}</Text>
-          </Pressable>
-        </View>
+        {/* Solo hay controles y mensajes que mostrar si hay un niño registrado */}
+        {activeChild ? (
+          <>
+            {/* Sección: Próximo control */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('home.nextCheckup')}</Text>
+              <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.REMINDERS)}>
+                <Text style={styles.sectionLink}>{t('home.schedule')}</Text>
+              </Pressable>
+            </View>
 
-        {renderNextCheckupCard()}
+            {renderNextCheckupCard()}
+          </>
+        ) : null}
 
         {/* Sección: Aprende en casa (artículos según la edad del niño activo) */}
         <View style={styles.sectionHeader}>

@@ -104,5 +104,4 @@ The server side of the offline design exists: `POST /sync/checkups` accepts a ba
 
 - Local storage and sync queue in the app (offline capture).
 - Application-level encryption of columns and pseudonymised exports (RT-07 in the report). Today the protection is RLS, hashed passwords (Argon2id) and encrypted backups ([backups.md](backups.md)).
-- Two-factor authentication for professionals: the schema has the columns and the login screen has the prompt, but the API always answers `requiresTwoFactor: false`.
 - Caregiver push registration (the app registers tokens only for professionals).

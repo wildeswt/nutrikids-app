@@ -1,28 +1,31 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LoginInputSchema } from '@nutrikids/shared';
+import { LoginInputSchema, type TwoFactorSetup } from '@nutrikids/shared';
 import { Link, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthBrandHeader, authStyles } from '../../components/auth/AuthBrandHeader.js';
+import { TwoFactorEnrollment } from '../../components/auth/TwoFactorEnrollment.js';
 import {
   KeyboardAwareScrollView,
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
+import { RecoveryCodesList } from '../../components/RecoveryCodesList.js';
 import { PillField } from '../../components/ui/PillField.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { BackButton } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
-import { useAuth } from '../../context/auth-context.js';
+import { useAuth, type AuthenticatedAuthResponse } from '../../context/auth-context.js';
 import { loginRequest } from '../../lib/api.js';
 import {
   AuthApiError,
   extractZodFieldErrors,
   formatAuthErrorMessage,
 } from '../../lib/auth-errors.js';
+import { resolveLoginStep } from '../../lib/login-flow.js';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -35,11 +38,15 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Two-factor state for professionals (NK-14 integration)
+  // Two-factor state for professionals (NK-10, NK-14)
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [isUsingRecoveryCode, setIsUsingRecoveryCode] = useState(false);
   const [totpCode, setTotpCode] = useState('');
   const [recoveryCode, setRecoveryCode] = useState('');
+  // First login of a professional without two-factor: QR enrollment (NK-10).
+  const [setup, setSetup] = useState<TwoFactorSetup | null>(null);
+  // Session held back until the user confirms the one-time recovery codes are saved.
+  const [pendingSession, setPendingSession] = useState<AuthenticatedAuthResponse | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -64,12 +71,18 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const response = await loginRequest(validation.data);
+      const step = resolveLoginStep(await loginRequest(validation.data));
 
-      if (response.requiresTwoFactor) {
+      if (step.kind === 'enroll' || step.kind === 'verify') {
         setRequiresTwoFactor(true);
+        setSetup(step.kind === 'enroll' ? step.setup : null);
+        if (step.kind === 'enroll') {
+          setIsUsingRecoveryCode(false);
+        }
+      } else if (step.kind === 'showRecoveryCodes') {
+        setPendingSession(step.session);
       } else {
-        await signIn(response);
+        await signIn(step.session);
       }
     } catch (err) {
       if (requiresTwoFactor && err instanceof AuthApiError && err.status === 401) {
@@ -82,14 +95,47 @@ export default function LoginScreen() {
     }
   };
 
+  const handleConfirmRecoveryCodes = async () => {
+    if (!pendingSession) return;
+    setLoading(true);
+    try {
+      await signIn(pendingSession);
+    } catch (err) {
+      setGeneralError(formatAuthErrorMessage(err));
+      setLoading(false);
+    }
+  };
+
   const handleResetToCredentials = () => {
     setRequiresTwoFactor(false);
+    setSetup(null);
     setIsUsingRecoveryCode(false);
     setTotpCode('');
     setRecoveryCode('');
     setGeneralError(null);
     setFieldErrors({});
   };
+
+  const totpField = (
+    <PillField label={t('login.totpLabel')} error={fieldErrors['totpCode']}>
+      <KeyboardAwareTextInput
+        style={authStyles.pillInput}
+        value={totpCode}
+        onChangeText={(text) => {
+          setTotpCode(text.replace(/\D/g, '').slice(0, 6));
+          if (fieldErrors['totpCode']) {
+            setFieldErrors((prev) => ({ ...prev, totpCode: '' }));
+          }
+        }}
+        placeholder={t('login.totpPlaceholder')}
+        placeholderTextColor={PALETTE.input.placeholder}
+        keyboardType="number-pad"
+        maxLength={6}
+        editable={!loading}
+        testID="totp-code-input"
+      />
+    </PillField>
+  );
 
   return (
     <SafeAreaView style={authStyles.container}>
@@ -111,7 +157,13 @@ export default function LoginScreen() {
 
         <View style={authStyles.formContainer}>
           <Text style={authStyles.title}>
-            {requiresTwoFactor ? t('login.twoFactorTitle') : t('login.title')}
+            {pendingSession
+              ? t('recoveryCodes.title')
+              : setup
+                ? t('login.setupTitle')
+                : requiresTwoFactor
+                  ? t('login.twoFactorTitle')
+                  : t('login.title')}
           </Text>
           {generalError && (
             <View style={authStyles.errorBox}>
@@ -119,7 +171,40 @@ export default function LoginScreen() {
             </View>
           )}
 
-          {!requiresTwoFactor ? (
+          {pendingSession ? (
+            <>
+              {/* Step 3 (enrollment only): one-time recovery codes */}
+              <Text style={styles.stepDescription}>{t('recoveryCodes.description')}</Text>
+              <RecoveryCodesList codes={pendingSession.recoveryCodes ?? []} />
+              <PrimaryButton
+                label={t('recoveryCodes.saved')}
+                onPress={() => void handleConfirmRecoveryCodes()}
+                loading={loading}
+                style={styles.submitButton}
+              />
+            </>
+          ) : setup ? (
+            <>
+              {/* Step 2a: enroll the authenticator app with the QR code */}
+              <TwoFactorEnrollment
+                setup={setup}
+                onOpenError={() => setGeneralError(t('login.openAuthenticatorError'))}
+              />
+
+              {totpField}
+
+              <PrimaryButton
+                label={t('login.activateSubmit')}
+                onPress={() => void handleLoginSubmit()}
+                loading={loading}
+                style={styles.submitButton}
+              />
+
+              <Pressable onPress={handleResetToCredentials} style={styles.cancelTwoFactorButton}>
+                <Text style={styles.cancelTwoFactorText}>{t('login.backToLogin')}</Text>
+              </Pressable>
+            </>
+          ) : !requiresTwoFactor ? (
             <>
               {/* Email Field */}
               <PillField label={t('login.emailLabel')} error={fieldErrors['email']}>
@@ -209,23 +294,7 @@ export default function LoginScreen() {
               <Text style={styles.stepDescription}>{t('login.twoFactorDescription')}</Text>
 
               {!isUsingRecoveryCode ? (
-                <PillField label={t('login.totpLabel')} error={fieldErrors['totpCode']}>
-                  <KeyboardAwareTextInput
-                    style={authStyles.pillInput}
-                    value={totpCode}
-                    onChangeText={(text) => {
-                      setTotpCode(text.replace(/\D/g, '').slice(0, 6));
-                      if (fieldErrors['totpCode']) {
-                        setFieldErrors((prev) => ({ ...prev, totpCode: '' }));
-                      }
-                    }}
-                    placeholder={t('login.totpPlaceholder')}
-                    placeholderTextColor={PALETTE.input.placeholder}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    editable={!loading}
-                  />
-                </PillField>
+                totpField
               ) : (
                 <PillField label={t('login.recoveryLabel')} error={fieldErrors['recoveryCode']}>
                   <KeyboardAwareTextInput

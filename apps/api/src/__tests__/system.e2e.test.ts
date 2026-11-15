@@ -4,6 +4,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
 import { prisma } from '../lib/prisma.js';
+import { generateTotp } from '../lib/totp.js';
 import { dispatchDueReminders } from '../services/reminders.service.js';
 import { connectAdmin, createUser, isoHoursAgo, seedChild, waitForAudit } from './helpers/world.js';
 
@@ -57,9 +58,19 @@ describe('Pruebas de sistema (NK-46)', { timeout: 90000 }, () => {
     const caregiverLogin = await request(app)
       .post('/auth/login')
       .send({ email: `cuidadora-${suffix}@nutrikids.local`, password: PASSWORD });
+    // El profesional debe dar el segundo factor (NK-10): primero activa con el secreto del QR.
+    const proEmail = `pediatra-${suffix}@nutrikids.local`;
+    const proSetup = await request(app)
+      .post('/auth/login')
+      .send({ email: proEmail, password: PASSWORD });
+    expect(proSetup.body.requiresTwoFactor).toBe(true);
     const proLogin = await request(app)
       .post('/auth/login')
-      .send({ email: `pediatra-${suffix}@nutrikids.local`, password: PASSWORD });
+      .send({
+        email: proEmail,
+        password: PASSWORD,
+        totpCode: generateTotp(proSetup.body.setup.secret as string),
+      });
     expect(caregiverLogin.status).toBe(200);
     expect(proLogin.status).toBe(200);
     const caregiver = `Bearer ${caregiverLogin.body.accessToken as string}`;

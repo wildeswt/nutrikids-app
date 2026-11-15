@@ -99,6 +99,24 @@ describe('parseEnv (variables de entorno de autenticación)', () => {
       ),
     ).toThrow();
   });
+
+  it('exige TOTP_ENCRYPTION_KEY de al menos 32 caracteres en producción (NK-10)', () => {
+    const prod = validTestEnv({
+      NODE_ENV: 'production',
+      JWT_ACCESS_SECRET: 'secreto-de-produccion-con-mas-de-32-caracteres',
+      PROFESSIONAL_INVITE_CODES: 'PROD-CODE',
+    });
+    expect(() => parseEnv(prod)).toThrow(/TOTP_ENCRYPTION_KEY/);
+    expect(() => parseEnv({ ...prod, TOTP_ENCRYPTION_KEY: 'corta' })).toThrow(
+      /TOTP_ENCRYPTION_KEY/,
+    );
+    const key = 'clave-totp-de-produccion-con-mas-de-32-caracteres';
+    expect(parseEnv({ ...prod, TOTP_ENCRYPTION_KEY: key }).TOTP_ENCRYPTION_KEY).toBe(key);
+  });
+
+  it('usa una clave TOTP de desarrollo fuera de producción', () => {
+    expect(parseEnv(validTestEnv()).TOTP_ENCRYPTION_KEY.length).toBeGreaterThanOrEqual(32);
+  });
 });
 
 describe('parseEnv (puntos de corte de clasificación, RF-08)', () => {

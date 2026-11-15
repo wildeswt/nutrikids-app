@@ -93,6 +93,8 @@ model Professional {
   totpSecretEnc        String?             @map("totp_secret_enc")
   totpEnabledAt        DateTime?           @map("totp_enabled_at") @db.Timestamptz(3)
   recoveryCodeHashes   String[]            @default([]) @map("recovery_code_hashes")
+  /// Último paso TOTP aceptado: impide reutilizar un mismo código (NK-10).
+  totpLastUsedStep     BigInt?             @map("totp_last_used_step")
 
   user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   professionalChildren ProfessionalChild[]

@@ -64,7 +64,7 @@ Los demás RT coinciden con el código: RT-03 (API REST; HTTPS depende del despl
 
 - **Coincide:** contraseñas con hash **Argon2id**, sesión con token de acceso de 15 minutos y token de renovación rotativo de 30 días, y registro de profesionales con **código de invitación** y número de registro profesional único (`docs/auth.md`).
 - **Falta en el informe:** el **límite de intentos de inicio de sesión** (5 fallidos cada 15 minutos por IP y correo, luego `429`; variables `LOGIN_MAX_ATTEMPTS` y `LOGIN_WINDOW_MINUTES`). Conviene mencionarlo porque la prueba PSEG-02 lo ejercita.
-- **No coincide:** "verificación en dos pasos para profesionales". La base de datos tiene las columnas (`totp_secret_enc`, `totp_enabled_at`, `recovery_code_hashes`) y la pantalla de inicio de sesión tiene el paso, pero la API responde siempre `requiresTwoFactor: false` (`apps/api/src/services/auth.service.ts`); no hay forma de activarla. Redactar como "prevista" o implementarla antes de la entrega.
+- **Coincide (NK-10):** "verificación en dos pasos para profesionales". Es obligatoria para toda cuenta con perfil profesional: en el primer inicio de sesión se activa con un código QR (aplicación autenticadora TOTP), el inicio de sesión no entrega tokens hasta recibir el código de 6 dígitos y se generan 10 códigos de recuperación de un solo uso. La clave TOTP se guarda cifrada con AES-256-GCM y un mismo código no puede reutilizarse (`docs/auth.md`, sección 6).
 
 ### RT-07, cifrado y pseudonimización (p. 28; Tabla 5, p. 34)
 

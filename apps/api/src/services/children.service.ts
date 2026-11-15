@@ -403,6 +403,16 @@ export async function assignProfessional(
   return withUser(auth.userId, async (tx) => {
     await assertCanManageProfessionalLinks(tx, auth, childId);
 
+    const activeConsent = await tx.consent.findFirst({
+      where: { childId, revokedAt: null },
+      select: { id: true },
+    });
+    if (!activeConsent) {
+      throw HttpError.forbidden(
+        'El niño no cuenta con un consentimiento informado vigente para vincular un profesional',
+      );
+    }
+
     const professional = await tx.professional.findUnique({
       where: { userId: input.professionalId },
       select: {
