@@ -16,7 +16,6 @@ import { font } from '../../constants/typography.js';
 import { useOptionalAuth } from '../../context/auth-context.js';
 import { useProfessionalCheckups } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
-import { useGrowthTrend } from '../../hooks/useGrowthTrend.js';
 import { useReferenceCurves } from '../../hooks/useReferenceCurves.js';
 import { formatAgeShort, formatDecimal, formatLongDate } from '../../i18n/format.js';
 import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
@@ -70,27 +69,21 @@ export default function ProfessionalChildrenScreen() {
     load: loadCheckups,
   } = useProfessionalCheckups(child?.id ?? null);
 
-  const { trends: growthTrends, load: loadGrowthTrend } = useGrowthTrend(child?.id ?? null);
-
   // Reloads when coming back (after correcting a checkup).
   useFocusEffect(
     useCallback(() => {
       void loadCheckups();
-      void loadGrowthTrend();
-    }, [loadCheckups, loadGrowthTrend]),
+    }, [loadCheckups]),
   );
 
   const activeIndicator =
     INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[0]!;
-  const activeTrend = growthTrends?.find((item) => item.indicator === activeIndicator.indicator);
-  const isFavorable = activeTrend?.trend === 'FAVORABLE';
   const latest = latestProfessionalCheckup(checkups);
   const position = curvesPositionFor(activeIndicator, latest);
 
   const reloadAfterDelete = () => {
     setSelectedCheckupId(null);
     void loadCheckups();
-    void loadGrowthTrend();
   };
 
   const curves = useReferenceCurves(
@@ -348,11 +341,6 @@ export default function ProfessionalChildrenScreen() {
                 <Text style={styles.legendText}>{t('children.legendReference')}</Text>
               </View>
             </View>
-            {isFavorable ? (
-              <Text style={styles.favorableTrendText} testID="professional-evolution-growth-trend">
-                {t('caregiver:evolution.favorableTrend')}
-              </Text>
-            ) : null}
           </View>
 
           <Text style={styles.tapPointHint}>{t('children.tapPointHint')}</Text>
@@ -366,14 +354,6 @@ export default function ProfessionalChildrenScreen() {
           <Ionicons name="shield-checkmark-outline" size={20} color={PALETTE.primary} />
           <Text style={styles.nonDiagnosticNoticeText}>{t('children.nonDiagnosticNotice')}</Text>
         </View>
-
-        {/* Resumen de la tendencia en texto */}
-        <Card style={styles.trendSummaryCard} testID="professional-evolution-trend-summary-card">
-          <Text style={styles.trendSummaryTitle}>{t('children.trendSummaryTitle')}</Text>
-          <Text style={styles.trendSummaryBody}>
-            {isFavorable ? t('children.trendSummaryFavorable') : t('children.trendSummarySteady')}
-          </Text>
-        </Card>
 
         {/* Detalle técnico completo del control seleccionado al tocar un punto */}
         <Card
@@ -685,12 +665,6 @@ const styles = StyleSheet.create({
     color: PALETTE.text.body,
     fontWeight: '500',
   },
-  favorableTrendText: {
-    fontFamily: font('semibold'),
-    fontSize: 12,
-    fontWeight: '600',
-    color: PALETTE.primary,
-  },
   tapPointHint: {
     fontFamily: font('regular'),
     fontSize: 12,
@@ -715,24 +689,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 18,
     color: PALETTE.primary,
-  },
-  trendSummaryCard: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 16,
-    gap: 4,
-  },
-  trendSummaryTitle: {
-    fontFamily: font('semibold'),
-    fontSize: 15,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-  },
-  trendSummaryBody: {
-    fontFamily: font('regular'),
-    fontSize: 14,
-    lineHeight: 20,
-    color: PALETTE.text.body,
   },
   selectedRecordCard: {
     paddingHorizontal: 20,

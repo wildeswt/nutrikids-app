@@ -26,7 +26,6 @@ import { font } from '../../constants/typography.js';
 import { useOptionalAuth } from '../../context/auth-context.js';
 import { useCheckups, type CaregiverCheckupListItem } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
-import { useGrowthTrend } from '../../hooks/useGrowthTrend.js';
 import { useReferenceCurves } from '../../hooks/useReferenceCurves.js';
 import { formatAgeShort, formatDecimal, formatLongDate } from '../../i18n/format.js';
 import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
@@ -77,28 +76,22 @@ export default function EvolutionScreen() {
     load: loadCheckups,
   } = useCheckups(child?.id ?? null);
 
-  const { trends: growthTrends, load: loadGrowthTrend } = useGrowthTrend(child?.id ?? null);
-
   // Recarga niños, controles y tendencia al enfocar la pestaña Evolución (NK-74)
   useFocusEffect(
     useCallback(() => {
       void loadChildren();
       void loadCheckups();
-      void loadGrowthTrend();
-    }, [loadChildren, loadCheckups, loadGrowthTrend]),
+    }, [loadChildren, loadCheckups]),
   );
 
   const activeIndicator =
     INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[0]!;
-  const activeTrend = growthTrends?.find((item) => item.indicator === activeIndicator.indicator);
-  const isFavorable = activeTrend?.trend === 'FAVORABLE';
   const latest = latestCheckup(checkups);
   const position = curvesPositionFor(activeIndicator, latest);
 
   const reloadAfterDelete = () => {
     setSelectedCheckupId(null);
     void loadCheckups();
-    void loadGrowthTrend();
   };
 
   // The reference curves are requested once the child has at least one checkup to plot.
@@ -398,12 +391,6 @@ export default function EvolutionScreen() {
                   {chartZoneLabels.outer}
                 </Text>
               </View>
-
-              {isFavorable ? (
-                <Text style={styles.favorableTrendText} testID="evolution-growth-trend">
-                  {t('evolution.favorableTrend')}
-                </Text>
-              ) : null}
             </View>
           </View>
 
@@ -801,12 +788,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: PALETTE.text.muted,
   },
-  favorableTrendText: {
-    fontFamily: font('semibold'),
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#2D5F5A',
-  },
   tapPointHint: {
     fontFamily: font('regular'),
     fontSize: 12,
@@ -831,24 +812,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 18,
     color: PALETTE.primary,
-  },
-  trendSummaryCard: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 16,
-    gap: 4,
-  },
-  trendSummaryTitle: {
-    fontFamily: font('semibold'),
-    fontSize: 15,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-  },
-  trendSummaryBody: {
-    fontFamily: font('regular'),
-    fontSize: 14,
-    lineHeight: 20,
-    color: PALETTE.text.body,
   },
   checkupModalCard: {
     width: '100%',

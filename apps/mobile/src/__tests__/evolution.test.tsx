@@ -161,7 +161,7 @@ describe('EvolutionScreen Growth Trend (NK-74)', () => {
     mocks.growthTrends = null;
   });
 
-  it('muestra «Tendencia favorable» SOLO cuando el indicador seleccionado tiene trend FAVORABLE', () => {
+  it('ya no muestra «Tendencia favorable» aunque el indicador tenga trend FAVORABLE', () => {
     mocks.growthTrends = [
       {
         indicator: 'WEIGHT_FOR_AGE',
@@ -183,9 +183,8 @@ describe('EvolutionScreen Growth Trend (NK-74)', () => {
 
     const html = renderToString(React.createElement(Wrapper));
 
-    expect(html.toLowerCase()).toContain('tendencia favorable');
-    const trendElement = findElementByTestId(capturedTree, 'evolution-growth-trend');
-    expect(trendElement).not.toBeNull();
+    expect(html.toLowerCase()).not.toContain('tendencia favorable');
+    expect(findElementByTestId(capturedTree, 'evolution-growth-trend')).toBeNull();
   });
 
   it('NO muestra «Tendencia favorable» cuando el indicador seleccionado tiene trend NONE', () => {
