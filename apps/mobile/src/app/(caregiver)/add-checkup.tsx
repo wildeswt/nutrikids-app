@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { CHECKUP_NOTES_MAX, type Position } from '@nutrikids/shared';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -19,6 +19,7 @@ import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useCheckups } from '../../hooks/useCheckups.js';
+import { useClearParamsOnBlur } from '../../hooks/useClearParamsOnBlur.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { formatDecimal, formatLongDate } from '../../i18n/format.js';
 import { correctChildCheckup, isConsentRequiredError } from '../../lib/checkups-api.js';
@@ -59,8 +60,20 @@ export default function AddCheckupScreen({
     heightCm?: string;
     position?: string;
     notes?: string;
+    /** Where «Volver» goes after correcting: `checkup-history` or, by default, the previous screen. */
+    returnTo?: string;
   }>();
   const correctsCheckupId = params.correctsCheckupId ?? null;
+  // Leaving the screen ends correction mode (tabs remember their params).
+  useClearParamsOnBlur([
+    'returnTo',
+    'correctsCheckupId',
+    'measuredAt',
+    'weightKg',
+    'heightCm',
+    'position',
+    'notes',
+  ]);
 
   const {
     status: childrenStatus,
@@ -96,6 +109,46 @@ export default function AddCheckupScreen({
     void loadChildren();
   }, [loadChildren]);
 
+  // The tabs keep their screens mounted: when the screen is shown with other params (correcting
+  // another checkup, or back to a new one) the form starts again from them.
+  const lastParamsKey = useRef<string | null>(null);
+  const paramsKey = [
+    params.childId,
+    params.correctsCheckupId,
+    params.measuredAt,
+    params.weightKg,
+    params.heightCm,
+    params.position,
+    params.notes,
+  ].join('|');
+  useFocusEffect(
+    useCallback(() => {
+      if (paramsKey === lastParamsKey.current) return;
+      lastParamsKey.current = paramsKey;
+      setSelectedChildId(params.childId ?? null);
+      setMeasuredDateText(
+        formatDateInput(params.measuredAt ? new Date(params.measuredAt) : new Date()),
+      );
+      setPosition(params.position === 'RECUMBENT' ? 'RECUMBENT' : 'STANDING');
+      setWeightText(params.weightKg ?? '');
+      setHeightText(params.heightCm ?? '');
+      setObservations(params.notes ?? '');
+      attemptId.current = null;
+      setErrorMessage(null);
+      setOutlierWarning(null);
+      setConfirmedOutlier(false);
+      setConsentRequired(false);
+    }, [
+      paramsKey,
+      params.childId,
+      params.measuredAt,
+      params.position,
+      params.weightKg,
+      params.heightCm,
+      params.notes,
+    ]),
+  );
+
   const selectedPositionLabel = t(`addCheckup.positions.${position}`);
 
   /** Any change to the data starts a new attempt and clears the previous messages. */
@@ -125,6 +178,14 @@ export default function AddCheckupScreen({
   };
 
   const handleBack = () => {
+    // Correcting a checkup always returns to the history it was opened from.
+    if (correctsCheckupId && params.returnTo === 'checkup-history') {
+      router.navigate({
+        pathname: APP_ROUTES.CAREGIVER.CHECKUP_HISTORY as never,
+        params: activeChild ? { childId: activeChild.id } : {},
+      });
+      return;
+    }
     if (router.canGoBack()) {
       router.back();
     } else {
@@ -199,6 +260,14 @@ export default function AddCheckupScreen({
       }
       const checkup = await create(result.input);
       attemptId.current = null;
+      // Back from «Control guardado» must not show the saved data again (it could be re-sent).
+      setMeasuredDateText(formatDateInput(new Date()));
+      setWeightText('');
+      setHeightText('');
+      setObservations('');
+      setPosition('STANDING');
+      setOutlierWarning(null);
+      setConfirmedOutlier(false);
       router.push({
         pathname: APP_ROUTES.CAREGIVER.CHECKUP_SAVED as never,
         params: toCheckupSavedParams(activeChild, checkup, {
@@ -362,13 +431,13 @@ export default function AddCheckupScreen({
 
         {/* Enlace Cambiar paciente (solo con más de un niño) y Ver historial */}
         <View style={[styles.linksRow, children.length <= 1 && styles.linksRowSingle]}>
-          {/* El historial de comidas es del cuidador; el profesional solo cambia de paciente. */}
-          {!isProfessional ? (
+          {/* El historial de controles es del cuidador; el profesional ve los controles en Evolución. */}
+          {!isProfessional && !correctsCheckupId ? (
             <Pressable
               style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
               onPress={() =>
                 router.push({
-                  pathname: APP_ROUTES.CAREGIVER.FEEDING_HISTORY as never,
+                  pathname: APP_ROUTES.CAREGIVER.CHECKUP_HISTORY as never,
                   params: { childId: activeChild.id },
                 })
               }

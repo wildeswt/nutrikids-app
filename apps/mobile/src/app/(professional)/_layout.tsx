@@ -84,6 +84,8 @@ export default function ProfessionalDrawerLayout() {
   return (
     <ConnectionBarLayout role={USER_ROLES.PROFESSIONAL}>
       <Drawer
+        // «Atrás» (botón del teléfono o router.back) vuelve a la pantalla anterior, no a la primera.
+        backBehavior="history"
         defaultStatus="closed"
         drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{

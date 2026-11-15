@@ -22,6 +22,7 @@ export const APP_ROUTES = {
     CHECKUP_SAVED: '/(caregiver)/checkup-saved' as const,
     FEEDING: '/(caregiver)/feeding' as const,
     FEEDING_HISTORY: '/(caregiver)/feeding-history' as const,
+    CHECKUP_HISTORY: '/(caregiver)/checkup-history' as const,
     MESSAGES: '/(caregiver)/messages' as const,
     CHAT_DETAIL: '/(caregiver)/chat-detail' as const,
     PROFILE: '/(caregiver)/profile' as const,

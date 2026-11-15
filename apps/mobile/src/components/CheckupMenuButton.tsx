@@ -29,11 +29,14 @@ export function CheckupMenuButton({
   checkup,
   roleMode,
   onDeleted,
+  returnTo,
   testID = 'checkup-menu-button',
 }: {
   checkup: CheckupMenuTarget;
   roleMode: CheckupRoleMode;
   onDeleted: () => void;
+  /** Screen to return to after correcting; by default the previous one in the history. */
+  returnTo?: 'checkup-history';
   testID?: string;
 }) {
   const { t } = useTranslation(['caregiver', 'common']);
@@ -57,6 +60,7 @@ export function CheckupMenuButton({
         heightCm: String(checkup.lengthHeightCm),
         position: checkup.position,
         notes: checkup.notes ?? '',
+        ...(returnTo ? { returnTo } : {}),
       },
     });
   };

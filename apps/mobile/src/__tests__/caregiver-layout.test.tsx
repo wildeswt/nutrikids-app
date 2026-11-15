@@ -119,6 +119,7 @@ describe('CaregiverTabsLayout', () => {
       'edit-child',
       'privacy',
       'my-children',
+      'checkup-history',
       'feeding-history',
       'pending-sync',
     ]);
@@ -140,6 +141,7 @@ describe('CaregiverTabsLayout', () => {
       'edit-child',
       'privacy',
       'my-children',
+      'checkup-history',
       'feeding-history',
       'pending-sync',
     ]) {
