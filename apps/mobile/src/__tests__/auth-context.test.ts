@@ -174,7 +174,7 @@ describe('auth-context', () => {
     expect(mockRegisterPushNotifications).toHaveBeenCalled();
   });
 
-  it('does NOT register push token when caregiver user signs in', async () => {
+  it('registers the push token when a caregiver signs in', async () => {
     mockRegisterPushNotifications.mockClear();
 
     let authContext!: AuthContextValue;
@@ -202,7 +202,7 @@ describe('auth-context', () => {
       });
     });
 
-    expect(mockRegisterPushNotifications).not.toHaveBeenCalled();
+    expect(mockRegisterPushNotifications).toHaveBeenCalled();
   });
 
   it('calls unregisterPushNotifications during signOut before session is wiped', async () => {
