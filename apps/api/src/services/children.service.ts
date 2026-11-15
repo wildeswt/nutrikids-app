@@ -491,7 +491,8 @@ export async function endProfessionalAssignment(
       throw HttpError.notFound('No existe un vínculo vigente con ese profesional para este niño');
     }
 
-    if (endDate < assignment.startDate) {
+    // Un día antes del inicio se permite: cierra un vínculo creado hoy sin dejarlo vigente hoy.
+    if (endDate.getTime() < assignment.startDate.getTime() - 86_400_000) {
       throw HttpError.badRequest(
         'La fecha de fin no puede ser anterior a la fecha de inicio del vínculo',
       );
