@@ -96,12 +96,16 @@
     "noCheckupsSubtitle": "Aún no existen mediciones antropométricas para graficar.",
     "classifications": {
       "SEVERE_UNDERWEIGHT": "Bajo peso grave (< −3 DE)",
+      "UNDERWEIGHT": "Bajo peso (−3 a −2 DE)",
       "MODERATE_UNDERWEIGHT": "Bajo peso moderado (−3 a −2 DE)",
       "SEVERE_STUNTING": "Talla baja severa (< −3 DE)",
+      "STUNTING": "Talla baja (−3 a −2 DE)",
       "MODERATE_STUNTING": "Talla baja moderada (−3 a −2 DE)",
       "SEVERE_WASTING": "Emaciación grave (< −3 DE)",
+      "WASTING": "Emaciación (−3 a −2 DE)",
       "MODERATE_WASTING": "Emaciación moderada (−3 a −2 DE)",
       "NORMAL": "Adecuado (−2 a +2 DE)",
+      "OVERWEIGHT_RISK": "Riesgo de sobrepeso (+1 a +2 DE)",
       "POSSIBLE_RISK_OVERWEIGHT": "Posible riesgo de sobrepeso (+1 a +2 DE)",
       "OVERWEIGHT": "Sobrepeso (+2 a +3 DE)",
       "OBESITY": "Obesidad (> +3 DE)"
