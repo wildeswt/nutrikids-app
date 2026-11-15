@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ChildResponse } from '@nutrikids/shared';
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { PALETTE } from '../constants/colors.js';
 import { RADIUS_PILL, SCREEN_MARGIN } from '../constants/layout.js';
 import { font } from '../constants/typography.js';
@@ -134,12 +134,11 @@ export function SelectChildModal({
           </View>
 
           {/* List of children */}
-          <FlatList
-            data={filteredChildren}
-            keyExtractor={(item) => item.id}
+          <ScrollView
             contentContainerStyle={styles.listContent}
             keyboardShouldPersistTaps="handled"
-            ListEmptyComponent={
+          >
+            {filteredChildren.length === 0 ? (
               <View style={styles.emptyContainer} testID="select-child-empty">
                 <Ionicons name="search" size={32} color={PALETTE.input.placeholder} />
                 <Text style={styles.emptyText}>
@@ -148,51 +147,53 @@ export function SelectChildModal({
                   })}
                 </Text>
               </View>
-            }
-            renderItem={({ item }) => {
-              const isSelected = item.id === selectedChildId;
-              const fullName = `${item.firstName} ${item.lastName}`.trim();
-              const ageLabel = formatChildAge(item.birthDate);
-              const birthDateLabel = formatLongDate(item.birthDate);
+            ) : (
+              filteredChildren.map((item) => {
+                const isSelected = item.id === selectedChildId;
+                const fullName = `${item.firstName} ${item.lastName}`.trim();
+                const ageLabel = formatChildAge(item.birthDate);
+                const birthDateLabel = formatLongDate(item.birthDate);
 
-              return (
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.itemRow,
-                    isSelected && styles.itemRowSelected,
-                    pressed && styles.pressed,
-                  ]}
-                  onPress={() => handleSelect(item)}
-                  accessibilityRole="button"
-                  testID={`select-child-item-${item.id}`}
-                >
-                  <View style={styles.itemInfo}>
-                    <View style={styles.nameRow}>
-                      <Text style={styles.itemTitle}>{fullName}</Text>
-                      {isSelected ? (
-                        <View style={styles.selectedBadge} testID={`selected-badge-${item.id}`}>
-                          <Ionicons name="checkmark" size={12} color={LOCAL_COLORS.white} />
-                          <Text style={styles.selectedBadgeText}>
-                            {t('caregiver:addCheckup.searchModal.current', {
-                              defaultValue: 'Actual',
-                            })}
-                          </Text>
-                        </View>
-                      ) : null}
+                return (
+                  <Pressable
+                    key={item.id}
+                    style={({ pressed }) => [
+                      styles.itemRow,
+                      isSelected && styles.itemRowSelected,
+                      pressed && styles.pressed,
+                    ]}
+                    onPress={() => handleSelect(item)}
+                    accessibilityRole="button"
+                    testID={`select-child-item-${item.id}`}
+                  >
+                    <View style={styles.itemInfo}>
+                      <View style={styles.nameRow}>
+                        <Text style={styles.itemTitle}>{fullName}</Text>
+                        {isSelected ? (
+                          <View style={styles.selectedBadge} testID={`selected-badge-${item.id}`}>
+                            <Ionicons name="checkmark" size={12} color={LOCAL_COLORS.white} />
+                            <Text style={styles.selectedBadgeText}>
+                              {t('caregiver:addCheckup.searchModal.current', {
+                                defaultValue: 'Actual',
+                              })}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text style={styles.itemSubtitle}>
+                        {ageLabel} · {birthDateLabel}
+                      </Text>
                     </View>
-                    <Text style={styles.itemSubtitle}>
-                      {ageLabel} · {birthDateLabel}
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name={isSelected ? 'checkmark-circle' : 'chevron-forward'}
-                    size={20}
-                    color={isSelected ? PALETTE.primary : PALETTE.text.muted}
-                  />
-                </Pressable>
-              );
-            }}
-          />
+                    <Ionicons
+                      name={isSelected ? 'checkmark-circle' : 'chevron-forward'}
+                      size={20}
+                      color={isSelected ? PALETTE.primary : PALETTE.text.muted}
+                    />
+                  </Pressable>
+                );
+              })
+            )}
+          </ScrollView>
         </View>
       </View>
     </Modal>
