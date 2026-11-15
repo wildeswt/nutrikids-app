@@ -237,8 +237,7 @@ describe('Pendientes de envío común y perfil profesional (NK-62B)', () => {
 
   it('perfil profesional muestra su registro profesional', () => {
     const { html } = renderScreen(ProfessionalProfileScreen);
-    expect(html).toContain('Registro profesional:');
-    expect(html).toContain('MPPS-12345');
+    expect(html).toContain('Registro MPPS-12345');
   });
 
   it('perfil profesional muestra «Pendientes de envío (N)» solo si N > 0 o hay errores y navega a pendientes', () => {

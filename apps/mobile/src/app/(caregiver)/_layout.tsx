@@ -286,6 +286,17 @@ export default function CaregiverTabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="checkup-history"
+          options={{
+            title: t('tabs.checkupHistory'),
+            headerTitle: t('tabs.checkupHistoryHeader'),
+            headerShown: false,
+            tabBarStyle: { display: 'none' },
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
+          }}
+        />
+        <Tabs.Screen
           name="pending-sync"
           options={{
             title: t('tabs.pendingSync'),

@@ -121,6 +121,7 @@ describe('CaregiverTabsLayout', () => {
       'my-children',
       'checkup-history',
       'feeding-history',
+      'checkup-history',
       'pending-sync',
     ]);
 
@@ -143,6 +144,7 @@ describe('CaregiverTabsLayout', () => {
       'my-children',
       'checkup-history',
       'feeding-history',
+      'checkup-history',
       'pending-sync',
     ]) {
       const screen = screens.find((s) => s.props.name === name);

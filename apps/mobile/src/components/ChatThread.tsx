@@ -63,7 +63,7 @@ export function ChatThread({
   participantName,
   participantRole,
   participantSpecialty,
-  childFirstName,
+  childFirstName: _childFirstName,
   childFullName,
   fallbackRoute,
 }: ChatThreadProps) {

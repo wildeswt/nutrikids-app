@@ -11,6 +11,7 @@ import {
   KeyboardAwareTextInput,
 } from '../../components/KeyboardAwareScrollView.js';
 import { ChildBanner } from '../../components/ChildBanner.js';
+import { SelectChildModal } from '../../components/SelectChildModal.js';
 import { PillField } from '../../components/ui/PillField.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
@@ -101,6 +102,7 @@ export default function AddCheckupScreen({
   const [outlierWarning, setOutlierWarning] = useState<string | null>(null);
   const [confirmedOutlier, setConfirmedOutlier] = useState(false);
   const [consentRequired, setConsentRequired] = useState(false);
+  const [selectModalVisible, setSelectModalVisible] = useState(false);
   const [correcting, setCorrecting] = useState(false);
   /** Same id for every retry of the same data, so a lost response never duplicates the checkup. */
   const attemptId = useRef<string | null>(null);
@@ -197,9 +199,13 @@ export default function AddCheckupScreen({
 
   const handleSwitchPatient = () => {
     if (!activeChild || children.length < 2) return;
-    const index = children.findIndex((child) => child.id === activeChild.id);
-    setSelectedChildId(children[(index + 1) % children.length]!.id);
+    setSelectModalVisible(true);
+  };
+
+  const handleSelectChild = (child: (typeof children)[number]) => {
+    setSelectedChildId(child.id);
     resetAttempt();
+    setSelectModalVisible(false);
   };
 
   const handleGoToConsent = () => {
@@ -420,35 +426,40 @@ export default function AddCheckupScreen({
       <KeyboardAwareScrollView contentContainerStyle={styles.scrollContent}>
         {header}
 
-        {/* Banner naranja del paciente activo */}
+        {/* Banner naranja del paciente activo con Ver historial adentro */}
         <ChildBanner
           name={`${activeChild.firstName} ${activeChild.lastName}`}
           subtitle={t('addCheckup.childSubtitle', {
             age: formatChildAge(activeChild.birthDate),
             birthDate: formatLongDate(activeChild.birthDate),
           })}
-        />
-
-        {/* Enlace Cambiar paciente (solo con más de un niño) y Ver historial */}
-        <View style={[styles.linksRow, children.length <= 1 && styles.linksRowSingle]}>
-          {/* El historial de controles es del cuidador; el profesional ve los controles en Evolución. */}
-          {!isProfessional && !correctsCheckupId ? (
-            <Pressable
-              style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
-              onPress={() =>
-                router.push({
-                  pathname: APP_ROUTES.CAREGIVER.CHECKUP_HISTORY as never,
-                  params: { childId: activeChild.id },
-                })
-              }
-              accessibilityRole="button"
-              accessibilityLabel={t('addCheckup.seeHistory')}
-              testID="checkup-see-history"
-            >
-              <Text style={styles.changePatientText}>{t('addCheckup.seeHistory')}</Text>
-            </Pressable>
+        >
+          {!correctsCheckupId ? (
+            <View style={styles.bannerActionsRow}>
+              <Pressable
+                style={({ pressed }) => [styles.bannerActionBtn, pressed && styles.pressed]}
+                onPress={() =>
+                  router.push({
+                    pathname: (isProfessional
+                      ? APP_ROUTES.PROFESSIONAL.CHECKUP_HISTORY
+                      : APP_ROUTES.CAREGIVER.CHECKUP_HISTORY) as never,
+                    params: { childId: activeChild.id },
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityLabel={t('addCheckup.seeHistory')}
+                testID="checkup-see-history"
+              >
+                <Ionicons name="time-outline" size={15} color="#FFFFFF" />
+                <Text style={styles.bannerActionText}>{t('addCheckup.seeHistory')}</Text>
+              </Pressable>
+            </View>
           ) : null}
-          {children.length > 1 ? (
+        </ChildBanner>
+
+        {/* Enlace Cambiar paciente (solo con más de un niño y fuera de corrección) */}
+        {children.length > 1 && !correctsCheckupId ? (
+          <View style={styles.changePatientRow}>
             <Pressable
               style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
               onPress={handleSwitchPatient}
@@ -466,8 +477,10 @@ export default function AddCheckupScreen({
                   : t('addCheckup.changeChild')}
               </Text>
             </Pressable>
-          ) : null}
-        </View>
+          </View>
+        ) : (
+          <View style={styles.bannerBottomSpacer} />
+        )}
 
         {/* Mensajes de error o confirmación de valor atípico */}
         {errorMessage ? (
@@ -754,6 +767,18 @@ export default function AddCheckupScreen({
           style={styles.submitButton}
         />
       </KeyboardAwareScrollView>
+
+      {activeChild ? (
+        <SelectChildModal
+          visible={selectModalVisible}
+          childrenList={children}
+          selectedChildId={activeChild.id}
+          onSelect={handleSelectChild}
+          onClose={() => setSelectModalVisible(false)}
+          isProfessional={isProfessional}
+          testID="select-child-modal"
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -773,15 +798,35 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 18,
   },
-  linksRow: {
+  bannerActionsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 18,
-  },
-  linksRowSingle: {
     justifyContent: 'flex-end',
+    marginTop: 8,
+  },
+  bannerActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: RADIUS_PILL,
+  },
+  bannerActionText: {
+    fontFamily: font('semibold'),
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textDecorationLine: 'underline',
+  },
+  changePatientRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  bannerBottomSpacer: {
+    height: 16,
   },
   linkButton: {
     paddingVertical: 2,

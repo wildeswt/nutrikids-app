@@ -50,6 +50,7 @@ export const APP_ROUTES = {
     REFERRAL: '/(professional)/referral' as const,
     CHILDREN: '/(professional)/children' as const,
     EVOLUTION: '/(professional)/evolution' as const,
+    CHECKUP_HISTORY: '/(professional)/checkup-history' as const,
     ADD_CHECKUP: '/(professional)/add-checkup' as const,
     MESSAGES: '/(professional)/messages' as const,
     CHAT_DETAIL: '/(professional)/chat-detail' as const,

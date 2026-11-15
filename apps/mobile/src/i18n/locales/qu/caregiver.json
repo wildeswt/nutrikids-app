@@ -42,11 +42,12 @@
     "linkProfessionalHeader": "Vincular profesional",
     "feedingHistory": "Historial de comidas",
     "feedingHistoryHeader": "Historial de comidas",
+    "checkupHistory": "Kamaykuna wiñay",
+    "checkupHistoryHeader": "Kamaykuna wiñay",
     "childRegistered": "Niño registrado",
     "childRegisteredHeader": "Niño registrado",
     "childProfessionals": "Profesionales del niño",
-    "childProfessionalsHeader": "Profesionales del niño",
-    "checkupHistory": "Historial de controles"
+    "childProfessionalsHeader": "Profesionales del niño"
   },
   "home": {
     "notifications": "Yuyachikkuna",
@@ -132,6 +133,12 @@
     "title": "Mushuk kamayta killkay",
     "childSubtitle": "{{age}}",
     "changeChild": "Shuk wawata akllay",
+    "searchModal": {
+      "titleChild": "Wawata akllay",
+      "searchPlaceholder": "Shutita mashkay...",
+      "emptySearch": "Mana imapash tarikunchu kay shutiwan.",
+      "current": "Kunan"
+    },
     "dateLabel": "Kamay puncha",
     "datePlaceholder": "Shina: {{example}}",
     "openDatePicker": "Abrir selector de fecha",
@@ -242,6 +249,39 @@
     "openDetailA11y": "Ver el detalle del {{date}}",
     "subtitle_one": "Últimos {{days}} días · {{count}} registro",
     "subtitle_other": "Últimos {{days}} días · {{count}} registros"
+  },
+  "checkupHistory": {
+    "title": "Kamaykuna wiñay",
+    "subtitle_one": "{{count}} kamay killkashka",
+    "subtitle_other": "{{count}} kamaykuna killkashka",
+    "subtitle": "{{count}} kamaykuna killkashka",
+    "subtitleLoading": "Kamaykunata apamukun...",
+    "loading": "Wiñayta apamukun...",
+    "loadError": "Mana kamaykunata hapita usharkanchu.",
+    "retry": "Kutishpa ruray",
+    "emptyTitle": "Mana kamaykuna kanchu",
+    "emptySubtitle": "Kamaykunata killkashpaka, kaypimi rikurinka.",
+    "emptyFilterTitle": "Mana kaypi kamaykuna kanchu",
+    "emptyFilterSubtitle": "Shuk akllayta ruray shuk kamaykunata rikunkapak.",
+    "register": "Mushuk kamayta killkay",
+    "weightLabel": "Llasak",
+    "heightLabel": "Suniy",
+    "recordedBy": "Killkak: {{name}}",
+    "recordedByCaregiver": "Killkak: Rikuk",
+    "positionStanding": "Shayashka",
+    "positionRecumbent": "Siririshka",
+    "statusOk": "Allillami",
+    "notesLabel": "Yachaykuna:",
+    "corrected": "Allichishka",
+    "filters": {
+      "ALL": "Tukuy ({{count}})",
+      "PROFESSIONAL": "Hampik",
+      "CAREGIVER": "Rikuk"
+    },
+    "origin": {
+      "PROFESSIONAL": "Hampik",
+      "CAREGIVER": "Rikuk"
+    }
   },
   "checkupSaved": {
     "title": "¡Kamayka wakaychishkami!",
@@ -774,16 +814,5 @@
     "correctTitle": "Corregir control",
     "menuA11y": "Más opciones del control",
     "menuTitle": "Control"
-  },
-  "checkupHistory": {
-    "title": "Historial de controles",
-    "loading": "Cargando los controles...",
-    "loadError": "No pudimos cargar el historial de controles.",
-    "retry": "Intentar de nuevo",
-    "emptyTitle": "Aún no hay controles",
-    "emptySubtitle": "Cuando anotes un control de tu niño, lo verás aquí.",
-    "register": "Anotar un control",
-    "subtitle_one": "{{count}} control",
-    "subtitle_other": "{{count}} controles"
   }
 }

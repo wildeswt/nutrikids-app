@@ -1,8 +1,10 @@
 import {
+  CaregiverAssignmentResponseSchema,
   ChildResponseSchema,
   CreateChildInputSchema,
   completedMonths,
   todayIsoDate,
+  type CaregiverAssignmentResponse,
   type ChildResponse,
   type CreateChildInput,
 } from '@nutrikids/shared';
@@ -87,4 +89,22 @@ export async function fetchChild(childId: string): Promise<ChildResponse> {
 
   const rawJson: unknown = await response.json();
   return ChildResponseSchema.parse(rawJson);
+}
+
+/** Linked caregivers for a child (`GET /children/:childId/caregivers`). */
+export async function fetchChildCaregivers(
+  childId: string,
+): Promise<CaregiverAssignmentResponse[]> {
+  const response = await authFetch(`/children/${encodeURIComponent(childId)}/caregivers`);
+
+  if (!response.ok) {
+    const payload: unknown = await response.json().catch(() => ({}));
+    throw new ChildApiError(
+      parseApiError(payload, i18n.t('errors:children.fetch')).message,
+      response.status,
+    );
+  }
+
+  const rawJson: unknown = await response.json();
+  return z.array(CaregiverAssignmentResponseSchema).parse(rawJson);
 }
