@@ -243,6 +243,8 @@ model FeedingLog {
   logDate              DateTime            @map("log_date") @db.Date
   mealsPerDay          Int?                @map("meals_per_day") @db.SmallInt
   details              String?             @map("details")
+  /// Eliminación lógica: RLS oculta el registro.
+  deletedAt            DateTime?           @map("deleted_at") @db.Timestamptz(3)
 
   child                Child               @relation(fields: [childId], references: [id], onDelete: Cascade)
 

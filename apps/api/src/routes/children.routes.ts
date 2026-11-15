@@ -4,6 +4,7 @@ import {
   CreateCheckupInputSchema,
   CreateChildInputSchema,
   CreateFeedingLogInputSchema,
+  UpdateFeedingLogInputSchema,
   CreateFollowUpBatchInputSchema,
   CreateFollowUpInputSchema,
   EndProfessionalAssignmentInputSchema,
@@ -16,6 +17,7 @@ import {
   type CreateCheckupInput,
   type CreateChildInput,
   type CreateFeedingLogInput,
+  type UpdateFeedingLogInput,
   type CreateFollowUpBatchInput,
   type CreateFollowUpInput,
   type EndProfessionalAssignmentInput,
@@ -50,7 +52,12 @@ import {
   revokeConsent,
   updateCaregiverLink,
 } from '../services/children.service.js';
-import { createFeedingLog, listFeedingLogs } from '../services/feedingLogs.service.js';
+import {
+  createFeedingLog,
+  deleteFeedingLog,
+  listFeedingLogs,
+  updateFeedingLog,
+} from '../services/feedingLogs.service.js';
 import { logAuditEvent } from '../services/audit.service.js';
 import { createFollowUp, createFollowUpBatch } from '../services/followUps.service.js';
 import { getGrowthTrend } from '../services/growthTrend.service.js';
@@ -60,6 +67,10 @@ const ChildProfessionalParamsSchema = z.object({
   professionalId: UuidSchema,
 });
 
+const ChildFeedingLogParamsSchema = z.object({
+  childId: UuidSchema,
+  logId: UuidSchema,
+});
 const ChildCaregiverParamsSchema = z.object({
   childId: UuidSchema,
   caregiverId: UuidSchema,
@@ -463,6 +474,52 @@ export function createChildrenRouter(): Router {
       );
       res.locals.auditEntityId = feedingLog.id;
       res.status(created ? 201 : 200).json(feedingLog);
+    },
+  );
+
+  /**
+   * PATCH /children/:childId/feeding-logs/:logId
+   * Edita un registro de alimentación (día, comidas y detalle). Requiere vínculo y consentimiento.
+   */
+  router.patch(
+    '/:childId/feeding-logs/:logId',
+    requirePermission('feedinglog:create'),
+    requireLink('childId'),
+    requireActiveConsent('childId'),
+    validateRequest({ params: ChildFeedingLogParamsSchema, body: UpdateFeedingLogInputSchema }),
+    auditHealth({
+      action: 'UPDATE',
+      entityType: 'feeding_logs',
+      getEntityId: (req) => req.params.logId as string,
+    }),
+    async (req, res) => {
+      const log = await updateFeedingLog(
+        req.auth!,
+        req.params.childId as string,
+        req.params.logId as string,
+        req.body as UpdateFeedingLogInput,
+      );
+      res.status(200).json(log);
+    },
+  );
+
+  /**
+   * DELETE /children/:childId/feeding-logs/:logId
+   * Eliminación lógica: el registro deja de verse pero queda en la base de datos.
+   */
+  router.delete(
+    '/:childId/feeding-logs/:logId',
+    requirePermission('feedinglog:create'),
+    requireLink('childId'),
+    validateRequest({ params: ChildFeedingLogParamsSchema }),
+    auditHealth({
+      action: 'DELETE',
+      entityType: 'feeding_logs',
+      getEntityId: (req) => req.params.logId as string,
+    }),
+    async (req, res) => {
+      await deleteFeedingLog(req.auth!, req.params.childId as string, req.params.logId as string);
+      res.status(204).end();
     },
   );
 

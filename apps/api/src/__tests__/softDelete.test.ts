@@ -182,4 +182,48 @@ describe('Eliminación lógica de controles y niños', { timeout: 60000 }, () =>
     const { rows } = await admin.query(`SELECT deleted_at FROM children WHERE id = $1`, [childId]);
     expect(rows[0].deleted_at).not.toBeNull();
   });
+  async function seedFeedingLog(childId: string) {
+    const id = crypto.randomUUID();
+    await admin.query(
+      `INSERT INTO feeding_logs (id, child_id, log_date, meals_per_day, details)
+       VALUES ($1, $2, CURRENT_DATE, 3, 'Comidas: Desayuno.')`,
+      [id, childId],
+    );
+    return id;
+  }
+
+  it('PATCH y DELETE /children/:id/feeding-logs/:logId editan y eliminan (lógico) el registro', async () => {
+    const rep = await createCaregiver();
+    const childId = await seedChild(rep);
+    const logId = await seedFeedingLog(childId);
+    const url = `/children/${childId}/feeding-logs/${logId}`;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const edited = await request(app)
+      .patch(url)
+      .set('Authorization', rep.auth)
+      .send({ logDate: today, mealsPerDay: 5, details: 'Comidas: Desayuno, Cena.' });
+    expect(edited.status).toBe(200);
+    expect(edited.body).toMatchObject({ id: logId, mealsPerDay: 5 });
+
+    const bad = await request(app)
+      .patch(url)
+      .set('Authorization', rep.auth)
+      .send({ logDate: '2999-01-01', mealsPerDay: 5 });
+    expect(bad.status).toBe(400);
+
+    const removed = await request(app).delete(url).set('Authorization', rep.auth);
+    expect(removed.status).toBe(204);
+
+    const list = await request(app)
+      .get(`/children/${childId}/feeding-logs`)
+      .set('Authorization', rep.auth);
+    expect(list.body).toEqual([]);
+    const { rows } = await admin.query(`SELECT deleted_at FROM feeding_logs WHERE id = $1`, [
+      logId,
+    ]);
+    expect(rows[0].deleted_at).not.toBeNull();
+
+    expect((await request(app).delete(url).set('Authorization', rep.auth)).status).toBe(404);
+  });
 });
