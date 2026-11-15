@@ -210,11 +210,11 @@
     "errors": {
       "invalid": "Revisa los datos de la alimentación e intenta de nuevo."
     },
-    "editTitle": "Editar alimentación"
+    "editTitle": "Editar alimentación",
+    "mealsDayLabel": "Comidas del día"
   },
   "feedingHistory": {
     "title": "Historial de comidas",
-    "subtitle": "Últimos {{days}} días · {{count}} registros",
     "subtitleLoading": "Últimos {{days}} días",
     "today": "Hoy · {{date}}",
     "yesterday": "Ayer · {{date}}",
@@ -239,7 +239,9 @@
     "detailNotes": "Notas",
     "detailNoMeals": "Sin comidas marcadas",
     "detailClose": "Cerrar",
-    "openDetailA11y": "Ver el detalle del {{date}}"
+    "openDetailA11y": "Ver el detalle del {{date}}",
+    "subtitle_one": "Últimos {{days}} días · {{count}} registro",
+    "subtitle_other": "Últimos {{days}} días · {{count}} registros"
   },
   "checkupSaved": {
     "title": "¡Control guardado!",
@@ -295,10 +297,6 @@
     "nonDiagnosticNotice": "Esta gráfica apoya la valoración del crecimiento y no es un diagnóstico médico.",
     "tapPointHint": "Toca cualquier punto de la curva para ver el detalle de ese control.",
     "selectedRecordTitle": "Detalle del control seleccionado",
-    "trendSummaryTitle": "Resumen del crecimiento",
-    "trendSummaryFavorable": "La evolución reciente muestra una tendencia favorable en este indicador.",
-    "trendSummarySteady": "Seguimos acompañando el crecimiento registrado en cada control.",
-    "favorableTrend": "Tendencia favorable",
     "lastRecordTitle": "Último control",
     "lastRecord": "Último control - {{date}}",
     "weight": "Peso",
@@ -337,8 +335,7 @@
     "filterAllA11y": "Ver todos los mensajes",
     "filterUnread": "Sin leer ({{count}})",
     "filterUnreadA11y": "Ver mensajes sin leer",
-    "childTeam": "Equipo de {{name}}",
-    "teamSubtitle": "{{specialty}} · {{professional}}",
+    "teamSubtitle": "{{specialty}} · {{child}}",
     "healthCenter": "Centro de salud",
     "healthCenterSubtitle": "Atención al usuario",
     "threadA11y": "Mensaje de {{title}}",
@@ -366,7 +363,6 @@
   },
   "chat": {
     "back": "Volver",
-    "title": "Equipo de {{name}}",
     "titleFallback": "Conversación",
     "professional": "{{name}} · {{specialty}}",
     "about": "Sobre {{name}}",
@@ -526,8 +522,6 @@
       "completed": "Realizado"
     },
     "notifications": {
-      "enabled": "Notificaciones activadas",
-      "enabledHint": "Te avisaremos antes de cada cita.",
       "disabled": "Notificaciones desactivadas",
       "disabledHint": "Actívalas para que te avisemos antes de cada cita.",
       "unavailable": "En este dispositivo no podemos revisar las notificaciones.",
@@ -793,12 +787,13 @@
   },
   "checkupHistory": {
     "title": "Historial de controles",
-    "subtitle": "{{count}} controles",
     "loading": "Cargando los controles...",
     "loadError": "No pudimos cargar el historial de controles.",
     "retry": "Intentar de nuevo",
     "emptyTitle": "Aún no hay controles",
     "emptySubtitle": "Cuando anotes un control de tu niño, lo verás aquí.",
-    "register": "Anotar un control"
+    "register": "Anotar un control",
+    "subtitle_one": "{{count}} control",
+    "subtitle_other": "{{count}} controles"
   }
 }
