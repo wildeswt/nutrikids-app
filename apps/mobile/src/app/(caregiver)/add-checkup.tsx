@@ -283,7 +283,7 @@ export default function AddCheckupScreen() {
             style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
             onPress={() =>
               router.push({
-                pathname: APP_ROUTES.CAREGIVER.EVOLUTION as never,
+                pathname: APP_ROUTES.CAREGIVER.FEEDING_HISTORY as never,
                 params: { childId: activeChild.id },
               })
             }
