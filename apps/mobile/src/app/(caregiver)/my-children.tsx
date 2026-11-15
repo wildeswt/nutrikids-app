@@ -52,7 +52,10 @@ export default function MyChildrenScreen() {
 
   const handleSelectChild = (childId: string) => {
     setActiveChildId(childId);
-    handleBack();
+    router.push({
+      pathname: APP_ROUTES.CAREGIVER.EVOLUTION as never,
+      params: { childId },
+    });
   };
 
   const handleAddChild = () => {

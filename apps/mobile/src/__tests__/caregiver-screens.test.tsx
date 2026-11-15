@@ -455,7 +455,7 @@ describe('Caregiver Screens (NK-21 / NK-66)', () => {
       expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.ADD_CHILD);
     });
 
-    it('sets the selected child as active and returns to Home when tapped', () => {
+    it('sets the selected child as active and navigates to EVOLUTION when tapped', () => {
       mocks.childrenHookState = {
         ...mocks.childrenHookState,
         status: 'ready',
@@ -473,7 +473,10 @@ describe('Caregiver Screens (NK-21 / NK-66)', () => {
       expect(valentinaCard).not.toBeNull();
       (valentinaCard?.props?.['onPress'] as (() => void) | undefined)?.();
 
-      expect(mocks.back).toHaveBeenCalled();
+      expect(mocks.push).toHaveBeenCalledWith({
+        pathname: APP_ROUTES.CAREGIVER.EVOLUTION,
+        params: { childId: VALENTINA.id },
+      });
 
       // Home now shows Valentina as the active child
       const homeHtml = renderToString(React.createElement(CaregiverHomeScreen));
