@@ -6,6 +6,7 @@ import { createApp } from '../app.js';
 import { env } from '../config/env.js';
 import { prisma, withUser } from '../lib/prisma.js';
 import { runErasureRequests } from '../services/dataRights.service.js';
+import { encryptChildNames, encryptPhone, encryptUserNames } from '../services/pii.service.js';
 import { signAccessToken } from '../services/token.service.js';
 
 const adminConnectionString = env.DIRECT_URL ?? env.DATABASE_URL;
@@ -34,14 +35,19 @@ describe('Mensajes y derivaciones (NK-38)', { timeout: 60000 }, () => {
     specialty: 'pediatrics' | 'nutrition' | 'nursing' = 'pediatrics',
   ): Promise<TestUser> {
     const userId = crypto.randomUUID();
+    const names = encryptUserNames({
+      firstName: 'Ana',
+      lastName: role === 'CAREGIVER' ? 'Cuidadora' : 'Doctora',
+    });
     await admin.query(
       `INSERT INTO users (id, email, password_hash, first_name, last_name, status, updated_at)
-       VALUES ($1, $2, 'hash', 'Ana', $3, 'active', now())`,
-      [userId, `msg-${userId}@nutrikids.local`, role === 'CAREGIVER' ? 'Cuidadora' : 'Doctora'],
+       VALUES ($1, $2, 'hash', $3, $4, 'active', now())`,
+      [userId, `msg-${userId}@nutrikids.local`, names.firstNameEnc, names.lastNameEnc],
     );
     if (role === 'CAREGIVER') {
-      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, '+593990000')`, [
+      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, $2)`, [
         userId,
+        encryptPhone('+593990000'),
       ]);
     } else {
       await admin.query(
@@ -59,10 +65,11 @@ describe('Mensajes y derivaciones (NK-38)', { timeout: 60000 }, () => {
 
   async function seedChild(caregiverId: string, withConsent = true): Promise<string> {
     const childId = crypto.randomUUID();
+    const childNames = encryptChildNames({ firstName: 'Mateo', lastName: 'Mensajes' });
     await admin.query(
       `INSERT INTO children (id, first_name, last_name, birth_date, sex)
-       VALUES ($1, 'Mateo', 'Mensajes', CURRENT_DATE - 900, 'MALE')`,
-      [childId],
+       VALUES ($1, $2, $3, CURRENT_DATE - 900, 'MALE')`,
+      [childId, childNames.firstNameEnc, childNames.lastNameEnc],
     );
     await admin.query(
       `INSERT INTO caregiver_children (caregiver_id, child_id, relationship, is_legal_representative)

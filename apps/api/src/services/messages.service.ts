@@ -20,6 +20,7 @@ import { HttpError } from '../lib/http-error.js';
 import type { AuthContext } from '../lib/permissions.js';
 import { prisma, withUser } from '../lib/prisma.js';
 import { dispatchExpoPush } from './notifications.service.js';
+import { decryptUserNames } from './pii.service.js';
 
 /**
  * Mensajes y derivaciones (NK-38, RF-19). Quién puede escribir a quién y quién puede leer lo
@@ -42,19 +43,23 @@ function format(row: Prisma.MessageGetPayload<object>): MessageResponse {
 
 const USER_SELECT = {
   id: true,
-  firstName: true,
-  lastName: true,
+  firstNameEnc: true,
+  lastNameEnc: true,
   professional: { select: { specialty: true } },
-} as const;
+} as const satisfies Prisma.UserSelect;
 
 function participant(
   user: Prisma.UserGetPayload<{ select: typeof USER_SELECT }>,
 ): MessageParticipant {
   const specialty = user.professional?.specialty ?? null;
+  const { firstName, lastName } = decryptUserNames({
+    firstNameEnc: user.firstNameEnc,
+    lastNameEnc: user.lastNameEnc,
+  });
   return {
     userId: user.id,
-    firstName: user.firstName,
-    lastName: user.lastName,
+    firstName,
+    lastName,
     role: specialty ? 'PROFESSIONAL' : 'CAREGIVER',
     specialty,
   };
@@ -219,27 +224,33 @@ export async function listConversations(
     `,
   );
 
-  return rows.map((r) => ({
-    childId: r.child_id,
-    participant: {
-      userId: r.other_id,
-      firstName: r.first_name,
-      lastName: r.last_name,
-      role: r.specialty ? 'PROFESSIONAL' : 'CAREGIVER',
-      specialty: r.specialty,
-    },
-    lastMessage: {
-      id: r.id,
+  return rows.map((r) => {
+    const { firstName, lastName } = decryptUserNames({
+      firstNameEnc: r.first_name,
+      lastNameEnc: r.last_name,
+    });
+    return {
       childId: r.child_id,
-      senderId: r.sender_id,
-      recipientId: r.recipient_id,
-      kind: r.kind as MessageKind,
-      body: r.body,
-      sentAt: r.sent_at.toISOString(),
-      readAt: r.read_at ? r.read_at.toISOString() : null,
-    },
-    unreadCount: r.unread,
-  }));
+      participant: {
+        userId: r.other_id,
+        firstName,
+        lastName,
+        role: r.specialty ? 'PROFESSIONAL' : 'CAREGIVER',
+        specialty: r.specialty,
+      },
+      lastMessage: {
+        id: r.id,
+        childId: r.child_id,
+        senderId: r.sender_id,
+        recipientId: r.recipient_id,
+        kind: r.kind as MessageKind,
+        body: r.body,
+        sentAt: r.sent_at.toISOString(),
+        readAt: r.read_at ? r.read_at.toISOString() : null,
+      },
+      unreadCount: r.unread,
+    };
+  });
 }
 
 /** Hilo con una persona sobre un niño, del más reciente al más antiguo, paginado por cursor. */
