@@ -225,18 +225,13 @@ describe('MyDataScreen («Mis datos»)', () => {
 
     expect(html).toContain('Mateo Gómez');
     expect(html).toContain('Valentina Ríos');
-    expect(html).toContain(t('caregiver:myData.fixData'));
+    expect(html).not.toContain(t('caregiver:myData.fixData'));
   });
 
-  it('opens the correction form and the privacy screen of a child', () => {
+  it('opens the privacy screen of a child (no edit link here)', () => {
     const tree = renderTree(MyDataScreen as () => unknown);
 
-    press(tree, `my-data-fix-${VALENTINA.id}`);
-    expect(mocks.push).toHaveBeenCalledWith({
-      pathname: APP_ROUTES.CAREGIVER.EDIT_CHILD,
-      params: { childId: VALENTINA.id },
-    });
-
+    expect(findElementByTestId(tree, `my-data-fix-${VALENTINA.id}`)).toBeNull();
     press(tree, `my-data-privacy-${MATEO.id}`);
     expect(mocks.push).toHaveBeenCalledWith({
       pathname: APP_ROUTES.CAREGIVER.PRIVACY,
