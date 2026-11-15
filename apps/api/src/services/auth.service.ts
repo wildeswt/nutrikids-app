@@ -107,6 +107,7 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
     lastName: string;
     roles: UserRole[];
     specialty: Specialty | null;
+    licenseNumber: string | null;
   };
 
   try {
@@ -178,6 +179,7 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
         lastName: user.lastName,
         roles: input.roles,
         specialty: isProfessional && input.specialty ? input.specialty : null,
+        licenseNumber: isProfessional && input.licenseNumber ? input.licenseNumber : null,
       };
     });
   } catch (err) {
@@ -223,7 +225,7 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
       lastName: true,
       status: true,
       caregiver: { select: { userId: true } },
-      professional: { select: { userId: true, specialty: true } },
+      professional: { select: { userId: true, specialty: true, licenseNumber: true } },
     },
   });
 
@@ -271,6 +273,7 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
       lastName: user.lastName,
       roles,
       specialty,
+      licenseNumber: user.professional?.licenseNumber ?? null,
     },
   });
 }
@@ -300,7 +303,7 @@ export async function refreshUserSession(input: RefreshInput): Promise<AuthRespo
           lastName: true,
           status: true,
           caregiver: { select: { userId: true } },
-          professional: { select: { userId: true, specialty: true } },
+          professional: { select: { userId: true, specialty: true, licenseNumber: true } },
         },
       },
     },
@@ -381,6 +384,7 @@ export async function refreshUserSession(input: RefreshInput): Promise<AuthRespo
       lastName: stored.user.lastName,
       roles,
       specialty,
+      licenseNumber: stored.user.professional?.licenseNumber ?? null,
     },
   });
 }

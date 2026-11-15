@@ -78,6 +78,7 @@
     "email": "Correo:",
     "specialty": "Especialidad:",
     "noSpecialty": "No asignada",
+    "licenseNumber": "Registro profesional:",
     "activeRole": "Perfil activo:",
     "switchToCaregiver": "Cambiar a vista Cuidador",
     "pendingSync": "Pendientes de envío ({{count}})",

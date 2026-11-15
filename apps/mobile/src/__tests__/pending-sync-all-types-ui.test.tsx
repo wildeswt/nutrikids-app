@@ -60,6 +60,7 @@ vi.mock('../context/auth-context.js', () => ({
       email: 'carlos@example.com',
       roles: ['PROFESSIONAL'],
       specialty: 'pediatrics',
+      licenseNumber: 'MPPS-12345',
     },
     activeRole: 'PROFESSIONAL',
     switchRole: vi.fn(),
@@ -249,6 +250,12 @@ describe('Pendientes de envío común y perfil profesional (NK-62B)', () => {
     const header = findElementByTestId(tree, 'pending-sync-header');
     (header?.props?.onBack as (() => void) | undefined)?.();
     expect(mocks.replace).toHaveBeenCalledWith(APP_ROUTES.PROFESSIONAL.ALERTS);
+  });
+
+  it('perfil profesional muestra su registro profesional', () => {
+    const { html } = renderScreen(ProfessionalProfileScreen);
+    expect(html).toContain('Registro profesional:');
+    expect(html).toContain('MPPS-12345');
   });
 
   it('perfil profesional muestra «Pendientes de envío (N)» solo si N > 0 o hay errores y navega a pendientes', () => {
