@@ -16,6 +16,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { HttpError } from '../lib/http-error.js';
 import type { AuthContext } from '../lib/permissions.js';
 import { withUser } from '../lib/prisma.js';
+import { decryptUserNames } from './pii.service.js';
 
 /**
  * Alertas de riesgo nutricional (NK-30, RF-11, RF-12, RF-17).
@@ -293,16 +294,22 @@ async function toDetail(tx: Prisma.TransactionClient, row: AlertRow): Promise<Al
   const history = await tx.alertHistory.findMany({
     where: { alertId: row.id },
     orderBy: [{ changedAt: 'asc' }],
-    include: { changedBy: { select: { firstName: true, lastName: true } } },
+    include: { changedBy: { select: { firstNameEnc: true, lastNameEnc: true } } },
   });
   return {
     ...formatAlert(row, new Date()),
-    history: history.map((h) => ({
-      status: h.status,
-      changedById: h.changedById,
-      changedByName: `${h.changedBy.firstName} ${h.changedBy.lastName}`,
-      changedAt: h.changedAt.toISOString(),
-    })),
+    history: history.map((h) => {
+      const names = decryptUserNames({
+        firstNameEnc: h.changedBy.firstNameEnc,
+        lastNameEnc: h.changedBy.lastNameEnc,
+      });
+      return {
+        status: h.status,
+        changedById: h.changedById,
+        changedByName: `${names.firstName} ${names.lastName}`,
+        changedAt: h.changedAt.toISOString(),
+      };
+    }),
   };
 }
 

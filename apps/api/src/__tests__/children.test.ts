@@ -12,6 +12,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { createApp } from '../app.js';
 import { env } from '../config/env.js';
 import { HttpError } from '../lib/http-error.js';
+import { encryptPii } from '../lib/pii-crypto.js';
 import { prisma } from '../lib/prisma.js';
 import { assertChildAgeInOmsRange, createChild } from '../services/children.service.js';
 import { signAccessToken } from '../services/token.service.js';
@@ -123,13 +124,20 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
     await adminClient.query(
       `INSERT INTO users (id, email, password_hash, first_name, last_name, status, updated_at)
        VALUES ($1, $2, 'hash', $3, $4, $5, now())`,
-      [userId, email, firstName, lastName, status],
+      [
+        userId,
+        email,
+        encryptPii(firstName, 'users:first_name'),
+        encryptPii(lastName, 'users:last_name'),
+        status,
+      ],
     );
     createdUserIds.push(userId);
 
     if (options.roles.includes('CAREGIVER')) {
-      await adminClient.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, '+593990000')`, [
+      await adminClient.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, $2)`, [
         userId,
+        encryptPii('+593990000', 'caregivers:phone'),
       ]);
     }
     if (options.roles.includes('PROFESSIONAL')) {
@@ -163,7 +171,12 @@ describe('API de Niños y Vínculos (/children) - RF-03', { timeout: 60000 }, ()
     await adminClient.query(
       `INSERT INTO children (id, first_name, last_name, birth_date, sex)
        VALUES ($1, $2, $3, $4::date, 'MALE')`,
-      [childId, options.firstName ?? 'Mateo', options.lastName ?? 'López', birthDate],
+      [
+        childId,
+        encryptPii(options.firstName ?? 'Mateo', 'children:first_name'),
+        encryptPii(options.lastName ?? 'López', 'children:last_name'),
+        birthDate,
+      ],
     );
     createdChildIds.push(childId);
 

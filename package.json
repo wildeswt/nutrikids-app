@@ -27,6 +27,7 @@
     "db:generate": "pnpm --filter api db:generate",
     "db:migrate": "pnpm --filter api db:migrate",
     "db:migrate:deploy": "pnpm --filter api db:migrate:deploy",
+    "db:encrypt-pii": "pnpm --filter api db:encrypt-pii",
     "db:seed": "pnpm --filter api db:seed",
     "db:studio": "pnpm --filter api db:studio",
     "clean": "pnpm -r --if-present clean",

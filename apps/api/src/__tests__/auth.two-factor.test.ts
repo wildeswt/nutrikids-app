@@ -11,6 +11,7 @@ import { prisma } from '../lib/prisma.js';
 import { decryptSecret } from '../lib/secretBox.js';
 import { generateTotp, TOTP_PERIOD_SECONDS } from '../lib/totp.js';
 import { hashRefreshToken, verifyAccessToken } from '../services/token.service.js';
+import { encryptUserNames } from '../services/pii.service.js';
 import { RECOVERY_CODE_COUNT, hashRecoveryCode } from '../services/twoFactor.service.js';
 import {
   EMPTY_TWO_FACTOR,
@@ -32,8 +33,8 @@ interface MemUser {
   id: string;
   email: string;
   passwordHash: string;
-  firstName: string;
-  lastName: string;
+  firstNameEnc: string;
+  lastNameEnc: string;
   status: string;
   isCaregiver: boolean;
 }
@@ -92,8 +93,7 @@ describe('Segundo factor TOTP para profesionales (NK-10)', () => {
         id: CAREGIVER_ID,
         email: 'ana@correo.ec',
         passwordHash,
-        firstName: 'Ana',
-        lastName: 'Pérez',
+        ...encryptUserNames({ firstName: 'Ana', lastName: 'Pérez' }),
         status: 'active',
         isCaregiver: true,
       },
@@ -101,8 +101,7 @@ describe('Segundo factor TOTP para profesionales (NK-10)', () => {
         id: PROFESSIONAL_ID,
         email: 'luis@hospital.ec',
         passwordHash,
-        firstName: 'Luis',
-        lastName: 'Mora',
+        ...encryptUserNames({ firstName: 'Luis', lastName: 'Mora' }),
         status: 'active',
         isCaregiver: false,
       },
@@ -110,8 +109,7 @@ describe('Segundo factor TOTP para profesionales (NK-10)', () => {
         id: DUAL_ID,
         email: 'elena@hospital.ec',
         passwordHash,
-        firstName: 'Elena',
-        lastName: 'Vega',
+        ...encryptUserNames({ firstName: 'Elena', lastName: 'Vega' }),
         status: 'active',
         isCaregiver: true,
       },

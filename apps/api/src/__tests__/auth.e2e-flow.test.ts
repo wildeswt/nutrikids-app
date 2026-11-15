@@ -17,14 +17,14 @@ interface MemUser {
   id: string;
   email: string;
   passwordHash: string;
-  firstName: string;
-  lastName: string;
+  firstNameEnc: string;
+  lastNameEnc: string;
   status: string;
 }
 
 interface MemCaregiver {
   userId: string;
-  phone: string | null;
+  phoneEnc: string | null;
 }
 
 interface MemProfessional extends TwoFactorFields {

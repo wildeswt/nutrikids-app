@@ -13,6 +13,7 @@ import { HttpError } from '../lib/http-error.js';
 import type { AuthContext } from '../lib/permissions.js';
 import { prisma, withUser } from '../lib/prisma.js';
 import { formatChildResponse } from './children.service.js';
+import { decryptUserNames, encryptChildFirstName, encryptChildLastName } from './pii.service.js';
 
 /**
  * Derechos del representante sobre los datos del niño (NK-41, RF-20): rectificar, exportar y
@@ -71,8 +72,8 @@ export async function rectifyChild(
     }
 
     const data: Prisma.ChildUpdateInput = {};
-    if (input.firstName !== undefined) data.firstName = input.firstName;
-    if (input.lastName !== undefined) data.lastName = input.lastName;
+    if (input.firstName !== undefined) data.firstNameEnc = encryptChildFirstName(input.firstName);
+    if (input.lastName !== undefined) data.lastNameEnc = encryptChildLastName(input.lastName);
     if (input.birthDate !== undefined)
       data.birthDate = new Date(`${input.birthDate}T00:00:00.000Z`);
     if (input.sex !== undefined) data.sex = input.sex;
@@ -104,7 +105,10 @@ export async function exportChildData(auth: AuthContext, childId: string) {
     const child = await tx.child.findUnique({ where: { id: childId }, include: exportInclude });
     if (!child) throw HttpError.notFound('Niño no encontrado');
 
-    const name = (u: { firstName: string; lastName: string }) => `${u.firstName} ${u.lastName}`;
+    const name = (u: { firstNameEnc: string; lastNameEnc: string }) => {
+      const { firstName, lastName } = decryptUserNames(u);
+      return `${firstName} ${lastName}`;
+    };
     return {
       exportedAt: new Date().toISOString(),
       child: formatChildResponse(child),

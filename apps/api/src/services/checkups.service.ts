@@ -28,6 +28,7 @@ import { withUser } from '../lib/prisma.js';
 import { createAlertsForResults } from './alerts.service.js';
 import { assertActiveConsent, assertChildAgeInOmsRange } from './children.service.js';
 import { notifyNewAlerts } from './notifications.service.js';
+import { decryptUserNames } from './pii.service.js';
 
 /** Viewer profile under which checkup is queried or recorded: determines `origin` and response shape. */
 export type CheckupViewer = 'CAREGIVER' | 'PROFESSIONAL';
@@ -45,8 +46,8 @@ export const checkupInclude = {
   recordedBy: {
     select: {
       id: true,
-      firstName: true,
-      lastName: true,
+      firstNameEnc: true,
+      lastNameEnc: true,
       status: true,
       professional: {
         select: {
@@ -98,10 +99,14 @@ function formatCheckupRecorder(
   }
   const specialty = user.professional?.specialty ?? null;
   const role: 'CAREGIVER' | 'PROFESSIONAL' = specialty ? 'PROFESSIONAL' : origin;
+  const { firstName, lastName } = decryptUserNames({
+    firstNameEnc: user.firstNameEnc,
+    lastNameEnc: user.lastNameEnc,
+  });
   return {
     userId: user.id,
-    firstName: user.firstName,
-    lastName: user.lastName,
+    firstName,
+    lastName,
     role,
     specialty,
   };

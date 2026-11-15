@@ -16,6 +16,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { HttpError } from '../lib/http-error.js';
 import type { AuthContext } from '../lib/permissions.js';
 import { withUser } from '../lib/prisma.js';
+import { decryptChildNames, decryptUserNames, encryptChildNames } from './pii.service.js';
 
 function utcTodayDate(): Date {
   const today = new Date();
@@ -29,15 +30,16 @@ function parseIsoDateUtc(isoDate: string): Date {
 
 export function formatChildResponse(child: {
   id: string;
-  firstName: string;
-  lastName: string;
+  firstNameEnc: string;
+  lastNameEnc: string;
   birthDate: Date;
   sex: ChildResponse['sex'];
 }): ChildResponse {
+  const { firstName, lastName } = decryptChildNames(child);
   return {
     id: child.id,
-    firstName: child.firstName,
-    lastName: child.lastName,
+    firstName,
+    lastName,
     birthDate: child.birthDate.toISOString().slice(0, 10),
     sex: child.sex,
   };
@@ -70,18 +72,19 @@ function formatProfessionalAssignmentResponse(assignment: {
   professional: {
     specialty: string;
     user: {
-      firstName: string;
-      lastName: string;
+      firstNameEnc: string;
+      lastNameEnc: string;
     };
   };
 }): ProfessionalAssignmentResponse {
+  const { firstName, lastName } = decryptUserNames(assignment.professional.user);
   return {
     id: assignment.id,
     childId: assignment.childId,
     professionalId: assignment.professionalId,
     specialty: assignment.professional.specialty,
-    firstName: assignment.professional.user.firstName,
-    lastName: assignment.professional.user.lastName,
+    firstName,
+    lastName,
     startDate: assignment.startDate.toISOString().slice(0, 10),
     endDate: assignment.endDate ? assignment.endDate.toISOString().slice(0, 10) : null,
   };
@@ -94,17 +97,18 @@ function formatCaregiverAssignmentResponse(assignment: {
   isLegalRepresentative: boolean;
   caregiver: {
     user: {
-      firstName: string;
-      lastName: string;
+      firstNameEnc: string;
+      lastNameEnc: string;
       email: string;
     };
   };
 }): CaregiverAssignmentResponse {
+  const { firstName, lastName } = decryptUserNames(assignment.caregiver.user);
   return {
     caregiverId: assignment.caregiverId,
     childId: assignment.childId,
-    firstName: assignment.caregiver.user.firstName,
-    lastName: assignment.caregiver.user.lastName,
+    firstName,
+    lastName,
     email: assignment.caregiver.user.email,
     relationship: assignment.relationship,
     isLegalRepresentative: assignment.isLegalRepresentative,
@@ -277,8 +281,10 @@ export async function createChild(
     const createdChild = await tx.child.create({
       data: {
         id: childId,
-        firstName: input.firstName,
-        lastName: input.lastName,
+        ...encryptChildNames({
+          firstName: input.firstName,
+          lastName: input.lastName,
+        }),
         birthDate,
         sex: input.sex,
       },
@@ -324,10 +330,15 @@ export async function listChildren(auth: AuthContext): Promise<ChildResponse[]> 
           },
         ],
       },
-      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
     });
 
-    return children.map(formatChildResponse);
+    return children
+      .map(formatChildResponse)
+      .sort(
+        (a, b) =>
+          a.lastName.localeCompare(b.lastName, 'es', { sensitivity: 'base' }) ||
+          a.firstName.localeCompare(b.firstName, 'es', { sensitivity: 'base' }),
+      );
   });
 }
 
@@ -363,7 +374,7 @@ export async function listChildProfessionals(
         professional: {
           select: {
             specialty: true,
-            user: { select: { firstName: true, lastName: true } },
+            user: { select: { firstNameEnc: true, lastNameEnc: true } },
           },
         },
       },
@@ -441,7 +452,7 @@ export async function assignProfessional(
         professional: {
           select: {
             specialty: true,
-            user: { select: { firstName: true, lastName: true } },
+            user: { select: { firstNameEnc: true, lastNameEnc: true } },
           },
         },
       },
@@ -493,7 +504,7 @@ export async function endProfessionalAssignment(
         professional: {
           select: {
             specialty: true,
-            user: { select: { firstName: true, lastName: true } },
+            user: { select: { firstNameEnc: true, lastNameEnc: true } },
           },
         },
       },
@@ -519,8 +530,8 @@ export async function listChildCaregivers(
           select: {
             user: {
               select: {
-                firstName: true,
-                lastName: true,
+                firstNameEnc: true,
+                lastNameEnc: true,
                 email: true,
               },
             },
@@ -586,8 +597,8 @@ export async function assignCaregiver(
           select: {
             user: {
               select: {
-                firstName: true,
-                lastName: true,
+                firstNameEnc: true,
+                lastNameEnc: true,
                 email: true,
               },
             },
@@ -653,8 +664,8 @@ export async function updateCaregiverLink(
           select: {
             user: {
               select: {
-                firstName: true,
-                lastName: true,
+                firstNameEnc: true,
+                lastNameEnc: true,
                 email: true,
               },
             },

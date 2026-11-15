@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
 import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
+import { encryptPii } from '../lib/pii-crypto.js';
 import {
   EDUCATION_AGE_BANDS,
   EDUCATION_SEED,
@@ -79,12 +80,18 @@ describe('Education API (/education)', { timeout: 60000 }, () => {
     const userId = crypto.randomUUID();
     await admin.query(
       `INSERT INTO users (id, email, password_hash, first_name, last_name, status, updated_at)
-       VALUES ($1, $2, 'hash', 'Test', 'User', 'active', now())`,
-      [userId, `education-${userId}@nutrikids.local`],
+       VALUES ($1, $2, 'hash', $3, $4, 'active', now())`,
+      [
+        userId,
+        `education-${userId}@nutrikids.local`,
+        encryptPii('Test', 'users:first_name'),
+        encryptPii('User', 'users:last_name'),
+      ],
     );
     if (role === 'CAREGIVER') {
-      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, '+593990000')`, [
+      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, $2)`, [
         userId,
+        encryptPii('+593990000', 'caregivers:phone'),
       ]);
     } else {
       await admin.query(

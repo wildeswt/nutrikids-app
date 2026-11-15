@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from
 import pg from 'pg';
 import crypto from 'node:crypto';
 import { env } from '../config/env.js';
+import { encryptPii } from '../lib/pii-crypto.js';
 
 const connectionString = env.DIRECT_URL ?? env.DATABASE_URL;
 
@@ -52,15 +53,26 @@ describe('Database Immutability, Roles, Business Rules and RLS', { timeout: 2000
     await client.query(
       `INSERT INTO users (id, email, password_hash, first_name, last_name, status, updated_at)
        VALUES
-         ($1, 'caregiver@example.com', 'hash1', 'Caregiver', 'One', 'active', now()),
-         ($2, 'professional@example.com', 'hash2', 'Doctor', 'Two', 'active', now()),
-         ($3, 'unrelated@example.com', 'hash3', 'Other', 'Three', 'active', now())`,
-      [caregiverUserId, professionalUserId, unrelatedUserId],
+         ($1, 'caregiver@example.com', 'hash1', $4, $5, 'active', now()),
+         ($2, 'professional@example.com', 'hash2', $6, $7, 'active', now()),
+         ($3, 'unrelated@example.com', 'hash3', $8, $9, 'active', now())`,
+      [
+        caregiverUserId,
+        professionalUserId,
+        unrelatedUserId,
+        encryptPii('Caregiver', 'users:first_name'),
+        encryptPii('One', 'users:last_name'),
+        encryptPii('Doctor', 'users:first_name'),
+        encryptPii('Two', 'users:last_name'),
+        encryptPii('Other', 'users:first_name'),
+        encryptPii('Three', 'users:last_name'),
+      ],
     );
 
     // 2. Roles
-    await client.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, '+584120000000')`, [
+    await client.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, $2)`, [
       caregiverUserId,
+      encryptPii('+584120000000', 'caregivers:phone'),
     ]);
 
     await client.query(
@@ -72,8 +84,12 @@ describe('Database Immutability, Roles, Business Rules and RLS', { timeout: 2000
     // 3. Child (born 2023-05-10)
     await client.query(
       `INSERT INTO children (id, first_name, last_name, birth_date, sex)
-       VALUES ($1, 'Ana', 'Gomez', '2023-05-10', 'FEMALE')`,
-      [childId],
+       VALUES ($1, $2, $3, '2023-05-10', 'FEMALE')`,
+      [
+        childId,
+        encryptPii('Ana', 'children:first_name'),
+        encryptPii('Gomez', 'children:last_name'),
+      ],
     );
 
     // 4. Caregiver-child link

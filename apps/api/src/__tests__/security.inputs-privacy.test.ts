@@ -3,6 +3,7 @@ import type pg from 'pg';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
+import { decryptPii } from '../lib/pii-crypto.js';
 import { prisma } from '../lib/prisma.js';
 import { signAccessToken } from '../services/token.service.js';
 import { connectAdmin, createUser, isoHoursAgo, seedChild } from './helpers/world.js';
@@ -88,7 +89,7 @@ describe('Seguridad de entradas y privacidad (NK-46)', { timeout: 90000 }, () =>
       const { rows } = await admin.query(`SELECT first_name FROM children WHERE id = $1`, [
         childId,
       ]);
-      expect(rows[0].first_name).toBe(name);
+      expect(decryptPii(rows[0].first_name, 'children:first_name')).toBe(name);
       expect(await tableCount('children')).toBeGreaterThan(0);
     });
 

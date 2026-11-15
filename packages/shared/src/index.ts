@@ -18,4 +18,5 @@ export * from './schemas/notification.js';
 export * from './schemas/professional.js';
 export * from './schemas/reference.js';
 export * from './schemas/reminder.js';
+export * from './schemas/statistics.js';
 export * from './schemas/sync.js';

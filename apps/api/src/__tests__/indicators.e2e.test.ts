@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
 import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
+import { encryptPii } from '../lib/pii-crypto.js';
 import { MATEO, MATEO_CONTROLS, buildMateoCheckups } from '../lib/seedDev.js';
 import { computeIndicatorResults } from '../services/checkups.service.js';
 import { signAccessToken } from '../services/token.service.js';
@@ -44,12 +45,18 @@ describe('WHO indicators computed on server (Mateo, end to end)', { timeout: 600
     const userId = crypto.randomUUID();
     await admin.query(
       `INSERT INTO users (id, email, password_hash, first_name, last_name, status, updated_at)
-       VALUES ($1, $2, 'hash', 'Test', 'User', 'active', now())`,
-      [userId, `indicators-${userId}@nutrikids.local`],
+       VALUES ($1, $2, 'hash', $3, $4, 'active', now())`,
+      [
+        userId,
+        `indicators-${userId}@nutrikids.local`,
+        encryptPii('Test', 'users:first_name'),
+        encryptPii('User', 'users:last_name'),
+      ],
     );
     if (role === 'CAREGIVER') {
-      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, '+584120000000')`, [
+      await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, $2)`, [
         userId,
+        encryptPii('+584120000000', 'caregivers:phone'),
       ]);
     } else {
       await admin.query(
@@ -70,7 +77,13 @@ describe('WHO indicators computed on server (Mateo, end to end)', { timeout: 600
     await admin.query(
       `INSERT INTO children (id, first_name, last_name, birth_date, sex)
        VALUES ($1, $2, $3, $4::date, $5)`,
-      [childId, MATEO.firstName, MATEO.lastName, MATEO.birthDate, MATEO.sex],
+      [
+        childId,
+        encryptPii(MATEO.firstName, 'children:first_name'),
+        encryptPii(MATEO.lastName, 'children:last_name'),
+        MATEO.birthDate,
+        MATEO.sex,
+      ],
     );
     await admin.query(
       `INSERT INTO caregiver_children (caregiver_id, child_id, relationship, is_legal_representative)

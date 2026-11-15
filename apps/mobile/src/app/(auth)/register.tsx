@@ -31,6 +31,7 @@ export default function RegisterScreen() {
 
   const lastNameRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
   const emailRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
+  const phoneRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
   const licenseNumberRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
   const invitationCodeRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
   const passwordRef = useRef<React.ComponentRef<typeof KeyboardAwareTextInput>>(null);
@@ -43,6 +44,7 @@ export default function RegisterScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -72,6 +74,7 @@ export default function RegisterScreen() {
       email: email.trim(),
       password,
       roles: [selectedRole],
+      ...(!isProfessional && phone.trim() ? { phone: phone.trim() } : {}),
       ...(isProfessional
         ? {
             specialty: specialty || undefined,
@@ -207,13 +210,39 @@ export default function RegisterScreen() {
                 if (isProfessional) {
                   licenseNumberRef.current?.focus();
                 } else {
-                  passwordRef.current?.focus();
+                  phoneRef.current?.focus();
                 }
               }}
               blurOnSubmit={false}
               editable={!loading}
             />
           </PillField>
+
+          {/* Teléfono opcional si es Cuidador */}
+          {!isProfessional && (
+            <PillField label={t('register.phoneLabel')} error={fieldErrors['phone']}>
+              <KeyboardAwareTextInput
+                ref={phoneRef}
+                style={authStyles.pillInput}
+                value={phone}
+                onChangeText={(text) => {
+                  setPhone(text);
+                  if (fieldErrors['phone']) {
+                    setFieldErrors((prev) => ({ ...prev, phone: '' }));
+                  }
+                }}
+                placeholder={t('register.phonePlaceholder')}
+                placeholderTextColor={PALETTE.input.placeholder}
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                blurOnSubmit={false}
+                editable={!loading}
+              />
+            </PillField>
+          )}
 
           {/* Campos adicionales si eligió Profesional de Salud */}
           {isProfessional && (

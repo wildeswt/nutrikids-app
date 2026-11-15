@@ -4,6 +4,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
 import { prisma, withUser } from '../lib/prisma.js';
+import { decryptPii, encryptPii } from '../lib/pii-crypto.js';
 import {
   connectAdmin,
   createUser,
@@ -344,7 +345,8 @@ describe('Seguridad: acceso por rol y vínculo (NK-46)', { timeout: 90000 }, () 
     const child = await admin.query(`SELECT first_name, last_name FROM children WHERE id = $1`, [
       childId,
     ]);
-    expect(child.rows[0]).toEqual({ first_name: 'Mateo', last_name: 'Sintetico' });
+    expect(decryptPii(child.rows[0].first_name, 'children:first_name')).toBe('Mateo');
+    expect(decryptPii(child.rows[0].last_name, 'children:last_name')).toBe('Sintetico');
     const consent = await admin.query(
       `SELECT count(*)::int AS n FROM consents WHERE child_id = $1 AND revoked_at IS NULL`,
       [childId],
@@ -529,7 +531,7 @@ describe('Seguridad: acceso por rol y vínculo (NK-46)', { timeout: 90000 }, () 
       ).rejects.toThrow();
 
       const updated = await withUser(stranger.userId, async (tx) => ({
-        child: await tx.child.updateMany({ where: { id: childId }, data: { firstName: 'X' } }),
+        child: await tx.child.updateMany({ where: { id: childId }, data: { firstNameEnc: 'X' } }),
         consent: await tx.consent.updateMany({
           where: { childId },
           data: { revokedAt: new Date() },
@@ -556,7 +558,7 @@ describe('Seguridad: acceso por rol y vínculo (NK-46)', { timeout: 90000 }, () 
       expect(deleted.feeding.count).toBe(0);
 
       const child = await admin.query(`SELECT first_name FROM children WHERE id = $1`, [childId]);
-      expect(child.rows[0].first_name).toBe('Mateo');
+      expect(decryptPii(child.rows[0].first_name, 'children:first_name')).toBe('Mateo');
     });
 
     it('nadie puede vincularse a sí mismo a un niño existente (defecto corregido en 20261114170000)', async () => {
@@ -623,8 +625,8 @@ describe('Seguridad: acceso por rol y vínculo (NK-46)', { timeout: 90000 }, () 
         await tx.child.create({
           data: {
             id: newChild,
-            firstName: 'Lucia',
-            lastName: 'Sintetica',
+            firstNameEnc: encryptPii('Lucia', 'children:first_name'),
+            lastNameEnc: encryptPii('Sintetica', 'children:last_name'),
             birthDate: new Date(Date.now() - 800 * 86_400_000),
             sex: 'FEMALE',
           },

@@ -4,6 +4,7 @@ import { verifyPassword } from '../lib/password.js';
 import type { AuthContext } from '../lib/permissions.js';
 import { prisma } from '../lib/prisma.js';
 import { logAuditEvent } from './audit.service.js';
+import { decryptPhone, decryptUserNames, encryptPhone, encryptUserNames } from './pii.service.js';
 
 /**
  * Cuenta del usuario autenticado (NK-55, RF-20): ver y editar nombre, correo y teléfono.
@@ -13,25 +14,27 @@ import { logAuditEvent } from './audit.service.js';
 const accountSelect = {
   id: true,
   email: true,
-  firstName: true,
-  lastName: true,
+  firstNameEnc: true,
+  lastNameEnc: true,
   passwordHash: true,
-  caregiver: { select: { phone: true } },
+  caregiver: { select: { phoneEnc: true } },
 } as const;
 
 function format(user: {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  caregiver: { phone: string | null } | null;
+  firstNameEnc: string;
+  lastNameEnc: string;
+  caregiver: { phoneEnc: string | null } | null;
 }): AccountResponse {
+  const { firstName, lastName } = decryptUserNames(user);
+  const phone = decryptPhone(user.caregiver?.phoneEnc);
   return {
     id: user.id,
     email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    phone: user.caregiver?.phone ?? null,
+    firstName,
+    lastName,
+    phone,
   };
 }
 
@@ -58,21 +61,32 @@ export async function updateAccount(
   }
 
   const fields: string[] = [];
-  const userData: { firstName?: string; lastName?: string; email?: string } = {};
-  if (input.firstName !== undefined) userData.firstName = input.firstName;
-  if (input.lastName !== undefined) userData.lastName = input.lastName;
-  if (changesEmail) userData.email = input.email as string;
-  fields.push(...Object.keys(userData));
+  if (input.firstName !== undefined) fields.push('firstName');
+  if (input.lastName !== undefined) fields.push('lastName');
+  if (changesEmail) fields.push('email');
   if (input.phone !== undefined && current.caregiver) fields.push('phone');
+
+  const currentNames = decryptUserNames(current);
+  const newFirstName = input.firstName !== undefined ? input.firstName : currentNames.firstName;
+  const newLastName = input.lastName !== undefined ? input.lastName : currentNames.lastName;
+
+  const namesChanged = input.firstName !== undefined || input.lastName !== undefined;
+  const encryptedNames = namesChanged
+    ? encryptUserNames({ firstName: newFirstName, lastName: newLastName })
+    : {};
+
+  const phoneUpdate =
+    input.phone !== undefined && current.caregiver
+      ? { caregiver: { update: { phoneEnc: encryptPhone(input.phone) } } }
+      : {};
 
   try {
     const updated = await prisma.user.update({
       where: { id: auth.userId },
       data: {
-        ...userData,
-        ...(input.phone !== undefined && current.caregiver
-          ? { caregiver: { update: { phone: input.phone === '' ? null : input.phone } } }
-          : {}),
+        ...(changesEmail ? { email: input.email as string } : {}),
+        ...encryptedNames,
+        ...phoneUpdate,
       },
       select: accountSelect,
     });

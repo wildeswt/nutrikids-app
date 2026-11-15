@@ -2,6 +2,7 @@ import type { ProfessionalLookupResponse, Specialty } from '@nutrikids/shared';
 import { HttpError } from '../lib/http-error.js';
 import { prisma } from '../lib/prisma.js';
 import { logAuditEvent } from './audit.service.js';
+import { decryptUserNames } from './pii.service.js';
 
 /**
  * Busca un profesional activo por su registro profesional (coincidencia exacta).
@@ -17,7 +18,7 @@ export async function lookupProfessionalByLicense(
     select: {
       userId: true,
       specialty: true,
-      user: { select: { firstName: true, lastName: true, status: true } },
+      user: { select: { firstNameEnc: true, lastNameEnc: true, status: true } },
     },
   });
 
@@ -35,10 +36,12 @@ export async function lookupProfessionalByLicense(
     throw HttpError.notFound('No se encontró un profesional con ese registro');
   }
 
+  const { firstName, lastName } = decryptUserNames(professional.user);
+
   return {
     professionalId: professional.userId,
-    firstName: professional.user.firstName,
-    lastName: professional.user.lastName,
+    firstName,
+    lastName,
     specialty: professional.specialty as Specialty,
   };
 }

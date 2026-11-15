@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
 import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
+import { encryptPii } from '../lib/pii-crypto.js';
 import { signAccessToken } from '../services/token.service.js';
 
 /**
@@ -52,12 +53,18 @@ describe(
       const userId = crypto.randomUUID();
       await admin.query(
         `INSERT INTO users (id, email, password_hash, first_name, last_name, status, updated_at)
-       VALUES ($1, $2, 'hash', 'Test', 'User', 'active', now())`,
-        [userId, `checkups-${userId}@nutrikids.local`],
+       VALUES ($1, $2, 'hash', $3, $4, 'active', now())`,
+        [
+          userId,
+          `checkups-${userId}@nutrikids.local`,
+          encryptPii('Test', 'users:first_name'),
+          encryptPii('User', 'users:last_name'),
+        ],
       );
       if (role === 'CAREGIVER') {
-        await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, '+593990000')`, [
+        await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, $2)`, [
           userId,
+          encryptPii('+593990000', 'caregivers:phone'),
         ]);
       } else {
         await admin.query(
@@ -77,8 +84,13 @@ describe(
       const childId = crypto.randomUUID();
       await admin.query(
         `INSERT INTO children (id, first_name, last_name, birth_date, sex)
-       VALUES ($1, 'Mateo', 'Test', $2::date, 'MALE')`,
-        [childId, isoDateMonthsAgo(ageMonths)],
+       VALUES ($1, $2, $3, $4::date, 'MALE')`,
+        [
+          childId,
+          encryptPii('Mateo', 'children:first_name'),
+          encryptPii('Test', 'children:last_name'),
+          isoDateMonthsAgo(ageMonths),
+        ],
       );
       await admin.query(
         `INSERT INTO caregiver_children (caregiver_id, child_id, relationship, is_legal_representative)

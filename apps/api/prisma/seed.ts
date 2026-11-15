@@ -1,3 +1,4 @@
+import '../src/__tests__/setup-env.js';
 import { seedEducationalContent } from '../src/lib/seedEducation.js';
 import { seedLmsReferences } from '../src/lib/seedLms.js';
 import { assertNotProduction, seedDevData } from '../src/lib/seedDev.js';
