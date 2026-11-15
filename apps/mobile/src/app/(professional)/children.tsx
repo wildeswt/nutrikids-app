@@ -5,351 +5,215 @@ import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
-import { Card } from '../../components/ui/Card.js';
-import { SecondaryButton } from '../../components/ui/SecondaryButton.js';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActionModal, type ActionModalItem } from '../../components/ActionModal.js';
+import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
-import { CARD_SHADOW, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
+import { CARD_SHADOW, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
+import { useNotifications } from '../../hooks/useNotifications.js';
 import { usePatients } from '../../hooks/usePatients.js';
-import { formatAlertAge } from '../../lib/alert-format.js';
 import { formatChildAge } from '../../lib/children-api.js';
-import {
-  filterPatients,
-  paginatePatients,
-  type PatientListItem,
-  type PatientRiskFilter,
-} from '../../lib/patients.js';
-
-const PAGE_SIZE = 20;
-
-const FILTER_KEYS: PatientRiskFilter[] = ['ALL', 'SEVERE', 'RISK', 'NO_ALERTS'];
+import { groupPatientsByRisk, type PatientListItem } from '../../lib/patients.js';
 
 export default function ProfessionalPatientsScreen() {
   const { t } = useTranslation(['professional', 'common']);
   const router = useRouter();
-
-  const [filter, setFilter] = useState<PatientRiskFilter>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const { unreadCount, reload: reloadNotifications } = useNotifications();
 
   const { patients, loading, refreshing, error, reload, refresh } = usePatients();
+  const [selectedChild, setSelectedChild] = useState<PatientListItem | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       void reload();
-    }, [reload]),
+      void reloadNotifications();
+    }, [reload, reloadNotifications]),
   );
 
-  const filteredPatients = useMemo(
-    () => filterPatients(patients, { filter, query: searchQuery }),
-    [patients, filter, searchQuery],
-  );
+  const sections = useMemo(() => groupPatientsByRisk(patients), [patients]);
 
-  const paginated = useMemo(
-    () => paginatePatients(filteredPatients, visibleCount),
-    [filteredPatients, visibleCount],
-  );
+  const openPatientActions = (item: PatientListItem) => {
+    setSelectedChild(item);
+  };
 
-  const countsByLevel = useMemo(() => {
-    let severe = 0;
-    let risk = 0;
-    let noAlerts = 0;
-    for (const p of patients) {
-      if (p.riskLevel === 'SEVERE') severe += 1;
-      else if (p.riskLevel === 'RISK') risk += 1;
-      else noAlerts += 1;
+  const closePatientActions = () => {
+    setSelectedChild(null);
+  };
+
+  const modalActions = useMemo<ActionModalItem[]>(() => {
+    if (!selectedChild) return [];
+    const { child, primaryAlert } = selectedChild;
+    const actions: ActionModalItem[] = [
+      {
+        id: 'evolution',
+        label: t('patients.actions.viewEvolution'),
+        icon: 'trending-up-outline',
+        onPress: () => {
+          closePatientActions();
+          router.push({
+            pathname: APP_ROUTES.PROFESSIONAL.EVOLUTION as never,
+            params: { childId: child.id },
+          });
+        },
+      },
+      {
+        id: 'checkup',
+        label: t('patients.actions.registerCheckup'),
+        icon: 'add-circle-outline',
+        onPress: () => {
+          closePatientActions();
+          router.push({
+            pathname: APP_ROUTES.PROFESSIONAL.ADD_CHECKUP as never,
+            params: { childId: child.id },
+          });
+        },
+      },
+      {
+        id: 'referral',
+        label: t('patients.actions.newReferral'),
+        icon: 'share-outline',
+        onPress: () => {
+          closePatientActions();
+          router.push({
+            pathname: APP_ROUTES.PROFESSIONAL.REFERRAL as never,
+            params: { childId: child.id },
+          });
+        },
+      },
+    ];
+
+    if (primaryAlert) {
+      actions.unshift(
+        {
+          id: 'alert',
+          label: t('patients.actions.viewAlert'),
+          icon: 'eye-outline',
+          onPress: () => {
+            closePatientActions();
+            router.push({
+              pathname: APP_ROUTES.PROFESSIONAL.ALERT_DETAIL as never,
+              params: { alertId: primaryAlert.id },
+            });
+          },
+        },
+        {
+          id: 'followup',
+          label: t('patients.actions.newFollowUp'),
+          icon: 'clipboard-outline',
+          onPress: () => {
+            closePatientActions();
+            router.push({
+              pathname: APP_ROUTES.PROFESSIONAL.FOLLOW_UP as never,
+              params: { childId: child.id, alertId: primaryAlert.id },
+            });
+          },
+        },
+      );
     }
-    return {
-      ALL: patients.length,
-      SEVERE: severe,
-      RISK: risk,
-      NO_ALERTS: noAlerts,
-    };
-  }, [patients]);
 
-  const handleFilterChange = (newFilter: PatientRiskFilter) => {
-    setFilter(newFilter);
-    setVisibleCount(PAGE_SIZE);
-  };
+    return actions;
+  }, [selectedChild, router, t]);
 
-  const handleSearchChange = (text: string) => {
-    setSearchQuery(text);
-    setVisibleCount(PAGE_SIZE);
-  };
+  const renderBadge = (item: PatientListItem) => {
+    const { riskLevel, primaryAlert } = item;
 
-  const openAlertDetail = (alertId: string) => {
-    router.push({
-      pathname: APP_ROUTES.PROFESSIONAL.ALERT_DETAIL as never,
-      params: { alertId },
-    });
-  };
-
-  const openFollowUp = (childId: string, alertId?: string) => {
-    router.push({
-      pathname: APP_ROUTES.PROFESSIONAL.FOLLOW_UP as never,
-      params: { childId, ...(alertId ? { alertId } : {}) },
-    });
-  };
-
-  const openReferral = (childId: string) => {
-    router.push({
-      pathname: APP_ROUTES.PROFESSIONAL.REFERRAL as never,
-      params: { childId },
-    });
-  };
-
-  const openEvolution = (childId: string) => {
-    router.push({
-      pathname: APP_ROUTES.PROFESSIONAL.EVOLUTION as never,
-      params: { childId },
-    });
-  };
-
-  const openAddCheckup = (childId: string) => {
-    router.push({
-      pathname: APP_ROUTES.PROFESSIONAL.ADD_CHECKUP as never,
-      params: { childId },
-    });
-  };
-
-  const renderPatientCard = ({ item }: { item: PatientListItem }) => {
-    const { child, riskLevel, primaryAlert } = item;
-    const fullName = `${child.firstName} ${child.lastName}`;
-    const ageText = formatChildAge(child.birthDate);
-
-    const isSevere = riskLevel === 'SEVERE';
-    const isRisk = riskLevel === 'RISK';
-
-    return (
-      <Card style={styles.patientCard} testID={`patient-card-${child.id}`}>
-        <View style={styles.cardHeader}>
-          <View style={styles.nameContainer}>
-            <Text style={styles.childName} numberOfLines={1}>
-              {fullName}
-            </Text>
-            <Text style={styles.childAge}>{ageText}</Text>
-          </View>
-
-          <View style={styles.badgesContainer}>
-            <View
-              style={[
-                styles.riskBadge,
-                isSevere && styles.riskBadgeSevere,
-                isRisk && styles.riskBadgeRisk,
-                riskLevel === 'NO_ALERTS' && styles.riskBadgeNormal,
-              ]}
-              testID={`patient-risk-badge-${child.id}`}
-            >
-              <Text
-                style={[
-                  styles.riskBadgeText,
-                  isSevere && styles.riskBadgeTextSevere,
-                  isRisk && styles.riskBadgeTextRisk,
-                  riskLevel === 'NO_ALERTS' && styles.riskBadgeTextNormal,
-                ]}
-              >
-                {t(`patients.riskLevels.${riskLevel}`)}
-              </Text>
-            </View>
-
-            {primaryAlert?.isOverdue ? (
-              <View
-                style={[styles.riskBadge, styles.riskBadgeOverdue]}
-                testID={`patient-overdue-badge-${child.id}`}
-              >
-                <Ionicons name="time" size={12} color={PALETTE.feedback.error} />
-                <Text style={[styles.riskBadgeText, styles.riskBadgeTextSevere]}>
-                  {t('patients.overdueBadge')}
-                </Text>
-              </View>
-            ) : null}
-          </View>
+    if (riskLevel === 'SEVERE') {
+      return (
+        <View style={[styles.badgePill, styles.badgePillSevere]}>
+          <Text style={[styles.badgePillText, styles.badgePillTextSevere]}>
+            {t('patients.status.severe')}
+          </Text>
         </View>
+      );
+    }
 
-        {primaryAlert ? (
-          <View style={styles.alertSummaryBox} testID={`patient-alert-summary-${child.id}`}>
-            <Ionicons
-              name="warning"
-              size={15}
-              color={isSevere ? PALETTE.feedback.error : PALETTE.secondary}
-            />
-            <Text style={styles.alertSummaryText} numberOfLines={2}>
-              {t('patients.lastAlertLabel', {
-                indicator: t(`alerts.indicator.${primaryAlert.indicator}`),
-                time: formatAlertAge(primaryAlert.createdAt),
-              })}
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.noAlertBox}>
-            <Ionicons name="checkmark-circle" size={15} color={PALETTE.primary} />
-            <Text style={styles.noAlertText}>{t('patients.noOpenAlerts')}</Text>
-          </View>
-        )}
-
-        <View style={styles.actionsDivider} />
-
-        <View style={styles.actionsRow}>
-          {primaryAlert ? (
-            <Pressable
-              style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
-              onPress={() => openAlertDetail(primaryAlert.id)}
-              accessibilityRole="button"
-              accessibilityLabel={t('patients.actions.viewAlert')}
-              testID={`patient-action-alert-${child.id}`}
-            >
-              <Ionicons name="eye-outline" size={14} color={PALETTE.primary} />
-              <Text style={styles.actionButtonText}>{t('patients.actions.viewAlert')}</Text>
-            </Pressable>
-          ) : null}
-
-          {primaryAlert ? (
-            <Pressable
-              style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
-              onPress={() => openFollowUp(child.id, primaryAlert.id)}
-              accessibilityRole="button"
-              accessibilityLabel={t('patients.actions.newFollowUp')}
-              testID={`patient-action-followup-${child.id}`}
-            >
-              <Ionicons name="clipboard-outline" size={14} color={PALETTE.primary} />
-              <Text style={styles.actionButtonText}>{t('patients.actions.newFollowUp')}</Text>
-            </Pressable>
-          ) : null}
-
-          <Pressable
-            style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
-            onPress={() => openReferral(child.id)}
-            accessibilityRole="button"
-            accessibilityLabel={t('patients.actions.newReferral')}
-            testID={`patient-action-referral-${child.id}`}
-          >
-            <Ionicons name="share-outline" size={14} color={PALETTE.primary} />
-            <Text style={styles.actionButtonText}>{t('patients.actions.newReferral')}</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
-            onPress={() => openEvolution(child.id)}
-            accessibilityRole="button"
-            accessibilityLabel={t('patients.actions.viewEvolution')}
-            testID={`patient-action-evolution-${child.id}`}
-          >
-            <Ionicons name="trending-up-outline" size={14} color={PALETTE.primary} />
-            <Text style={styles.actionButtonText}>{t('patients.actions.viewEvolution')}</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
-            onPress={() => openAddCheckup(child.id)}
-            accessibilityRole="button"
-            accessibilityLabel={t('patients.actions.registerCheckup')}
-            testID={`patient-action-checkup-${child.id}`}
-          >
-            <Ionicons name="add-circle-outline" size={14} color={PALETTE.primary} />
-            <Text style={styles.actionButtonText}>{t('patients.actions.registerCheckup')}</Text>
-          </Pressable>
+    if (riskLevel === 'RISK' && primaryAlert) {
+      const riskLabel = t(`alerts.risk.${primaryAlert.riskType}`);
+      return (
+        <View style={[styles.badgePill, styles.badgePillModerate]}>
+          <Text style={[styles.badgePillText, styles.badgePillTextModerate]}>{riskLabel}</Text>
         </View>
-      </Card>
-    );
-  };
-
-  const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      <Text style={styles.title}>{t('patients.title')}</Text>
-      <Text style={styles.subtitle}>{t('patients.subtitle')}</Text>
-
-      <View style={styles.searchBar}>
-        <Ionicons name="search" size={18} color={PALETTE.text.muted} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder={t('patients.searchPlaceholder')}
-          placeholderTextColor={PALETTE.input.placeholder}
-          value={searchQuery}
-          onChangeText={handleSearchChange}
-          accessibilityLabel={t('patients.searchA11y')}
-          returnKeyType="search"
-          testID="patients-search-input"
-        />
-        {searchQuery.length > 0 ? (
-          <Pressable
-            onPress={() => handleSearchChange('')}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={t('patients.clearSearch')}
-            testID="patients-search-clear"
-          >
-            <Ionicons name="close-circle" size={18} color={PALETTE.text.muted} />
-          </Pressable>
-        ) : null}
-      </View>
-
-      <View style={styles.filterBar} accessibilityLabel={t('patients.filterA11y')}>
-        {FILTER_KEYS.map((key) => {
-          const selected = key === filter;
-          const count = countsByLevel[key];
-          return (
-            <Pressable
-              key={key}
-              style={[styles.filterChip, selected && styles.filterChipActive]}
-              onPress={() => handleFilterChange(key)}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              testID={`patient-filter-${key}`}
-            >
-              <Text style={[styles.filterChipText, selected && styles.filterChipTextActive]}>
-                {`${t(`patients.filters.${key}`)} (${count})`}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-
-  const renderFooter = () => {
-    if (!paginated.hasMore) {
-      if (paginated.total > PAGE_SIZE) {
-        return (
-          <View style={styles.paginationFooter}>
-            <Text style={styles.paginationSummary}>
-              {t('patients.pagination.showing', {
-                shown: paginated.items.length,
-                total: paginated.total,
-              })}
-            </Text>
-          </View>
-        );
-      }
-      return null;
+      );
     }
 
     return (
-      <View style={styles.paginationFooter}>
-        <SecondaryButton
-          label={t('patients.pagination.loadMore')}
-          onPress={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
-          testID="patients-load-more"
-        />
-        <Text style={styles.paginationSummary}>
-          {t('patients.pagination.showing', {
-            shown: paginated.items.length,
-            total: paginated.total,
-          })}
+      <View style={[styles.badgePill, styles.badgePillInOrder]}>
+        <Text style={[styles.badgePillText, styles.badgePillTextInOrder]}>
+          {t('patients.status.inOrder')}
         </Text>
       </View>
     );
   };
 
-  const renderEmpty = () => {
-    if (loading) return null;
+  const renderPatientCard = (item: PatientListItem) => {
+    const { child } = item;
+    const fullName = `${child.firstName} ${child.lastName}`;
+    const ageText = formatChildAge(child.birthDate);
+
+    return (
+      <Pressable
+        key={child.id}
+        style={({ pressed }) => [styles.patientCard, pressed && styles.patientCardPressed]}
+        onPress={() => openPatientActions(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`${fullName}, ${ageText}`}
+        testID={`patient-card-${child.id}`}
+      >
+        <View style={styles.patientInfo}>
+          <Text style={styles.childName} numberOfLines={1}>
+            {fullName}
+          </Text>
+          <Text style={styles.childAge}>{ageText}</Text>
+        </View>
+
+        <View style={styles.cardRight}>
+          {renderBadge(item)}
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={PALETTE.primary}
+            style={styles.chevron}
+          />
+        </View>
+      </Pressable>
+    );
+  };
+
+  const renderContent = () => {
+    if (loading && !refreshing && patients.length === 0) {
+      return (
+        <View style={styles.centerContainer} testID="patients-loading-state">
+          <ActivityIndicator size="large" color={PALETTE.primary} />
+          <Text style={styles.loadingText}>{t('patients.loading')}</Text>
+        </View>
+      );
+    }
+
+    if (error && patients.length === 0) {
+      return (
+        <View style={styles.centerContainer} testID="patients-error-state">
+          <Ionicons name="alert-circle-outline" size={48} color={PALETTE.feedback.error} />
+          <Text style={styles.errorText}>{error || t('patients.loadError')}</Text>
+          <Pressable
+            style={({ pressed }) => [styles.retryButton, pressed && styles.patientCardPressed]}
+            onPress={() => void reload()}
+            accessibilityRole="button"
+            testID="patients-retry-button"
+          >
+            <Text style={styles.retryButtonText}>{t('patients.retry')}</Text>
+          </Pressable>
+        </View>
+      );
+    }
 
     if (patients.length === 0) {
       return (
@@ -362,61 +226,90 @@ export default function ProfessionalPatientsScreen() {
     }
 
     return (
-      <View style={styles.emptyContainer} testID="patients-search-empty-state">
-        <Ionicons name="search-outline" size={48} color={PALETTE.text.muted} />
-        <Text style={styles.emptyTitle}>{t('patients.emptySearchTitle')}</Text>
-        <Text style={styles.emptyDescription}>{t('patients.emptySearchDescription')}</Text>
-        <Pressable
-          style={styles.clearSearchButton}
-          onPress={() => {
-            setSearchQuery('');
-            setFilter('ALL');
-          }}
-          accessibilityRole="button"
-          testID="patients-empty-clear"
-        >
-          <Text style={styles.clearSearchButtonText}>{t('patients.clearSearch')}</Text>
-        </Pressable>
+      <View style={styles.sectionsContainer}>
+        {sections.map((section) => {
+          return (
+            <View key={section.key} style={styles.sectionBlock}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{t(section.titleKey)}</Text>
+                <View
+                  style={[
+                    styles.counterBadge,
+                    section.key === 'SEVERE' && styles.counterBadgeSevere,
+                    section.key === 'RISK' && styles.counterBadgeModerate,
+                    section.key === 'NO_ALERTS' && styles.counterBadgeInOrder,
+                  ]}
+                  testID={`section-counter-${section.key}`}
+                >
+                  <Text
+                    style={[
+                      styles.counterBadgeText,
+                      section.key === 'SEVERE' && styles.counterBadgeTextSevere,
+                      section.key === 'RISK' && styles.counterBadgeTextModerate,
+                      section.key === 'NO_ALERTS' && styles.counterBadgeTextInOrder,
+                    ]}
+                  >
+                    {section.count}
+                  </Text>
+                </View>
+              </View>
+
+              {section.data.length > 0 ? (
+                <View style={styles.cardsList}>{section.data.map(renderPatientCard)}</View>
+              ) : null}
+            </View>
+          );
+        })}
       </View>
     );
   };
 
-  if (loading && !refreshing && patients.length === 0) {
-    return (
-      <View style={styles.centerContainer} testID="patients-loading-state">
-        <ActivityIndicator size="large" color={PALETTE.primary} />
-        <Text style={styles.loadingText}>{t('patients.loading')}</Text>
-      </View>
-    );
-  }
-
-  if (error && patients.length === 0) {
-    return (
-      <View style={styles.centerContainer} testID="patients-error-state">
-        <Ionicons name="alert-circle-outline" size={48} color={PALETTE.feedback.error} />
-        <Text style={styles.errorText}>{error || t('patients.loadError')}</Text>
-        <Pressable
-          style={({ pressed }) => [styles.retryButton, pressed && styles.actionButtonPressed]}
-          onPress={() => void reload()}
-          accessibilityRole="button"
-          testID="patients-retry-button"
-        >
-          <Text style={styles.retryButtonText}>{t('patients.retry')}</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container} testID="patients-screen">
+    <SafeAreaView
+      style={styles.container}
+      edges={['top', 'left', 'right']}
+      testID="patients-screen"
+    >
       <FlatList
-        data={paginated.items}
-        keyExtractor={(item) => item.child.id}
-        renderItem={renderPatientCard}
-        ListHeaderComponent={renderHeader}
-        ListFooterComponent={renderFooter}
-        ListEmptyComponent={renderEmpty}
-        contentContainerStyle={styles.listContent}
+        data={[]}
+        renderItem={() => null}
+        ListHeaderComponent={
+          <>
+            <View style={styles.topHeader}>
+              <Image
+                source={APP_ASSETS.LOGO}
+                style={styles.logo}
+                resizeMode="contain"
+                accessibilityLabel={t('common:brand.logoLabel')}
+              />
+              <Pressable
+                style={({ pressed }) => [
+                  styles.notificationButton,
+                  pressed && styles.patientCardPressed,
+                ]}
+                onPress={() => router.push(APP_ROUTES.PROFESSIONAL.NOTIFICATIONS)}
+                accessibilityRole="button"
+                accessibilityLabel={t('drawer.notifications')}
+                testID="professional-notifications-bell"
+              >
+                <View style={styles.bellIconWrapper}>
+                  <Ionicons name="notifications" size={22} color={PALETTE.secondary} />
+                  {unreadCount > 0 ? (
+                    <View style={styles.bellDot} testID="professional-bell-dot" />
+                  ) : null}
+                </View>
+              </Pressable>
+            </View>
+
+            <View style={styles.titlesBlock}>
+              <Text style={styles.mainTitle}>{t('patients.title')}</Text>
+              <Text style={styles.subTitle}>{t('patients.subtitle')}</Text>
+            </View>
+
+            {renderContent()}
+          </>
+        }
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -427,7 +320,19 @@ export default function ProfessionalPatientsScreen() {
           />
         }
       />
-    </View>
+
+      <ActionModal
+        visible={selectedChild !== null}
+        title={
+          selectedChild
+            ? `${selectedChild.child.firstName} ${selectedChild.child.lastName}`
+            : undefined
+        }
+        subtitle={selectedChild ? formatChildAge(selectedChild.child.birthDate) : undefined}
+        actions={modalActions}
+        onClose={closePatientActions}
+      />
+    </SafeAreaView>
   );
 }
 
@@ -436,93 +341,140 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: PALETTE.background,
   },
-  listContent: {
+  scrollContent: {
     paddingHorizontal: SCREEN_MARGIN,
-    paddingTop: 16,
-    paddingBottom: 32,
+    paddingTop: 12,
+    paddingBottom: 40,
   },
-  headerContainer: {
-    marginBottom: 16,
-  },
-  title: {
-    fontFamily: font('semibold'),
-    fontSize: 22,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontFamily: font('regular'),
-    fontSize: 13,
-    color: PALETTE.text.body,
-    marginBottom: 16,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: PALETTE.input.background,
-    borderWidth: 1,
-    borderColor: PALETTE.border.input,
-    borderRadius: RADIUS_PILL,
-    paddingHorizontal: 16,
-    height: 44,
-    marginBottom: 14,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: font('regular'),
-    fontSize: 14,
-    color: PALETTE.text.title,
-    paddingVertical: 0,
-  },
-  filterBar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: RADIUS_PILL,
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
-  },
-  filterChipActive: {
-    backgroundColor: PALETTE.primary,
-    borderColor: PALETTE.primary,
-  },
-  filterChipText: {
-    fontFamily: font('medium'),
-    fontSize: 12,
-    fontWeight: '500',
-    color: PALETTE.text.title,
-  },
-  filterChipTextActive: {
-    color: PALETTE.text.light,
-  },
-  patientCard: {
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 14,
-    ...CARD_SHADOW,
-  },
-  cardHeader: {
+  topHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logo: {
+    width: 170,
+    height: 48,
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: PALETTE.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...CARD_SHADOW,
+  },
+  bellIconWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bellDot: {
+    position: 'absolute',
+    top: -1,
+    right: -2,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: PALETTE.feedback.error,
+  },
+  titlesBlock: {
+    marginBottom: 24,
+  },
+  mainTitle: {
+    fontFamily: font('semibold'),
+    fontSize: 26,
+    fontWeight: '700',
+    color: PALETTE.text.title,
+    letterSpacing: -0.3,
+    marginBottom: 4,
+  },
+  subTitle: {
+    fontFamily: font('regular'),
+    fontSize: 15,
+    color: PALETTE.text.muted,
+  },
+  sectionsContainer: {
+    gap: 24,
+  },
+  sectionBlock: {
+    marginBottom: 8,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontFamily: font('semibold'),
+    fontSize: 18,
+    fontWeight: '700',
+    color: PALETTE.text.title,
+    marginRight: 8,
+  },
+  counterBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  counterBadgeSevere: {
+    backgroundColor: '#FDECE7',
+  },
+  counterBadgeTextSevere: {
+    color: PALETTE.feedback.error,
+  },
+  counterBadgeModerate: {
+    backgroundColor: '#FEF2EC',
+  },
+  counterBadgeTextModerate: {
+    color: PALETTE.secondary,
+  },
+  counterBadgeInOrder: {
+    backgroundColor: '#E8F1F0',
+  },
+  counterBadgeTextInOrder: {
+    color: PALETTE.primary,
+  },
+  counterBadgeText: {
+    fontFamily: font('semibold'),
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  cardsList: {
     gap: 12,
   },
-  nameContainer: {
+  patientCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    ...CARD_SHADOW,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  patientCardPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
+  },
+  patientInfo: {
     flex: 1,
+    marginRight: 10,
   },
   childName: {
     fontFamily: font('semibold'),
-    fontSize: 16,
-    fontWeight: '600',
-    color: PALETTE.text.title,
+    fontSize: 15,
+    fontWeight: '700',
+    color: PALETTE.primary,
     marginBottom: 2,
   },
   childAge: {
@@ -530,183 +482,96 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: PALETTE.text.muted,
   },
-  badgesContainer: {
+  cardRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
+    gap: 8,
   },
-  riskBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: RADIUS_PILL,
+  badgePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
   },
-  riskBadgeSevere: {
-    backgroundColor: PALETTE.feedback.errorBg,
+  badgePillSevere: {
+    backgroundColor: '#FDECE7',
   },
-  riskBadgeRisk: {
-    backgroundColor: PALETTE.feedback.warningBg,
-  },
-  riskBadgeNormal: {
-    backgroundColor: PALETTE.primaryLight,
-  },
-  riskBadgeOverdue: {
-    backgroundColor: PALETTE.feedback.errorBg,
-    borderWidth: 1,
-    borderColor: PALETTE.feedback.errorBorder,
-  },
-  riskBadgeText: {
-    fontFamily: font('semibold'),
-    fontSize: 11,
+  badgePillTextSevere: {
+    fontFamily: font('medium'),
+    fontSize: 12,
     fontWeight: '600',
-  },
-  riskBadgeTextSevere: {
     color: PALETTE.feedback.error,
   },
-  riskBadgeTextRisk: {
-    color: PALETTE.feedback.warning,
+  badgePillModerate: {
+    backgroundColor: '#FEF2EC',
   },
-  riskBadgeTextNormal: {
-    color: PALETTE.primary,
-  },
-  alertSummaryBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: PALETTE.surface,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: PALETTE.border.subtle,
-  },
-  alertSummaryText: {
-    flex: 1,
-    fontFamily: font('regular'),
-    fontSize: 12,
-    color: PALETTE.text.body,
-    lineHeight: 16,
-  },
-  noAlertBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-  },
-  noAlertText: {
-    fontFamily: font('regular'),
-    fontSize: 12,
-    color: PALETTE.text.muted,
-  },
-  actionsDivider: {
-    height: 1,
-    backgroundColor: PALETTE.border.subtle,
-    marginVertical: 12,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    alignItems: 'center',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: RADIUS_PILL,
-    backgroundColor: PALETTE.primaryLight,
-  },
-  actionButtonPressed: {
-    opacity: 0.75,
-  },
-  actionButtonText: {
+  badgePillTextModerate: {
     fontFamily: font('medium'),
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
+    color: PALETTE.secondary,
+  },
+  badgePillInOrder: {
+    backgroundColor: '#E8F1F0',
+  },
+  badgePillTextInOrder: {
+    fontFamily: font('medium'),
+    fontSize: 12,
+    fontWeight: '600',
     color: PALETTE.primary,
   },
-  paginationFooter: {
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  paginationSummary: {
-    fontFamily: font('regular'),
-    fontSize: 12,
-    color: PALETTE.text.muted,
+  badgePillText: {},
+  chevron: {
+    marginLeft: 2,
   },
   centerContainer: {
-    flex: 1,
-    backgroundColor: PALETTE.background,
-    justifyContent: 'center',
+    paddingVertical: 48,
     alignItems: 'center',
-    padding: SCREEN_MARGIN,
-    gap: 12,
+    justifyContent: 'center',
   },
   loadingText: {
-    fontFamily: font('medium'),
+    marginTop: 12,
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.muted,
   },
   errorText: {
-    fontFamily: font('medium'),
+    marginTop: 12,
+    fontFamily: font('regular'),
     fontSize: 14,
-    color: PALETTE.text.title,
+    color: PALETTE.feedback.error,
     textAlign: 'center',
-    marginHorizontal: 16,
+    paddingHorizontal: 20,
   },
   retryButton: {
-    backgroundColor: PALETTE.primary,
-    borderRadius: RADIUS_PILL,
-    paddingHorizontal: 20,
+    marginTop: 16,
     paddingVertical: 10,
-    marginTop: 8,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: PALETTE.primary,
   },
   retryButtonText: {
-    fontFamily: font('semibold'),
+    fontFamily: font('medium'),
     fontSize: 14,
-    fontWeight: '600',
     color: PALETTE.text.light,
   },
   emptyContainer: {
+    paddingVertical: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 16,
-    gap: 10,
   },
   emptyTitle: {
+    marginTop: 16,
     fontFamily: font('semibold'),
     fontSize: 16,
     fontWeight: '600',
     color: PALETTE.text.title,
-    textAlign: 'center',
   },
   emptyDescription: {
+    marginTop: 8,
     fontFamily: font('regular'),
     fontSize: 13,
     color: PALETTE.text.muted,
     textAlign: 'center',
-    lineHeight: 18,
-  },
-  clearSearchButton: {
-    marginTop: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: RADIUS_PILL,
-    backgroundColor: PALETTE.primaryLight,
-  },
-  clearSearchButtonText: {
-    fontFamily: font('medium'),
-    fontSize: 13,
-    color: PALETTE.primary,
+    paddingHorizontal: 24,
   },
 });

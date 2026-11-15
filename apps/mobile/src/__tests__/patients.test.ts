@@ -4,6 +4,7 @@ import {
   buildPatientList,
   compareAlertSeverity,
   filterPatients,
+  groupPatientsByRisk,
   normalizeSearchText,
   paginatePatients,
   type PatientListItem,
@@ -179,6 +180,53 @@ describe('patients logic (Block 2)', () => {
       expect(page2.items).toHaveLength(25);
       expect(page2.hasMore).toBe(false);
       expect(page2.total).toBe(25);
+    });
+  });
+
+  describe('groupPatientsByRisk', () => {
+    it('groups patients into 3 sections with exact counts', () => {
+      const p1: PatientListItem = {
+        child: makeChild('c-1', 'Mateo', 'Rodríguez'),
+        riskLevel: 'SEVERE',
+        primaryAlert: null,
+        openAlertCount: 1,
+      };
+      const p2: PatientListItem = {
+        child: makeChild('c-2', 'Valentina', 'Gómez'),
+        riskLevel: 'SEVERE',
+        primaryAlert: null,
+        openAlertCount: 1,
+      };
+      const p3: PatientListItem = {
+        child: makeChild('c-3', 'Santiago', 'Pérez'),
+        riskLevel: 'RISK',
+        primaryAlert: null,
+        openAlertCount: 1,
+      };
+      const p4: PatientListItem = {
+        child: makeChild('c-4', 'Camila', 'Torres'),
+        riskLevel: 'RISK',
+        primaryAlert: null,
+        openAlertCount: 1,
+      };
+      const p5: PatientListItem = {
+        child: makeChild('c-5', 'Daniel', 'Ríos'),
+        riskLevel: 'NO_ALERTS',
+        primaryAlert: null,
+        openAlertCount: 0,
+      };
+      const p6: PatientListItem = {
+        child: makeChild('c-6', 'Sofía', 'Vera'),
+        riskLevel: 'NO_ALERTS',
+        primaryAlert: null,
+        openAlertCount: 0,
+      };
+
+      const sections = groupPatientsByRisk([p1, p2, p3, p4, p5, p6]);
+      expect(sections).toHaveLength(3);
+      expect(sections[0]).toMatchObject({ key: 'SEVERE', count: 2 });
+      expect(sections[1]).toMatchObject({ key: 'RISK', count: 2 });
+      expect(sections[2]).toMatchObject({ key: 'NO_ALERTS', count: 2 });
     });
   });
 });

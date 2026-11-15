@@ -5,6 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_ROUTES } from '../constants/routes.js';
 import type { PatientListItem } from '../lib/patients.js';
 
+vi.mock('../constants/assets.js', () => ({
+  APP_ASSETS: {
+    LOGO: { uri: 'mock-logo.png' },
+  },
+}));
+
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   focusEffects: [] as (() => void)[],
@@ -35,6 +41,13 @@ vi.mock('@expo/vector-icons', () => ({
 
 vi.mock('../hooks/usePatients.js', () => ({
   usePatients: () => mocks.hookState,
+}));
+
+vi.mock('../hooks/useNotifications.js', () => ({
+  useNotifications: () => ({
+    unreadCount: 2,
+    reload: vi.fn(),
+  }),
 }));
 
 import ProfessionalPatientsScreen from '../app/(professional)/children.js';
@@ -88,7 +101,7 @@ const patientItems: PatientListItem[] = [
   },
 ];
 
-describe('ProfessionalPatientsScreen (Block 5)', () => {
+describe('ProfessionalPatientsScreen (Figura 6a)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.focusEffects.length = 0;
@@ -132,24 +145,24 @@ describe('ProfessionalPatientsScreen (Block 5)', () => {
     expect(html).toContain('Sin pacientes vinculados');
   });
 
-  it('renders patient cards with risk badges, alert summaries, and action buttons', () => {
+  it('renders header with logo, notification bell and sections per Figma (Figura 6a)', () => {
     const html = renderToString(React.createElement(ProfessionalPatientsScreen));
 
     expect(html).toContain('patients-screen');
+    expect(html).toContain('professional-notifications-bell');
+    expect(html).toContain('Mis pacientes');
+    expect(html).toContain('Niños vinculados, ordenados por riesgo.');
+    expect(html).toContain('Riesgo alto');
+    expect(html).toContain('En orden');
     expect(html).toContain('Mateo García');
     expect(html).toContain('Ana Alvarado');
-    expect(html).toContain('patient-risk-badge-child-1');
-    expect(html).toContain('patient-overdue-badge-child-1');
-    expect(html).toContain('Vencida');
-    expect(html).toContain('patient-action-alert-child-1');
-    expect(html).toContain('patient-action-followup-child-1');
-    expect(html).toContain('patient-action-referral-child-1');
-    expect(html).toContain('patient-action-evolution-child-1');
-    expect(html).toContain('patient-action-checkup-child-1');
+    expect(html).toContain('patient-card-child-1');
+    expect(html).toContain('patient-card-child-2');
+    expect(html).toContain('Grave');
+    expect(html).toContain('Todo en orden');
   });
 
   it('navigates with correct parameters when actions are invoked', () => {
-    // Test the navigation router routes are properly mapped
     expect(APP_ROUTES.PROFESSIONAL.ALERT_DETAIL).toBe('/(professional)/alert-detail');
     expect(APP_ROUTES.PROFESSIONAL.FOLLOW_UP).toBe('/(professional)/follow-up');
     expect(APP_ROUTES.PROFESSIONAL.REFERRAL).toBe('/(professional)/referral');

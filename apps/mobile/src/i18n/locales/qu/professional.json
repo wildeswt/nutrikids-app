@@ -316,8 +316,17 @@
     "goBackToPatients": "Wawakunaman riy"
   },
   "patients": {
-    "title": "Llakipi kak wawakuna",
+    "title": "Wawakuna",
     "subtitle": "Tinkishka wawakuna ima llakipi kashkashina.",
+    "sections": {
+      "severe": "Yapa llakipi",
+      "moderate": "Llakipi",
+      "inOrder": "Allillami"
+    },
+    "status": {
+      "severe": "Yapa sinchi",
+      "inOrder": "Tukuy allillami"
+    },
     "searchPlaceholder": "Shutiwan maskay...",
     "searchA11y": "Wawapa shutita maskay",
     "filterA11y": "Llakipi kashkashina akllay",

@@ -316,8 +316,17 @@
     "goBackToPatients": "Ir a pacientes"
   },
   "patients": {
-    "title": "Pacientes por Riesgo",
-    "subtitle": "Pacientes vinculados según su prioridad de atención.",
+    "title": "Mis pacientes",
+    "subtitle": "Niños vinculados, ordenados por riesgo.",
+    "sections": {
+      "severe": "Riesgo alto",
+      "moderate": "Riesgo moderado",
+      "inOrder": "En orden"
+    },
+    "status": {
+      "severe": "Grave",
+      "inOrder": "Todo en orden"
+    },
     "searchPlaceholder": "Buscar por nombre o apellido...",
     "searchA11y": "Buscar paciente por nombre o apellido",
     "filterA11y": "Filtrar por nivel de riesgo",

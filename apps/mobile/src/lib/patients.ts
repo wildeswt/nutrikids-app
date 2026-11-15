@@ -166,3 +166,49 @@ export function paginatePatients(
     total: patients.length,
   };
 }
+
+export interface PatientRiskSection {
+  key: PatientRiskLevel;
+  titleKey: 'patients.sections.severe' | 'patients.sections.moderate' | 'patients.sections.inOrder';
+  count: number;
+  data: PatientListItem[];
+}
+
+/**
+ * Groups a patient list into 3 semantic sections:
+ * 1. SEVERE ("Riesgo alto")
+ * 2. RISK ("Riesgo moderado")
+ * 3. NO_ALERTS ("En orden")
+ */
+export function groupPatientsByRisk(patients: readonly PatientListItem[]): PatientRiskSection[] {
+  const severe: PatientListItem[] = [];
+  const risk: PatientListItem[] = [];
+  const noAlerts: PatientListItem[] = [];
+
+  for (const item of patients) {
+    if (item.riskLevel === 'SEVERE') severe.push(item);
+    else if (item.riskLevel === 'RISK') risk.push(item);
+    else noAlerts.push(item);
+  }
+
+  return [
+    {
+      key: 'SEVERE',
+      titleKey: 'patients.sections.severe',
+      count: severe.length,
+      data: severe,
+    },
+    {
+      key: 'RISK',
+      titleKey: 'patients.sections.moderate',
+      count: risk.length,
+      data: risk,
+    },
+    {
+      key: 'NO_ALERTS',
+      titleKey: 'patients.sections.inOrder',
+      count: noAlerts.length,
+      data: noAlerts,
+    },
+  ];
+}
