@@ -231,11 +231,23 @@
       }
     },
     "legendReference": "Lo esperado (OMS)",
+    "zoneLabels": {
+      "upper": "Por encima de lo esperado",
+      "normal": "Rango esperado (OMS)",
+      "lower": "Por debajo de lo esperado"
+    },
+    "nonDiagnosticNotice": "Esta gráfica apoya la valoración del crecimiento y no es un diagnóstico médico.",
+    "tapPointHint": "Toca cualquier punto de la curva para ver el detalle de ese control.",
+    "selectedRecordTitle": "Detalle del control seleccionado",
+    "trendSummaryTitle": "Resumen del crecimiento",
+    "trendSummaryFavorable": "La evolución reciente muestra una tendencia favorable en este indicador.",
+    "trendSummarySteady": "Seguimos acompañando el crecimiento registrado en cada control.",
     "favorableTrend": "Tendencia favorable",
     "lastRecordTitle": "Último control",
     "lastRecord": "Último control - {{date}}",
     "weight": "Peso",
     "height": "Estatura",
+    "position": "Posición",
     "recordedBy": "Registró",
     "notes": "Observaciones",
     "unitKgM2": "kg/m²",
