@@ -144,6 +144,13 @@ export default function ProfessionalDrawerLayout() {
           }}
         />
         <Drawer.Screen
+          name="evolution"
+          options={{
+            title: t('drawer.evolutionTitle'),
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
+        <Drawer.Screen
           name="add-checkup"
           options={{
             drawerLabel: t('drawer.addCheckup'),

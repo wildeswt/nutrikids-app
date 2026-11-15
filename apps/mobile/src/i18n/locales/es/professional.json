@@ -7,6 +7,7 @@
     "alertsTitle": "Bandeja de Alertas",
     "children": "Niños por riesgo",
     "childrenTitle": "Pacientes por Riesgo",
+    "evolutionTitle": "Evolución del paciente",
     "addCheckup": "Registrar control",
     "addCheckupTitle": "Registrar Control",
     "messages": "Mensajes y seguimientos",
