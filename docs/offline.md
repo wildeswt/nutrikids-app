@@ -62,7 +62,42 @@ Implementado en `apps/mobile/src/lib/connectivity.ts` sobre `@react-native-commu
 - `getConnectivity()`: consulta el estado actual mediante `NetInfo.fetch()`.
 - `subscribeToConnectivity(listener)`: envuelve `NetInfo.addEventListener` emitiendo `'online' | 'offline'` y retorna la función de desuscripción. El contexto React para la UI se implementará en NK-61.
 
-## 5. Diseño propuesto de la cola de sincronización (NK-59 a NK-63)
+## 5. Base de datos local: esquema, aislamiento, migraciones y borrado seguro (NK-59)
+
+Implementado bajo `apps/mobile/src/lib/local-db/` sobre la interfaz mínima `LocalDb` (`types.ts`), compatible con `SQLiteDatabase` de `expo-sqlite` y desacoplada para pruebas reales sobre `node:sqlite`.
+
+### Esquema local (versión 1)
+
+Las columnas sueltas se usan únicamente para filtrar y ordenar consultas; el campo `payload` almacena JSON serializado en formato `TEXT` y se valida tanto al escribir como al leer contra los esquemas de `@nutrikids/shared`. Todas las marcas temporales (`updated_at`, `created_at`, `measured_at`, `fetched_at`, `next_attempt_at`) se guardan en **ISO 8601 UTC**.
+
+- **`children`** (aislamiento por `user_id`): `user_id TEXT`, `id TEXT`, `payload TEXT`, `updated_at TEXT` — `PRIMARY KEY (user_id, id)`. Caché local de niños accesibles por el usuario.
+- **`checkups`** (aislamiento por `user_id`): `user_id TEXT`, `id TEXT`, `child_id TEXT`, `measured_at TEXT`, `payload TEXT`, `sync_state TEXT CHECK IN ('LOCAL', 'SENT')`, `created_at TEXT` — `PRIMARY KEY (user_id, id)` e índice `(user_id, child_id, measured_at DESC)`. Controles sincronizados del servidor (`SENT`) y controles locales sin enviar (`LOCAL`).
+- **`indicator_results`** (aislamiento por `user_id`): `user_id TEXT`, `checkup_id TEXT`, `indicator TEXT`, `payload TEXT` — `PRIMARY KEY (user_id, checkup_id, indicator)`. Resultados OMS por indicador (vista profesional o cuidador).
+- **`reference_curves`** (datos públicos de la OMS, sin `user_id`): `indicator TEXT`, `sex TEXT`, `position TEXT`, `payload TEXT`, `fetched_at TEXT` — `PRIMARY KEY (indicator, sex, position)`. Curvas OMS 2006 en caché.
+- **`sync_queue`** (aislamiento por `user_id`): `id TEXT PRIMARY KEY`, `user_id TEXT`, `kind TEXT CHECK IN ('checkup', 'follow-up', 'feeding')`, `payload TEXT`, `status TEXT CHECK IN ('LOCAL', 'SENDING', 'SENT', 'ERROR')`, `attempts INTEGER`, `next_attempt_at TEXT`, `last_error TEXT`, `created_at TEXT`, `updated_at TEXT` — índice `(user_id, status, next_attempt_at)`. Cola persistente de operaciones pendientes de sincronización.
+- **`meta`** (global de la app): `key TEXT PRIMARY KEY`, `value TEXT`. Metadatos clave/valor persistidos localmente.
+
+### Aislamiento por usuario y validación de `payload`
+
+- Todas las consultas de `childrenRepository`, `checkupsRepository`, `indicatorResultsRepository` y `syncQueueRepository` reciben `userId` explícito, filtran por `user_id = ?` y usan exclusivamente parámetros enlazados (nunca concatenación de SQL).
+- Varios usuarios que inicien sesión en el mismo teléfono nunca comparten ni ven filas de otro `user_id`; `reference_curves` carece de `user_id` por contener datos públicos de la OMS.
+- Si un `payload` almacenado está corrupto o falla la validación con `@nutrikids/shared`, el repositorio omite el registro y registra una advertencia en consola indicando **únicamente el nombre de la tabla**, sin exponer nombres, fechas de nacimiento, medidas ni notas clínicas.
+
+### Migraciones versionadas y apertura única
+
+- `runMigrations(db)` (`migrations.ts`) lee `PRAGMA user_version;`, aplica dentro de `db.withTransactionAsync` únicamente las migraciones con `version > user_version` y actualiza `PRAGMA user_version` al final de cada paso.
+- La ejecución es idempotente y rechaza de forma explícita bases cuya `user_version` sea superior a `LATEST_SCHEMA_VERSION`.
+- `getLocalDatabase()` (`database.ts`) comparte una única promesa en vuelo al abrir `openEncryptedDatabase('nutrikids.db')` y correr `runMigrations`, devolviendo siempre la misma instancia hasta que se llame a `closeLocalDatabase()`.
+
+### Borrado seguro al cerrar sesión
+
+- `wipeLocalData()` (`wipe.ts`, usada en NK-63) realiza en orden:
+  1. `closeLocalDatabase()` para cerrar la conexión activa y reiniciar el singleton.
+  2. `SQLite.deleteDatabaseAsync('nutrikids.db')` para eliminar el archivo cifrado del disco.
+  3. `deleteDatabaseKey()` (`encrypted-db.ts`) para borrar `nutrikids.localDb.encryptionKey` de `expo-secure-store` y limpiar la promesa en memoria.
+- Tolera que ni la base ni la clave existan todavía en el dispositivo.
+
+## 6. Diseño propuesto de la cola de sincronización (NK-59 a NK-63)
 
 La base cifrada alojará las tablas locales (niños, controles, resultados OMS, curvas y cola de sincronización) siguiendo estos lineamientos para los controles registrados sin internet:
 
@@ -79,7 +114,7 @@ La base cifrada alojará las tablas locales (niños, controles, resultados OMS, 
   - La operación es idempotente mediante el `id` UUID generado en el cliente, por lo que un reintento tras corte de red responde `DUPLICATE` sin duplicar controles ni alertas en PostgreSQL.
   - Cuando el servidor devuelve `checkup`, la app reemplaza la copia local con los resultados recalculados por el servidor (RF-07 / RF-14).
 
-## 6. Verificación pendiente en dispositivo
+## 7. Verificación pendiente en dispositivo
 
 Las pruebas automatizadas en Node/Vitest validan los módulos contra mocks de `expo-sqlite`, `expo-secure-store` y `@react-native-community/netinfo`. Queda pendiente validar en un **Development Build de Android** (dispositivo físico o emulador con Play/Dev Client):
 

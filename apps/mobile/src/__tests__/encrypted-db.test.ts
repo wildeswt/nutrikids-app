@@ -18,6 +18,7 @@ vi.mock('expo-secure-store', () => ({
 
 import {
   DATABASE_KEY_STORAGE_KEY,
+  deleteDatabaseKey,
   getDatabaseKey,
   openEncryptedDatabase,
 } from '../lib/local-db/encrypted-db.js';
@@ -69,6 +70,31 @@ describe('encrypted-db', () => {
       mockSecureStore.set(DATABASE_KEY_STORAGE_KEY, 'not-a-valid-hex-key');
 
       await expect(getDatabaseKey()).rejects.toThrow(/formato inválido/i);
+    });
+  });
+
+  describe('deleteDatabaseKey', () => {
+    it('deletes the stored key and clears any in-memory pending promise', async () => {
+      const firstKey = await getDatabaseKey();
+      expect(mockSecureStore.get(DATABASE_KEY_STORAGE_KEY)).toBe(firstKey);
+
+      await deleteDatabaseKey();
+
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(DATABASE_KEY_STORAGE_KEY, {
+        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+      });
+      expect(mockSecureStore.has(DATABASE_KEY_STORAGE_KEY)).toBe(false);
+
+      const nextKey = await getDatabaseKey();
+      expect(nextKey).toMatch(/^[0-9a-f]{64}$/);
+      expect(nextKey).not.toBe(firstKey);
+    });
+
+    it('tolerates missing keys or unavailable SecureStore without throwing', async () => {
+      await expect(deleteDatabaseKey()).resolves.toBeUndefined();
+
+      vi.mocked(SecureStore.isAvailableAsync).mockResolvedValueOnce(false);
+      await expect(deleteDatabaseKey()).resolves.toBeUndefined();
     });
   });
 

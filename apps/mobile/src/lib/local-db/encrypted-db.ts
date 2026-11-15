@@ -81,6 +81,36 @@ export async function getDatabaseKey(): Promise<string> {
   return pendingKeyPromise;
 }
 
+/**
+ * Elimina la clave de cifrado almacenada en SecureStore y limpia la promesa en memoria.
+ * Tolera entornos donde SecureStore no esté disponible o la clave no exista.
+ */
+export async function deleteDatabaseKey(): Promise<void> {
+  const inFlight = pendingKeyPromise;
+  pendingKeyPromise = null;
+  if (inFlight) {
+    await inFlight.catch(() => {});
+  }
+  pendingKeyPromise = null;
+
+  let available: boolean;
+  try {
+    available = await SecureStore.isAvailableAsync();
+  } catch {
+    available = false;
+  }
+
+  if (!available) {
+    return;
+  }
+
+  try {
+    await SecureStore.deleteItemAsync(DATABASE_KEY_STORAGE_KEY, SECURE_STORE_OPTIONS);
+  } catch {
+    // Se tolera que la clave ya no exista al limpiar en cierre de sesión.
+  }
+}
+
 /** Verifica que SQLite nativo con SQLCipher pueda usarse en la plataforma actual. */
 function assertNativeSqliteAvailable(): void {
   if (Platform.OS === 'web' && !Platform.isTesting) {

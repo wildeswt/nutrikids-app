@@ -88,6 +88,7 @@ vi.mock('expo-sqlite', () => ({
     };
     return database;
   }),
+  deleteDatabaseAsync: vi.fn(async () => {}),
 }));
 
 // @react-native-community/netinfo es un módulo nativo; se mockea en Node/Vitest con estado configurable.
