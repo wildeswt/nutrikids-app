@@ -6,9 +6,12 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ConsentChildItem } from '../../components/ConsentChildItem.js';
 import { LanguageSelector } from '../../components/LanguageSelector.js';
+import { SignOutPendingDialog } from '../../components/SignOutPendingDialog.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
+import { useSignOutFlow } from '../../hooks/useSignOutFlow.js';
+import { useSyncStatus } from '../../hooks/useSyncStatus.js';
 import { fetchCaregiverChildren } from '../../lib/consent-api.js';
 
 export { ConsentChildItem };
@@ -16,9 +19,16 @@ export { ConsentChildItem };
 export default function CaregiverProfileScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
   const router = useRouter();
-  const { user, activeRole, switchRole, signOut } = useAuth();
+  const { user, activeRole, switchRole } = useAuth();
+  const syncStatus = useSyncStatus();
+  const signOutFlow = useSignOutFlow({
+    onGoToPendingSync: () => router.push(APP_ROUTES.CAREGIVER.PENDING_SYNC as never),
+  });
   const [children, setChildren] = useState<ChildResponse[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
+
+  const pendingSyncCount = syncStatus.pending + syncStatus.sending;
+  const showPendingSyncRow = pendingSyncCount > 0 || syncStatus.error > 0;
 
   const hasDualRole =
     user?.roles.includes(USER_ROLES.CAREGIVER) && user?.roles.includes(USER_ROLES.PROFESSIONAL);
@@ -92,8 +102,26 @@ export default function CaregiverProfileScreen() {
           <LanguageSelector />
         </View>
 
-        {/* Derechos sobre los datos (NK-55) */}
+        {/* Derechos sobre los datos (NK-55) y pendientes de sincronización (NK-61) */}
         <View style={styles.sectionContainer}>
+          {showPendingSyncRow ? (
+            <Pressable
+              style={({ pressed }) => [styles.linkRow, pressed && styles.buttonPressed]}
+              onPress={() => router.push(APP_ROUTES.CAREGIVER.PENDING_SYNC as never)}
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.pendingSync', { count: pendingSyncCount })}
+              testID="profile-link-pendingSync"
+            >
+              <Ionicons name="cloud-upload-outline" size={22} color="#14532D" />
+              <View style={styles.linkText}>
+                <Text style={styles.linkTitle}>
+                  {t('profile.pendingSync', { count: pendingSyncCount })}
+                </Text>
+                <Text style={styles.linkSubtitle}>{t('profile.pendingSyncDescription')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+            </Pressable>
+          ) : null}
           {(
             [
               ['myData', APP_ROUTES.CAREGIVER.MY_DATA, 'person-outline'],
@@ -120,11 +148,18 @@ export default function CaregiverProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.logoutButton, pressed && styles.buttonPressed]}
-          onPress={() => void signOut()}
+          onPress={() => void signOutFlow.requestSignOut()}
+          disabled={signOutFlow.isSigningOut}
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.logout')}
+          accessibilityState={{ disabled: signOutFlow.isSigningOut }}
+          testID="caregiver-logout-button"
         >
           <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </Pressable>
       </View>
+
+      <SignOutPendingDialog {...signOutFlow.dialogProps} />
     </ScrollView>
   );
 }

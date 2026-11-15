@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { SecondaryButton } from '../../components/ui/SecondaryButton.js';
@@ -111,6 +111,22 @@ export default function CheckupSavedScreen() {
             />
             <Text style={styles.noteText}>{t('checkupSaved.teamNote')}</Text>
           </View>
+
+          {saved.pendingSync ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.pendingNotice,
+                pressed && styles.pendingNoticePressed,
+              ]}
+              onPress={() => router.push(APP_ROUTES.CAREGIVER.PENDING_SYNC as never)}
+              accessibilityRole="button"
+              accessibilityLabel={t('checkupSaved.pendingSyncNotice')}
+              testID="checkup-saved-pending-notice"
+            >
+              <Ionicons name="cloud-offline-outline" size={18} color="#E14100" />
+              <Text style={styles.pendingNoticeText}>{t('checkupSaved.pendingSyncNotice')}</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={styles.spacer} />
@@ -231,6 +247,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: PALETTE.text.body,
+  },
+  pendingNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FEF2EC',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 16,
+  },
+  pendingNoticePressed: {
+    opacity: 0.85,
+  },
+  pendingNoticeText: {
+    fontFamily: font('medium'),
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#E14100',
   },
   spacer: {
     flex: 1,

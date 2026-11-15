@@ -55,6 +55,16 @@ export function formatShortDate(value: string | Date): string {
   });
 }
 
+/** Medium date with short month and year, e.g. "18 oct 2026". */
+export function formatMediumDate(value: string | Date): string {
+  const date = toDate(value);
+  return i18n.t('common:date.medium', {
+    day: date.getDate(),
+    month: monthName(date, 'monthsShort'),
+    year: date.getFullYear(),
+  });
+}
+
 /** Abbreviated month with leading capital for chart X axes, e.g. "Abr" / "Wayru". */
 export function formatMonthShort(value: string | Date): string {
   const short = monthName(toDate(value), 'monthsShort');

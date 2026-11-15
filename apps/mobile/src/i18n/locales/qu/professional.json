@@ -16,7 +16,8 @@
     "alertDetailTitle": "Yuyachikkunamanta",
     "followUpTitle": "Seguimiento clínico",
     "referralTitle": "Interconsulta",
-    "chatTitle": "Conversación"
+    "chatTitle": "Conversación",
+    "pendingSyncTitle": "Pendientes de envío"
   },
   "alerts": {
     "title": "Yuyachikkuna",
@@ -128,6 +129,8 @@
     "noSpecialty": "Mana churashkachu",
     "activeRole": "Kunan ruray:",
     "switchToCaregiver": "Wawa kamak rikuchikman tikray",
+    "pendingSync": "Pendientes de envío ({{count}})",
+    "pendingSyncDescription": "Registros guardados en este dispositivo",
     "logout": "Llukshiy"
   },
   "alertDetail": {

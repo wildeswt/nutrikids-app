@@ -309,6 +309,33 @@ describe('FeedingScreen («Alimentación»)', () => {
     expect(mocks.back).toHaveBeenCalledTimes(1);
   });
 
+  it('shows offline saved confirmation and navigates back when queued locally', async () => {
+    mocks.create.mockResolvedValue({
+      id: '33333333-3333-4333-8333-333333333333',
+      childId: MATEO.id,
+      logDate: '2026-10-18',
+      mealsPerDay: 1,
+      details: 'Comidas: Almuerzo.',
+      savedLocally: true,
+    });
+
+    let tree = renderTree();
+    press(tree, 'feeding-meal-lunch');
+    tree = renderTree();
+
+    await pressAsync(tree, 'submit-feeding-button');
+    tree = renderTree();
+
+    const bannerText = textContent(findElementByTestId(tree, 'feeding-success-banner'));
+    expect(bannerText).toBe(
+      'Sin conexión · se guardó en este dispositivo y se enviará al reconectar',
+    );
+    expect(findElementByTestId(tree, 'feeding-error-banner')).toBeNull();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(mocks.back).toHaveBeenCalledTimes(1);
+  });
+
   it('shows offline error, preserves form, and retries with the same id', async () => {
     const offlineMsg = i18n.t('errors:feeding.network');
     const networkErr = new FeedingApiError(offlineMsg, 0, { isNetwork: true });

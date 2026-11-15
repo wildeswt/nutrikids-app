@@ -63,7 +63,8 @@ export default function FeedingScreen() {
   const [notes, setNotes] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [consentRequired, setConsentRequired] = useState(false);
-  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [savedMode, setSavedMode] = useState<'none' | 'online' | 'offline'>('none');
+  const savedSuccess = savedMode !== 'none';
 
   /** Mismo UUID en reintentos del mismo contenido para evitar duplicados en la API. */
   const attemptId = useRef<string | null>(null);
@@ -85,7 +86,7 @@ export default function FeedingScreen() {
     attemptId.current = null;
     setErrorMessage(null);
     setConsentRequired(false);
-    setSavedSuccess(false);
+    setSavedMode('none');
   };
 
   const handleBack = useCallback(() => {
@@ -151,9 +152,9 @@ export default function FeedingScreen() {
     }
 
     try {
-      await create(result.input);
+      const created = await create(result.input);
       attemptId.current = null;
-      setSavedSuccess(true);
+      setSavedMode(created?.savedLocally ? 'offline' : 'online');
       redirectTimer.current = setTimeout(() => {
         handleBack();
       }, SAVE_REDIRECT_DELAY_MS);
@@ -269,7 +270,9 @@ export default function FeedingScreen() {
             accessibilityRole="alert"
             testID="feeding-success-banner"
           >
-            <Text style={styles.successBannerText}>{t('feeding.savedSuccess')}</Text>
+            <Text style={styles.successBannerText}>
+              {savedMode === 'offline' ? t('feeding.savedOffline') : t('feeding.savedSuccess')}
+            </Text>
           </View>
         ) : null}
 

@@ -57,6 +57,32 @@
     "daysAgo_other": "{{count}} puncha ñawpa",
     "dateAtTime": "{{date}}, {{time}} pachapi"
   },
+  "offline": {
+    "dataNotice": "Datos guardados en este dispositivo · actualizados hace {{time}}",
+    "dataNoticeNoTime": "Datos guardados en este dispositivo",
+    "noDataMessage": "Conéctate a internet una vez para descargar tu información",
+    "localOnlyBadge": "Guardado en este dispositivo",
+    "elapsed": {
+      "lessThanMinute": "menos de 1 minuto",
+      "minutes_one": "{{count}} minuto",
+      "minutes_other": "{{count}} minutos",
+      "hours_one": "{{count}} hora",
+      "hours_other": "{{count}} horas",
+      "days_one": "{{count}} día",
+      "days_other": "{{count}} días"
+    }
+  },
+  "connectionBar": {
+    "offline": "Sin conexión",
+    "offlineWithCount_one": "Sin conexión · {{count}} registro por enviar",
+    "offlineWithCount_other": "Sin conexión · {{count}} registros por enviar",
+    "sending_one": "Enviando {{count}} registro…",
+    "sending_other": "Enviando {{count}} registros…",
+    "error_one": "{{count}} registro no se pudo enviar",
+    "error_other": "{{count}} registros no se pudieron enviar",
+    "errorAction": "Ver",
+    "synced": "Todo sincronizado"
+  },
   "language": {
     "title": "Shimi",
     "description": "Ima shimipi app-ta rikunata munanki, akllay.",
@@ -65,6 +91,7 @@
   },
   "date": {
     "long": "{{day}} {{month}} killa {{year}}",
+    "medium": "{{day}} {{month}} {{year}}",
     "short": "{{day}} {{month}}",
     "months": {
       "1": "kulla",
@@ -113,5 +140,24 @@
       "alert_pending_review": "Qawanapaq willay",
       "alert_overdue": "Pacha yallisqa willay"
     }
+  },
+  "signOutPending": {
+    "title_one": "1 mana kachasqa killkaymi tiyan",
+    "title_other": "{{count}} mana kachasqa killkaykunam tiyan",
+    "body": "Mana kachaspa lluqsikpika kay karurimana ukhumanta pichasqam kanka. Mana chinkachinapaq ñawpaqta kachay.",
+    "syncAndSignOut": "Kachay hinaspa lluqsiy",
+    "syncing": "Kachachkan...",
+    "offlineHint": "Kachanapaq internetmi minishtirin",
+    "syncFailed_one": "Manam 1 killkayta kachayta atikurchu",
+    "syncFailed_other": "Manam {{count}} killkaykunata kachayta atikurchu",
+    "goToPendingSync": "Kachanapaq suyachkaqkunaman riy",
+    "signOutAndDelete": "Lluqsiy hinaspa willaykunata pichay",
+    "signingOut": "Lluqsichkan...",
+    "confirmDeleteTitle": "Lluqsinapaq allichay",
+    "confirmDeleteBody_one": "1 mana kachasqa killkaymi chinkanka. Kay ruraytaqa manam kutichiy atikunchu",
+    "confirmDeleteBody_other": "{{count}} mana kachasqa killkaykunam chinkanka. Kay ruraytaqa manam kutichiy atikunchu",
+    "confirmDeleteAction": "Lluqsiy hinaspa willaykunata pichay",
+    "cancel": "Mana ari",
+    "closeA11y": "Lluqsiyta saqiy"
   }
 }
