@@ -44,3 +44,33 @@ export function createLoginRateLimiter(options?: LoginRateLimiterOptions): Reque
     },
   });
 }
+
+export interface LookupRateLimiterOptions {
+  maxAttempts?: number;
+  windowMinutes?: number;
+}
+
+/**
+ * Limita las búsquedas de profesionales por registro (por defecto 10 cada 15 min por usuario)
+ * para que no sirvan para enumerar profesionales. Cuentan tanto los aciertos como los fallos.
+ * Debe montarse después de `authenticate`.
+ */
+export function createLookupRateLimiter(options?: LookupRateLimiterOptions): RequestHandler {
+  const maxAttempts = options?.maxAttempts ?? env.LOOKUP_MAX_ATTEMPTS;
+  const windowMinutes = options?.windowMinutes ?? env.LOOKUP_WINDOW_MINUTES;
+
+  return rateLimit({
+    windowMs: windowMinutes * 60 * 1000,
+    limit: maxAttempts,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    keyGenerator: (req) => req.auth?.userId ?? ipKeyGenerator(req.ip ?? '127.0.0.1'),
+    handler: (_req, res) => {
+      const payload: ErrorResponse = {
+        error: 'Too Many Requests',
+        message: 'Demasiadas búsquedas de profesionales. Intenta nuevamente más tarde.',
+      };
+      res.status(429).json(payload);
+    },
+  });
+}

@@ -27,8 +27,7 @@
     "filtersA11y": "Filtrar alertas por estado",
     "filters": {
       "OPEN": "Sin revisar",
-      "GENERATED": "Generadas",
-      "PENDING_REVIEW": "Pendientes de revisión"
+      "ATTENDED": "Atendidas"
     },
     "status": {
       "GENERATED": "Generada",
@@ -130,6 +129,7 @@
     "email": "Correo:",
     "specialty": "Especialidad:",
     "noSpecialty": "No asignada",
+    "licenseNumber": "Registro profesional:",
     "activeRole": "Perfil activo:",
     "switchToCaregiver": "Cambiar a vista Cuidador",
     "pendingSync": "Pendientes de envío ({{count}})",

@@ -66,6 +66,8 @@ const EnvSchema = z
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
     LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
     LOGIN_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
+    LOOKUP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(10),
+    LOOKUP_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
     PROFESSIONAL_INVITE_CODES: z.string().optional(),
     /** Plazo (horas) para revisar una alerta sin revisar antes de marcarla vencida (NK-30). */
     ALERT_REVIEW_DEADLINE_HOURS: z.coerce.number().int().positive().default(72),
@@ -151,6 +153,8 @@ const EnvSchema = z
       REFRESH_TOKEN_TTL_DAYS: raw.REFRESH_TOKEN_TTL_DAYS,
       LOGIN_MAX_ATTEMPTS: raw.LOGIN_MAX_ATTEMPTS,
       LOGIN_WINDOW_MINUTES: raw.LOGIN_WINDOW_MINUTES,
+      LOOKUP_MAX_ATTEMPTS: raw.LOOKUP_MAX_ATTEMPTS,
+      LOOKUP_WINDOW_MINUTES: raw.LOOKUP_WINDOW_MINUTES,
       PROFESSIONAL_INVITE_CODES: inviteCodes,
       CLASSIFICATION_CUTOFFS: Object.freeze(cutoffs) as Readonly<Cutoffs>,
       ALERT_REVIEW_DEADLINE_HOURS: raw.ALERT_REVIEW_DEADLINE_HOURS,

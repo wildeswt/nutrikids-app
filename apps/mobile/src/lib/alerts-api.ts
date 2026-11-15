@@ -13,8 +13,7 @@ import { authFetch, parseApiError } from './api.js';
 /** Status filters offered as chips in the professional inbox. */
 export const ALERT_STATUS_FILTERS = {
   OPEN: OPEN_ALERT_STATUSES,
-  GENERATED: ['GENERATED'],
-  PENDING_REVIEW: ['PENDING_REVIEW'],
+  ATTENDED: ['REVIEWED', 'FOLLOW_UP_ESTABLISHED'],
 } as const satisfies Record<string, readonly AlertStatus[]>;
 
 export type AlertStatusFilter = keyof typeof ALERT_STATUS_FILTERS;

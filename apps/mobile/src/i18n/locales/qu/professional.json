@@ -27,8 +27,7 @@
     "filtersA11y": "Yuyachikkunata ima kashkaman akllay",
     "filters": {
       "OPEN": "Mana rikushka",
-      "GENERATED": "Rurashka",
-      "PENDING_REVIEW": "Rikuyta shuyan"
+      "ATTENDED": "Rikushka"
     },
     "status": {
       "GENERATED": "Rurashka",
@@ -130,6 +129,7 @@
     "email": "Correo:",
     "specialty": "Hampi yachay:",
     "noSpecialty": "Mana churashkachu",
+    "licenseNumber": "Registro profesional:",
     "activeRole": "Kunan ruray:",
     "switchToCaregiver": "Wawa kamak rikuchikman tikray",
     "pendingSync": "Pendientes de envío ({{count}})",

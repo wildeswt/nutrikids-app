@@ -53,13 +53,15 @@ export function useNotifications(): UseNotificationsResult {
     }
   }, []);
 
+  // Stable identities: screens put `reload` in effect dependencies (e.g. useFocusEffect on the
+  // caregiver home); a new function per render would re-run the effect in an endless loop.
+  const reload = useCallback(() => loadNotifications(false), [loadNotifications]);
+  const refresh = useCallback(() => loadNotifications(true), [loadNotifications]);
+
   const unreadCount = useMemo(
     () => notifications.filter((item) => !item.readAt).length,
     [notifications],
   );
-
-  const reload = useCallback(() => loadNotifications(false), [loadNotifications]);
-  const refresh = useCallback(() => loadNotifications(true), [loadNotifications]);
 
   return {
     notifications,
