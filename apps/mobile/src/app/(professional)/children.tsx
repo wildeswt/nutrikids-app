@@ -121,7 +121,7 @@ export default function ProfessionalPatientsScreen() {
   };
 
   const renderPatientCard = ({ item }: { item: PatientListItem }) => {
-    const { child, riskLevel, primaryAlert, openAlertCount } = item;
+    const { child, riskLevel, primaryAlert } = item;
     const fullName = `${child.firstName} ${child.lastName}`;
     const ageText = formatChildAge(child.birthDate);
 
