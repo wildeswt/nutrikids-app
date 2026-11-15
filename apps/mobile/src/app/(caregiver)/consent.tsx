@@ -162,14 +162,9 @@ export default function ConsentScreen() {
           />
         )}
 
-        {/* Metadata de versión y fecha si ya existe consentimiento */}
+        {/* Metadata de fecha si ya existe consentimiento */}
         {consent && (
           <Card style={styles.metaCard} testID="consent-metadata">
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>{t('screen.versionLabel')}</Text>
-              <Text style={styles.versionBadge}>{consent.textVersion}</Text>
-            </View>
-
             <View style={styles.metaRow}>
               <Text style={styles.metaLabel}>{t('screen.grantedAtLabel')}</Text>
               <Text style={styles.metaValue}>{formatDate(consent.grantedAt)}</Text>

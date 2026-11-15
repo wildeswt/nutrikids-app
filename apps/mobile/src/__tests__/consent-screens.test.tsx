@@ -248,7 +248,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       expect(mocks.replace).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.ADD_CHILD);
     });
 
-    it('muestra versión del texto aceptado y fecha en modo vista con opción de revocar', () => {
+    it('muestra fecha y estado en modo vista con opción de revocar', () => {
       mocks.searchParams = {
         childId: 'c0000000-0000-0000-0000-000000000001',
         childName: 'Sofía Morales',
@@ -262,9 +262,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
 
       const html = renderToString(React.createElement(ConsentScreen));
 
-      // Debe mostrar la versión aceptada y la fecha
-      expect(html).toContain('Versión aceptada:');
-      expect(html).toContain('v1');
+      expect(html).not.toContain('Versión aceptada:');
       expect(html).toContain(i18n.t('consent:screen.grantedAtLabel'));
       expect(html).toContain('ACTIVO');
 
@@ -318,7 +316,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       expect(tree).toBeTruthy();
     });
 
-    it('ConsentChildItem muestra versión, fecha y botón de revocar en perfil', () => {
+    it('ConsentChildItem muestra fecha y botón de revocar en perfil', () => {
       mocks.hookState = {
         ...mocks.hookState,
         status: 'active',
@@ -338,8 +336,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       expect(html).toContain('Sofía');
       expect(html).toContain('Morales');
       expect(html).toContain('ACTIVO');
-      expect(html).toContain('Versión aceptada:');
-      expect(html).toContain('v1');
+      expect(html).not.toContain('Versión aceptada:');
       expect(html).toContain('Fecha:');
       expect(html).toContain(i18n.t('caregiver:consentItem.revoke'));
       expect(html).toContain('Ver documento');
