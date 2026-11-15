@@ -18,7 +18,11 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={authStyles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.contentWrapper}>
           <AuthBrandHeader style={styles.brandHeader} />
 
@@ -40,7 +44,7 @@ export default function WelcomeScreen() {
               />
             </View>
 
-            {/* Selector de idioma (Español / Kichwa) visible antes de iniciar sesión */}
+            {/* Selector de idioma */}
             <View style={styles.languageContainer}>
               <LanguageSelector showHeader={false} />
             </View>
@@ -76,9 +80,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 32,
   },
-  languageContainer: {
-    marginTop: 24,
-  },
   actionsContainer: {
     width: '100%',
     alignItems: 'center',
@@ -87,6 +88,10 @@ const styles = StyleSheet.create({
   buttonGroup: {
     width: '100%',
     gap: 16,
+  },
+  languageContainer: {
+    width: '100%',
+    marginTop: 24,
   },
   footer: {
     marginTop: 40,
