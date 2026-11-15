@@ -3,7 +3,7 @@ import DateTimePicker, { type DateTimePickerEvent } from '@react-native-communit
 import { CHECKUP_NOTES_MAX, type Position } from '@nutrikids/shared';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -20,15 +20,18 @@ import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useCheckups } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
-import { formatLongDate } from '../../i18n/format.js';
+import { formatDecimal, formatLongDate } from '../../i18n/format.js';
 import { isConsentRequiredError } from '../../lib/checkups-api.js';
 import {
   buildCreateCheckupInput,
+  calculateLocalWhoResults,
   formatDateInput,
+  measuredAtFromIsoDate,
   parseDateInput,
+  parseDecimalInput,
   type CheckupFormError,
 } from '../../lib/checkup-form.js';
-import { toCheckupSavedParams } from '../../lib/checkup-route.js';
+import { toCheckupSavedParams, type CheckupRoleMode } from '../../lib/checkup-route.js';
 import { formatChildAge } from '../../lib/children-api.js';
 import { generateUuid } from '../../lib/uuid.js';
 
@@ -41,9 +44,10 @@ function isoToLocalDate(iso: string): Date | null {
   return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
 
-export default function AddCheckupScreen() {
+export function CheckupFormContent({ roleMode = 'CAREGIVER' }: { roleMode?: CheckupRoleMode }) {
+  const isProfessional = roleMode === 'PROFESSIONAL';
   const router = useRouter();
-  const { t } = useTranslation(['caregiver', 'common']);
+  const { t } = useTranslation(['caregiver', 'professional', 'common']);
   const params = useLocalSearchParams<{ childId?: string }>();
 
   const {
@@ -107,7 +111,9 @@ export default function AddCheckupScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace(APP_ROUTES.CAREGIVER.HOME);
+      router.replace(
+        (isProfessional ? APP_ROUTES.PROFESSIONAL.CHILDREN : APP_ROUTES.CAREGIVER.HOME) as never,
+      );
     }
   };
 
@@ -140,7 +146,12 @@ export default function AddCheckupScreen() {
         position,
         notesText: observations,
       },
-      { birthDate: activeChild.birthDate, confirmOutlier: confirmedOutlier, id: attemptId.current },
+      {
+        birthDate: activeChild.birthDate,
+        sex: activeChild.sex,
+        confirmOutlier: confirmedOutlier,
+        id: attemptId.current,
+      },
     );
 
     if (!result.ok) {
@@ -161,7 +172,10 @@ export default function AddCheckupScreen() {
       attemptId.current = null;
       router.push({
         pathname: APP_ROUTES.CAREGIVER.CHECKUP_SAVED as never,
-        params: toCheckupSavedParams(activeChild, checkup),
+        params: toCheckupSavedParams(activeChild, checkup, {
+          localEvaluation: result.localEvaluation,
+          roleMode,
+        }),
       });
     } catch (err) {
       if (isConsentRequiredError(err)) {
@@ -189,11 +203,27 @@ export default function AddCheckupScreen() {
     ? (isoToLocalDate(activeChild.birthDate) ?? undefined)
     : undefined;
 
+  const liveLocalEvaluation = useMemo(() => {
+    if (!activeChild || !parsedIsoDate) return null;
+    const weightKg = parseDecimalInput(weightText);
+    const lengthHeightCm = parseDecimalInput(heightText);
+    if (!Number.isFinite(weightKg) || !Number.isFinite(lengthHeightCm)) return null;
+    if (weightKg <= 0 || lengthHeightCm <= 0) return null;
+    return calculateLocalWhoResults({
+      sex: activeChild.sex,
+      birthDate: activeChild.birthDate,
+      measuredAt: measuredAtFromIsoDate(parsedIsoDate),
+      weightKg,
+      lengthHeightCm,
+      position,
+    });
+  }, [activeChild, heightText, parsedIsoDate, position, weightText]);
+
   const isLoadingChildren = childrenStatus === 'idle' || childrenStatus === 'loading';
 
   const header = (
     <ScreenHeader
-      title={t('addCheckup.title')}
+      title={isProfessional ? t('professional:addCheckup.title') : t('addCheckup.title')}
       backLabel={t('addCheckup.back')}
       onBack={handleBack}
       style={styles.header}
@@ -240,21 +270,39 @@ export default function AddCheckupScreen() {
             </View>
           ) : (
             <View style={styles.stateBox} testID="add-checkup-empty">
-              <Text style={styles.stateTitle}>{t('addCheckup.emptyTitle')}</Text>
-              <Text style={styles.stateText}>{t('addCheckup.emptySubtitle')}</Text>
+              <Text style={styles.stateTitle}>
+                {isProfessional
+                  ? t('professional:addCheckup.emptyTitle')
+                  : t('addCheckup.emptyTitle')}
+              </Text>
+              <Text style={styles.stateText}>
+                {isProfessional
+                  ? t('professional:addCheckup.emptySubtitle')
+                  : t('addCheckup.emptySubtitle')}
+              </Text>
               <Pressable
                 style={({ pressed }) => [styles.stateButton, pressed && styles.pressed]}
                 onPress={() =>
-                  router.push({
-                    pathname: APP_ROUTES.CAREGIVER.CONSENT as never,
-                    params: { mode: 'register' },
-                  })
+                  isProfessional
+                    ? router.replace(APP_ROUTES.PROFESSIONAL.CHILDREN as never)
+                    : router.push({
+                        pathname: APP_ROUTES.CAREGIVER.CONSENT as never,
+                        params: { mode: 'register' },
+                      })
                 }
                 accessibilityRole="button"
-                accessibilityLabel={t('addCheckup.addChild')}
+                accessibilityLabel={
+                  isProfessional
+                    ? t('professional:addCheckup.goBackToPatients')
+                    : t('addCheckup.addChild')
+                }
                 testID="add-checkup-add-child"
               >
-                <Text style={styles.stateButtonText}>{t('addCheckup.addChild')}</Text>
+                <Text style={styles.stateButtonText}>
+                  {isProfessional
+                    ? t('professional:addCheckup.goBackToPatients')
+                    : t('addCheckup.addChild')}
+                </Text>
               </Pressable>
             </View>
           )}
@@ -283,10 +331,18 @@ export default function AddCheckupScreen() {
             style={({ pressed }) => [styles.changePatientButton, pressed && styles.pressed]}
             onPress={handleSwitchPatient}
             accessibilityRole="button"
-            accessibilityLabel={t('addCheckup.changeChild')}
+            accessibilityLabel={
+              isProfessional
+                ? t('professional:addCheckup.changePatient')
+                : t('addCheckup.changeChild')
+            }
             testID="change-child-button"
           >
-            <Text style={styles.changePatientText}>{t('addCheckup.changeChild')}</Text>
+            <Text style={styles.changePatientText}>
+              {isProfessional
+                ? t('professional:addCheckup.changePatient')
+                : t('addCheckup.changeChild')}
+            </Text>
           </Pressable>
         ) : (
           <View style={styles.changePatientButton} />
@@ -507,6 +563,65 @@ export default function AddCheckupScreen() {
           </Text>
         </View>
 
+        {/* Resultado preliminar calculado localmente con who-growth */}
+        {liveLocalEvaluation ? (
+          <View
+            style={[
+              styles.localResultCard,
+              liveLocalEvaluation.hasAlert && styles.localResultCardAlert,
+            ]}
+            testID="add-checkup-local-result"
+          >
+            <View style={styles.localResultHeader}>
+              <Ionicons
+                name={liveLocalEvaluation.hasAlert ? 'alert-circle-outline' : 'analytics-outline'}
+                size={18}
+                color={liveLocalEvaluation.hasAlert ? PALETTE.secondary : PALETTE.primary}
+              />
+              <Text style={styles.localResultTitle}>
+                {isProfessional
+                  ? t('professional:addCheckup.localResultTitle')
+                  : t('addCheckup.localPreviewTitle')}
+              </Text>
+            </View>
+            {isProfessional ? (
+              <View style={styles.localResultRows}>
+                <Text style={styles.localResultSummary}>
+                  {liveLocalEvaluation.hasAlert
+                    ? t('professional:addCheckup.localSummaryAlert', {
+                        risk: t(
+                          `professional:children.classifications.${liveLocalEvaluation.primary}`,
+                        ),
+                      })
+                    : t('professional:addCheckup.localSummaryNormal')}
+                </Text>
+                {liveLocalEvaluation.results.map((item) => (
+                  <View key={item.indicator} style={styles.localIndicatorRow}>
+                    <Text style={styles.localIndicatorName}>
+                      {t(`professional:alerts.indicator.${item.indicator}`)}
+                    </Text>
+                    <Text style={styles.localIndicatorMetrics}>
+                      {t('professional:addCheckup.zScoreValue', {
+                        value: formatDecimal(item.zScore, 2),
+                      })}{' '}
+                      ·{' '}
+                      {t('professional:addCheckup.percentileValue', {
+                        value: formatDecimal(item.percentile, 0),
+                      })}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.localResultSummary}>
+                {liveLocalEvaluation.hasAlert
+                  ? t('addCheckup.localPreviewAlert')
+                  : t('addCheckup.localPreviewNormal')}
+              </Text>
+            )}
+          </View>
+        ) : null}
+
         {/* Botón Guardar y calcular */}
         <PrimaryButton
           label={saving ? t('addCheckup.saving') : t('addCheckup.submit')}
@@ -520,6 +635,10 @@ export default function AddCheckupScreen() {
       </KeyboardAwareScrollView>
     </SafeAreaView>
   );
+}
+
+export default function AddCheckupScreen() {
+  return <CheckupFormContent roleMode="CAREGIVER" />;
 }
 
 const styles = StyleSheet.create({
@@ -695,6 +814,58 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: 10,
+  },
+  localResultCard: {
+    backgroundColor: '#EDF6F4',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#C5DFDA',
+    padding: 14,
+    marginBottom: 14,
+    gap: 8,
+  },
+  localResultCardAlert: {
+    backgroundColor: '#FEF2EC',
+    borderColor: '#FAD1BF',
+  },
+  localResultHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  localResultTitle: {
+    fontFamily: font('semibold'),
+    fontSize: 13,
+    fontWeight: '600',
+    color: PALETTE.primary,
+  },
+  localResultSummary: {
+    fontFamily: font('regular'),
+    fontSize: 13,
+    lineHeight: 18,
+    color: PALETTE.text.body,
+  },
+  localResultRows: {
+    gap: 6,
+  },
+  localIndicatorRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  localIndicatorName: {
+    fontFamily: font('medium'),
+    fontSize: 12,
+    fontWeight: '500',
+    color: PALETTE.text.title,
+    flex: 1,
+  },
+  localIndicatorMetrics: {
+    fontFamily: font('semibold'),
+    fontSize: 12,
+    fontWeight: '600',
+    color: PALETTE.primary,
   },
   consentButton: {
     alignSelf: 'flex-start',
