@@ -84,6 +84,11 @@ vi.mock('expo-file-system', () => {
   return { File, Paths: { document: { uri: 'file:///documents' } }, __files: files };
 });
 
+// expo-crypto es un módulo nativo; en Node se usa el generador de Web Crypto.
+vi.mock('expo-crypto', () => ({
+  getRandomBytes: (size: number) => globalThis.crypto.getRandomValues(new Uint8Array(size)),
+}));
+
 // expo-secure-store depende del runtime nativo de expo; se provee un mock en memoria por defecto.
 vi.mock('expo-secure-store', () => ({
   isAvailableAsync: vi.fn(async () => true),

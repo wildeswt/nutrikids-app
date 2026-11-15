@@ -86,10 +86,6 @@ export function ConsentChildItem({ child }: ConsentChildItemProps) {
       {consent && !consent.revokedAt && (
         <View style={styles.consentDetails}>
           <Text style={styles.consentDetailText}>
-            <Text style={styles.detailLabel}>{t('consentItem.version')}</Text>
-            {consent.textVersion}
-          </Text>
-          <Text style={styles.consentDetailText}>
             <Text style={styles.detailLabel}>{t('consentItem.date')}</Text>
             {formatDate(consent.grantedAt)}
           </Text>
