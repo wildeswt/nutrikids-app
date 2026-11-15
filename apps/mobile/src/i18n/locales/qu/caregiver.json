@@ -271,7 +271,8 @@
     "zoneLabels": {
       "upper": "Shuyashkamanta hawa",
       "normal": "Shuyashka tupuy (OMS)",
-      "lower": "Shuyashkamanta ura"
+      "lower": "Shuyashkamanta ura",
+      "outer": "Shuyashkamanta hawa/ura"
     },
     "nonDiagnosticNotice": "Kay rikuchikka wiñayta rikunkapak yanapanmi, mana hampik diagnósticochu kan.",
     "tapPointHint": "Maykan iñuta llapiy chay kamaymanta rikunkapak.",

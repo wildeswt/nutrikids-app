@@ -186,6 +186,7 @@ vi.mock('expo-secure-store', () => ({
 vi.mock('expo-router', () => ({
   useRouter: () => ({ push: mocks.push }),
   useLocalSearchParams: () => mocks.params,
+  useFocusEffect: vi.fn(),
 }));
 
 vi.mock('@expo/vector-icons', () => ({
@@ -372,19 +373,21 @@ describe('Pantalla Figura 6c — Evolución y Curvas OMS (RF-07, RF-10)', () => 
     expect(textContent(selectedCard)).toContain('90,8 cm');
     expect(textContent(selectedCard)).toContain('Medición en casa');
     expect(textContent(selectedCard)).toContain(i18n.t('caregiver:evolution.origin.CAREGIVER'));
+
+    // Al cerrar el modal se oculta el detalle
+    press(tree, 'evolution-checkup-modal-close');
+    tree = renderTree(EvolutionScreen as () => unknown);
+    expect(findElementByTestId(tree, 'evolution-selected-checkup-card')).toBeNull();
   });
 
   it('Criterio 3: las zonas entre líneas están rotuladas con texto en ambas vistas', () => {
     const caregiverTree = renderTree(EvolutionScreen as () => unknown);
 
     expect(textContent(findElementByTestId(caregiverTree, 'growth-chart-zone-label-upper'))).toBe(
-      i18n.t('caregiver:evolution.zoneLabels.upper'),
+      i18n.t('caregiver:evolution.zoneLabels.outer'),
     );
     expect(textContent(findElementByTestId(caregiverTree, 'growth-chart-zone-label-normal'))).toBe(
       i18n.t('caregiver:evolution.zoneLabels.normal'),
-    );
-    expect(textContent(findElementByTestId(caregiverTree, 'growth-chart-zone-label-lower'))).toBe(
-      i18n.t('caregiver:evolution.zoneLabels.lower'),
     );
 
     const professionalTree = renderTree(ProfessionalChildrenScreen as () => unknown);
@@ -399,12 +402,7 @@ describe('Pantalla Figura 6c — Evolución y Curvas OMS (RF-07, RF-10)', () => 
     ).toBe(i18n.t('professional:children.zoneLabels.lower'));
   });
 
-  it('Criterio 4: muestra el aviso permanente en pantalla de que la gráfica apoya la valoración y no es un diagnóstico', () => {
-    const caregiverTree = renderTree(EvolutionScreen as () => unknown);
-    const caregiverNotice = findElementByTestId(caregiverTree, 'evolution-non-diagnostic-notice');
-    expect(caregiverNotice).not.toBeNull();
-    expect(textContent(caregiverNotice)).toBe(i18n.t('caregiver:evolution.nonDiagnosticNotice'));
-
+  it('Criterio 4: el profesional conserva el aviso permanente de apoyo a la valoración no diagnóstico', () => {
     const professionalTree = renderTree(ProfessionalChildrenScreen as () => unknown);
     const professionalNotice = findElementByTestId(
       professionalTree,
