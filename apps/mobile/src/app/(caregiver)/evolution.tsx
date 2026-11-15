@@ -333,7 +333,7 @@ export default function EvolutionScreen() {
         </Card>
 
         {/* Detalle del control seleccionado al tocar un punto de la gráfica */}
-        {selectedCheckupId && selectedCheckup.id !== latest.id ? (
+        {selectedCheckupId ? (
           <Card style={styles.selectedRecordCard} testID="evolution-selected-checkup-card">
             <View style={styles.lastRecordHeader}>
               <Text style={styles.lastRecordTitle}>{t('evolution.selectedRecordTitle')}</Text>
