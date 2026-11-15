@@ -171,6 +171,26 @@ describe('sync-engine', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
+  it('trata una respuesta ilegible (p. ej. portal cautivo) como reintentable, no como error', async () => {
+    const id = makeUuid(11);
+    await seedPendingCheckup(db, USER_A, makeCheckupItem(id));
+
+    const post = vi.fn<PostSyncCheckupsFn>(async () => {
+      throw new SyncApiError('Respuesta inválida', {
+        kind: 'invalid-response',
+        status: 200,
+        retryable: true,
+      });
+    });
+
+    const summary = await flushCheckupQueue({ db, userId: USER_A, now: NOW_ISO, post });
+
+    expect(summary.failedPermanent).toBe(0);
+    expect(summary.deferredRetry).toBe(1);
+    expect(await syncQueueRepository.listByStatus(db, USER_A, 'ERROR')).toHaveLength(0);
+    expect(await syncQueueRepository.listByStatus(db, USER_A, 'LOCAL')).toHaveLength(1);
+  });
+
   it('vuelve a LOCAL con attempts + 1 y next_attempt_at ante error de red del lote', async () => {
     const id = makeUuid(10);
     await seedPendingCheckup(db, USER_A, makeCheckupItem(id));

@@ -63,10 +63,8 @@ export function isRetryableSyncError(error: unknown): boolean {
     return true;
   }
 
-  if (error instanceof Error && error.name === 'ZodError') {
-    return false;
-  }
-
+  // Cualquier otro fallo (incluida una respuesta que no cumple el esquema) se reintenta: el envío
+  // es idempotente por `id`, así que repetirlo nunca duplica controles.
   return true;
 }
 
@@ -118,7 +116,9 @@ export async function postSyncCheckups(
     throw new SyncApiError(i18n.t('errors:invalidResponse'), {
       kind: 'invalid-response',
       status: response.status,
-      retryable: false,
+      // Una respuesta ilegible (p. ej. portal cautivo) no prueba que los controles sean inválidos:
+      // el reenvío es idempotente, así que se reintenta con espera creciente.
+      retryable: true,
       cause: err,
     });
   }
@@ -128,7 +128,9 @@ export async function postSyncCheckups(
     throw new SyncApiError(i18n.t('errors:invalidResponse'), {
       kind: 'invalid-response',
       status: response.status,
-      retryable: false,
+      // Una respuesta ilegible (p. ej. portal cautivo) no prueba que los controles sean inválidos:
+      // el reenvío es idempotente, así que se reintenta con espera creciente.
+      retryable: true,
       cause: parsedResponse.error,
     });
   }

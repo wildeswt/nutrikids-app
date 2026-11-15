@@ -152,7 +152,7 @@ describe('sync-api', () => {
     await expect(postSyncCheckups([makeSyncItem()])).rejects.toMatchObject({
       name: 'SyncApiError',
       kind: 'invalid-response',
-      retryable: false,
+      retryable: true,
     });
   });
 
