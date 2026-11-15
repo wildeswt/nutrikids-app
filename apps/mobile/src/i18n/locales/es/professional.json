@@ -314,5 +314,47 @@
     "emptyTitle": "Sin pacientes vinculados",
     "emptySubtitle": "Debes tener al menos un paciente vinculado para registrar su control.",
     "goBackToPatients": "Ir a pacientes"
+  },
+  "patients": {
+    "title": "Pacientes por Riesgo",
+    "subtitle": "Pacientes vinculados según su prioridad de atención.",
+    "searchPlaceholder": "Buscar por nombre o apellido...",
+    "searchA11y": "Buscar paciente por nombre o apellido",
+    "filterA11y": "Filtrar por nivel de riesgo",
+    "filters": {
+      "ALL": "Todos",
+      "SEVERE": "Riesgo grave",
+      "RISK": "Riesgo",
+      "NO_ALERTS": "Sin alertas"
+    },
+    "riskLevels": {
+      "SEVERE": "Riesgo grave",
+      "RISK": "Riesgo",
+      "NO_ALERTS": "Sin alertas"
+    },
+    "overdueBadge": "Vencida",
+    "openAlertsCount_one": "{{count}} alerta abierta",
+    "openAlertsCount_other": "{{count}} alertas abiertas",
+    "noOpenAlerts": "Sin alertas activas",
+    "lastAlertLabel": "Última alerta: {{indicator}} · {{time}}",
+    "actions": {
+      "viewAlert": "Ver alerta",
+      "newFollowUp": "Nuevo seguimiento",
+      "newReferral": "Interconsulta",
+      "viewEvolution": "Ver evolución",
+      "registerCheckup": "Registrar control"
+    },
+    "loading": "Cargando lista de pacientes...",
+    "retry": "Reintentar",
+    "loadError": "No pudimos cargar tus pacientes.",
+    "emptyTitle": "Sin pacientes vinculados",
+    "emptyDescription": "Cuando tengas niños asignados bajo tu atención profesional, los verás ordenados por su nivel de riesgo nutricional aquí.",
+    "emptySearchTitle": "Sin resultados",
+    "emptySearchDescription": "No encontramos pacientes que coincidan con tu búsqueda o filtro seleccionado.",
+    "clearSearch": "Limpiar búsqueda",
+    "pagination": {
+      "showing": "Mostrando {{shown}} de {{total}} pacientes",
+      "loadMore": "Ver más pacientes"
+    }
   }
 }
