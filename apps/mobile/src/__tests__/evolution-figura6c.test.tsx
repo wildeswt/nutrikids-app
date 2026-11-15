@@ -373,6 +373,11 @@ describe('Pantalla Figura 6c — Evolución y Curvas OMS (RF-07, RF-10)', () => 
     expect(textContent(selectedCard)).toContain('90,8 cm');
     expect(textContent(selectedCard)).toContain('Medición en casa');
     expect(textContent(selectedCard)).toContain(i18n.t('caregiver:evolution.origin.CAREGIVER'));
+
+    // Al cerrar el modal se oculta el detalle
+    press(tree, 'evolution-checkup-modal-close');
+    tree = renderTree(EvolutionScreen as () => unknown);
+    expect(findElementByTestId(tree, 'evolution-selected-checkup-card')).toBeNull();
   });
 
   it('Criterio 3: las zonas entre líneas están rotuladas con texto en ambas vistas', () => {

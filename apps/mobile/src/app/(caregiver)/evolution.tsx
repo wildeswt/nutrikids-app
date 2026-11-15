@@ -23,7 +23,7 @@ import { CARD_SHADOW, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useOptionalAuth } from '../../context/auth-context.js';
-import { useCheckups } from '../../hooks/useCheckups.js';
+import { useCheckups, type CaregiverCheckupListItem } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
 import { useGrowthTrend } from '../../hooks/useGrowthTrend.js';
 import { useReferenceCurves } from '../../hooks/useReferenceCurves.js';
@@ -47,6 +47,7 @@ export default function EvolutionScreen() {
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PE');
   const [showChartInfo, setShowChartInfo] = useState(false);
   const [selectedCheckupId, setSelectedCheckupId] = useState<string | null>(null);
+  const [modalCheckup, setModalCheckup] = useState<CaregiverCheckupListItem | null>(null);
 
   const {
     status: childrenStatus,
@@ -338,7 +339,14 @@ export default function EvolutionScreen() {
               variant="caregiver"
               zoneLabels={chartZoneLabels}
               selectedCheckupId={selectedCheckup.id}
-              onSelectPoint={(point) => setSelectedCheckupId(point.checkupId ?? null)}
+              onSelectPoint={(point) => {
+                const checkupId = point.checkupId ?? null;
+                setSelectedCheckupId(checkupId);
+                const found = checkups.find((item) => item.id === checkupId);
+                if (found) {
+                  setModalCheckup(found);
+                }
+              }}
             />
           ) : curves.status === 'error' ? (
             <View style={styles.chartState} testID="evolution-curves-error">
@@ -394,74 +402,6 @@ export default function EvolutionScreen() {
 
           <Text style={styles.tapPointHint}>{t('evolution.tapPointHint')}</Text>
         </Card>
-
-        {/* Detalle del control seleccionado al tocar un punto de la gráfica */}
-        {selectedCheckupId ? (
-          <Card style={styles.selectedRecordCard} testID="evolution-selected-checkup-card">
-            <View style={styles.lastRecordHeader}>
-              <Text style={styles.lastRecordTitle}>{t('evolution.selectedRecordTitle')}</Text>
-              <Text style={styles.lastRecordDate}>
-                {formatLongDate(selectedCheckup.measuredAt)}
-              </Text>
-            </View>
-
-            <View style={styles.lastRecordDetailsRow}>
-              <View style={styles.recordDetailItem}>
-                <Ionicons name="barbell-outline" size={24} color={PALETTE.secondary} />
-                <View style={styles.recordDetailText}>
-                  <Text style={styles.recordDetailLabel}>{t('evolution.weight')}</Text>
-                  <Text style={styles.recordDetailValue}>
-                    {t('common:units.weightValue', {
-                      value: formatDecimal(selectedCheckup.weightKg),
-                    })}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.recordDetailItem}>
-                <Ionicons name="resize-outline" size={24} color={PALETTE.secondary} />
-                <View style={styles.recordDetailText}>
-                  <Text style={styles.recordDetailLabel}>{t('evolution.height')}</Text>
-                  <Text style={styles.recordDetailValue}>
-                    {t('common:units.heightValue', {
-                      value: formatDecimal(selectedCheckup.lengthHeightCm),
-                    })}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.lastRecordDivider} />
-
-            <View style={styles.recordedByRow}>
-              <Ionicons name="person" size={18} color={PALETTE.secondary} />
-              <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>
-              <Text style={styles.recordedByValue} numberOfLines={1}>
-                {formatCheckupRecorder({
-                  recorder: selectedCheckup.recordedBy,
-                  origin: selectedCheckup.origin,
-                  currentUserId: user?.id,
-                  t,
-                })}
-              </Text>
-            </View>
-
-            {selectedCheckup.notes ? (
-              <View style={styles.notesRow}>
-                <Ionicons
-                  name="document-text-outline"
-                  size={18}
-                  color={PALETTE.secondary}
-                  style={styles.notesIcon}
-                />
-                <View style={styles.notesContent}>
-                  <Text style={styles.recordedByLabel}>{t('evolution.notes')}</Text>
-                  <Text style={styles.notesValue}>{selectedCheckup.notes}</Text>
-                </View>
-              </View>
-            ) : null}
-          </Card>
-        ) : null}
 
         {/* Tarjeta Inferior de Último Registro */}
         <Card style={styles.lastRecordCard} testID="evolution-last-record-card">
@@ -575,6 +515,123 @@ export default function EvolutionScreen() {
             />
           </View>
         </View>
+      </Modal>
+
+      {/* Modal con el detalle del control seleccionado */}
+      <Modal
+        visible={Boolean(modalCheckup)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalCheckup(null)}
+        testID="evolution-checkup-detail-modal"
+      >
+        {modalCheckup ? (
+          <View style={styles.modalOverlay}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => setModalCheckup(null)}
+              testID="evolution-checkup-modal-backdrop"
+              accessibilityRole="button"
+              accessibilityLabel={t('evolution.infoModal.close')}
+            />
+            <View
+              style={styles.checkupModalCard}
+              testID="evolution-selected-checkup-card"
+              accessibilityLabel={t('evolution.selectedRecordTitle')}
+            >
+              <View style={styles.checkupModalHeader}>
+                <View style={styles.checkupModalTitleColumn}>
+                  <View style={styles.lastRecordTitleRow}>
+                    <Text style={styles.modalTitle}>{t('evolution.selectedRecordTitle')}</Text>
+                    {'localOnly' in modalCheckup && modalCheckup.localOnly ? (
+                      <View style={styles.localOnlyPill} testID="evolution-modal-local-only-badge">
+                        <Ionicons name="cloud-upload-outline" size={13} color="#E06A39" />
+                        <Text style={styles.localOnlyText}>
+                          {t('common:offline.localOnlyBadge')}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text style={styles.lastRecordDate}>
+                    {formatLongDate(modalCheckup.measuredAt)}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => setModalCheckup(null)}
+                  style={({ pressed }) => [styles.closeIconButton, pressed && styles.pressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('evolution.infoModal.close')}
+                  testID="evolution-checkup-modal-close-icon"
+                >
+                  <Ionicons name="close" size={24} color={PALETTE.text.title} />
+                </Pressable>
+              </View>
+
+              <View style={styles.lastRecordDetailsRow}>
+                <View style={styles.recordDetailItem}>
+                  <Ionicons name="barbell-outline" size={24} color={PALETTE.secondary} />
+                  <View style={styles.recordDetailText}>
+                    <Text style={styles.recordDetailLabel}>{t('evolution.weight')}</Text>
+                    <Text style={styles.recordDetailValue}>
+                      {t('common:units.weightValue', {
+                        value: formatDecimal(modalCheckup.weightKg),
+                      })}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.recordDetailItem}>
+                  <Ionicons name="resize-outline" size={24} color={PALETTE.secondary} />
+                  <View style={styles.recordDetailText}>
+                    <Text style={styles.recordDetailLabel}>{t('evolution.height')}</Text>
+                    <Text style={styles.recordDetailValue}>
+                      {t('common:units.heightValue', {
+                        value: formatDecimal(modalCheckup.lengthHeightCm),
+                      })}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.lastRecordDivider} />
+
+              <View style={styles.recordedByRow}>
+                <Ionicons name="person" size={18} color={PALETTE.secondary} />
+                <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>
+                <Text style={styles.recordedByValue} numberOfLines={1}>
+                  {formatCheckupRecorder({
+                    recorder: modalCheckup.recordedBy,
+                    origin: modalCheckup.origin,
+                    currentUserId: user?.id,
+                    t,
+                  })}
+                </Text>
+              </View>
+
+              {modalCheckup.notes ? (
+                <View style={styles.notesRow}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={18}
+                    color={PALETTE.secondary}
+                    style={styles.notesIcon}
+                  />
+                  <View style={styles.notesContent}>
+                    <Text style={styles.recordedByLabel}>{t('evolution.notes')}</Text>
+                    <Text style={styles.notesValue}>{modalCheckup.notes}</Text>
+                  </View>
+                </View>
+              ) : null}
+
+              <PrimaryButton
+                label={t('evolution.infoModal.close')}
+                onPress={() => setModalCheckup(null)}
+                testID="evolution-checkup-modal-close"
+                style={styles.modalButton}
+              />
+            </View>
+          </View>
+        ) : null}
       </Modal>
     </SafeAreaView>
   );
@@ -769,12 +826,28 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: PALETTE.text.body,
   },
-  selectedRecordCard: {
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: PALETTE.secondary,
+  checkupModalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: PALETTE.surface,
+    borderRadius: RADIUS_PILL,
+    padding: 22,
+    gap: 16,
+    ...CARD_SHADOW,
+  },
+  checkupModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  checkupModalTitleColumn: {
+    flex: 1,
+  },
+  closeIconButton: {
+    padding: 4,
+    marginRight: -4,
+    marginTop: -4,
   },
   lastRecordCard: {
     paddingHorizontal: 20,
