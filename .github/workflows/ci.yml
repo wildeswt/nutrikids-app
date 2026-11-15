@@ -35,6 +35,9 @@ jobs:
       PORT: 3000
       DIRECT_URL: postgresql://nutrikids:nutrikids@localhost:5432/nutrikids?schema=public
       DATABASE_URL: postgresql://nutrikids_app:nutrikids_app@localhost:5432/nutrikids?schema=public
+      DATA_ENCRYPTION_KEY: AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
+      DATA_ENCRYPTION_KEY_ID: ci-k1
+      PSEUDONYMIZATION_KEY: AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=
 
     steps:
       - name: Checkout repository
