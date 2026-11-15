@@ -146,23 +146,24 @@ Copy `.env.example` to `.env` at the repository root (the API also reads `apps/a
 
 ### API
 
-| Variable                                     | Default              | Meaning                                                                                                          |
-| -------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `NODE_ENV`                                   | `development`        | `development`, `test` or `production`. Production makes the next two required and blocks the seed.               |
-| `PORT`                                       | `3000`               | HTTP port.                                                                                                       |
-| `CORS_ORIGIN`                                | `*`                  | `*` or a comma-separated list of allowed origins.                                                                |
-| `JWT_ACCESS_SECRET`                          | dev value            | Signing secret, at least 32 characters. **Required in production.**                                              |
-| `PROFESSIONAL_INVITE_CODES`                  | `NK-PROF-2026` (dev) | Comma-separated invitation codes to register as a professional. **Required in production.**                      |
-| `ACCESS_TOKEN_TTL_SECONDS`                   | `900`                | Access token lifetime.                                                                                           |
-| `REFRESH_TOKEN_TTL_DAYS`                     | `30`                 | Refresh token lifetime.                                                                                          |
-| `LOGIN_MAX_ATTEMPTS`, `LOGIN_WINDOW_MINUTES` | `5`, `15`            | Failed sign-in attempts allowed per IP + email in the window; then `429`.                                        |
-| `ALERT_REVIEW_DEADLINE_HOURS`                | `72`                 | Hours an alert may stay unreviewed before it is overdue.                                                         |
-| `ALERT_REVIEW_DEADLINE_SEVERE_HOURS`         | `24`                 | Same for severe alerts; must be at most the previous one.                                                        |
-| `OVERDUE_ALERTS_INTERVAL_MINUTES`            | `60`                 | How often the overdue-alerts and reminders jobs run.                                                             |
-| `OVERDUE_ALERT_RENOTIFY_HOURS`               | `24`                 | Minimum hours before notifying the same professional again about the same overdue alert.                         |
-| `REMINDER_LEAD_HOURS`                        | `24`                 | Hours before a reminder's date at which caregivers are notified ([docs/reminders.md](docs/reminders.md)).        |
-| `ERASURE_GRACE_DAYS`                         | `7`                  | Days between an erasure request and its execution, 0 to 14 ([docs/data-rights.md](docs/data-rights.md)).         |
-| `CUTOFF_*`, `OVERWEIGHT_CRITERION`           | WHO defaults         | Optional classification cutoffs (z-scores) and overweight criterion (`WFLH`, `BFA`, `both`); see `.env.example`. |
+| Variable                                       | Default              | Meaning                                                                                                               |
+| ---------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                                     | `development`        | `development`, `test` or `production`. Production makes the next two required and blocks the seed.                    |
+| `PORT`                                         | `3000`               | HTTP port.                                                                                                            |
+| `CORS_ORIGIN`                                  | `*`                  | `*` or a comma-separated list of allowed origins.                                                                     |
+| `JWT_ACCESS_SECRET`                            | dev value            | Signing secret, at least 32 characters. **Required in production.**                                                   |
+| `PROFESSIONAL_INVITE_CODES`                    | `NK-PROF-2026` (dev) | Comma-separated invitation codes to register as a professional. **Required in production.**                           |
+| `ACCESS_TOKEN_TTL_SECONDS`                     | `900`                | Access token lifetime.                                                                                                |
+| `REFRESH_TOKEN_TTL_DAYS`                       | `30`                 | Refresh token lifetime.                                                                                               |
+| `LOGIN_MAX_ATTEMPTS`, `LOGIN_WINDOW_MINUTES`   | `5`, `15`            | Failed sign-in attempts allowed per IP + email in the window; then `429`.                                             |
+| `LOOKUP_MAX_ATTEMPTS`, `LOOKUP_WINDOW_MINUTES` | `10`, `15`           | Professional lookups (`GET /professionals/lookup`) allowed per user in the window, hits and misses alike; then `429`. |
+| `ALERT_REVIEW_DEADLINE_HOURS`                  | `72`                 | Hours an alert may stay unreviewed before it is overdue.                                                              |
+| `ALERT_REVIEW_DEADLINE_SEVERE_HOURS`           | `24`                 | Same for severe alerts; must be at most the previous one.                                                             |
+| `OVERDUE_ALERTS_INTERVAL_MINUTES`              | `60`                 | How often the overdue-alerts and reminders jobs run.                                                                  |
+| `OVERDUE_ALERT_RENOTIFY_HOURS`                 | `24`                 | Minimum hours before notifying the same professional again about the same overdue alert.                              |
+| `REMINDER_LEAD_HOURS`                          | `24`                 | Hours before a reminder's date at which caregivers are notified ([docs/reminders.md](docs/reminders.md)).             |
+| `ERASURE_GRACE_DAYS`                           | `7`                  | Days between an erasure request and its execution, 0 to 14 ([docs/data-rights.md](docs/data-rights.md)).              |
+| `CUTOFF_*`, `OVERWEIGHT_CRITERION`             | WHO defaults         | Optional classification cutoffs (z-scores) and overweight criterion (`WFLH`, `BFA`, `both`); see `.env.example`.      |
 
 ### Mobile and backups
 
@@ -421,6 +422,7 @@ The navigation guard in `apps/mobile/src/app/_layout.tsx` inspects auth status a
   3. `add-checkup`: Central elevated button for recording checkups.
   4. `messages`: Messages and reminders.
   5. `profile`: Profile and role switcher.
+     Hidden screens include `link-professional` («Vincular profesional»), opened from «Mis datos» for each child: search by professional license, confirm, link; «Desvincular» ends the link.
 - **Professional (`PROFESSIONAL`):** Drawer navigation with alerts inbox as home (`apps/mobile/src/app/(professional)/_layout.tsx`):
   1. `index`: Nutritional alerts inbox.
   2. `children`: Children categorized by risk.

@@ -202,6 +202,16 @@ export default function CaregiverTabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="link-professional"
+          options={{
+            title: t('tabs.linkProfessional'),
+            headerTitle: t('tabs.linkProfessionalHeader'),
+            tabBarStyle: { display: 'none' },
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
+          }}
+        />
+        <Tabs.Screen
           name="edit-child"
           options={{
             title: t('tabs.editChild'),

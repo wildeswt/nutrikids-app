@@ -15,6 +15,7 @@ export * from './schemas/growthTrend.js';
 export * from './schemas/health.js';
 export * from './schemas/message.js';
 export * from './schemas/notification.js';
+export * from './schemas/professional.js';
 export * from './schemas/reference.js';
 export * from './schemas/reminder.js';
 export * from './schemas/sync.js';

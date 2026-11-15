@@ -37,7 +37,9 @@
     "myChildren": "Mis niños",
     "myChildrenHeader": "Mis niños",
     "pendingSync": "Pendientes de envío",
-    "pendingSyncHeader": "Pendientes de envío"
+    "pendingSyncHeader": "Pendientes de envío",
+    "linkProfessional": "Vincular profesional",
+    "linkProfessionalHeader": "Vincular profesional"
   },
   "home": {
     "notifications": "Yuyachikkuna",
@@ -572,7 +574,15 @@
       "emailTaken": "Ese correo ya está en uso.",
       "loadError": "No pudimos cargar tus datos.",
       "retry": "Reintentar"
-    }
+    },
+    "professionalsTitle": "Profesionales",
+    "noProfessionals": "Todavía no hay profesionales vinculados.",
+    "linkProfessional": "Vincular profesional",
+    "unlinkProfessional": "Desvincular",
+    "unlinkConfirmTitle": "¿Desvincular a {{name}}?",
+    "unlinkConfirmMessage": "{{name}} dejará de ver los controles y alertas de {{child}}.",
+    "unlinkConfirm": "Desvincular",
+    "unlinkError": "No pudimos desvincular al profesional."
   },
   "editChild": {
     "back": "Volver",
@@ -657,5 +667,28 @@
       "yes": "Sí",
       "no": "No"
     }
+  },
+  "linkProfessional": {
+    "title": "Vincular profesional",
+    "back": "Volver",
+    "childSubtitle": "{{age}}",
+    "licenseLabel": "Registro profesional",
+    "licenseHint": "Te lo da tu profesional de salud.",
+    "licensePlaceholder": "Ej. 1234567890",
+    "search": "Buscar profesional",
+    "searching": "Buscando…",
+    "resultDetail": "{{specialty}} · {{license}}",
+    "resultNote": "Podrá ver los controles y alertas de {{child}}.",
+    "link": "Vincular a {{child}}",
+    "linking": "Vinculando…",
+    "cancel": "Cancelar",
+    "licenseRequired": "Escribe el registro profesional.",
+    "consentRequired": "{{child}} no tiene un consentimiento informado vigente. Concédelo para poder vincular a un profesional.",
+    "goToConsent": "Ir al consentimiento",
+    "notLegalRepresentative": "Solo el representante legal puede vincular profesionales.",
+    "successTitle": "Profesional vinculado",
+    "successMessage": "{{name}} ya puede ver los controles y alertas de {{child}}.",
+    "ok": "Entendido",
+    "missingChild": "Elige primero a un niño."
   }
 }

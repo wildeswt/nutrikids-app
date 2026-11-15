@@ -31,6 +31,7 @@ export const AuditEntityTypeSchema = z.enum([
   'messages',
   'erasure_requests',
   'users',
+  'professionals',
 ]);
 
 /** Parámetros internos para registrar auditoría. */
