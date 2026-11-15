@@ -25,6 +25,7 @@ import {
   signPasswordResetToken,
   verifyPasswordResetToken,
 } from './token.service.js';
+import { checkLoginSecondFactor, professionalTwoFactorSelect } from './twoFactor.service.js';
 
 function isUniqueConstraintError(err: unknown): boolean {
   return (
@@ -85,7 +86,9 @@ export function setPasswordResetNotifier(notifier: PasswordResetNotifier): void 
  * - Si el rol incluye `PROFESSIONAL`, verifica el código de invitación configurado.
  * - Almacena la contraseña con hash Argon2id (nunca en claro).
  * - Crea las filas en `users`, `caregivers`/`professionals` y `refresh_tokens`.
- * - Devuelve `AuthResponse` con tokens, roles y especialidad.
+ * - Devuelve `AuthResponse` con tokens, roles y especialidad. Si el rol incluye `PROFESSIONAL`,
+ *   no emite tokens: responde `{ requiresTwoFactor: true }` y la activación del segundo
+ *   factor ocurre en el primer inicio de sesión (NK-10).
  */
 export async function registerUser(input: RegisterInput): Promise<AuthResponse> {
   const isCaregiver = input.roles.includes('CAREGIVER');
@@ -99,6 +102,8 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
 
   const passwordHash = await hashPassword(input.password);
   const { refreshToken, tokenHash, expiresAt } = generateRefreshToken();
+  // Las cuentas profesionales deben activar el segundo factor antes de recibir tokens (NK-10).
+  const issueSession = !isProfessional;
 
   let createdUser: {
     id: string;
@@ -163,13 +168,15 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
         });
       }
 
-      await tx.refreshToken.create({
-        data: {
-          userId: user.id,
-          tokenHash,
-          expiresAt,
-        },
-      });
+      if (issueSession) {
+        await tx.refreshToken.create({
+          data: {
+            userId: user.id,
+            tokenHash,
+            expiresAt,
+          },
+        });
+      }
 
       return {
         id: user.id,
@@ -188,6 +195,10 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
       throw HttpError.conflict('El correo electrónico o número de licencia ya está registrado');
     }
     throw err;
+  }
+
+  if (!issueSession) {
+    return AuthResponseSchema.parse({ requiresTwoFactor: true });
   }
 
   const { accessToken, expiresIn } = await signAccessToken({
@@ -210,6 +221,9 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
  * - Si el correo no existe, ejecuta `verifyDummyPassword` para igualar tiempos.
  * - Rechaza cuentas suspendidas (`status !== 'active'`).
  * - Determina los roles (`CAREGIVER`, `PROFESSIONAL` o ambos) y la especialidad.
+ * - Si la cuenta tiene perfil profesional, exige el segundo factor TOTP (NK-10): sin código
+ *   responde `{ requiresTwoFactor: true }` (con `setup` y el QR si aún no lo activó) y no
+ *   emite tokens; con un código TOTP o de recuperación válido continúa.
  * - Emite un JWT de acceso de corta duración y guarda el hash SHA-256 del refresh token.
  */
 export async function loginUser(input: LoginInput): Promise<AuthResponse> {
@@ -223,7 +237,7 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
       lastName: true,
       status: true,
       caregiver: { select: { userId: true } },
-      professional: { select: { userId: true, specialty: true } },
+      professional: { select: professionalTwoFactorSelect },
     },
   });
 
@@ -243,6 +257,20 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
 
   const roles = resolveUserRoles(user);
   const specialty = normalizeSpecialty(user.professional?.specialty);
+
+  // Segundo factor obligatorio para cualquier cuenta con perfil profesional (NK-10, RT-06).
+  let recoveryCodes: string[] | undefined;
+  if (user.professional) {
+    const outcome = await checkLoginSecondFactor(user.email, user.professional, {
+      totpCode: input.totpCode,
+      recoveryCode: input.recoveryCode,
+    });
+    if (outcome.status === 'challenge') {
+      return AuthResponseSchema.parse({ requiresTwoFactor: true, setup: outcome.setup });
+    }
+    recoveryCodes = outcome.recoveryCodes;
+  }
+
   const { refreshToken, tokenHash, expiresAt } = generateRefreshToken();
 
   await prisma.refreshToken.create({
@@ -272,6 +300,7 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
       roles,
       specialty,
     },
+    ...(recoveryCodes ? { recoveryCodes } : {}),
   });
 }
 
@@ -300,7 +329,7 @@ export async function refreshUserSession(input: RefreshInput): Promise<AuthRespo
           lastName: true,
           status: true,
           caregiver: { select: { userId: true } },
-          professional: { select: { userId: true, specialty: true } },
+          professional: { select: { userId: true, specialty: true, totpEnabledAt: true } },
         },
       },
     },
@@ -328,6 +357,13 @@ export async function refreshUserSession(input: RefreshInput): Promise<AuthRespo
 
   if (stored.user.status !== 'active') {
     throw HttpError.forbidden('La cuenta está suspendida');
+  }
+
+  // Sesiones de profesionales emitidas antes de activar el segundo factor no se renuevan.
+  if (stored.user.professional && !stored.user.professional.totpEnabledAt) {
+    throw HttpError.unauthorized(
+      'Debes activar la verificación en dos pasos; inicia sesión nuevamente',
+    );
   }
 
   const roles = resolveUserRoles(stored.user);

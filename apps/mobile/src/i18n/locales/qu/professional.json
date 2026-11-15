@@ -79,7 +79,20 @@
     "noSpecialty": "Mana churashkachu",
     "activeRole": "Kunan ruray:",
     "switchToCaregiver": "Wawa kamak rikuchikman tikray",
-    "logout": "Llukshiy"
+    "logout": "Llukshiy",
+    "twoFactor": {
+      "title": "Ishkay kutin chaninchiy",
+      "statusEnabled": "Kawsanmi",
+      "statusLoading": "Tapuykun...",
+      "remaining": "Tikrachina yupaykuna tiyan: {{count}}",
+      "lowCodes": "Ashalla tikrachina yupaykunami sakirin. Mushukkunata rurapay.",
+      "regenerate": "Mushuk tikrachina yupaykunata ruray",
+      "regenerateDescription": "Autenticadora app-pak kunan yupayta killkay. Ñawpa yupaykunaka manañami sirvinkachu.",
+      "totpLabel": "Chaninchina yupay (6 yupay)",
+      "confirm": "Yupaykunata ruray",
+      "done": "Tukurishka",
+      "invalidCode": "Yupayka pantashkami, mana kashpaka ña hapishkami. Katik yupayta shuyay, kutin rurapay."
+    }
   },
   "alertDetail": {
     "title": "Detalle de alerta",

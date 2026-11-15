@@ -145,11 +145,31 @@ export const AuthUserSchema = z.object({
 });
 
 /**
+ * Datos para activar el segundo factor (NK-10). Solo se envían a un profesional que
+ * aún no lo activó, tras validar su contraseña.
+ */
+export const TwoFactorSetupSchema = z.object({
+  /** Clave en base32 para ingresarla a mano en la aplicación autenticadora. */
+  secret: z.string().min(16),
+  /** URI `otpauth://totp/...` (lo que codifica el QR). */
+  otpauthUri: z.string().startsWith('otpauth://totp/'),
+  /** Imagen PNG del QR como `data:image/png;base64,...`. */
+  qrCodeDataUrl: z.string().startsWith('data:image/png;base64,'),
+});
+
+/** Códigos de recuperación de un solo uso, mostrados una única vez. */
+export const RecoveryCodesSchema = z.array(z.string().min(1)).min(1);
+
+/**
  * Respuesta de registro, inicio de sesión y renovación. Si el profesional aún debe
- * dar el segundo factor (`requiresTwoFactor: true`), no se entregan tokens.
+ * dar el segundo factor (`requiresTwoFactor: true`), no se entregan tokens; `setup`
+ * viene solo cuando primero debe activarlo con el QR.
  */
 export const AuthResponseSchema = z.discriminatedUnion('requiresTwoFactor', [
-  z.object({ requiresTwoFactor: z.literal(true) }),
+  z.object({
+    requiresTwoFactor: z.literal(true),
+    setup: TwoFactorSetupSchema.optional(),
+  }),
   z.object({
     requiresTwoFactor: z.literal(false),
     accessToken: z.string(),
@@ -157,8 +177,25 @@ export const AuthResponseSchema = z.discriminatedUnion('requiresTwoFactor', [
     /** Segundos de vigencia del token de acceso. */
     expiresIn: z.number().int().positive(),
     user: AuthUserSchema,
+    /** Solo al activar el segundo factor: los códigos de recuperación generados. */
+    recoveryCodes: RecoveryCodesSchema.optional(),
   }),
 ]);
+
+/** Regenerar códigos de recuperación (`POST /auth/2fa/recovery-codes`): exige un código TOTP vigente. */
+export const RegenerateRecoveryCodesInputSchema = z.strictObject({
+  totpCode: z.string().regex(/^\d{6}$/, { error: 'El código debe tener 6 dígitos' }),
+});
+
+export const RecoveryCodesResponseSchema = z.object({
+  recoveryCodes: RecoveryCodesSchema,
+});
+
+/** Estado del segundo factor del profesional autenticado (`GET /auth/2fa/status`). */
+export const TwoFactorStatusSchema = z.object({
+  enabled: z.boolean(),
+  recoveryCodesRemaining: z.number().int().min(0),
+});
 
 export const ForgotPasswordResponseSchema = z.object({
   message: z.string(),
@@ -173,3 +210,7 @@ export type ResetPasswordInput = z.infer<typeof ResetPasswordInputSchema>;
 export type AuthUser = z.infer<typeof AuthUserSchema>;
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
 export type ForgotPasswordResponse = z.infer<typeof ForgotPasswordResponseSchema>;
+export type TwoFactorSetup = z.infer<typeof TwoFactorSetupSchema>;
+export type RegenerateRecoveryCodesInput = z.infer<typeof RegenerateRecoveryCodesInputSchema>;
+export type RecoveryCodesResponse = z.infer<typeof RecoveryCodesResponseSchema>;
+export type TwoFactorStatus = z.infer<typeof TwoFactorStatusSchema>;

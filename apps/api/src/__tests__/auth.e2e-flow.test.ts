@@ -3,8 +3,15 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app.js';
 import { prisma } from '../lib/prisma.js';
+import { generateTotp } from '../lib/totp.js';
 import { setPasswordResetNotifier } from '../services/auth.service.js';
 import { verifyAccessToken } from '../services/token.service.js';
+import {
+  EMPTY_TWO_FACTOR,
+  mockTwoFactorStore,
+  snapshot,
+  type TwoFactorFields,
+} from './helpers/twoFactorStore.js';
 
 interface MemUser {
   id: string;
@@ -20,7 +27,7 @@ interface MemCaregiver {
   phone: string | null;
 }
 
-interface MemProfessional {
+interface MemProfessional extends TwoFactorFields {
   userId: string;
   specialty: string;
   licenseNumber: string;
@@ -60,7 +67,7 @@ describe('Flujo E2E de autenticación (register -> login -> refresh -> logout ->
       return {
         ...u,
         caregiver: caregivers.find((c) => c.userId === u.id) ?? null,
-        professional: professionals.find((p) => p.userId === u.id) ?? null,
+        professional: snapshot(professionals.find((p) => p.userId === u.id) ?? null),
       };
     });
 
@@ -104,10 +111,13 @@ describe('Flujo E2E de autenticación (register -> login -> refresh -> logout ->
       },
     );
 
-    const professionalCreate = vi.fn(async ({ data }: { data: MemProfessional }) => {
-      professionals.push(data);
-      return data;
-    });
+    const professionalCreate = vi.fn(
+      async ({ data }: { data: Omit<MemProfessional, keyof TwoFactorFields> }) => {
+        const created: MemProfessional = { ...EMPTY_TWO_FACTOR, ...data };
+        professionals.push(created);
+        return created;
+      },
+    );
 
     const refreshFindUnique = vi.fn(async ({ where }: { where: { tokenHash: string } }) => {
       const rt = refreshTokens.find((item) => item.tokenHash === where.tokenHash);
@@ -160,6 +170,7 @@ describe('Flujo E2E de autenticación (register -> login -> refresh -> logout ->
     );
 
     vi.spyOn(prisma.user, 'findUnique').mockImplementation(userFindUnique as never);
+    mockTwoFactorStore(() => professionals);
     vi.spyOn(prisma.refreshToken, 'findUnique').mockImplementation(refreshFindUnique as never);
     vi.spyOn(prisma.refreshToken, 'create').mockImplementation(refreshCreate as never);
     vi.spyOn(prisma.refreshToken, 'updateMany').mockImplementation(refreshUpdateMany as never);
@@ -201,7 +212,9 @@ describe('Flujo E2E de autenticación (register -> login -> refresh -> logout ->
     }) as never);
   });
 
-  it('completa el ciclo completo sin exponer contraseñas en claro', async () => {
+  it('completa el ciclo completo con segundo factor sin exponer contraseñas en claro', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.UTC(2026, 10, 14, 12, 0, 0));
     const app = createApp();
     const firstPassword = 'ClaveInicial#2026';
     const secondPassword = 'ClaveRotada#2026';
@@ -223,17 +236,34 @@ describe('Flujo E2E de autenticación (register -> login -> refresh -> logout ->
       });
     expect(regRes.status).toBe(201);
     const regBody = AuthResponseSchema.parse(regRes.body);
-    expect(regBody.requiresTwoFactor).toBe(false);
-    if (regBody.requiresTwoFactor) return;
+    // El registro profesional no entrega tokens: falta activar el segundo factor (NK-10).
+    expect(regBody.requiresTwoFactor).toBe(true);
+    expect(refreshTokens).toHaveLength(0);
 
-    // 2. Inicio de sesión
-    const loginRes = await request(app)
+    // 2. Primer inicio de sesión: la contraseña es correcta, pero se pide activar el QR
+    const setupRes = await request(app)
       .post('/auth/login')
       .send({ email: 'doctora.elena@hospital.ec', password: firstPassword });
+    expect(setupRes.status).toBe(200);
+    const setupBody = AuthResponseSchema.parse(setupRes.body);
+    if (!setupBody.requiresTwoFactor || !setupBody.setup) throw new Error('Se esperaba el QR');
+    expect(refreshTokens).toHaveLength(0);
+    const { secret } = setupBody.setup;
+
+    // 3. Activación con el código de la aplicación autenticadora
+    const loginRes = await request(app)
+      .post('/auth/login')
+      .send({
+        email: 'doctora.elena@hospital.ec',
+        password: firstPassword,
+        totpCode: generateTotp(secret),
+      });
     expect(loginRes.status).toBe(200);
     const loginBody = AuthResponseSchema.parse(loginRes.body);
     expect(loginBody.requiresTwoFactor).toBe(false);
     if (loginBody.requiresTwoFactor) return;
+    const recoveryCodes = loginBody.recoveryCodes!;
+    expect(recoveryCodes).toHaveLength(10);
 
     // 3. Renovación rotativa
     const refreshRes = await request(app)
@@ -277,10 +307,40 @@ describe('Flujo E2E de autenticación (register -> login -> refresh -> logout ->
       .send({ email: 'doctora.elena@hospital.ec', password: firstPassword });
     expect(oldLoginRes.status).toBe(401);
 
+    // Con la nueva clave se sigue pidiendo el segundo factor (ya activo: sin QR)
     const newLoginRes = await request(app)
       .post('/auth/login')
       .send({ email: 'doctora.elena@hospital.ec', password: secondPassword });
     expect(newLoginRes.status).toBe(200);
+    expect(newLoginRes.body).toEqual({ requiresTwoFactor: true });
+
+    // 6. Sin acceso a la app autenticadora: código de recuperación (un solo uso)
+    const recoveryRes = await request(app).post('/auth/login').send({
+      email: 'doctora.elena@hospital.ec',
+      password: secondPassword,
+      recoveryCode: recoveryCodes[0],
+    });
+    expect(recoveryRes.status).toBe(200);
+    expect(AuthResponseSchema.parse(recoveryRes.body).requiresTwoFactor).toBe(false);
+
+    const reusedRes = await request(app).post('/auth/login').send({
+      email: 'doctora.elena@hospital.ec',
+      password: secondPassword,
+      recoveryCode: recoveryCodes[0],
+    });
+    expect(reusedRes.status).toBe(401);
+
+    // 7. Nuevo código TOTP en el siguiente paso de 30 s
+    vi.setSystemTime(Date.UTC(2026, 10, 14, 12, 1, 0));
+    const totpRes = await request(app)
+      .post('/auth/login')
+      .send({
+        email: 'doctora.elena@hospital.ec',
+        password: secondPassword,
+        totpCode: generateTotp(secret),
+      });
+    expect(totpRes.status).toBe(200);
+    vi.useRealTimers();
 
     // Ninguna de las dos contraseñas aparece jamás en claro
     expect(JSON.stringify(users)).not.toContain(firstPassword);

@@ -133,7 +133,7 @@ describe('POST /auth/register', () => {
     expect(professionals).toHaveLength(0);
   });
 
-  it('registra un profesional con código de invitación válido y ambos perfiles cuando se solicita', async () => {
+  it('registra un profesional con código de invitación válido y ambos perfiles, sin tokens hasta activar el segundo factor', async () => {
     const res = await request(app)
       .post('/auth/register')
       .send({
@@ -148,12 +148,11 @@ describe('POST /auth/register', () => {
       });
 
     expect(res.status).toBe(201);
-    const parsed = AuthResponseSchema.parse(res.body);
-    expect(parsed.requiresTwoFactor).toBe(false);
-    if (parsed.requiresTwoFactor) return;
-
-    expect(parsed.user.roles).toEqual(['CAREGIVER', 'PROFESSIONAL']);
-    expect(parsed.user.specialty).toBe('pediatrics');
+    // NK-10: el profesional activa el segundo factor en su primer inicio de sesión.
+    expect(res.body).toEqual({ requiresTwoFactor: true });
+    expect(AuthResponseSchema.parse(res.body).requiresTwoFactor).toBe(true);
+    expect(refreshTokens).toHaveLength(0);
+    expect(users).toHaveLength(1);
     expect(caregivers).toHaveLength(1);
     expect(professionals).toEqual([
       {

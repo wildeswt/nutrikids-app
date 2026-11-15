@@ -201,6 +201,7 @@ Copy `.env.example` to `.env` at the repository root (the API also reads `apps/a
 | `pnpm dev`                          | Runs `api` and `mobile` concurrently                                           |
 | `pnpm dev:api`                      | Starts Express API server in watch mode (`tsx`)                                |
 | `pnpm dev:mobile`                   | Starts Expo dev server with interactive terminal and QR code                   |
+| `pnpm dev:phone`                    | Expo for a physical phone: tunnel + Expo Go mode (`expo start --tunnel --go`)  |
 | `pnpm build`                        | Builds all workspace packages                                                  |
 | `pnpm typecheck`                    | Verifies TypeScript types across `shared`, `who-growth`, `api`, and `mobile`   |
 | `pnpm test`                         | Runs test suite across all packages (Vitest + Supertest)                       |
@@ -435,7 +436,7 @@ The navigation guard in `apps/mobile/src/app/_layout.tsx` inspects auth status a
 - **Login (`apps/mobile/src/app/(auth)/login.tsx`):**
   - Email and password fields with toggleable visibility.
   - Password recovery and account creation links.
-  - Second-step prompt (6-digit TOTP or recovery code) shown when the API answers `requiresTwoFactor: true`. The API does not enable two-factor authentication yet (it always answers `false`), so the prompt is not reachable today.
+  - Mandatory two-factor for professionals (NK-10): on the first login the screen shows the QR code, the key to type by hand and a link to open the authenticator app, then asks for the first 6-digit code and shows the 10 one-time recovery codes before signing in. Later logins ask for the TOTP code or a recovery code. The professional profile shows the codes left and can generate new ones.
 - **Registration (`apps/mobile/src/app/(auth)/register.tsx`):**
   - Profile selector chips (`Cuidador` and `Profesional de Salud`, supporting dual registration).
   - Demographics: first name, last name, email, optional phone.

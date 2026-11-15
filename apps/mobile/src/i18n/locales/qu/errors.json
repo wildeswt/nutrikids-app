@@ -100,5 +100,9 @@
     "noConsent": "No puedes enviar mensajes porque este niño no tiene un consentimiento informado vigente.",
     "network": "No hay conexión. Verifica tu internet e intenta de nuevo.",
     "conflict": "Este mensaje ya fue enviado con otro contenido."
+  },
+  "twoFactor": {
+    "status": "Ishkay kutin chaninchiyta mana tapuy ushanchikchu.",
+    "regenerate": "Mushuk yupaykunata mana ruray ushanchikchu. Kutin rurapay."
   }
 }

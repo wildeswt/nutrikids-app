@@ -82,6 +82,68 @@ describe('auth request helpers in lib/api.ts', () => {
       expect(result.requiresTwoFactor).toBe(true);
     });
 
+    it('keeps the QR setup data when the professional must activate two-factor (NK-10)', async () => {
+      const setup = {
+        secret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+        otpauthUri: 'otpauth://totp/NutriKids:dr.pediatra%40example.com?secret=JBSW',
+        qrCodeDataUrl: 'data:image/png;base64,iVBORw0KGgo=',
+      };
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(JSON.stringify({ requiresTwoFactor: true, setup }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ),
+      );
+
+      const result = await loginRequest({
+        email: 'dr.pediatra@example.com',
+        password: 'Password123!',
+      });
+
+      expect(result).toEqual({ requiresTwoFactor: true, setup });
+    });
+
+    it('sends the TOTP code on the second step and receives the one-time recovery codes', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            requiresTwoFactor: false,
+            accessToken: 'access',
+            refreshToken: 'refresh',
+            expiresIn: 900,
+            user: {
+              id: '3f2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c',
+              email: 'dr.pediatra@example.com',
+              firstName: 'Luis',
+              lastName: 'Mora',
+              roles: [USER_ROLES.PROFESSIONAL],
+              specialty: 'pediatrics',
+            },
+            recoveryCodes: ['ABCD-EFGH', 'JKMN-PQRS'],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+      vi.stubGlobal('fetch', mockFetch);
+
+      const result = await loginRequest({
+        email: 'dr.pediatra@example.com',
+        password: 'Password123!',
+        totpCode: '123456',
+      });
+
+      expect(JSON.parse(mockFetch.mock.calls[0]![1].body as string)).toMatchObject({
+        totpCode: '123456',
+      });
+      expect(result.requiresTwoFactor).toBe(false);
+      if (!result.requiresTwoFactor) {
+        expect(result.recoveryCodes).toEqual(['ABCD-EFGH', 'JKMN-PQRS']);
+      }
+    });
+
     it('throws AuthApiError with clear message on 401', async () => {
       const mockFetch = vi.fn().mockResolvedValue(
         new Response(JSON.stringify({ message: 'Credenciales inválidas' }), {

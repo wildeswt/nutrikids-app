@@ -12,7 +12,7 @@ interface MockUser {
   lastName: string;
   status: string;
   caregiver: { userId: string } | null;
-  professional: { userId: string; specialty: string } | null;
+  professional: { userId: string; specialty: string; totpEnabledAt: Date | null } | null;
 }
 
 interface MockRefreshRow {
@@ -40,6 +40,8 @@ describe('POST /auth/refresh (rotación) y POST /auth/logout', () => {
         professional: {
           userId: '00000000-0000-4000-8000-000000000010',
           specialty: 'pediatrics',
+          // Profesional con el segundo factor ya activado (NK-10).
+          totpEnabledAt: new Date('2026-11-01T00:00:00Z'),
         },
       },
     ];
