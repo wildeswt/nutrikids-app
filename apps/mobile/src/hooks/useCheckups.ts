@@ -1,9 +1,13 @@
-import type { CaregiverCheckupResponse, CreateCheckupInput } from '@nutrikids/shared';
+import type { CreateCheckupInput } from '@nutrikids/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useOptionalAuth } from '../context/auth-context.js';
+import { useConnection } from '../context/connection-context.js';
 import i18n from '../i18n/index.js';
-import { createChildCheckup, fetchChildCheckups } from '../lib/checkups-api.js';
-import { checkupsRepository } from '../lib/local-db/index.js';
+import { fetchChildCheckups } from '../lib/checkups-api.js';
+import {
+  createCheckupWithOfflineFallback,
+  type CreateCheckupResult,
+} from '../lib/offline-checkup.js';
 import {
   deleteCachedCaregiverCheckups,
   mergeServerAndLocalCheckups,
@@ -13,17 +17,12 @@ import {
   writeCachedCaregiverCheckups,
   type CaregiverCheckupListItem,
 } from '../lib/offline-cache.js';
-import {
-  classifyLoadError,
-  readThrough,
-  tryGetLocalDatabase,
-  tryLocalOperation,
-  type LoadErrorKind,
-} from '../lib/offline-read.js';
+import { classifyLoadError, readThrough, type LoadErrorKind } from '../lib/offline-read.js';
 
 export type CheckupsStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 
 export type { CaregiverCheckupListItem } from '../lib/offline-cache.js';
+export type { CreateCheckupResult } from '../lib/offline-checkup.js';
 
 export interface CheckupsHookState {
   status: CheckupsStatus;
@@ -43,6 +42,7 @@ export function useCheckups(childId: string | null, options: { autoLoad?: boolea
   const autoLoad = options.autoLoad ?? true;
   const auth = useOptionalAuth();
   const userId = auth?.user?.id ?? null;
+  const { isOnline } = useConnection();
 
   const [state, setState] = useState<CheckupsHookState>({
     status: 'idle',
@@ -149,42 +149,53 @@ export function useCheckups(childId: string | null, options: { autoLoad?: boolea
   }, [childId, userId]);
 
   const create = useCallback(
-    async (input: CreateCheckupInput): Promise<CaregiverCheckupResponse> => {
+    async (input: CreateCheckupInput): Promise<CreateCheckupResult> => {
       if (!childId) {
         throw new Error(i18n.t('errors:checkups.missingChild'));
       }
 
       setSaving(true);
       try {
-        const checkup = await createChildCheckup(childId, input);
-        if (userId) {
-          const db = await tryGetLocalDatabase('useCheckups.create');
-          if (db) {
-            await tryLocalOperation(
-              'useCheckups.create',
-              () => checkupsRepository.upsertMany(db, userId, [checkup]),
-              undefined,
-            );
-          }
-        }
+        const result = await createCheckupWithOfflineFallback({
+          userId,
+          childId,
+          input,
+          isOnline,
+        });
+        const listItem: CaregiverCheckupListItem = {
+          id: result.id,
+          childId: result.childId,
+          measuredAt: result.measuredAt,
+          weightKg: result.weightKg,
+          lengthHeightCm: result.lengthHeightCm,
+          position: result.position,
+          origin: result.origin,
+          recordedById: result.recordedById,
+          recordedBy: result.recordedBy,
+          correctedCheckupId: result.correctedCheckupId,
+          isCurrent: result.isCurrent,
+          notes: result.notes,
+          createdAt: result.createdAt,
+          ...(result.localOnly ? { localOnly: true } : {}),
+        };
         setState((prev) => ({
           status: 'ready',
           checkups: sortCheckupsNewestFirst([
-            checkup,
-            ...prev.checkups.filter((item) => item.id !== checkup.id),
+            listItem,
+            ...prev.checkups.filter((item) => item.id !== listItem.id),
           ]),
           error: null,
-          fromCache: false,
+          fromCache: result.savedLocally ? true : false,
           stale: false,
-          lastSyncedAt: new Date().toISOString(),
+          lastSyncedAt: result.savedLocally ? prev.lastSyncedAt : new Date().toISOString(),
           loadError: null,
         }));
-        return checkup;
+        return result;
       } finally {
         setSaving(false);
       }
     },
-    [childId, userId],
+    [childId, isOnline, userId],
   );
 
   useEffect(() => {

@@ -360,11 +360,7 @@ export default function EvolutionScreen() {
               <Text style={styles.lastRecordTitle}>{t('evolution.lastRecordTitle')}</Text>
               {'localOnly' in latest && latest.localOnly ? (
                 <View style={styles.localOnlyPill} testID="evolution-local-only-badge">
-                  <Ionicons
-                    name="cloud-upload-outline"
-                    size={13}
-                    color={PALETTE.feedback.warning}
-                  />
+                  <Ionicons name="cloud-upload-outline" size={13} color="#E06A39" />
                   <Text style={styles.localOnlyText}>{t('common:offline.localOnlyBadge')}</Text>
                 </View>
               ) : null}
@@ -620,15 +616,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: PALETTE.feedback.warningBg,
+    backgroundColor: '#FEF2EC',
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   localOnlyText: {
-    fontFamily: font('medium'),
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 11,
-    color: PALETTE.feedback.warning,
+    color: '#E06A39',
   },
   lastRecordTitle: {
     fontFamily: font('semibold'),

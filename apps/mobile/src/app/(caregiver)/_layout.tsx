@@ -228,6 +228,17 @@ export default function CaregiverTabsLayout() {
           tabBarButton: () => null,
         }}
       />
+      <Tabs.Screen
+        name="pending-sync"
+        options={{
+          title: t('tabs.pendingSync'),
+          headerTitle: t('tabs.pendingSyncHeader'),
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
+          tabBarItemStyle: { display: 'none' },
+          tabBarButton: () => null,
+        }}
+      />
     </Tabs>
   );
 }

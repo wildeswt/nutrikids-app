@@ -41,7 +41,8 @@
   "checkups": {
     "fetch": "No pudimos cargar los controles. Intenta de nuevo.",
     "create": "No pudimos guardar el control. Intenta de nuevo.",
-    "missingChild": "Falta elegir el niño para anotar el control."
+    "missingChild": "Falta elegir el niño para anotar el control.",
+    "offlineNoLocalDb": "Necesitas conexión para guardar el control en este dispositivo"
   },
   "growthTrend": {
     "fetch": "No pudimos cargar la tendencia de crecimiento. Intenta de nuevo."

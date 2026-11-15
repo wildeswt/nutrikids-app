@@ -83,6 +83,7 @@ vi.mock('react', async (importOriginal) => {
     },
     useCallback: <T extends (...args: never[]) => unknown>(fn: T) => fn,
     useEffect: () => {},
+    useContext: () => null,
   };
 });
 

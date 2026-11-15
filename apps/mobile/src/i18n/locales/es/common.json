@@ -61,7 +61,7 @@
     "dataNotice": "Datos guardados en este dispositivo · actualizados hace {{time}}",
     "dataNoticeNoTime": "Datos guardados en este dispositivo",
     "noDataMessage": "Conéctate a internet una vez para descargar tu información",
-    "localOnlyBadge": "Pendiente de envío",
+    "localOnlyBadge": "Guardado en este dispositivo",
     "elapsed": {
       "lessThanMinute": "menos de 1 minuto",
       "minutes_one": "{{count}} minuto",
@@ -80,6 +80,7 @@
   },
   "date": {
     "long": "{{day}} de {{month}} de {{year}}",
+    "medium": "{{day}} {{month}} {{year}}",
     "short": "{{day}} {{month}}",
     "months": {
       "1": "enero",

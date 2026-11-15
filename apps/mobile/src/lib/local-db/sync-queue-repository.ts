@@ -334,6 +334,59 @@ export async function countPendingSyncItems(db: LocalDb, userId: string): Promis
 }
 
 /**
+ * Obtiene un elemento de `sync_queue` por su identificador dentro del alcance del usuario.
+ */
+export async function getSyncItemById(
+  db: LocalDb,
+  userId: string,
+  id: string,
+): Promise<SyncQueueRecord | null> {
+  const row = await db.getFirstAsync<SyncQueueRow>(
+    `SELECT id, user_id, kind, payload, status, attempts, next_attempt_at, last_error, created_at, updated_at
+     FROM sync_queue
+     WHERE user_id = ? AND id = ?;`,
+    [userId, id],
+  );
+  return row ? parseRow(row) : null;
+}
+
+/**
+ * Lista los controles pendientes (`LOCAL`, `SENDING`, `ERROR`) y los enviados (`SENT`)
+ * desde `sentSinceIso` (p. ej. últimas 24 horas) para la pantalla «Pendientes de envío».
+ */
+export async function listCheckupsWithRecentSent(
+  db: LocalDb,
+  userId: string,
+  sentSinceIso: string,
+): Promise<Array<Extract<SyncQueueRecord, { kind: 'checkup' }>>> {
+  const normalizedSince = toUtcIso(IsoDateTimeSchema.parse(sentSinceIso));
+  const rows = await db.getAllAsync<SyncQueueRow>(
+    `SELECT id, user_id, kind, payload, status, attempts, next_attempt_at, last_error, created_at, updated_at
+     FROM sync_queue
+     WHERE user_id = ?
+       AND kind = 'checkup'
+       AND (
+         status IN ('LOCAL', 'SENDING', 'ERROR')
+         OR (status = 'SENT' AND updated_at >= ?)
+       )
+     ORDER BY
+       CASE status WHEN 'SENT' THEN 1 ELSE 0 END ASC,
+       created_at DESC,
+       id ASC;`,
+    [userId, normalizedSince],
+  );
+
+  const records: Array<Extract<SyncQueueRecord, { kind: 'checkup' }>> = [];
+  for (const row of rows) {
+    const parsed = parseRow(row);
+    if (parsed !== null && parsed.kind === 'checkup') {
+      records.push(parsed);
+    }
+  }
+  return records;
+}
+
+/**
  * Elimina un elemento de `sync_queue` perteneciente al usuario indicado.
  */
 export async function removeSyncItem(db: LocalDb, userId: string, id: string): Promise<boolean> {
@@ -347,8 +400,10 @@ export async function removeSyncItem(db: LocalDb, userId: string, id: string): P
 /** Repositorio tipado para la tabla local `sync_queue`. */
 export const syncQueueRepository = {
   enqueue: enqueueSyncItem,
+  getById: getSyncItemById,
   listByStatus: listSyncItemsByStatus,
   listDue: listDueSyncItems,
+  listCheckupsWithRecentSent,
   updateStatus: updateSyncItemStatus,
   countPending: countPendingSyncItems,
   remove: removeSyncItem,

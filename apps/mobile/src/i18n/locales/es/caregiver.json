@@ -35,7 +35,9 @@
     "privacy": "Privacidad e historial",
     "privacyHeader": "Privacidad e historial",
     "myChildren": "Mis niños",
-    "myChildrenHeader": "Mis niños"
+    "myChildrenHeader": "Mis niños",
+    "pendingSync": "Pendientes de envío",
+    "pendingSyncHeader": "Pendientes de envío"
   },
   "home": {
     "notifications": "Avisos",
@@ -195,6 +197,7 @@
     "height": "Estatura",
     "position": "Posición",
     "teamNote": "Tu equipo de salud revisará este control. Te avisaremos si necesitan algo más.",
+    "pendingSyncNotice": "Sin conexión · se enviará al reconectar",
     "seeEvolution": "Ver cómo va creciendo",
     "goHome": "Volver al inicio",
     "missing": "No encontramos el control que acabas de guardar."
@@ -334,7 +337,36 @@
     "myData": "Mis datos",
     "myDataDescription": "Tu cuenta y los niños vinculados",
     "privacy": "Privacidad e historial",
-    "privacyDescription": "Permisos, historial y borrado de datos"
+    "privacyDescription": "Permisos, historial y borrado de datos",
+    "pendingSync": "Pendientes de envío ({{count}})",
+    "pendingSyncDescription": "Controles guardados en este dispositivo"
+  },
+  "pendingSync": {
+    "back": "Volver",
+    "title": "Pendientes de envío",
+    "offlineBanner_one": "Sin conexión · {{count}} control por enviar",
+    "offlineBanner_other": "Sin conexión · {{count}} controles por enviar",
+    "offlineBannerZero": "Sin conexión · Sin controles pendientes",
+    "recordSummary": "Control del {{date}} · {{weight}} kg · {{height}} cm",
+    "childFallback": "Niño",
+    "status": {
+      "local": "Guardado en este dispositivo",
+      "sending": "Enviando...",
+      "error": "Error",
+      "sent": "Enviado"
+    },
+    "retry": "Reintentar",
+    "discard": "Descartar",
+    "syncNow": "Sincronizar ahora",
+    "syncing": "Sincronizando...",
+    "emptyTitle": "No tienes controles pendientes",
+    "emptySubtitle": "Cuando anotes un control sin conexión, aparecerá aquí hasta enviarse.",
+    "loading": "Cargando controles pendientes...",
+    "discardConfirmTitle": "¿Descartar este control?",
+    "discardConfirmMessage": "Este control no se enviará y se borrará de este dispositivo",
+    "discardConfirmAction": "Descartar",
+    "discardCancelAction": "Cancelar",
+    "errorFallback": "No se pudo enviar este control."
   },
   "consentItem": {
     "badgeActive": "ACTIVO",

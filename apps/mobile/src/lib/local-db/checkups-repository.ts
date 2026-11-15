@@ -190,6 +190,22 @@ export async function deleteCheckup(db: LocalDb, userId: string, id: string): Pr
 }
 
 /**
+ * Elimina un control pendiente (`sync_state = 'LOCAL'`) del usuario indicado sin afectar
+ * controles ya confirmados por el servidor (`SENT`).
+ */
+export async function deleteLocalOnlyCheckup(
+  db: LocalDb,
+  userId: string,
+  id: string,
+): Promise<boolean> {
+  const result = await db.runAsync(
+    "DELETE FROM checkups WHERE user_id = ? AND id = ? AND sync_state = 'LOCAL';",
+    [userId, id],
+  );
+  return result.changes > 0;
+}
+
+/**
  * Lista los controles de un niño con su `sync_state`, ordenados del más reciente al más antiguo.
  */
 export async function listCheckupEntriesByChild(
@@ -287,5 +303,6 @@ export const checkupsRepository = {
   insertLocal: insertLocalCheckup,
   markSent: markCheckupSent,
   delete: deleteCheckup,
+  deleteLocal: deleteLocalOnlyCheckup,
   deleteSentByChild: deleteSentCheckupsForChild,
 };

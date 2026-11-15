@@ -235,3 +235,35 @@ Implementado en `apps/mobile/src/lib/sync/`, `apps/mobile/src/context/connection
   5. **Temporizador programado:** mientras haya conexión, programa un único `setTimeout` para el menor `next_attempt_at` pendiente entre los controles por reintentar.
 - **Estado observable (`getSyncState()`, `subscribe(listener)` y `useSyncStatus()`):** expone `{ pending, sending, error, lastSyncedAt }` consultados por usuario en `sync_queue` y `meta`, además de `syncNow` en el hook `useSyncStatus()`.
 - **Degradación y privacidad:** si `getLocalDatabase()` falla (Expo Go o web), el motor no lanza errores y permanece inactivo con contadores en cero; los avisos en consola registran únicamente el nombre de la operación, nunca datos personales ni cargas clínicas.
+
+## 10. Captura sin conexión y pantalla «Pendientes de envío» (NK-61, parte B)
+
+Implementado en `apps/mobile/src/lib/offline-checkup.ts`, `apps/mobile/src/hooks/useCheckups.ts`, `apps/mobile/src/hooks/usePendingSyncItems.ts`, `apps/mobile/src/lib/checkup-route.ts` y las pantallas `add-checkup.tsx`, `checkup-saved.tsx`, `evolution.tsx`, `profile.tsx` y `pending-sync.tsx`.
+
+### Captura sin conexión y guardado atómico
+
+1. **Decisión en `useCheckups.create` (`createCheckupWithOfflineFallback`):**
+   - Si `useConnection().isOnline` es `true`, intenta `createChildCheckup` normalmente (`savedLocally: false`) y cachea la respuesta en `checkups` (`SENT`).
+   - Si el dispositivo está `offline`, o si el envío en línea falla por **red** (`isNetworkUnavailableError`: `TypeError`, `AbortError`, `TimeoutError`), conserva exactamente el mismo `id` UUID del intento y guarda el control en local devolviendo `{ ...checkup, savedLocally: true }`.
+   - Los errores HTTP `4xx`/`5xx` devueltos por la API (p. ej. `400` validación o `403` sin consentimiento vigente) **nunca** caen a guardado local: se propagan al formulario para que el cuidador vea el error real.
+2. **Transacción única (`saveCheckupLocallyInDb`):** dentro de un único `db.withTransactionAsync(...)` ejecuta:
+   - `checkupsRepository.insertLocal(db, userId, payload)` con `sync_state = 'LOCAL'` (para que aparezca inmediatamente en Evolución marcado con `localOnly: true`).
+   - `syncQueueRepository.enqueue(db, userId, { id: payload.id, kind: 'checkup', payload })` en estado `'LOCAL'`.
+3. **Por qué no se calculan ni envían `results` en el teléfono:**
+   - El servidor siempre recalcula todos los indicadores antropométricos OMS al sincronizar (`RF-07`, tanto en `POST /children/:id/checkups` como en `POST /sync/checkups`).
+   - Además, el cuidador nunca visualiza puntajes z, percentiles ni clasificaciones en la aplicación (`RF-14`). Por ello, `buildSyncCheckupItem` construye el `SyncCheckupItem` (`id`, `childId`, `measuredAt`, `weightKg`, `lengthHeightCm`, `position`, `notes?`, `confirmOutlier?`) omitiendo `results`.
+4. **Validación de atípicos (`confirmOutlier`):** el formulario (`buildCreateCheckupInput`) y la validación del esquema (`CreateCheckupInputSchema` / `SyncCheckupItemSchema`) exigen confirmación de valores extremos exactamente igual con o sin conexión.
+5. **Sin base local (Expo Go / web):** si no hay red (o falla por red) y `getLocalDatabase()` devuelve `null`, se lanza `OfflineCheckupSaveError` («Necesitas conexión para guardar el control en este dispositivo») y el formulario mantiene los datos escritos sin limpiar campos ni el `attemptId`.
+6. **Disparo tras guardar:** cuando cae a local tras un fallo con conexión disponible o recuperada, dispara `syncEngine.syncNow()` sin esperar; si se guardó explícitamente en modo `offline`, actualiza el estado observable con `syncEngine.refreshState()` (y el motor lo enviará automáticamente al recuperar conectividad).
+
+### Retroalimentación en UI y pantalla «Pendientes de envío»
+
+- **«Control guardado» (`checkup-saved.tsx`):** `toCheckupSavedParams` añade `pendingSync=1` cuando `savedLocally` es `true`. Con este parámetro, la pantalla muestra el aviso «Sin conexión · se enviará al reconectar» que abre `APP_ROUTES.CAREGIVER.PENDING_SYNC` al tocarlo; sin él, la pantalla no cambia.
+- **Historial / Evolución (`evolution.tsx`):** los controles con `localOnly: true` muestran el chip «Guardado en este dispositivo».
+- **Entrada en Perfil (`profile.tsx`):** mediante `useSyncStatus()`, muestra la fila «Pendientes de envío ({N})» (donde `N = pending + sending`) únicamente cuando `N > 0` o `error > 0`.
+- **Pantalla «Pendientes de envío» (`apps/mobile/src/app/(caregiver)/pending-sync.tsx`):**
+  - Alimentada por `usePendingSyncItems()`, que consulta `sync_queue` (`LOCAL`, `SENDING`, `ERROR` y los `SENT` de las últimas 24 horas) junto con los nombres de los niños en la tabla local `children`, y se actualiza en vivo mediante `syncEngine.subscribe`.
+  - Sin conexión muestra arriba el aviso «Sin conexión · N controles por enviar» y deshabilita el botón inferior «Sincronizar ahora» (que en línea llama a `syncEngine.syncNow()`).
+  - Muestra cada tarjeta con estado («Guardado en este dispositivo», «Error» o «Enviado» sin acciones) y el `lastError` cuando existe.
+  - **Reintentar (`retryOfflineCheckup`):** devuelve el ítem de `sync_queue` a `'LOCAL'` con `attempts = 0`, `next_attempt_at = null` y `last_error = null`, y llama a `syncEngine.syncNow()`.
+  - **Descartar (`discardOfflineCheckup`):** solicita confirmación («Este control no se enviará y se borrará de este dispositivo») y, al confirmar, elimina el registro de `sync_queue` y el control `LOCAL` en `checkups` dentro de una única transacción SQLite.
