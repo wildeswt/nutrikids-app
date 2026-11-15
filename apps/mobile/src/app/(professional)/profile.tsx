@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { USER_ROLES } from '@nutrikids/shared';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChildBanner } from '../../components/ChildBanner.js';
 import { LanguageSelector } from '../../components/LanguageSelector.js';
-import { TwoFactorCard } from '../../components/TwoFactorCard.js';
 import { SignOutPendingDialog } from '../../components/SignOutPendingDialog.js';
-import { Card } from '../../components/ui/Card.js';
-import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { TwoFactorCard } from '../../components/TwoFactorCard.js';
+import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
 import { BUTTON_HEIGHT, BUTTON_WIDTH, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
@@ -16,6 +17,12 @@ import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
 import { useSignOutFlow } from '../../hooks/useSignOutFlow.js';
 import { useSyncStatus } from '../../hooks/useSyncStatus.js';
+
+const LOCAL_COLORS = {
+  white: '#FFFFFF',
+  backdrop: 'rgba(0,0,0,0.45)',
+  divider: '#EFEFEF',
+} as const;
 
 export default function ProfessionalProfileScreen() {
   const { t } = useTranslation(['professional', 'common']);
@@ -25,83 +32,130 @@ export default function ProfessionalProfileScreen() {
   const signOutFlow = useSignOutFlow({
     onGoToPendingSync: () => router.push(APP_ROUTES.PROFESSIONAL.PENDING_SYNC as never),
   });
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   const pendingSyncCount = syncStatus.pending + syncStatus.sending;
   const showPendingSyncRow = pendingSyncCount > 0 || syncStatus.error > 0;
 
   const hasDualRole =
     user?.roles.includes(USER_ROLES.CAREGIVER) && user?.roles.includes(USER_ROLES.PROFESSIONAL);
 
+  const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
+  const roleLabel = t('common:roles.PROFESSIONAL');
+  const specialtyLabel = user?.specialty
+    ? t(`common:specialties.${user.specialty}`, { defaultValue: user.specialty })
+    : '';
+
+  const bannerTitle = fullName
+    ? t('profile.bannerTitle', { name: fullName, role: roleLabel })
+    : roleLabel;
+
+  let bannerSubtitle: string | undefined;
+  if (specialtyLabel && user?.licenseNumber) {
+    bannerSubtitle = t('profile.bannerSubtitle', {
+      specialty: specialtyLabel,
+      license: user.licenseNumber,
+    });
+  } else if (specialtyLabel) {
+    bannerSubtitle = specialtyLabel;
+  } else if (user?.licenseNumber) {
+    bannerSubtitle = `${t('profile.licenseNumber')} ${user.licenseNumber}`;
+  } else {
+    bannerSubtitle = user?.email;
+  }
+
+  const renderLink = (key: string, title: string, subtitle: string, onPress: () => void) => (
+    <Pressable
+      key={key}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      testID={`profile-link-${key}`}
+    >
+      <View style={styles.rowText}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        <Text style={styles.rowSubtitle}>{subtitle}</Text>
+      </View>
+      <Text style={styles.chevron}>›</Text>
+    </Pressable>
+  );
+
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
-      <Card style={styles.card}>
-        <Text style={styles.title}>{t('profile.title')}</Text>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        testID="professional-profile-screen"
+      >
+        <ScreenHeader
+          title={t('profile.screenTitle')}
+          showBack={false}
+          style={styles.header}
+          testID="profile-header"
+        />
 
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>{t('profile.name')}</Text>
-          <Text style={styles.value}>
-            {user?.firstName} {user?.lastName}
+        <ChildBanner
+          name={bannerTitle}
+          subtitle={bannerSubtitle}
+          style={styles.banner}
+          testID="profile-banner"
+        />
+
+        <Text style={styles.fieldLabel}>{t('profile.activeRoleLabel')}</Text>
+        <View style={styles.activeRow}>
+          <Text style={styles.activeRoleText}>
+            {activeRole ? t(`common:roles.${activeRole}`) : roleLabel}
           </Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>{t('profile.email')}</Text>
-          <Text style={styles.value}>{user?.email}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>{t('profile.specialty')}</Text>
-          <Text style={styles.value}>
-            {user?.specialty ? t(`common:specialties.${user.specialty}`) : t('profile.noSpecialty')}
-          </Text>
-        </View>
-
-        {user?.licenseNumber ? (
-          <View style={styles.infoRow} testID="professional-license-row">
-            <Text style={styles.label}>{t('profile.licenseNumber')}</Text>
-            <Text style={styles.value} selectable>
-              {user.licenseNumber}
-            </Text>
+          <View style={styles.chip}>
+            <Text style={styles.chipText}>{t('profile.activeBadge')}</Text>
           </View>
-        ) : null}
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>{t('profile.activeRole')}</Text>
-          <Text style={styles.badge}>{activeRole ? t(`common:roles.${activeRole}`) : '-'}</Text>
         </View>
 
         {hasDualRole && (
-          <PrimaryButton
-            label={t('profile.switchToCaregiver')}
+          <Pressable
+            style={({ pressed }) => [styles.outlineButton, pressed && styles.pressed]}
             onPress={() => void switchRole(USER_ROLES.CAREGIVER)}
-            style={styles.switchButton}
-          />
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.switchToCaregiver')}
+            testID="professional-switch-caregiver"
+          >
+            <Text style={styles.outlineButtonText}>{t('profile.switchToCaregiver')}</Text>
+          </Pressable>
         )}
 
-        <TwoFactorCard />
+        <Text style={[styles.sectionTitle, styles.sectionSpacing]}>{t('profile.account')}</Text>
 
-        <LanguageSelector />
+        {renderLink('myData', t('profile.myData'), t('profile.myDataDescription'), () =>
+          setDetailsOpen(true),
+        )}
+        {renderLink(
+          'children',
+          t('profile.linkedChildren'),
+          t('profile.linkedChildrenDescription'),
+          () => router.push(APP_ROUTES.PROFESSIONAL.CHILDREN as never),
+        )}
+        {renderLink(
+          'notifications',
+          t('profile.notifications'),
+          t('profile.notificationsDescription'),
+          () => router.push(APP_ROUTES.PROFESSIONAL.NOTIFICATIONS as never),
+        )}
+        {showPendingSyncRow
+          ? renderLink(
+              'pendingSync',
+              t('profile.pendingSync', { count: pendingSyncCount }),
+              t('profile.pendingSyncDescription'),
+              () => router.push(APP_ROUTES.PROFESSIONAL.PENDING_SYNC as never),
+            )
+          : null}
 
-        {showPendingSyncRow ? (
-          <Pressable
-            style={({ pressed }) => [styles.linkRow, pressed && styles.buttonPressed]}
-            onPress={() => router.push(APP_ROUTES.PROFESSIONAL.PENDING_SYNC as never)}
-            accessibilityRole="button"
-            accessibilityLabel={t('profile.pendingSync', { count: pendingSyncCount })}
-            testID="profile-link-pendingSync"
-          >
-            <Ionicons name="cloud-upload-outline" size={22} color={PALETTE.primary} />
-            <View style={styles.linkText}>
-              <Text style={styles.linkTitle}>
-                {t('profile.pendingSync', { count: pendingSyncCount })}
-              </Text>
-              <Text style={styles.linkSubtitle}>{t('profile.pendingSyncDescription')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={PALETTE.text.muted} />
-          </Pressable>
-        ) : null}
+        <View style={styles.sectionSpacing}>
+          <LanguageSelector />
+        </View>
 
         <Pressable
-          style={({ pressed }) => [styles.logoutButton, pressed && styles.buttonPressed]}
+          style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}
           onPress={() => void signOutFlow.requestSignOut()}
           disabled={signOutFlow.isSigningOut}
           accessibilityRole="button"
@@ -111,37 +165,205 @@ export default function ProfessionalProfileScreen() {
         >
           <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </Pressable>
-      </Card>
+      </ScrollView>
+
+      <Modal
+        visible={detailsOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDetailsOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard} testID="professional-my-data-modal">
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('profile.myData')}</Text>
+              <Pressable
+                onPress={() => setDetailsOpen(false)}
+                accessibilityRole="button"
+                accessibilityLabel={t('common:actions.close', { defaultValue: 'Cerrar' })}
+                testID="professional-my-data-close"
+              >
+                <Ionicons name="close" size={22} color={PALETTE.text.muted} />
+              </Pressable>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.modalBody}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>{t('profile.name')}</Text>
+                <Text style={styles.infoValue}>{fullName}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>{t('profile.email')}</Text>
+                <Text style={styles.infoValue}>{user?.email}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>{t('profile.specialty')}</Text>
+                <Text style={styles.infoValue}>{specialtyLabel || t('profile.noSpecialty')}</Text>
+              </View>
+              {user?.licenseNumber ? (
+                <View style={styles.infoRow} testID="professional-license-row">
+                  <Text style={styles.infoLabel}>{t('profile.licenseNumber')}</Text>
+                  <Text style={styles.infoValue} selectable>
+                    {user.licenseNumber}
+                  </Text>
+                </View>
+              ) : null}
+
+              <TwoFactorCard />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <SignOutPendingDialog {...signOutFlow.dialogProps} />
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: PALETTE.background,
-  },
-  container: {
-    flexGrow: 1,
-    backgroundColor: PALETTE.background,
+  container: { flex: 1, backgroundColor: PALETTE.background },
+  scrollContent: {
     paddingHorizontal: SCREEN_MARGIN,
-    paddingVertical: 24,
+    paddingTop: 12,
+    paddingBottom: 32,
+    gap: 10,
+  },
+  header: { paddingHorizontal: 0, paddingTop: 0, marginBottom: 6 },
+  banner: { marginBottom: 14 },
+  fieldLabel: {
+    fontFamily: font('medium'),
+    fontWeight: '500',
+    fontSize: 18,
+    color: PALETTE.text.title,
+  },
+  sectionTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 20,
+    color: PALETTE.text.title,
+  },
+  sectionSpacing: { marginTop: 14 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: PALETTE.input.background,
+    borderRadius: RADIUS_PILL,
+    borderWidth: 2,
+    borderColor: PALETTE.border.input,
+    paddingLeft: 22,
+    paddingRight: 18,
+    paddingVertical: 11,
+  },
+  rowText: { flex: 1, gap: 2 },
+  rowTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 16,
+    color: PALETTE.primary,
+  },
+  rowSubtitle: {
+    fontFamily: font('regular'),
+    fontSize: 13,
+    color: PALETTE.text.muted,
+  },
+  chevron: {
+    fontFamily: font('medium'),
+    fontWeight: '500',
+    fontSize: 22,
+    color: PALETTE.primary,
+  },
+  activeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: PALETTE.input.background,
+    borderRadius: RADIUS_PILL,
+    borderWidth: 2,
+    borderColor: PALETTE.border.input,
+    paddingLeft: 22,
+    paddingRight: 14,
+    paddingVertical: 12,
+  },
+  activeRoleText: {
+    flex: 1,
+    fontFamily: font('medium'),
+    fontWeight: '500',
+    fontSize: 16,
+    color: PALETTE.text.title,
+  },
+  chip: {
+    backgroundColor: PALETTE.primary,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  chipText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 13,
+    color: PALETTE.text.light,
+  },
+  outlineButton: {
+    borderWidth: 2,
+    borderColor: PALETTE.primary,
+    borderRadius: RADIUS_PILL,
+    minHeight: BUTTON_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  card: {
-    width: '100%',
-    maxWidth: 420,
-    padding: 24,
-    gap: 14,
-  },
-  title: {
+  outlineButtonText: {
     fontFamily: font('semibold'),
-    fontSize: 32,
     fontWeight: '600',
+    fontSize: 16,
+    color: PALETTE.primary,
+  },
+  logoutButton: {
+    marginTop: 24,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: BUTTON_WIDTH,
+    minHeight: BUTTON_HEIGHT,
+    borderWidth: 2,
+    borderColor: PALETTE.secondary,
+    borderRadius: RADIUS_PILL,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 16,
+    color: PALETTE.secondary,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: LOCAL_COLORS.backdrop,
+    justifyContent: 'center',
+    padding: SCREEN_MARGIN,
+  },
+  modalCard: {
+    backgroundColor: LOCAL_COLORS.white,
+    borderRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: LOCAL_COLORS.divider,
+  },
+  modalTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 18,
     color: PALETTE.text.title,
+  },
+  modalBody: {
+    paddingTop: 14,
+    gap: 12,
   },
   infoRow: {
     flexDirection: 'row',
@@ -151,77 +373,16 @@ const styles = StyleSheet.create({
     borderBottomColor: PALETTE.border.subtle,
     paddingBottom: 8,
   },
-  label: {
+  infoLabel: {
     fontFamily: font('medium'),
-    fontSize: 14,
     fontWeight: '500',
+    fontSize: 14,
     color: PALETTE.text.muted,
   },
-  value: {
+  infoValue: {
     fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.body,
   },
-  badge: {
-    fontFamily: font('semibold'),
-    fontSize: 12,
-    fontWeight: '600',
-    color: PALETTE.primary,
-    backgroundColor: PALETTE.primaryLight,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-  },
-  switchButton: {
-    marginTop: 6,
-  },
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: PALETTE.input.background,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: PALETTE.border.subtle,
-    padding: 12,
-  },
-  linkText: {
-    flex: 1,
-    gap: 2,
-  },
-  linkTitle: {
-    fontFamily: font('semibold'),
-    fontSize: 15,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-  },
-  linkSubtitle: {
-    fontFamily: font('regular'),
-    fontSize: 12,
-    color: PALETTE.text.muted,
-    lineHeight: 16,
-  },
-  logoutButton: {
-    width: '100%',
-    maxWidth: BUTTON_WIDTH,
-    height: BUTTON_HEIGHT,
-    alignSelf: 'center',
-    backgroundColor: PALETTE.feedback.errorBg,
-    borderColor: PALETTE.feedback.errorBorder,
-    borderWidth: 1,
-    borderRadius: RADIUS_PILL,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginTop: 6,
-  },
-  logoutButtonText: {
-    fontFamily: font('semibold'),
-    color: PALETTE.feedback.error,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  buttonPressed: {
-    opacity: 0.85,
-  },
+  pressed: { opacity: 0.85 },
 });
