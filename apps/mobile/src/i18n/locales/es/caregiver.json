@@ -345,6 +345,7 @@
     "account": "Mi cuenta",
     "switchToProfessional": "Cambiar a vista Profesional",
     "consentsTitle": "Permisos de tus niños",
+    "consentsRowDescription": "Ver y cambiar el permiso de datos",
     "consentsDescription": "Aquí ves y cambias el permiso que diste para guardar y revisar los datos de crecimiento de tus niños.",
     "noChildren": "Aún no tienes niños registrados. Cuando registres uno, te pediremos tu permiso primero.",
     "dataNote": "Pronto podrás descargar o borrar tus datos desde aquí.",

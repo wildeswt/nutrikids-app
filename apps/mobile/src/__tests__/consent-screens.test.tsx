@@ -301,7 +301,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
 
       expect(html).toContain(i18n.t('caregiver:profile.title'));
       expect(html).toContain(i18n.t('caregiver:profile.consentsTitle'));
-      expect(html).toContain(i18n.t('caregiver:profile.consentsDescription'));
+      expect(html).toContain(i18n.t('caregiver:profile.consentsRowDescription'));
     });
 
     it('enlaza a «Mis datos» y a «Privacidad e historial»', () => {
