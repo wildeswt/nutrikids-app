@@ -278,19 +278,33 @@ export default function AddCheckupScreen() {
         />
 
         {/* Enlace Cambiar paciente (solo con más de un niño) */}
-        {children.length > 1 ? (
+        <View style={styles.linksRow}>
           <Pressable
-            style={({ pressed }) => [styles.changePatientButton, pressed && styles.pressed]}
-            onPress={handleSwitchPatient}
+            style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
+            onPress={() =>
+              router.push({
+                pathname: APP_ROUTES.CAREGIVER.EVOLUTION as never,
+                params: { childId: activeChild.id },
+              })
+            }
             accessibilityRole="button"
-            accessibilityLabel={t('addCheckup.changeChild')}
-            testID="change-child-button"
+            accessibilityLabel={t('addCheckup.seeHistory')}
+            testID="checkup-see-history"
           >
-            <Text style={styles.changePatientText}>{t('addCheckup.changeChild')}</Text>
+            <Text style={styles.changePatientText}>{t('addCheckup.seeHistory')}</Text>
           </Pressable>
-        ) : (
-          <View style={styles.changePatientButton} />
-        )}
+          {children.length > 1 ? (
+            <Pressable
+              style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
+              onPress={handleSwitchPatient}
+              accessibilityRole="button"
+              accessibilityLabel={t('addCheckup.changeChild')}
+              testID="change-child-button"
+            >
+              <Text style={styles.changePatientText}>{t('addCheckup.changeChild')}</Text>
+            </Pressable>
+          ) : null}
+        </View>
 
         {/* Mensajes de error o confirmación de valor atípico */}
         {errorMessage ? (
@@ -535,10 +549,13 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 18,
   },
-  changePatientButton: {
-    alignSelf: 'flex-end',
+  linksRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 8,
     marginBottom: 18,
+  },
+  linkButton: {
     paddingVertical: 2,
   },
   changePatientText: {

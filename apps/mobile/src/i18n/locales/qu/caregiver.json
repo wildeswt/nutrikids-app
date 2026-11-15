@@ -112,9 +112,10 @@
     "selectChildA11y": "Elegir a {{name}} como niño activo"
   },
   "addCheckup": {
+    "seeHistory": "Ver historial",
     "back": "Tikray",
     "title": "Mushuk kamayta killkay",
-    "childSubtitle": "{{age}} - {{birthDate}} punchapi wacharirka",
+    "childSubtitle": "{{age}}",
     "changeChild": "Shuk wawata akllay",
     "dateLabel": "Kamay puncha",
     "datePlaceholder": "Shina: {{example}}",
@@ -223,7 +224,7 @@
   },
   "evolution": {
     "title": "Imashina {{name}} wiñakun",
-    "childSubtitle": "{{age}} - {{birthDate}} punchapi wacharirka",
+    "childSubtitle": "{{age}}",
     "chartInfo": "Kay rikuchikka imata rikuchin",
     "chartSubtitle": "OMS-pak shuyashkawan chimpapurashka",
     "indicators": {
@@ -576,7 +577,7 @@
     "accountLocked": "Por ahora no puedes cambiar tu nombre, tu correo ni tu teléfono desde la app: esa opción todavía no está lista.",
     "childrenTitle": "Niños vinculados",
     "childrenDescription": "Solo ves a los niños vinculados a tu cuenta.",
-    "childSummary": "{{age}} - nació el {{birthDate}}",
+    "childSummary": "{{age}}",
     "fixData": "Corregir datos",
     "fixDataA11y": "Corregir los datos de {{name}}",
     "privacyLink": "Privacidad e historial",
@@ -610,7 +611,7 @@
   "editChild": {
     "back": "Volver",
     "title": "Corregir datos",
-    "childSubtitle": "{{age}} - nació el {{birthDate}}",
+    "childSubtitle": "{{age}}",
     "firstNameLabel": "Nombres",
     "lastNameLabel": "Apellidos",
     "birthDateLabel": "Fecha de nacimiento",
@@ -681,7 +682,7 @@
     "retry": "Intentar de nuevo",
     "noChildrenTitle": "Aún no tienes niños vinculados",
     "noChildrenSubtitle": "Cuando registres a un niño podrás gestionar aquí sus datos.",
-    "childSubtitle": "{{age}} - nació el {{birthDate}}",
+    "childSubtitle": "{{age}}",
     "csv": {
       "date": "Fecha del control",
       "weight": "Peso (kg)",
