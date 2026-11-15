@@ -4,6 +4,9 @@ build/
 coverage/
 .expo/
 .claude/
+.agents/
+.windsurf/
+skills-lock.json
 pnpm-lock.yaml
 *.tsbuildinfo
 **/generated/

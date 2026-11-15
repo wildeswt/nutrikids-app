@@ -277,8 +277,8 @@ export default function AddCheckupScreen() {
           })}
         />
 
-        {/* Enlace Cambiar paciente (solo con más de un niño) */}
-        <View style={styles.linksRow}>
+        {/* Enlace Cambiar paciente (solo con más de un niño) y Ver historial */}
+        <View style={[styles.linksRow, children.length <= 1 && styles.linksRowSingle]}>
           <Pressable
             style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
             onPress={() =>
@@ -552,8 +552,12 @@ const styles = StyleSheet.create({
   linksRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 8,
     marginBottom: 18,
+  },
+  linksRowSingle: {
+    justifyContent: 'flex-end',
   },
   linkButton: {
     paddingVertical: 2,

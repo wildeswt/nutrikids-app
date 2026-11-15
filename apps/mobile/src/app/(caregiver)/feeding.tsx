@@ -250,7 +250,7 @@ export default function FeedingScreen() {
           style={styles.childBanner}
         />
 
-        <View style={styles.linksRow}>
+        <View style={[styles.linksRow, children.length <= 1 && styles.linksRowSingle]}>
           <Pressable
             style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
             onPress={() =>
@@ -489,8 +489,12 @@ const styles = StyleSheet.create({
   linksRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 8,
     marginBottom: 16,
+  },
+  linksRowSingle: {
+    justifyContent: 'flex-end',
   },
   linkButton: {
     paddingVertical: 2,
