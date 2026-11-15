@@ -16,7 +16,16 @@ import type { LocalDb, SyncQueueKind, SyncQueueStatus } from './types.js';
 
 const TABLE_NAME = 'sync_queue';
 
+export const SyncFollowUpBatchQueuePayloadSchema = z.object({
+  childId: UuidSchema,
+  alertId: UuidSchema.optional(),
+  establish: z.boolean(),
+  batch: CreateFollowUpBatchInputSchema,
+});
+export type SyncFollowUpBatchQueuePayload = z.infer<typeof SyncFollowUpBatchQueuePayloadSchema>;
+
 export const SyncFollowUpPayloadSchema = z.union([
+  SyncFollowUpBatchQueuePayloadSchema,
   CreateFollowUpInputSchema.extend({ childId: UuidSchema }),
   CreateFollowUpBatchInputSchema.extend({ childId: UuidSchema }),
   CreateFollowUpInputSchema,
@@ -26,6 +35,7 @@ export type SyncFollowUpWithChild = CreateFollowUpInput & { childId: string };
 export type SyncFollowUpBatchWithChild = CreateFollowUpBatchInput & { childId: string };
 
 export type SyncFollowUpPayload =
+  | SyncFollowUpBatchQueuePayload
   | SyncFollowUpWithChild
   | SyncFollowUpBatchWithChild
   | CreateFollowUpInput
@@ -158,7 +168,14 @@ function validateAndSerializeInput(input: EnqueueSyncItemInput): {
 
   if (input.kind === 'follow-up') {
     const validated = SyncFollowUpPayloadSchema.parse(input.payload);
-    const derivedId = 'id' in validated ? validated.id : generateId();
+    let derivedId: string;
+    if ('batch' in validated) {
+      derivedId = validated.batch.items[0]?.id ?? validated.batch.groupId ?? generateId();
+    } else if ('id' in validated) {
+      derivedId = validated.id;
+    } else {
+      derivedId = validated.items[0]?.id ?? validated.groupId ?? generateId();
+    }
     return {
       id: input.id ? UuidSchema.parse(input.id) : derivedId,
       kind: 'follow-up',
@@ -351,20 +368,19 @@ export async function getSyncItemById(
 }
 
 /**
- * Lista los controles pendientes (`LOCAL`, `SENDING`, `ERROR`) y los enviados (`SENT`)
- * desde `sentSinceIso` (p. ej. últimas 24 horas) para la pantalla «Pendientes de envío».
+ * Lista todos los elementos pendientes (`LOCAL`, `SENDING`, `ERROR`) y los enviados (`SENT`)
+ * desde `sentSinceIso` (p. ej. últimas 24 horas) de todos los tipos en `sync_queue`.
  */
-export async function listCheckupsWithRecentSent(
+export async function listWithRecentSent(
   db: LocalDb,
   userId: string,
   sentSinceIso: string,
-): Promise<Array<Extract<SyncQueueRecord, { kind: 'checkup' }>>> {
+): Promise<SyncQueueRecord[]> {
   const normalizedSince = toUtcIso(IsoDateTimeSchema.parse(sentSinceIso));
   const rows = await db.getAllAsync<SyncQueueRow>(
     `SELECT id, user_id, kind, payload, status, attempts, next_attempt_at, last_error, created_at, updated_at
      FROM sync_queue
      WHERE user_id = ?
-       AND kind = 'checkup'
        AND (
          status IN ('LOCAL', 'SENDING', 'ERROR')
          OR (status = 'SENT' AND updated_at >= ?)
@@ -376,10 +392,59 @@ export async function listCheckupsWithRecentSent(
     [userId, normalizedSince],
   );
 
-  const records: Array<Extract<SyncQueueRecord, { kind: 'checkup' }>> = [];
+  const records: SyncQueueRecord[] = [];
   for (const row of rows) {
     const parsed = parseRow(row);
-    if (parsed !== null && parsed.kind === 'checkup') {
+    if (parsed !== null) {
+      records.push(parsed);
+    }
+  }
+  return records;
+}
+
+/**
+ * Lista los controles pendientes (`LOCAL`, `SENDING`, `ERROR`) y los enviados (`SENT`)
+ * desde `sentSinceIso` (p. ej. últimas 24 horas) para la pantalla «Pendientes de envío».
+ */
+export async function listCheckupsWithRecentSent(
+  db: LocalDb,
+  userId: string,
+  sentSinceIso: string,
+): Promise<Array<Extract<SyncQueueRecord, { kind: 'checkup' }>>> {
+  const records = await listWithRecentSent(db, userId, sentSinceIso);
+  return records.filter(
+    (record): record is Extract<SyncQueueRecord, { kind: 'checkup' }> => record.kind === 'checkup',
+  );
+}
+
+/**
+ * Lista los elementos en cola del usuario filtrados por tipo y estados.
+ */
+export async function listSyncItemsByKindAndStatuses(
+  db: LocalDb,
+  userId: string,
+  kind: SyncQueueKind,
+  statuses: readonly SyncQueueStatus[],
+): Promise<SyncQueueRecord[]> {
+  const validKind = SyncQueueKindSchema.parse(kind);
+  const validStatuses = statuses.map((status) => SyncQueueStatusSchema.parse(status));
+  if (validStatuses.length === 0) {
+    return [];
+  }
+
+  const placeholders = validStatuses.map(() => '?').join(', ');
+  const rows = await db.getAllAsync<SyncQueueRow>(
+    `SELECT id, user_id, kind, payload, status, attempts, next_attempt_at, last_error, created_at, updated_at
+     FROM sync_queue
+     WHERE user_id = ? AND kind = ? AND status IN (${placeholders})
+     ORDER BY created_at ASC, id ASC;`,
+    [userId, validKind, ...validStatuses],
+  );
+
+  const records: SyncQueueRecord[] = [];
+  for (const row of rows) {
+    const parsed = parseRow(row);
+    if (parsed !== null) {
       records.push(parsed);
     }
   }
@@ -402,7 +467,9 @@ export const syncQueueRepository = {
   enqueue: enqueueSyncItem,
   getById: getSyncItemById,
   listByStatus: listSyncItemsByStatus,
+  listByKindAndStatuses: listSyncItemsByKindAndStatuses,
   listDue: listDueSyncItems,
+  listWithRecentSent,
   listCheckupsWithRecentSent,
   updateStatus: updateSyncItemStatus,
   countPending: countPendingSyncItems,

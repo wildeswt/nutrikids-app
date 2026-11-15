@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useOptionalAuth } from '../context/auth-context.js';
 import {
-  discardOfflineCheckup,
-  listPendingSyncCheckupItems,
-  retryOfflineCheckup,
+  discardPendingSyncItem,
+  listPendingSyncItems,
+  retryPendingSyncItem,
   type PendingSyncItem,
-} from '../lib/offline-checkup.js';
+} from '../lib/pending-sync.js';
 import { syncEngine } from '../lib/sync/index.js';
 import { useSyncStatus } from './useSyncStatus.js';
 
-export type { PendingSyncItem } from '../lib/offline-checkup.js';
+export type {
+  PendingSyncCheckupItem,
+  PendingSyncFeedingItem,
+  PendingSyncFollowUpItem,
+  PendingSyncItem,
+} from '../lib/pending-sync.js';
 
 /** Estado y acciones expuestas por `usePendingSyncItems`. */
 export interface UsePendingSyncItemsResult {
@@ -47,7 +52,7 @@ export function usePendingSyncItems(): UsePendingSyncItemsResult {
       return;
     }
 
-    const nextItems = await listPendingSyncCheckupItems(userId);
+    const nextItems = await listPendingSyncItems(userId);
     if (requestId !== requestCounter.current) return;
     setItems(nextItems);
     setLoading(false);
@@ -66,7 +71,7 @@ export function usePendingSyncItems(): UsePendingSyncItemsResult {
 
   const retryItem = useCallback(
     async (id: string) => {
-      await retryOfflineCheckup(userId, id);
+      await retryPendingSyncItem(userId, id);
       await refresh();
     },
     [refresh, userId],
@@ -74,7 +79,7 @@ export function usePendingSyncItems(): UsePendingSyncItemsResult {
 
   const discardItem = useCallback(
     async (id: string) => {
-      await discardOfflineCheckup(userId, id);
+      await discardPendingSyncItem(userId, id);
       await refresh();
     },
     [refresh, userId],

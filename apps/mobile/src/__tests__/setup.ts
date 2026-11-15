@@ -6,6 +6,20 @@ vi.mock('@react-native-community/datetimepicker', () => ({
   default: (props: Record<string, unknown>) => React.createElement('mock-date-picker', props),
 }));
 
+// react-native-safe-area-context imports native codegen specs with Flow syntax unsupported in Node.
+vi.mock('react-native-safe-area-context', () => {
+  const defaultInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+  const SafeAreaInsetsContext = React.createContext(defaultInsets);
+  return {
+    SafeAreaInsetsContext,
+    SafeAreaProvider: ({ children }: { children?: React.ReactNode }) =>
+      React.createElement(SafeAreaInsetsContext.Provider, { value: defaultInsets }, children),
+    SafeAreaView: ({ children, ...rest }: { children?: React.ReactNode; [key: string]: unknown }) =>
+      React.createElement('mock-safe-area-view', rest, children),
+    useSafeAreaInsets: () => React.useContext(SafeAreaInsetsContext) ?? defaultInsets,
+  };
+});
+
 // expo-constants mock for Node/Vitest.
 vi.mock('expo-constants', () => ({
   default: {

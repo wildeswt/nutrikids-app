@@ -204,3 +204,41 @@ export async function readThrough<T>(
     throw error;
   }
 }
+
+/**
+ * Ejecuta una escritura en línea y cae a guardado local en cola cuando el dispositivo está sin
+ * conexión o el envío falla por error de red (nunca ante respuestas HTTP 4xx/5xx).
+ */
+export async function executeOfflineWriteFallback<T>(options: {
+  isOnline: boolean;
+  sendRemote: () => Promise<T>;
+  persistLocally: () => Promise<T>;
+  isNetworkError?: (error: unknown) => boolean;
+  syncNow?: () => Promise<void>;
+  refreshSyncState?: () => Promise<unknown>;
+}): Promise<T> {
+  const isNetworkError = options.isNetworkError ?? isNetworkUnavailableError;
+
+  if (!options.isOnline) {
+    const localResult = await options.persistLocally();
+    if (options.refreshSyncState) {
+      void options.refreshSyncState().catch(() => {});
+    }
+    return localResult;
+  }
+
+  try {
+    return await options.sendRemote();
+  } catch (error) {
+    // Los errores 4xx/5xx del servidor no caen a local; solo fallos de red / conectividad.
+    if (!isNetworkError(error)) {
+      throw error;
+    }
+    const localResult = await options.persistLocally();
+    if (options.syncNow) {
+      // Si se guardó con red disponible/recuperada, dispara un envío sin bloquear la UI.
+      void options.syncNow().catch(() => {});
+    }
+    return localResult;
+  }
+}

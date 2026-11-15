@@ -267,3 +267,97 @@ Implementado en `apps/mobile/src/lib/offline-checkup.ts`, `apps/mobile/src/hooks
   - Muestra cada tarjeta con estado («Guardado en este dispositivo», «Error» o «Enviado» sin acciones) y el `lastError` cuando existe.
   - **Reintentar (`retryOfflineCheckup`):** devuelve el ítem de `sync_queue` a `'LOCAL'` con `attempts = 0`, `next_attempt_at = null` y `last_error = null`, y llama a `syncEngine.syncNow()`.
   - **Descartar (`discardOfflineCheckup`):** solicita confirmación («Este control no se enviará y se borrará de este dispositivo») y, al confirmar, elimina el registro de `sync_queue` y el control `LOCAL` en `checkups` dentro de una única transacción SQLite.
+
+## 11. Seguimientos clínicos en la cola general (NK-62, parte A)
+
+Implementado en `apps/mobile/src/lib/sync/queue-processor.ts`, `follow-up-processor.ts`, `follow-up-alert.ts`, `follow-up-migration.ts`, `follow-up-storage.ts` y `follow-up-sync.ts`, manteniendo intacta la API pública (`submitFollowUp`, `flushPendingFollowUps`, `listPending`, `getDraft`, `saveDraft`, `clearDraft`, `clearDrafts`) que consumen las pantallas.
+
+### Procesadores por tipo en `sync_queue`
+
+- **`SYNC_QUEUE_PROCESSORS` (`sync-engine.ts`):** mapa extensible por `kind` (`checkup`, `follow-up` y `feeding`), todos compartiendo el mismo ciclo single-flight, recuperación al iniciar y temporizadores.
+- **Ejecución de `follow-up` (`processFollowUpQueue`):** los lotes NK-75 (`{ childId, alertId?, establish, batch }`) se envían **uno a uno** mediante `POST /children/:childId/follow-ups/batch` y, cuando aplica, `establishAlert(alertId)`.
+- **Idempotencia al mover la alerta:** si el lote ya se guardó en el servidor (`200`/`201`) pero falla la red o hay un error transitorio al cambiar el estado de la alerta, el elemento permanece en `'LOCAL'` con espera creciente y al reintentar el lote responde `200 OK` sin duplicar seguimientos ni recordatorios antes de reintentar `establishAlert`.
+- **Estados por elemento en `sync_queue`:**
+  - **Éxito:** pasa a `'SENT'` y actualiza `lastSyncedAt` en `meta`.
+  - **Rechazo `4xx` definitivo** (`400`/`403`/`404`/`409`/`422`): pasa a `'ERROR'` con el mensaje legible del servidor y `next_attempt_at = NULL`, **sin reintento automático**. Al abrir el formulario sin borrador previo (`useFollowUpForm`), `getLatestRejectedFollowUp` restaura el seguimiento en `'ERROR'` con `rejectedReason` para poder corregirlo y reenviarlo o guardarlo como borrador (momento en que se limpia la fila `'ERROR'`).
+  - **`401`:** vuelve a `'LOCAL'` sin marcar error definitivo ni consumir espera creciente.
+  - **Red / `5xx` / `408` / `429`:** vuelve a `'LOCAL'` incrementando `attempts`, calcula `next_attempt_at` con `computeBackoffMs` y detiene la tanda actual de seguimientos sin interferir con otros tipos (`checkup`).
+- **Conteos y disparadores:** `SyncEngine` cuenta controles y seguimientos juntos en `useSyncStatus()` (`pending`, `sending`, `error`) y los dispara automáticamente al arrancar, al recuperar conectividad, al volver al primer plano, mediante `syncNow()` o al vencer el temporizador de reintento. Las pantallas (`useFollowUpForm` y `alert-detail.tsx`) ya no vacían la cola al enfocar; `usePendingFollowUps` observa `useSyncStatus()` para actualizar el aviso de seguimientos pendientes de la alerta.
+
+### Borradores en `meta`, migración y degradación
+
+- **Borradores en `meta`:** cuando la base local cifrada está disponible, `saveDraft`/`getDraft`/`clearDraft`/`clearDrafts` leen y escriben JSON validado con Zod en `meta` bajo la clave `followup-draft:<userId>:<draftKey>`.
+- **Migración idempotente al arrancar (`migrateLegacyFollowUpStorage`):** en `syncEngine.start(userId)`, si no existe la marca `followup-migration:v1:<userId>` en `meta`, migra los pendientes y borradores de ese `userId` desde `nutrikids.followups` (SecureStore) hacia `sync_queue` y `meta` junto con la marca de migración dentro de **una sola transacción SQLite**. El almacén antiguo de ese usuario solo se limpia tras confirmar la escritura nueva (respetando los datos de otros usuarios); si falla a mitad, SQLite revierte todo y SecureStore permanece intacto.
+- **Degradación sin SQLCipher (Expo Go / web):** cuando `tryGetLocalDatabase()` devuelve `null`, `follow-up-storage.ts` y `follow-up-sync.ts` conservan en tiempo de ejecución la implementación heredada sobre SecureStore sin romper el flujo de seguimiento ni los borradores.
+
+## 12. Alimentación sin conexión y pantalla común «Pendientes de envío» (NK-62, parte B)
+
+Implementado en `apps/mobile/src/lib/sync/feeding-processor.ts`, `apps/mobile/src/lib/offline-feeding.ts`, `apps/mobile/src/lib/pending-sync.ts`, `apps/mobile/src/components/PendingSyncList.tsx`, `(professional)/pending-sync.tsx` y las actualizaciones en `useFeedingLog.ts`, `feeding.tsx`, `usePendingSyncItems.ts`, `(professional)/profile.tsx` y `(professional)/alert-detail.tsx`.
+
+### Procesador y captura sin conexión de alimentación
+
+1. **Procesador `feeding` (`processFeedingQueue` / `flushFeedingQueue`):**
+   - Registrado como `SYNC_QUEUE_PROCESSORS.feeding`. Normaliza el payload de `sync_queue` (`{ childId, input: CreateFeedingLogInput }`) validando con `UuidSchema` y `CreateFeedingLogInputSchema` y envía los elementos uno a uno mediante `POST /children/:childId/feeding-logs` (`createChildFeedingLog`).
+   - `200`/`201` → `'SENT'` y actualiza `lastSyncedAt`; `4xx` definitivo (consentimiento, vínculo, validación) → `'ERROR'` con el mensaje del servidor y sin reintento automático; `401` → `'LOCAL'` sin espera; fallo de red (`FeedingApiError` con `isNetwork: true` o `TypeError`) / `5xx` / `408` / `429` → `'LOCAL'` incrementando `attempts` con espera creciente y deteniendo la tanda actual.
+2. **Captura sin conexión (`createFeedingWithOfflineFallback`):**
+   - Reutiliza `executeOfflineWriteFallback` (patrón compartido con `offline-checkup.ts`): fija `attemptId` antes del primer intento; si está `offline` o el envío falla por **red** (nunca ante `4xx` HTTP), encola `{ childId, ...input }` con `kind = 'feeding'` y el mismo `id` dentro de `db.withTransactionAsync`, devolviendo `{ ..., savedLocally: true }`.
+   - En `feeding.tsx`, cuando hay base local muestra la confirmación «Sin conexión · se guardó en este dispositivo y se enviará al reconectar» y vuelve atrás tras el mismo retardo que en línea. Si no hay base local (Expo Go / web), lanza `OfflineFeedingSaveError` manteniendo el error de conexión previo sin perder los campos escritos.
+
+### Pantalla común «Pendientes de envío» (`PendingSyncList`)
+
+- **Fuente de datos unificada (`listPendingSyncItemsInDb`, `usePendingSyncItems`):** lee de `sync_queue` (`syncQueueRepository.listWithRecentSent`) los elementos `LOCAL`, `SENDING`, `ERROR` y `SENT` de las últimas 24 horas para **todos los tipos** (`checkup`, `follow-up` y `feeding`), resolviendo el nombre del niño desde `children` o `'Paciente'` como respaldo.
+- **Resúmenes y acciones por tipo (`PendingSyncList.tsx`):**
+  - `checkup`: «Control del {fecha} · {peso} kg · {talla} cm»; descartar elimina cola + registro `LOCAL` en `checkups`.
+  - `follow-up`: «Seguimiento clínico · {n} tipo(s)» con línea de próximo control si existe; descartar elimina de `sync_queue`.
+  - `feeding`: «Alimentación del {fecha} · {n} comidas»; descartar elimina de `sync_queue`.
+  - Reintentar (`retryPendingSyncItem`) devuelve cualquier tipo a `'LOCAL'` con `attempts = 0` y sin espera, disparando `syncEngine.syncNow()`.
+- **Rutas de cuidador y profesional:**
+  - `(caregiver)/pending-sync.tsx` y `(professional)/pending-sync.tsx` (`APP_ROUTES.PROFESSIONAL.PENDING_SYNC`, oculta en el drawer de `(professional)/_layout.tsx`) envuelven `PendingSyncList` con su ruta de respaldo respectiva (`CAREGIVER.HOME` y `PROFESSIONAL.ALERTS`).
+  - `(professional)/profile.tsx` muestra la fila «Pendientes de envío ({N})» solo cuando `N > 0` o hay errores, y `(professional)/alert-detail.tsx` enlaza su aviso de seguimientos pendientes a `APP_ROUTES.PROFESSIONAL.PENDING_SYNC`.
+
+## 13. Cierre de sesión con pendientes y borrado del almacenamiento local (NK-63)
+
+Implementado en `apps/mobile/src/lib/local-wipe.ts`, `apps/mobile/src/lib/sync/sync-engine.ts` (`stopAndWait`), `apps/mobile/src/context/auth-context.tsx`, `apps/mobile/src/hooks/useSignOutFlow.ts`, `apps/mobile/src/components/SignOutPendingDialog.tsx` y conectado en los tres puntos de salida (`app/(caregiver)/profile.tsx`, `app/(professional)/profile.tsx` y `CustomDrawerContent` en `app/(professional)/_layout.tsx`).
+
+### Flujo de cierre de sesión manual (`useSignOutFlow` + `SignOutPendingDialog`)
+
+1. **Sin pendientes (`LOCAL + SENDING + ERROR === 0`):** llama a `signOut()` directamente sin mostrar diálogo y ejecuta la limpieza local completa.
+2. **Con pendientes (`> 0`, incluyendo controles, seguimientos o alimentación):** abre `SignOutPendingDialog` con el conteo («Tienes {{count}} registros sin enviar») y tres opciones:
+   - **Sincronizar y salir:** bloqueada sin conexión («Necesitas conexión para enviarlos»). Con conexión invoca `syncEngine.syncNow()` y espera el resultado: si la cola queda en `0`, cierra sesión y borra; si quedan registros (error de red o rechazo del servidor), conserva la sesión abierta, muestra «No se pudieron enviar {{count}} registros» y ofrece ir a «Pendientes de envío» para revisarlos o corregirlos.
+   - **Salir y borrar datos:** exige una segunda confirmación («Se perderán {{count}} registros que no se han enviado. Esta acción no se puede deshacer») antes de cerrar sesión y descartar los datos locales.
+   - **Cancelar:** cierra el diálogo sin enviar ni borrar nada.
+3. Todas las acciones bloquean el doble toque y muestran estado de carga mientras se ejecutan.
+
+### Qué se borra y tolerancia a fallos (`wipeUserLocalStorage`)
+
+- Tras desregistrar el token push y revocar la sesión en el servidor, `signOut()` ejecuta `wipeUserLocalStorage({ userId })`:
+  1. Detiene `syncEngine` y espera a que concluya cualquier ciclo de envío en curso (`syncEngine.stopAndWait()`).
+  2. Elimina la base SQLite cifrada y su clave maestra en `SecureStore` (`wipeLocalData()`).
+  3. Limpia los datos residuales del usuario en `SecureStore` y sistema de archivos (`clearLegacyUserFollowUpData` / `clearAllLegacyFollowUpData` en `nutrikids.followups` y `clearReferralDraft`), sin reabrir SQLite después del borrado.
+- **Tolerancia a fallos:** si cualquier paso de limpieza falla, **nunca** impide cerrar la sesión. Se registra en consola únicamente el nombre de la operación fallida (sin datos personales ni identificadores de usuario o niño) y se escribe la marca `nutrikids.localDb.pendingWipe` en `SecureStore` para reintentar automáticamente al próximo arranque o inicio de sesión (`retryPendingLocalWipeIfNeeded()`).
+
+### Cierre automático por sesión expirada (`onSessionExpired`) y aislamiento entre usuarios
+
+- Cuando el refresco de token falla de forma definitiva (`onSessionExpired`), `AuthProvider` cierra la sesión en memoria y delega en `cleanupOnSessionExpired(expiredUserId)`:
+  - Detiene `syncEngine` (`stopAndWait()`).
+  - Verifica si existen registros sin enviar (`hasUnsentSyncRecords`) del usuario cuya sesión expiró.
+  - **Si hay pendientes:** **NO se borra la base cifrada ni la cola.** El envío ya no es posible sin sesión válida y descartar trabajo clínico sin avisar sería peor que conservarlo cifrado; como toda la base y `sync_queue` están aisladas por `user_id`, los registros permanecen protegidos en disco hasta que ese mismo usuario vuelva a iniciar sesión y se sincronicen automáticamente.
+  - **Si no hay pendientes:** se ejecuta el borrado completo (`wipeUserLocalStorage`).
+- **Otro usuario en el mismo teléfono:** todas las lecturas y vaciados de `sync_queue`, cachés y borradores filtran estrictamente por `user_id`, de modo que un segundo usuario no ve ni envía registros pendientes dejados por una sesión expirada previa.
+
+## 14. Barra de estado de conexión siempre visible (NK-29)
+
+Implementada en `apps/mobile/src/lib/connection-bar.ts`, `apps/mobile/src/hooks/useConnectionBarState.ts`, `apps/mobile/src/components/ConnectionBar.tsx` y montada en ambos layouts autenticados (`apps/mobile/src/app/(caregiver)/_layout.tsx` y `apps/mobile/src/app/(professional)/_layout.tsx`) mediante `ConnectionBarLayout`.
+
+### Estados y prioridad (`deriveConnectionBarState`)
+
+1. **`offline`** (`!isOnline`): fondo `#575757`, icono `cloud-offline-outline`. Muestra «Sin conexión · N registros por enviar» (o «Sin conexión» cuando `N = pending + sending + error === 0`).
+2. **`error`** (`isOnline && error > 0`): fondo `#E14100`, icono `alert-circle-outline`. Muestra «N registros no se pudieron enviar» con la acción «Ver» a la derecha.
+3. **`sending`** (`isOnline && error === 0 && (sending > 0 || pending > 0)`): fondo `#F77E4D`, icono `sync-outline`. Muestra «Enviando N registros…» (`N = sending + pending`).
+4. **`synced`** (`isOnline && pending + sending + error === 0 && justSynced`): fondo `#2D5F5A`, icono `checkmark-circle-outline`. Muestra «Todo sincronizado» durante **3 segundos** (`SYNCED_BANNER_DURATION_MS = 3000`) cuando `useConnectionBarState()` detecta que el total pendiente pasa de `> 0` a `0` estando con conexión.
+5. **`hidden`**: en cualquier otro caso (en línea y sin pendientes), la barra permanece oculta.
+
+### Navegación, accesibilidad y montaje en layouts
+
+- Toda la píldora (`maxWidth: 368`, radio `25`, texto `14 px` semibold `#FBFBFB`) es tocable (`accessibilityRole="button"`, `accessibilityLiveRegion="polite"`, `testID="connection-bar"`) y navega a `APP_ROUTES.CAREGIVER.PENDING_SYNC` o `APP_ROUTES.PROFESSIONAL.PENDING_SYNC` según el rol activo.
+- `ConnectionBarLayout` reserva el espacio en el flujo normal del layout dentro del área segura superior (`SafeAreaInsetsContext`) y ajusta `top: 0` en el contexto hacia las pantallas hijas para no tapar encabezados ni duplicar el relleno superior. Anima la aparición y desaparición (`maxHeight` y `opacity`) respetando «reducir movimiento» (`AccessibilityInfo.isReduceMotionEnabled`) y no se monta en las pantallas de `(auth)`.
