@@ -3,14 +3,14 @@ import { useCallback, useRef, useState } from 'react';
 import i18n from '../i18n/index.js';
 import {
   cancelErasureRequest,
-  fetchChildExport,
+  fetchChildWorkbook,
   fetchErasureRequests,
   isNotLegalRepresentativeError,
   rectifyChild,
   removeChild,
   requestErasure,
 } from '../lib/data-rights-api.js';
-import { buildHistoryCsv, deliverHistoryCsv, historyFileName } from '../lib/history-export.js';
+import { deliverHistoryWorkbook } from '../lib/history-export.js';
 
 export type DataRightsStatus =
   | 'idle'
@@ -120,13 +120,13 @@ export function useDataRights(childId: string | null) {
     [childId, run],
   );
 
-  /** Downloads the data of the child and hands the history over as a CSV. */
+  /** Downloads the history of the child as an Excel file and hands it over. */
   const exportHistory = useCallback(
     (): Promise<void> =>
       run('export', async () => {
         if (!childId) throw new Error(i18n.t('errors:dataRights.missingChild'));
-        const data = await fetchChildExport(childId);
-        await deliverHistoryCsv(historyFileName(data.child.firstName), buildHistoryCsv(data));
+        const { fileName, data } = await fetchChildWorkbook(childId);
+        await deliverHistoryWorkbook(fileName, data);
       }),
     [childId, run],
   );

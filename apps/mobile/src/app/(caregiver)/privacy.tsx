@@ -257,7 +257,7 @@ export function ChildPrivacyPanel({
           <Text style={styles.sectionText}>
             {t('privacy.exportDescription', { name: child.firstName })}
           </Text>
-          {/* NOTE: lib/history-export.ts only supports CSV export; "Descargar PDF" is omitted until PDF generation is supported. */}
+          {/* The history is exported as an Excel workbook built by the API (see lib/history-export.ts). */}
           <View style={styles.sectionActionCenter}>
             <SecondaryButton
               label={busy === 'export' ? t('privacy.exporting') : t('privacy.exportButton')}

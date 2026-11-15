@@ -9,6 +9,7 @@ import {
 import { z } from 'zod';
 import i18n from '../i18n/index.js';
 import { authFetch, parseApiError } from './api.js';
+import { historyFileName } from './history-export.js';
 
 /** Error returned by the data-rights endpoints, keeping the HTTP status so screens can react. */
 export class DataRightsApiError extends Error {
@@ -39,28 +40,6 @@ async function toApiError(response: Response, fallback: string): Promise<DataRig
   return new DataRightsApiError(parseApiError(payload, fallback).message, response.status);
 }
 
-/**
- * The part of the export the app reads (`GET /children/:childId/export` returns more: caregivers,
- * consents, feeding logs, follow-ups and reminders). Unknown fields are dropped on purpose.
- */
-export const ChildExportSchema = z.object({
-  exportedAt: z.string(),
-  child: ChildResponseSchema,
-  checkups: z.array(
-    z.object({
-      id: z.string(),
-      measuredAt: z.string(),
-      weightKg: z.string(),
-      lengthHeightCm: z.string(),
-      position: z.string(),
-      origin: z.string(),
-      correctedCheckupId: z.string().nullable(),
-    }),
-  ),
-});
-
-export type ChildExport = z.infer<typeof ChildExportSchema>;
-
 /** Rectifies the identity of a child (`PATCH /children/:childId`, legal representative only). */
 export async function rectifyChild(
   childId: string,
@@ -81,15 +60,22 @@ export async function rectifyChild(
   return ChildResponseSchema.parse(rawJson);
 }
 
-/** Downloads the data of a child (`GET /children/:childId/export`, legal representative only). */
-export async function fetchChildExport(childId: string): Promise<ChildExport> {
-  const response = await authFetch(`/children/${childId}/export`);
+/**
+ * Downloads the history of a child as an Excel workbook (`GET /children/:childId/export.xlsx`,
+ * legal representative only). Returns the bytes and the file name chosen by the API.
+ */
+export async function fetchChildWorkbook(
+  childId: string,
+): Promise<{ fileName: string; data: ArrayBuffer }> {
+  const response = await authFetch(`/children/${childId}/export.xlsx`);
   if (!response.ok) {
     throw await toApiError(response, i18n.t('errors:dataRights.export'));
   }
 
-  const rawJson: unknown = await response.json();
-  return ChildExportSchema.parse(rawJson);
+  return {
+    fileName: historyFileName(response.headers.get('Content-Disposition')),
+    data: await response.arrayBuffer(),
+  };
 }
 
 /** Requests the deletion of a child's data (`POST …/erasure-requests`; 409 if one is pending). */

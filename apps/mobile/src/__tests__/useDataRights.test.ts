@@ -117,26 +117,26 @@ describe('useDataRights hook', () => {
     expect(dataRightsApi.cancelErasureRequest).toHaveBeenCalledWith(CHILD_ID, pending.id);
   });
 
-  it('exportHistory downloads the data and hands the CSV over', async () => {
-    const data = { exportedAt: '2026-11-14T10:00:00.000Z', child, checkups: [] };
-    vi.spyOn(dataRightsApi, 'fetchChildExport').mockResolvedValueOnce(data);
-    const deliver = vi.spyOn(historyExport, 'deliverHistoryCsv').mockResolvedValueOnce();
+  it('exportHistory downloads the Excel file and hands it over', async () => {
+    const data = new Uint8Array([80, 75]).buffer;
+    vi.spyOn(dataRightsApi, 'fetchChildWorkbook').mockResolvedValueOnce({
+      fileName: 'nutrikids-historial-mateo-2026-11-14.xlsx',
+      data,
+    });
+    const deliver = vi.spyOn(historyExport, 'deliverHistoryWorkbook').mockResolvedValueOnce();
     const hook = capture(() => useDataRights(CHILD_ID));
 
     await hook.current.exportHistory();
 
-    expect(dataRightsApi.fetchChildExport).toHaveBeenCalledWith(CHILD_ID);
-    expect(deliver).toHaveBeenCalledWith(
-      expect.stringMatching(/^nutrikids-historial-mateo-\d{4}-\d{2}-\d{2}\.csv$/),
-      expect.stringContaining('Fecha del control'),
-    );
+    expect(dataRightsApi.fetchChildWorkbook).toHaveBeenCalledWith(CHILD_ID);
+    expect(deliver).toHaveBeenCalledWith('nutrikids-historial-mateo-2026-11-14.xlsx', data);
   });
 
   it('exportHistory does not share anything when the download fails', async () => {
-    vi.spyOn(dataRightsApi, 'fetchChildExport').mockRejectedValueOnce(
+    vi.spyOn(dataRightsApi, 'fetchChildWorkbook').mockRejectedValueOnce(
       new dataRightsApi.DataRightsApiError('Sin permiso', 403),
     );
-    const deliver = vi.spyOn(historyExport, 'deliverHistoryCsv');
+    const deliver = vi.spyOn(historyExport, 'deliverHistoryWorkbook');
     const hook = capture(() => useDataRights(CHILD_ID));
 
     await expect(hook.current.exportHistory()).rejects.toThrow('Sin permiso');
