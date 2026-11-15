@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { GrowthChart } from '../../components/GrowthChart.js';
+import { OfflineDataNotice } from '../../components/OfflineDataNotice.js';
 import { Card } from '../../components/ui/Card.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
@@ -50,6 +51,10 @@ export default function EvolutionScreen() {
     status: childrenStatus,
     children,
     error: childrenError,
+    fromCache: childrenFromCache,
+    stale: childrenStale,
+    lastSyncedAt: childrenLastSyncedAt,
+    loadError: childrenLoadError,
     load: loadChildren,
   } = useChildren();
   useEffect(() => {
@@ -62,6 +67,10 @@ export default function EvolutionScreen() {
     status: checkupsStatus,
     checkups,
     error: checkupsError,
+    fromCache: checkupsFromCache,
+    stale: checkupsStale,
+    lastSyncedAt: checkupsLastSyncedAt,
+    loadError: checkupsLoadError,
     load: loadCheckups,
   } = useCheckups(child?.id ?? null);
 
@@ -125,12 +134,18 @@ export default function EvolutionScreen() {
   }
 
   if (childrenStatus === 'error') {
+    const needsConnection = childrenLoadError === 'needs-connection';
+    const fallbackError = childrenError ?? t('evolution.loadError');
+    const message = needsConnection ? t('common:offline.noDataMessage') : fallbackError;
     return renderState(
       <>
-        <Text style={styles.stateText}>{childrenError ?? t('evolution.loadError')}</Text>
+        {needsConnection ? (
+          <Ionicons name="cloud-offline-outline" size={32} color={PALETTE.primary} />
+        ) : null}
+        <Text style={styles.stateText}>{message}</Text>
         {retryButton(() => void loadChildren())}
       </>,
-      'evolution-error',
+      needsConnection ? 'evolution-needs-connection' : 'evolution-error',
     );
   }
 
@@ -155,18 +170,31 @@ export default function EvolutionScreen() {
   }
 
   if (checkupsStatus === 'error') {
+    const needsConnection = checkupsLoadError === 'needs-connection';
+    const fallbackError = checkupsError ?? t('evolution.loadError');
+    const message = needsConnection ? t('common:offline.noDataMessage') : fallbackError;
     return renderState(
       <>
-        <Text style={styles.stateText}>{checkupsError ?? t('evolution.loadError')}</Text>
+        {needsConnection ? (
+          <Ionicons name="cloud-offline-outline" size={32} color={PALETTE.primary} />
+        ) : null}
+        <Text style={styles.stateText}>{message}</Text>
         {retryButton(() => void loadCheckups())}
       </>,
-      'evolution-error',
+      needsConnection ? 'evolution-needs-connection' : 'evolution-error',
     );
   }
 
   if (!latest) {
     return renderState(
       <>
+        <OfflineDataNotice
+          fromCache={childrenFromCache}
+          stale={childrenStale}
+          lastSyncedAt={childrenLastSyncedAt}
+          testID="evolution-offline-notice"
+          style={styles.offlineNoticeFullWidth}
+        />
         <Text style={styles.stateTitle}>
           {t('evolution.noCheckupsTitle', { name: child.firstName })}
         </Text>
@@ -189,6 +217,18 @@ export default function EvolutionScreen() {
       'evolution-no-checkups',
     );
   }
+
+  const childrenOffline = Boolean(childrenFromCache && childrenStale);
+  const checkupsOffline = Boolean(checkupsFromCache && checkupsStale);
+  const curvesOffline = Boolean(curves.fromCache && curves.stale);
+  const isOfflineStale = childrenOffline || checkupsOffline || curvesOffline;
+  const offlineSyncedAt = checkupsOffline
+    ? checkupsLastSyncedAt
+    : childrenOffline
+      ? childrenLastSyncedAt
+      : curvesOffline
+        ? curves.lastSyncedAt
+        : null;
 
   const formatTick = (value: number) =>
     activeIndicator.xAxis === 'height'
@@ -214,6 +254,14 @@ export default function EvolutionScreen() {
             age: formatChildAge(child.birthDate),
             birthDate: formatLongDate(child.birthDate),
           })}
+        />
+
+        <OfflineDataNotice
+          fromCache={isOfflineStale}
+          stale={isOfflineStale}
+          lastSyncedAt={offlineSyncedAt}
+          testID="evolution-offline-notice"
+          style={styles.offlineNotice}
         />
 
         {/* Selector de Indicadores Antropométricos: P/E, T/E, P/T, IMC/E */}
@@ -270,6 +318,9 @@ export default function EvolutionScreen() {
             />
           ) : curves.status === 'error' ? (
             <View style={styles.chartState} testID="evolution-curves-error">
+              {curves.loadError === 'needs-connection' ? (
+                <Ionicons name="cloud-offline-outline" size={26} color={PALETTE.primary} />
+              ) : null}
               <Text style={styles.stateText}>{curves.error ?? t('evolution.loadError')}</Text>
               {retryButton(() => void curves.load())}
             </View>
@@ -305,7 +356,15 @@ export default function EvolutionScreen() {
         {/* Tarjeta Inferior de Último Registro */}
         <Card style={styles.lastRecordCard} testID="evolution-last-record-card">
           <View style={styles.lastRecordHeader}>
-            <Text style={styles.lastRecordTitle}>{t('evolution.lastRecordTitle')}</Text>
+            <View style={styles.lastRecordTitleRow}>
+              <Text style={styles.lastRecordTitle}>{t('evolution.lastRecordTitle')}</Text>
+              {'localOnly' in latest && latest.localOnly ? (
+                <View style={styles.localOnlyPill} testID="evolution-local-only-badge">
+                  <Ionicons name="cloud-upload-outline" size={13} color="#E06A39" />
+                  <Text style={styles.localOnlyText}>{t('common:offline.localOnlyBadge')}</Text>
+                </View>
+              ) : null}
+            </View>
             <Text style={styles.lastRecordDate}>{formatLongDate(latest.measuredAt)}</Text>
           </View>
 
@@ -427,6 +486,13 @@ const styles = StyleSheet.create({
   childBanner: {
     marginBottom: 20,
   },
+  offlineNotice: {
+    marginBottom: 18,
+  },
+  offlineNoticeFullWidth: {
+    alignSelf: 'stretch',
+    marginBottom: 8,
+  },
   indicatorTabsContainer: {
     flexDirection: 'row',
     backgroundColor: PALETTE.primary,
@@ -539,6 +605,27 @@ const styles = StyleSheet.create({
   },
   lastRecordHeader: {
     marginBottom: 16,
+  },
+  lastRecordTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  localOnlyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FEF2EC',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  localOnlyText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 11,
+    color: '#E06A39',
   },
   lastRecordTitle: {
     fontFamily: font('semibold'),

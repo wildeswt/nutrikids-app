@@ -24,6 +24,7 @@ export interface SavedCheckupView {
   weightKg: number;
   lengthHeightCm: number;
   position: Position;
+  pendingSync?: boolean;
 }
 
 export function toCheckupSavedParams(
@@ -31,9 +32,10 @@ export function toCheckupSavedParams(
   checkup: Pick<
     CaregiverCheckupResponse,
     'measuredAt' | 'weightKg' | 'lengthHeightCm' | 'position'
-  >,
+  > & { savedLocally?: boolean; localOnly?: boolean },
 ): CheckupSavedParams {
-  return {
+  const isPendingSync = Boolean(checkup.savedLocally || checkup.localOnly);
+  const params: CheckupSavedParams = {
     childId: child.id,
     childName: child.firstName,
     birthDate: child.birthDate,
@@ -42,6 +44,10 @@ export function toCheckupSavedParams(
     lengthHeightCm: String(checkup.lengthHeightCm),
     position: checkup.position,
   };
+  if (isPendingSync) {
+    params.pendingSync = '1';
+  }
+  return params;
 }
 
 type RawParams = Partial<Record<keyof CheckupSavedParams, string | string[] | undefined>>;
@@ -70,6 +76,8 @@ export function parseCheckupSavedParams(params: RawParams): SavedCheckupView | n
     return null;
   }
 
+  const pendingSync = single(params.pendingSync) === '1';
+
   return {
     childId,
     childName: single(params.childName) ?? '',
@@ -78,5 +86,6 @@ export function parseCheckupSavedParams(params: RawParams): SavedCheckupView | n
     weightKg,
     lengthHeightCm,
     position: position.data,
+    ...(pendingSync ? { pendingSync: true } : {}),
   };
 }

@@ -57,6 +57,21 @@
     "daysAgo_other": "Hace {{count}} días",
     "dateAtTime": "{{date}} a las {{time}}"
   },
+  "offline": {
+    "dataNotice": "Datos guardados en este dispositivo · actualizados hace {{time}}",
+    "dataNoticeNoTime": "Datos guardados en este dispositivo",
+    "noDataMessage": "Conéctate a internet una vez para descargar tu información",
+    "localOnlyBadge": "Guardado en este dispositivo",
+    "elapsed": {
+      "lessThanMinute": "menos de 1 minuto",
+      "minutes_one": "{{count}} minuto",
+      "minutes_other": "{{count}} minutos",
+      "hours_one": "{{count}} hora",
+      "hours_other": "{{count}} horas",
+      "days_one": "{{count}} día",
+      "days_other": "{{count}} días"
+    }
+  },
   "language": {
     "title": "Idioma",
     "description": "Elige en qué idioma quieres ver la app.",
@@ -65,6 +80,7 @@
   },
   "date": {
     "long": "{{day}} de {{month}} de {{year}}",
+    "medium": "{{day}} {{month}} {{year}}",
     "short": "{{day}} {{month}}",
     "months": {
       "1": "enero",

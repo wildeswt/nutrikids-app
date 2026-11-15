@@ -50,6 +50,7 @@ export default function AddCheckupScreen() {
     status: childrenStatus,
     children,
     error: childrenError,
+    loadError: childrenLoadError,
     load: loadChildren,
   } = useChildren();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(params.childId ?? null);
@@ -209,6 +210,20 @@ export default function AddCheckupScreen() {
             <View style={styles.stateBox} testID="add-checkup-loading">
               <ActivityIndicator color={PALETTE.primary} />
               <Text style={styles.stateText}>{t('addCheckup.loading')}</Text>
+            </View>
+          ) : childrenStatus === 'error' && childrenLoadError === 'needs-connection' ? (
+            <View style={styles.stateBox} testID="add-checkup-needs-connection">
+              <Ionicons name="cloud-offline-outline" size={32} color={PALETTE.primary} />
+              <Text style={styles.stateText}>{t('common:offline.noDataMessage')}</Text>
+              <Pressable
+                style={({ pressed }) => [styles.stateButton, pressed && styles.pressed]}
+                onPress={() => void loadChildren()}
+                accessibilityRole="button"
+                accessibilityLabel={t('addCheckup.retry')}
+                testID="add-checkup-retry"
+              >
+                <Text style={styles.stateButtonText}>{t('addCheckup.retry')}</Text>
+              </Pressable>
             </View>
           ) : childrenStatus === 'error' ? (
             <View style={styles.stateBox} testID="add-checkup-error">

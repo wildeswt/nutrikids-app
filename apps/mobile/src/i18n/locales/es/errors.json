@@ -5,6 +5,7 @@
   "timeout": "Tiempo agotado conectando a {{url}}",
   "invalidResponse": "La respuesta del servidor no tiene el formato esperado.",
   "sessionRefreshNetwork": "Error de red al renovar la sesión. Verifica tu conexión.",
+  "offlineNoData": "Conéctate a internet una vez para descargar tu información",
   "http": {
     "401": "Correo o contraseña incorrectos. Verifica tus credenciales.",
     "403": "Acceso denegado o código de invitación profesional inválido.",
@@ -40,7 +41,8 @@
   "checkups": {
     "fetch": "No pudimos cargar los controles. Intenta de nuevo.",
     "create": "No pudimos guardar el control. Intenta de nuevo.",
-    "missingChild": "Falta elegir el niño para anotar el control."
+    "missingChild": "Falta elegir el niño para anotar el control.",
+    "offlineNoLocalDb": "Necesitas conexión para guardar el control en este dispositivo"
   },
   "growthTrend": {
     "fetch": "No pudimos cargar la tendencia de crecimiento. Intenta de nuevo."
@@ -51,7 +53,8 @@
     "network": "Necesitas conexión para guardar la alimentación. Inténtalo de nuevo cuando vuelvas a tener internet."
   },
   "reference": {
-    "fetch": "No pudimos cargar las curvas de referencia. Intenta de nuevo."
+    "fetch": "No pudimos cargar las curvas de referencia. Intenta de nuevo.",
+    "offlineNoData": "Conéctate una vez para descargar las curvas"
   },
   "alerts": {
     "list": "No pudimos cargar las alertas. Intenta de nuevo.",

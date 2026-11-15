@@ -5,6 +5,7 @@
   "timeout": "{{url}}-wan tinkinkapak pachaka tukurirkami",
   "invalidResponse": "Servidorpak kutichikka mana shuyashka shinachu kan.",
   "sessionRefreshNetwork": "Yaykushkata mushukyachinkapak internet pantarirkami. Kikinpak internetta rikuy.",
+  "offlineNoData": "Conéctate a internet una vez para descargar tu información",
   "http": {
     "401": "Correopash pakalla shimipash pantashkami. Kutin rikuy.",
     "403": "Mana yaykuy ushanichu, mana kashpaka hampikpak kayana yupay pantashkami.",
@@ -40,7 +41,8 @@
   "checkups": {
     "fetch": "Kamaykunata mana rikuchiy usharkanchikchu. Kutin rurapay.",
     "create": "Kamayta mana wakaychiy usharkanchikchu. Kutin rurapay.",
-    "missingChild": "Kamayta killkankapakka wawata akllana kanmi."
+    "missingChild": "Kamayta killkankapakka wawata akllana kanmi.",
+    "offlineNoLocalDb": "Necesitas conexión para guardar el control en este dispositivo"
   },
   "growthTrend": {
     "fetch": "No pudimos cargar la tendencia de crecimiento. Intenta de nuevo."
@@ -51,7 +53,8 @@
     "network": "Necesitas conexión para guardar la alimentación. Inténtalo de nuevo cuando vuelvas a tener internet."
   },
   "reference": {
-    "fetch": "OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay."
+    "fetch": "OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay.",
+    "offlineNoData": "Conéctate una vez para descargar las curvas"
   },
   "alerts": {
     "list": "Mana yuyachikkunata apamunkapak ushashkanchu. Kutin yachay.",
