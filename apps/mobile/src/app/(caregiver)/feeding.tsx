@@ -250,19 +250,33 @@ export default function FeedingScreen() {
           style={styles.childBanner}
         />
 
-        {children.length > 1 ? (
+        <View style={[styles.linksRow, children.length <= 1 && styles.linksRowSingle]}>
           <Pressable
-            style={({ pressed }) => [styles.changeChildButton, pressed && styles.pressed]}
-            onPress={handleSwitchChild}
+            style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
+            onPress={() =>
+              router.push({
+                pathname: APP_ROUTES.CAREGIVER.FEEDING_HISTORY as never,
+                params: { childId: activeChild.id },
+              })
+            }
             accessibilityRole="button"
-            accessibilityLabel={t('feeding.changeChild')}
-            testID="change-child-button"
+            accessibilityLabel={t('feedingHistory.seeHistory')}
+            testID="feeding-see-history"
           >
-            <Text style={styles.changeChildText}>{t('feeding.changeChild')}</Text>
+            <Text style={styles.changeChildText}>{t('feedingHistory.seeHistory')}</Text>
           </Pressable>
-        ) : (
-          <View style={styles.bannerSpacer} />
-        )}
+          {children.length > 1 ? (
+            <Pressable
+              style={({ pressed }) => [styles.linkButton, pressed && styles.pressed]}
+              onPress={handleSwitchChild}
+              accessibilityRole="button"
+              accessibilityLabel={t('feeding.changeChild')}
+              testID="change-child-button"
+            >
+              <Text style={styles.changeChildText}>{t('feeding.changeChild')}</Text>
+            </Pressable>
+          ) : null}
+        </View>
 
         {savedSuccess ? (
           <View
@@ -472,10 +486,17 @@ const styles = StyleSheet.create({
   childBanner: {
     width: '100%',
   },
-  changeChildButton: {
-    alignSelf: 'flex-end',
+  linksRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 8,
     marginBottom: 16,
+  },
+  linksRowSingle: {
+    justifyContent: 'flex-end',
+  },
+  linkButton: {
     paddingVertical: 2,
   },
   changeChildText: {
@@ -483,9 +504,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: PALETTE.primary,
     textDecorationLine: 'underline',
-  },
-  bannerSpacer: {
-    height: 22,
   },
   successBanner: {
     backgroundColor: PALETTE.feedback.successBg,

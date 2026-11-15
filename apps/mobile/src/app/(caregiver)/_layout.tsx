@@ -232,6 +232,17 @@ export default function CaregiverTabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="feeding-history"
+          options={{
+            title: t('tabs.feedingHistory'),
+            headerTitle: t('tabs.feedingHistoryHeader'),
+            headerShown: false,
+            tabBarStyle: { display: 'none' },
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
+          }}
+        />
+        <Tabs.Screen
           name="pending-sync"
           options={{
             title: t('tabs.pendingSync'),
