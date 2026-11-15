@@ -9,6 +9,7 @@ export interface ChildBannerProps {
   subtitle?: string | undefined;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  children?: React.ReactNode;
 }
 
 /**
@@ -16,7 +17,7 @@ export interface ChildBannerProps {
  * pantallas de Alimentación, Nuevo control y Evolución del diseño (72 px, sin foto ni avatar,
  * porque la app no guarda fotos de los niños).
  */
-export function ChildBanner({ name, subtitle, style, testID }: ChildBannerProps) {
+export function ChildBanner({ name, subtitle, style, testID, children }: ChildBannerProps) {
   return (
     <View style={[styles.banner, style]} testID={testID ?? 'child-banner'}>
       <Text style={styles.name} numberOfLines={1}>
@@ -27,6 +28,7 @@ export function ChildBanner({ name, subtitle, style, testID }: ChildBannerProps)
           {subtitle}
         </Text>
       ) : null}
+      {children}
     </View>
   );
 }
