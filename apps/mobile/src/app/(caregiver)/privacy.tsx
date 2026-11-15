@@ -170,12 +170,17 @@ export function ChildPrivacyPanel({
   const renderConsentSection = () => {
     const active = Boolean(consent && !consent.revokedAt);
     const revoked = Boolean(consent?.revokedAt);
-    const statusText =
+    const statusText = active
+      ? t('privacy.consentStatusActive')
+      : revoked
+        ? t('privacy.consentStatusRevoked')
+        : t('privacy.consentStatusNone');
+    const statusDateText =
       active && consent
-        ? t('privacy.consentStatusActive', { date: formatLongDate(new Date(consent.grantedAt)) })
+        ? t('privacy.consentAcceptedOn', { date: formatLongDate(new Date(consent.grantedAt)) })
         : revoked && consent?.revokedAt
-          ? t('privacy.consentStatusRevoked', { date: formatLongDate(new Date(consent.revokedAt)) })
-          : t('privacy.consentStatusNone');
+          ? t('privacy.consentRevokedOn', { date: formatLongDate(new Date(consent.revokedAt)) })
+          : null;
 
     return (
       <View style={styles.section} testID="privacy-consent-section">
@@ -184,15 +189,18 @@ export function ChildPrivacyPanel({
           <ActivityIndicator size="small" color={PALETTE.primary} />
         ) : (
           <>
-            <View style={styles.consentStatusRow}>
-              <Ionicons
-                name={active ? 'checkmark' : 'alert-circle-outline'}
-                size={16}
-                color={active ? PALETTE.primary : PALETTE.feedback.error}
-              />
-              <Text style={[styles.consentStatusText, !active && styles.consentStatusMuted]}>
-                {statusText}
-              </Text>
+            <View style={styles.consentStatusBlock}>
+              <View style={styles.consentStatusRow}>
+                <Ionicons
+                  name={active ? 'checkmark-circle' : 'alert-circle-outline'}
+                  size={18}
+                  color={active ? PALETTE.primary : PALETTE.feedback.error}
+                />
+                <Text style={[styles.consentStatusText, !active && styles.consentStatusMuted]}>
+                  {statusText}
+                </Text>
+              </View>
+              {statusDateText ? <Text style={styles.consentDateText}>{statusDateText}</Text> : null}
             </View>
 
             {active ? (
@@ -281,13 +289,12 @@ export function ChildPrivacyPanel({
             {t('privacy.exportDescription', { name: child.firstName })}
           </Text>
           {/* NOTE: lib/history-export.ts only supports CSV export; "Descargar PDF" is omitted until PDF generation is supported. */}
-          <View style={styles.exportActionsRow}>
+          <View style={styles.sectionActionCenter}>
             <SecondaryButton
               label={busy === 'export' ? t('privacy.exporting') : t('privacy.exportButton')}
               onPress={() => void handleExport()}
               disabled={busy !== null}
               accessibilityLabel={t('privacy.exportButton')}
-              style={styles.exportButton}
               testID="privacy-export-button"
             />
           </View>
@@ -624,19 +631,28 @@ const styles = StyleSheet.create({
     color: PALETTE.text.body,
     lineHeight: 20,
   },
+  consentStatusBlock: {
+    gap: 2,
+  },
   consentStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   consentStatusText: {
-    fontFamily: font('medium'),
-    fontWeight: '500',
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 14,
     color: PALETTE.primary,
   },
   consentStatusMuted: {
     color: PALETTE.feedback.error,
+  },
+  consentDateText: {
+    fontFamily: font('regular'),
+    fontSize: 13,
+    color: PALETTE.text.muted,
+    marginLeft: 24,
   },
   inlineLink: {
     flexDirection: 'row',
@@ -654,15 +670,6 @@ const styles = StyleSheet.create({
   sectionActionCenter: {
     alignItems: 'center',
     marginTop: 6,
-  },
-  exportActionsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 4,
-  },
-  exportButton: {
-    flex: 1,
-    width: undefined,
   },
   divider: {
     height: 1,

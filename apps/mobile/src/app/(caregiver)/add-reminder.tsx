@@ -404,11 +404,10 @@ const styles = StyleSheet.create({
     color: PALETTE.text.light,
   },
   pillTextInput: {
-    flex: 1,
     fontFamily: font('regular'),
     fontSize: 15,
     color: PALETTE.text.body,
-    paddingVertical: 8,
+    paddingVertical: 0,
   },
   hint: {
     fontFamily: font('regular'),
