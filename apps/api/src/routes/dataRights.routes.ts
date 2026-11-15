@@ -14,6 +14,7 @@ import { validateRequest } from '../middlewares/validate.js';
 import {
   cancelErasureRequest,
   createErasureRequest,
+  deleteChild,
   exportChildData,
   listErasureRequests,
   rectifyChild,
@@ -45,6 +46,18 @@ export function createDataRightsRouter(): Router {
         req.body as RectifyChildInput,
       );
       res.status(200).json(child);
+    },
+  );
+
+  /** DELETE /children/:childId: eliminación lógica del niño (solo el representante legal). */
+  router.delete(
+    '/:childId',
+    ...guard,
+    validateRequest({ params: ChildParamsSchema }),
+    auditHealth({ action: 'DELETE', entityType: 'children' }),
+    async (req, res) => {
+      await deleteChild(req.auth!, req.params.childId as string);
+      res.status(204).end();
     },
   );
 

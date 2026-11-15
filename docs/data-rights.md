@@ -52,6 +52,17 @@ One JSON document: `exportedAt`, `child`, `caregivers`, `professionals`, `consen
 
 Since the grace period is shorter than the legal deadline, every request is executed within the 15 days. Rectification and export are answered immediately.
 
+## Eliminación lógica (soft delete)
+
+Aparte de la solicitud de eliminación definitiva, hay una eliminación **lógica**: la fila se marca con `deleted_at` y RLS la oculta a toda la aplicación, pero queda en la base para auditoría. Se hace con las funciones `SECURITY DEFINER` `soft_delete_checkup` y `soft_delete_child`, porque PostgreSQL rechaza un `UPDATE` cuya fila nueva ya no es visible.
+
+| Método y ruta                 | Quién                                              | Efecto                                                                                                           |
+| ----------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `DELETE /checkups/:checkupId` | Quien registró el control o el representante legal | El control, sus resultados y alertas dejan de verse. Si era una corrección, el original vuelve a ser el vigente. |
+| `DELETE /children/:childId`   | Solo el representante legal                        | El niño y todos sus datos dejan de verse para todos (`app_has_child_access` devuelve `false`).                   |
+
+Editar un control sigue siendo **corregirlo** (`POST /checkups/:checkupId/correction`): los controles no se modifican. Ambas acciones quedan en `audit_logs` (`DELETE`, `CREATE`). El trigger de `checkups` solo permite el paso de `deleted_at` de `NULL` a una fecha; cualquier otro `UPDATE` o `DELETE` sigue prohibido.
+
 ## Limits
 
 - Once the links with caregivers are deleted, the completed request can no longer be read through the API (RLS needs a link to the child). The record stays in `erasure_requests` and in the audit log.

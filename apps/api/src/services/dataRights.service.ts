@@ -82,6 +82,18 @@ export async function rectifyChild(
   });
 }
 
+/**
+ * Soft-deletes the child: from then on RLS hides the child and all of its data from everybody
+ * (rows stay in the database; permanent anonymisation is the erasure request below).
+ */
+export async function deleteChild(auth: AuthContext, childId: string): Promise<void> {
+  await withUser(auth.userId, async (tx) => {
+    await assertLegalRepresentative(tx, auth, childId);
+    // SECURITY DEFINER function: RLS would reject an UPDATE whose new row is invisible.
+    await tx.$executeRaw`SELECT soft_delete_child(${childId}::uuid)`;
+  });
+}
+
 const exportInclude = {
   caregiverChildren: { include: { caregiver: { include: { user: true } } } },
   professionalChildren: { include: { professional: { include: { user: true } } } },
