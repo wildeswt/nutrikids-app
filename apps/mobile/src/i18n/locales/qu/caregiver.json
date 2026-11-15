@@ -227,6 +227,8 @@
   },
   "checkupHistory": {
     "title": "Kamaykuna wiñay",
+    "subtitle_one": "{{count}} kamay killkashka",
+    "subtitle_other": "{{count}} kamaykuna killkashka",
     "subtitle": "{{count}} kamaykuna killkashka",
     "subtitleLoading": "Kamaykunata apamukun...",
     "loading": "Wiñayta apamukun...",
@@ -234,6 +236,8 @@
     "retry": "Kutishpa ruray",
     "emptyTitle": "Mana kamaykuna kanchu",
     "emptySubtitle": "Kamaykunata killkashpaka, kaypimi rikurinka.",
+    "emptyFilterTitle": "Mana kaypi kamaykuna kanchu",
+    "emptyFilterSubtitle": "Shuk akllayta ruray shuk kamaykunata rikunkapak.",
     "register": "Mushuk kamayta killkay",
     "weightLabel": "Llasak",
     "heightLabel": "Suniy",
@@ -242,7 +246,17 @@
     "positionStanding": "Shayashka",
     "positionRecumbent": "Siririshka",
     "statusOk": "Allillami",
-    "notesLabel": "Yachaykuna:"
+    "notesLabel": "Yachaykuna:",
+    "corrected": "Allichishka",
+    "filters": {
+      "ALL": "Tukuy ({{count}})",
+      "PROFESSIONAL": "Hampik",
+      "CAREGIVER": "Rikuk"
+    },
+    "origin": {
+      "PROFESSIONAL": "Hampik",
+      "CAREGIVER": "Rikuk"
+    }
   },
   "checkupSaved": {
     "title": "¡Kamayka wakaychishkami!",

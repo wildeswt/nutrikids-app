@@ -227,6 +227,8 @@
   },
   "checkupHistory": {
     "title": "Historial de controles",
+    "subtitle_one": "{{count}} control registrado",
+    "subtitle_other": "{{count}} controles registrados",
     "subtitle": "{{count}} controles registrados",
     "subtitleLoading": "Cargando controles...",
     "loading": "Cargando el historial...",
@@ -234,6 +236,8 @@
     "retry": "Intentar de nuevo",
     "emptyTitle": "Aún no hay controles",
     "emptySubtitle": "Cuando anotes un control antropométrico, aparecerá aquí.",
+    "emptyFilterTitle": "Sin controles en este filtro",
+    "emptyFilterSubtitle": "Cambia el filtro para ver otros controles registrados.",
     "register": "Anotar nuevo control",
     "weightLabel": "Peso",
     "heightLabel": "Estatura / Longitud",
@@ -242,7 +246,17 @@
     "positionStanding": "De pie",
     "positionRecumbent": "Acostado",
     "statusOk": "Todo en orden",
-    "notesLabel": "Observaciones:"
+    "notesLabel": "Observaciones:",
+    "corrected": "Corregido",
+    "filters": {
+      "ALL": "Todos ({{count}})",
+      "PROFESSIONAL": "Profesional",
+      "CAREGIVER": "Cuidador"
+    },
+    "origin": {
+      "PROFESSIONAL": "Profesional",
+      "CAREGIVER": "Cuidador"
+    }
   },
   "checkupSaved": {
     "title": "¡Control guardado!",

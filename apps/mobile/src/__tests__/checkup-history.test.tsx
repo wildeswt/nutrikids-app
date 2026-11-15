@@ -105,17 +105,20 @@ describe('CheckupHistoryScreen', () => {
     };
   });
 
-  it('renders checkup history screen with banner, date, metrics, and recorder', () => {
+  it('renders checkup history screen with banner, filters, measurements, tags, and recorder', () => {
     const html = renderToString(React.createElement(CheckupHistoryScreen));
 
     expect(html).toContain('checkup-history-screen');
     expect(html).toContain('Historial de controles');
+    expect(html).toContain('1 control registrado');
     expect(html).toContain('Samuel Guzmán');
-    expect(html).toContain('12.5');
-    expect(html).toContain('88.0');
+    expect(html).toContain('checkup-history-filters');
+    expect(html).toContain('12.5 kg · 88.0 cm');
+    expect(html).toContain('Profesional');
     expect(html).toContain('De pie');
     expect(html).toContain('Carlos Méndez');
     expect(html).toContain('Control periódico normal.');
+    expect(html).toContain('checkup-history-register-footer');
   });
 
   it('renders loading state when status is loading', () => {

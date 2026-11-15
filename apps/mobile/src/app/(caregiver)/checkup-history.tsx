@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { CaregiverCheckupResponse } from '@nutrikids/shared';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -14,8 +14,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
+import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
-import { CARD_SHADOW, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
+import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useOptionalAuth } from '../../context/auth-context.js';
@@ -26,6 +28,10 @@ import { formatLongDate } from '../../i18n/format.js';
 import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
 import { formatChildAge } from '../../lib/children-api.js';
 
+type OriginFilter = 'ALL' | 'PROFESSIONAL' | 'CAREGIVER';
+
+const FILTER_OPTIONS: OriginFilter[] = ['ALL', 'PROFESSIONAL', 'CAREGIVER'];
+
 export default function CheckupHistoryScreen({
   roleMode = 'CAREGIVER',
 }: { roleMode?: 'CAREGIVER' | 'PROFESSIONAL' } = {}) {
@@ -35,6 +41,8 @@ export default function CheckupHistoryScreen({
   const user = auth?.user ?? null;
   const isProfessional =
     roleMode === 'PROFESSIONAL' || Boolean(user?.roles?.includes('PROFESSIONAL'));
+
+  const [originFilter, setOriginFilter] = useState<OriginFilter>('ALL');
 
   const params = useLocalSearchParams<{ childId?: string }>();
   const activeCaregiverChildId = useActiveChildId();
@@ -56,6 +64,12 @@ export default function CheckupHistoryScreen({
 
   const checkupsState = isProfessional ? professionalCheckupsHook : caregiverCheckupsHook;
   const { status, checkups, error, load } = checkupsState;
+
+  const filteredCheckups = useMemo(() => {
+    const list = checkups as CaregiverCheckupResponse[];
+    if (originFilter === 'ALL') return list;
+    return list.filter((item) => item.origin === originFilter);
+  }, [checkups, originFilter]);
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -92,56 +106,57 @@ export default function CheckupHistoryScreen({
       currentUserId: user?.id,
       t,
     });
+    const isProOrigin = item.origin === 'PROFESSIONAL';
 
     return (
       <View style={styles.card} testID={`checkup-item-${item.id}`}>
-        <View style={styles.cardHeader}>
-          <View style={styles.dateBlock}>
-            <Ionicons name="calendar-outline" size={16} color={PALETTE.primary} />
-            <Text style={styles.cardDate}>{formatLongDate(item.measuredAt)}</Text>
-          </View>
-          <View style={styles.positionBadge}>
-            <Text style={styles.positionText}>{positionText}</Text>
-          </View>
-        </View>
-
-        <View style={styles.metricsRow}>
-          <View style={styles.metricBox}>
-            <Text style={styles.metricLabel}>{t('checkupHistory.weightLabel')}</Text>
-            <Text style={styles.metricValue}>
-              {item.weightKg.toFixed(1)} <Text style={styles.metricUnit}>kg</Text>
-            </Text>
-          </View>
-          <View style={styles.metricDivider} />
-          <View style={styles.metricBox}>
-            <Text style={styles.metricLabel}>{t('checkupHistory.heightLabel')}</Text>
-            <Text style={styles.metricValue}>
-              {item.lengthHeightCm.toFixed(1)} <Text style={styles.metricUnit}>cm</Text>
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.recorderRow}>
-          <Ionicons name="person-circle-outline" size={15} color={PALETTE.text.muted} />
-          <Text style={styles.recorderText} numberOfLines={1}>
-            {recordedByText}
+        <View style={styles.cardTopRow}>
+          <Text style={styles.cardMeasurements} numberOfLines={1}>
+            {`${item.weightKg.toFixed(1)} kg · ${item.lengthHeightCm.toFixed(1)} cm`}
           </Text>
+          <Text style={styles.cardDate}>{formatLongDate(item.measuredAt)}</Text>
         </View>
 
-        {item.notes ? (
-          <View style={styles.notesBox}>
-            <Ionicons
-              name="document-text-outline"
-              size={14}
-              color={PALETTE.text.muted}
-              style={styles.notesIcon}
-            />
-            <Text style={styles.notesText}>{item.notes}</Text>
+        <Text style={styles.recorderText} numberOfLines={1}>
+          {recordedByText}
+        </Text>
+
+        <View style={styles.tagsRow}>
+          <View style={[styles.tag, isProOrigin ? styles.tagPro : styles.tagCaregiver]}>
+            <Text
+              style={[styles.tagText, isProOrigin ? styles.tagProText : styles.tagCaregiverText]}
+            >
+              {t(`checkupHistory.origin.${item.origin}`)}
+            </Text>
           </View>
-        ) : null}
+
+          <View style={[styles.tag, styles.tagPosition]}>
+            <Text style={[styles.tagText, styles.tagPositionText]}>{positionText}</Text>
+          </View>
+
+          {!item.isCurrent ? (
+            <View style={[styles.tag, styles.tagCorrected]}>
+              <Text style={[styles.tagText, styles.tagCorrectedText]}>
+                {t('checkupHistory.corrected')}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        {item.notes ? <Text style={styles.notesText}>{item.notes}</Text> : null}
       </View>
     );
   };
+
+  const renderEmptyFilter = () => (
+    <View style={styles.stateContainer} testID="checkup-history-empty-filter">
+      <View style={styles.emptyIconCircle}>
+        <Ionicons name="filter-outline" size={32} color={PALETTE.text.muted} />
+      </View>
+      <Text style={styles.emptyTitle}>{t('checkupHistory.emptyFilterTitle')}</Text>
+      <Text style={styles.emptySubtitle}>{t('checkupHistory.emptyFilterSubtitle')}</Text>
+    </View>
+  );
 
   const renderContent = () => {
     if (status === 'loading' || childrenStatus === 'loading') {
@@ -158,14 +173,11 @@ export default function CheckupHistoryScreen({
         <View style={styles.stateContainer} testID="checkup-history-error">
           <Ionicons name="alert-circle-outline" size={48} color={PALETTE.feedback.error} />
           <Text style={styles.errorText}>{error || t('checkupHistory.loadError')}</Text>
-          <Pressable
-            style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+          <PrimaryButton
+            label={t('checkupHistory.retry')}
             onPress={() => void load()}
-            accessibilityRole="button"
             testID="checkup-history-retry"
-          >
-            <Text style={styles.primaryButtonText}>{t('checkupHistory.retry')}</Text>
-          </Pressable>
+          />
         </View>
       );
     }
@@ -173,18 +185,18 @@ export default function CheckupHistoryScreen({
     if (checkups.length === 0) {
       return (
         <View style={styles.stateContainer} testID="checkup-history-empty">
-          <Ionicons name="clipboard-outline" size={48} color={PALETTE.primary} />
+          <View style={styles.emptyIconCircle}>
+            <Ionicons name="clipboard-outline" size={36} color={PALETTE.primary} />
+          </View>
           <Text style={styles.emptyTitle}>{t('checkupHistory.emptyTitle')}</Text>
           <Text style={styles.emptySubtitle}>{t('checkupHistory.emptySubtitle')}</Text>
-          <Pressable
-            style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
-            onPress={handleRegisterNew}
-            accessibilityRole="button"
-            testID="checkup-history-register-empty"
-          >
-            <Ionicons name="add" size={18} color="#FFFFFF" />
-            <Text style={styles.primaryButtonText}>{t('checkupHistory.register')}</Text>
-          </Pressable>
+          <View style={styles.emptyButtonWrap}>
+            <PrimaryButton
+              label={t('checkupHistory.register')}
+              onPress={handleRegisterNew}
+              testID="checkup-history-register-empty"
+            />
+          </View>
         </View>
       );
     }
@@ -193,9 +205,10 @@ export default function CheckupHistoryScreen({
 
     return (
       <FlatList
-        data={checkups as CaregiverCheckupResponse[]}
+        data={filteredCheckups}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        ListEmptyComponent={renderEmptyFilter}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -209,6 +222,15 @@ export default function CheckupHistoryScreen({
             tintColor={PALETTE.primary}
           />
         }
+        ListFooterComponent={
+          <View style={styles.footerCta}>
+            <PrimaryButton
+              label={t('checkupHistory.register')}
+              onPress={handleRegisterNew}
+              testID="checkup-history-register-footer"
+            />
+          </View>
+        }
       />
     );
   };
@@ -220,32 +242,18 @@ export default function CheckupHistoryScreen({
       testID="checkup-history-screen"
     >
       <View style={styles.header}>
-        <Pressable
-          style={({ pressed }) => [styles.backRow, pressed && styles.buttonPressed]}
-          onPress={handleBack}
-          accessibilityRole="button"
-          accessibilityLabel={t('common:actions.back')}
-          testID="checkup-history-back"
-        >
-          <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
-          <Text style={styles.backText}>{t('common:actions.back')}</Text>
-        </Pressable>
+        <ScreenHeader
+          title={t('checkupHistory.title')}
+          onBack={handleBack}
+          backLabel={t('common:actions.back')}
+          testID="checkup-history-header"
+        />
 
-        <View style={styles.titleRow}>
-          <Text style={styles.screenTitle}>{t('checkupHistory.title')}</Text>
-          {checkups.length > 0 ? (
-            <Pressable
-              style={({ pressed }) => [styles.addBadgeButton, pressed && styles.buttonPressed]}
-              onPress={handleRegisterNew}
-              accessibilityRole="button"
-              accessibilityLabel={t('checkupHistory.register')}
-              testID="checkup-history-add-top"
-            >
-              <Ionicons name="add" size={16} color={PALETTE.primary} />
-              <Text style={styles.addBadgeText}>Nuevo</Text>
-            </Pressable>
-          ) : null}
-        </View>
+        <Text style={styles.subtitle}>
+          {status === 'loading'
+            ? t('checkupHistory.subtitleLoading')
+            : t('checkupHistory.subtitle', { count: checkups.length })}
+        </Text>
 
         {activeChild ? (
           <ChildBanner
@@ -253,6 +261,32 @@ export default function CheckupHistoryScreen({
             subtitle={`${formatChildAge(activeChild.birthDate)} · ${formatLongDate(activeChild.birthDate)}`}
             style={styles.banner}
           />
+        ) : null}
+
+        {checkups.length > 0 ? (
+          <View style={styles.filterPillContainer} testID="checkup-history-filters">
+            {FILTER_OPTIONS.map((option) => {
+              const selected = originFilter === option;
+              const label =
+                option === 'ALL'
+                  ? t('checkupHistory.filters.ALL', { count: checkups.length })
+                  : t(`checkupHistory.filters.${option}`);
+              return (
+                <Pressable
+                  key={option}
+                  style={[styles.filterTab, selected && styles.filterTabActive]}
+                  onPress={() => setOriginFilter(option)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  testID={`checkup-filter-${option}`}
+                >
+                  <Text style={[styles.filterTabText, selected && styles.filterTabTextActive]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         ) : null}
       </View>
 
@@ -268,218 +302,188 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: SCREEN_MARGIN,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
-  backRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
-  },
-  backText: {
-    fontFamily: font('medium'),
-    fontSize: 16,
-    color: PALETTE.text.title,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  subtitle: {
+    fontFamily: font('regular'),
+    fontSize: 15,
+    color: PALETTE.text.muted,
+    marginTop: 2,
     marginBottom: 16,
   },
-  screenTitle: {
-    fontFamily: font('semibold'),
-    fontSize: 24,
-    fontWeight: '700',
-    color: PALETTE.text.title,
-    letterSpacing: -0.3,
+  banner: {
+    marginBottom: 16,
   },
-  addBadgeButton: {
+  filterPillContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: PALETTE.primaryLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    minHeight: 46,
+    borderRadius: RADIUS_PILL,
+    backgroundColor: PALETTE.primary,
+    paddingVertical: 5,
+    paddingHorizontal: 4,
+    marginBottom: 6,
+  },
+  filterTab: {
+    flex: 1,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
     borderRadius: RADIUS_PILL,
   },
-  addBadgeText: {
-    fontFamily: font('semibold'),
-    fontSize: 13,
-    color: PALETTE.primary,
+  filterTabActive: {
+    backgroundColor: PALETTE.surface,
   },
-  banner: {
-    marginBottom: 4,
+  filterTabText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 13,
+    color: PALETTE.surface,
+    textAlign: 'center',
+  },
+  filterTabTextActive: {
+    color: PALETTE.primary,
   },
   body: {
     flex: 1,
   },
   listContent: {
     paddingHorizontal: SCREEN_MARGIN,
-    paddingTop: 8,
+    paddingTop: 10,
     paddingBottom: 32,
-    gap: 14,
+    gap: 12,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    padding: 16,
-    ...CARD_SHADOW,
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  dateBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderColor: '#E5E7EB',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     gap: 6,
   },
-  cardDate: {
-    fontFamily: font('semibold'),
-    fontSize: 14,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-  },
-  positionBadge: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: RADIUS_PILL,
-  },
-  positionText: {
-    fontFamily: font('medium'),
-    fontSize: 12,
-    color: PALETTE.text.muted,
-  },
-  metricsRow: {
+  cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: PALETTE.background,
-    borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    gap: 8,
   },
-  metricBox: {
+  cardMeasurements: {
     flex: 1,
-    alignItems: 'center',
-  },
-  metricLabel: {
-    fontFamily: font('regular'),
-    fontSize: 12,
-    color: PALETTE.text.muted,
-    marginBottom: 2,
-  },
-  metricValue: {
     fontFamily: font('semibold'),
-    fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
+    fontSize: 17,
     color: PALETTE.primary,
   },
-  metricUnit: {
+  cardDate: {
     fontFamily: font('regular'),
-    fontSize: 13,
+    fontSize: 12,
     color: PALETTE.text.muted,
-  },
-  metricDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: '#E5E7EB',
-  },
-  recorderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
   },
   recorderText: {
     fontFamily: font('regular'),
-    fontSize: 12,
-    color: PALETTE.text.muted,
+    fontSize: 13,
+    color: PALETTE.text.body,
   },
-  notesBox: {
+  tagsRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 10,
-    borderLeftWidth: 3,
-    borderLeftColor: PALETTE.secondary,
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 2,
   },
-  notesIcon: {
-    marginRight: 6,
-    marginTop: 1,
+  tag: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: RADIUS_PILL,
+  },
+  tagText: {
+    fontFamily: font('semibold'),
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  tagPro: {
+    backgroundColor: PALETTE.primaryLight,
+  },
+  tagProText: {
+    color: PALETTE.primary,
+  },
+  tagCaregiver: {
+    backgroundColor: PALETTE.secondaryLight,
+  },
+  tagCaregiverText: {
+    color: PALETTE.secondaryPressed,
+  },
+  tagPosition: {
+    backgroundColor: PALETTE.border.subtle,
+  },
+  tagPositionText: {
+    color: PALETTE.text.body,
+  },
+  tagCorrected: {
+    backgroundColor: PALETTE.feedback.warningBg,
+  },
+  tagCorrectedText: {
+    color: PALETTE.feedback.warning,
   },
   notesText: {
-    flex: 1,
     fontFamily: font('regular'),
-    fontSize: 12,
+    fontSize: 13,
     color: PALETTE.text.body,
-    lineHeight: 16,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  footerCta: {
+    marginTop: 12,
+    alignItems: 'center',
   },
   stateContainer: {
     flex: 1,
     paddingHorizontal: SCREEN_MARGIN,
-    paddingVertical: 48,
+    paddingVertical: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 10,
+  },
+  emptyIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: PALETTE.border.subtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
   },
   stateText: {
-    marginTop: 12,
     fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.muted,
   },
   errorText: {
-    marginTop: 12,
     fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.feedback.error,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   emptyTitle: {
-    marginTop: 16,
     fontFamily: font('semibold'),
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: PALETTE.text.title,
-    marginBottom: 6,
+    textAlign: 'center',
   },
   emptySubtitle: {
     fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.muted,
     textAlign: 'center',
-    marginBottom: 24,
     paddingHorizontal: 16,
+    marginBottom: 8,
   },
-  primaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: PALETTE.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: RADIUS_PILL,
-    ...CARD_SHADOW,
-  },
-  primaryButtonText: {
-    fontFamily: font('semibold'),
-    fontSize: 14,
-    color: '#FFFFFF',
-  },
-  buttonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
+  emptyButtonWrap: {
+    width: '100%',
+    marginTop: 8,
   },
 });
