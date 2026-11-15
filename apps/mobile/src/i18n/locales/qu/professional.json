@@ -7,6 +7,7 @@
     "alertsTitle": "Yuyachikkuna",
     "children": "Llakipi kak wawakuna",
     "childrenTitle": "Llakipi kak wawakuna",
+    "evolutionTitle": "Wawapa wiñaynin",
     "addCheckup": "Kamayta killkay",
     "addCheckupTitle": "Kamayta killkay",
     "messages": "Willaykuna, katinakunapash",
@@ -313,5 +314,56 @@
     "emptyTitle": "Mana tinkishka wawakuna kanchu",
     "emptySubtitle": "Kamayta killkankapakka shuk tinkishka wawata charinami kanki.",
     "goBackToPatients": "Wawakunaman riy"
+  },
+  "patients": {
+    "title": "Wawakuna",
+    "subtitle": "Tinkishka wawakuna ima llakipi kashkashina.",
+    "sections": {
+      "severe": "Yapa llakipi",
+      "moderate": "Llakipi",
+      "inOrder": "Allillami"
+    },
+    "status": {
+      "severe": "Yapa sinchi",
+      "inOrder": "Tukuy allillami"
+    },
+    "searchPlaceholder": "Shutiwan maskay...",
+    "searchA11y": "Wawapa shutita maskay",
+    "filterA11y": "Llakipi kashkashina akllay",
+    "filters": {
+      "ALL": "Tukuykuna",
+      "SEVERE": "Yapa llakipi",
+      "RISK": "Llakipi",
+      "NO_ALERTS": "Mana llakipi"
+    },
+    "riskLevels": {
+      "SEVERE": "Yapa llakipi",
+      "RISK": "Llakipi",
+      "NO_ALERTS": "Mana llakipi"
+    },
+    "overdueBadge": "Pachapi yallishka",
+    "openAlertsCount_one": "{{count}} llaki rikuri",
+    "openAlertsCount_other": "{{count}} llaki rikurikuna",
+    "noOpenAlerts": "Mana llaki kanchu",
+    "lastAlertLabel": "Kipa llaki: {{indicator}} · {{time}}",
+    "actions": {
+      "viewAlert": "Llakita rikuy",
+      "newFollowUp": "Mushuk katinakuy",
+      "newReferral": "Hampikman willay",
+      "viewEvolution": "Wiñayta rikuy",
+      "registerCheckup": "Kamayta killkay"
+    },
+    "loading": "Wawakunata apamukun...",
+    "retry": "Kutishpa ruray",
+    "loadError": "Mana wawakunata hapita usharkanchu.",
+    "emptyTitle": "Mana tinkishka wawakuna kanchu",
+    "emptyDescription": "Kampa makipi wawakuna tiyashpaka, kaypimi rikurinka ima llakipi kashkamanta.",
+    "emptySearchTitle": "Mana ima tiyanchu",
+    "emptySearchDescription": "Maskashkashinaka mana wawakunata tarirkanchu.",
+    "clearSearch": "Maskayta pichay",
+    "pagination": {
+      "showing": "{{shown}} wawakunata rikuchikun (tukuyka {{total}} kan)",
+      "loadMore": "Yalli wawakunata rikuy"
+    }
   }
 }

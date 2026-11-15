@@ -1,492 +1,337 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { CheckupResponse } from '@nutrikids/shared';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState, type ReactNode } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChildBanner } from '../../components/ChildBanner.js';
-import { GrowthChart } from '../../components/GrowthChart.js';
-import { Card } from '../../components/ui/Card.js';
+import { ActionModal, type ActionModalItem } from '../../components/ActionModal.js';
+import { APP_ASSETS } from '../../constants/assets.js';
 import { PALETTE } from '../../constants/colors.js';
-import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
+import { CARD_SHADOW, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
-import { useOptionalAuth } from '../../context/auth-context.js';
-import { useProfessionalCheckups } from '../../hooks/useCheckups.js';
-import { useChildren } from '../../hooks/useChildren.js';
-import { useGrowthTrend } from '../../hooks/useGrowthTrend.js';
-import { useReferenceCurves } from '../../hooks/useReferenceCurves.js';
-import { formatAgeShort, formatDecimal, formatLongDate } from '../../i18n/format.js';
-import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
+import { useNotifications } from '../../hooks/useNotifications.js';
+import { usePatients } from '../../hooks/usePatients.js';
 import { formatChildAge } from '../../lib/children-api.js';
-import {
-  INDICATORS,
-  bodyMassIndex,
-  checkupsToPoints,
-  curvesPositionFor,
-  type IndicatorKey,
-} from '../../lib/growth-chart.js';
+import { groupPatientsByRisk, type PatientListItem } from '../../lib/patients.js';
 
-function latestProfessionalCheckup(
-  checkups: readonly CheckupResponse[],
-): CheckupResponse | undefined {
-  return checkups.reduce<CheckupResponse | undefined>(
-    (latest, checkup) =>
-      !latest || checkup.measuredAt.localeCompare(latest.measuredAt) > 0 ? checkup : latest,
-    undefined,
-  );
-}
-
-export default function ProfessionalChildrenScreen() {
-  const { t } = useTranslation(['professional', 'caregiver', 'common']);
+export default function ProfessionalPatientsScreen() {
+  const { t } = useTranslation(['professional', 'common']);
   const router = useRouter();
-  const auth = useOptionalAuth();
-  const user = auth?.user ?? null;
-  const params = useLocalSearchParams<{ childId?: string }>();
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(params.childId ?? null);
-  const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PE');
-  const [selectedCheckupId, setSelectedCheckupId] = useState<string | null>(null);
+  const { unreadCount, reload: reloadNotifications } = useNotifications();
 
-  const {
-    status: childrenStatus,
-    children,
-    error: childrenError,
-    load: loadChildren,
-  } = useChildren();
+  const { patients, loading, refreshing, error, reload, refresh } = usePatients();
+  const [selectedChild, setSelectedChild] = useState<PatientListItem | null>(null);
 
-  useEffect(() => {
-    void loadChildren();
-  }, [loadChildren]);
-
-  const child =
-    children.find((item) => item.id === (selectedChildId ?? params.childId)) ?? children[0] ?? null;
-
-  const {
-    status: checkupsStatus,
-    checkups,
-    error: checkupsError,
-    load: loadCheckups,
-  } = useProfessionalCheckups(child?.id ?? null);
-
-  const { trends: growthTrends } = useGrowthTrend(child?.id ?? null);
-
-  const activeIndicator =
-    INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[0]!;
-  const activeTrend = growthTrends?.find((item) => item.indicator === activeIndicator.indicator);
-  const isFavorable = activeTrend?.trend === 'FAVORABLE';
-  const latest = latestProfessionalCheckup(checkups);
-  const position = curvesPositionFor(activeIndicator, latest);
-
-  const curves = useReferenceCurves(
-    child && latest
-      ? {
-          indicator: activeIndicator.indicator,
-          sex: child.sex,
-          ...(position ? { position } : {}),
-        }
-      : null,
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+      void reloadNotifications();
+    }, [reload, reloadNotifications]),
   );
 
-  const renderState = (content: ReactNode, testID: string) => (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <View style={styles.scrollContent}>
-        <Text style={styles.screenTitle}>{t('children.title')}</Text>
-        <Text style={styles.screenDescription}>{t('children.description')}</Text>
-        <View style={styles.stateBox} testID={testID}>
-          {content}
-        </View>
-      </View>
-    </SafeAreaView>
-  );
+  const sections = useMemo(() => groupPatientsByRisk(patients), [patients]);
 
-  const retryButton = (onPress: () => void) => (
-    <Pressable
-      style={({ pressed }) => [styles.stateButton, pressed && styles.pressed]}
-      onPress={onPress}
-      accessibilityRole="button"
-      testID="professional-evolution-retry"
-    >
-      <Text style={styles.stateButtonText}>{t('children.retry')}</Text>
-    </Pressable>
-  );
+  const openPatientActions = (item: PatientListItem) => {
+    setSelectedChild(item);
+  };
 
-  if (childrenStatus === 'idle' || childrenStatus === 'loading') {
-    return renderState(
-      <>
-        <ActivityIndicator color={PALETTE.primary} />
-        <Text style={styles.stateText}>{t('children.loading')}</Text>
-      </>,
-      'professional-evolution-loading',
-    );
-  }
+  const closePatientActions = () => {
+    setSelectedChild(null);
+  };
 
-  if (childrenStatus === 'error') {
-    return renderState(
-      <>
-        <Text style={styles.stateText}>{childrenError ?? t('children.loadError')}</Text>
-        {retryButton(() => void loadChildren())}
-      </>,
-      'professional-evolution-error',
-    );
-  }
+  const modalActions = useMemo<ActionModalItem[]>(() => {
+    if (!selectedChild) return [];
+    const { child, primaryAlert } = selectedChild;
+    const actions: ActionModalItem[] = [
+      {
+        id: 'evolution',
+        label: t('patients.actions.viewEvolution'),
+        icon: 'trending-up-outline',
+        onPress: () => {
+          closePatientActions();
+          router.push({
+            pathname: APP_ROUTES.PROFESSIONAL.EVOLUTION as never,
+            params: { childId: child.id },
+          });
+        },
+      },
+      {
+        id: 'checkup',
+        label: t('patients.actions.registerCheckup'),
+        icon: 'add-circle-outline',
+        onPress: () => {
+          closePatientActions();
+          router.push({
+            pathname: APP_ROUTES.PROFESSIONAL.ADD_CHECKUP as never,
+            params: { childId: child.id },
+          });
+        },
+      },
+      {
+        id: 'referral',
+        label: t('patients.actions.newReferral'),
+        icon: 'share-outline',
+        onPress: () => {
+          closePatientActions();
+          router.push({
+            pathname: APP_ROUTES.PROFESSIONAL.REFERRAL as never,
+            params: { childId: child.id },
+          });
+        },
+      },
+    ];
 
-  if (!child) {
-    return renderState(
-      <>
-        <Text style={styles.stateTitle}>{t('children.emptyTitle')}</Text>
-        <Text style={styles.stateText}>{t('children.emptySubtitle')}</Text>
-      </>,
-      'professional-evolution-empty-children',
-    );
-  }
-
-  if (checkupsStatus === 'idle' || checkupsStatus === 'loading') {
-    return renderState(
-      <>
-        <ActivityIndicator color={PALETTE.primary} />
-        <Text style={styles.stateText}>{t('children.loading')}</Text>
-      </>,
-      'professional-evolution-loading',
-    );
-  }
-
-  if (checkupsStatus === 'error') {
-    return renderState(
-      <>
-        <Text style={styles.stateText}>{checkupsError ?? t('children.loadError')}</Text>
-        {retryButton(() => void loadCheckups())}
-      </>,
-      'professional-evolution-error',
-    );
-  }
-
-  if (!latest) {
-    return renderState(
-      <>
-        <Text style={styles.stateTitle}>
-          {t('children.noCheckupsTitle', { name: child.firstName })}
-        </Text>
-        <Text style={styles.stateText}>{t('children.noCheckupsSubtitle')}</Text>
-        <Pressable
-          style={({ pressed }) => [styles.registerCheckupButton, pressed && styles.pressed]}
-          onPress={() =>
+    if (primaryAlert) {
+      actions.unshift(
+        {
+          id: 'alert',
+          label: t('patients.actions.viewAlert'),
+          icon: 'eye-outline',
+          onPress: () => {
+            closePatientActions();
             router.push({
-              pathname: APP_ROUTES.PROFESSIONAL.ADD_CHECKUP as never,
-              params: { childId: child.id },
-            })
-          }
-          accessibilityRole="button"
-          testID="professional-register-checkup-empty"
-        >
-          <Ionicons name="add-circle-outline" size={18} color={PALETTE.text.light} />
-          <Text style={styles.registerCheckupButtonText}>{t('children.registerCheckup')}</Text>
-        </Pressable>
-      </>,
-      'professional-evolution-no-checkups',
+              pathname: APP_ROUTES.PROFESSIONAL.ALERT_DETAIL as never,
+              params: { alertId: primaryAlert.id },
+            });
+          },
+        },
+        {
+          id: 'followup',
+          label: t('patients.actions.newFollowUp'),
+          icon: 'clipboard-outline',
+          onPress: () => {
+            closePatientActions();
+            router.push({
+              pathname: APP_ROUTES.PROFESSIONAL.FOLLOW_UP as never,
+              params: { childId: child.id, alertId: primaryAlert.id },
+            });
+          },
+        },
+      );
+    }
+
+    return actions;
+  }, [selectedChild, router, t]);
+
+  const renderBadge = (item: PatientListItem) => {
+    const { riskLevel, primaryAlert } = item;
+
+    if (riskLevel === 'SEVERE') {
+      return (
+        <View style={[styles.badgePill, styles.badgePillSevere]}>
+          <Text style={[styles.badgePillText, styles.badgePillTextSevere]}>
+            {t('patients.status.severe')}
+          </Text>
+        </View>
+      );
+    }
+
+    if (riskLevel === 'RISK' && primaryAlert) {
+      const riskLabel = t(`alerts.risk.${primaryAlert.riskType}`);
+      return (
+        <View style={[styles.badgePill, styles.badgePillModerate]}>
+          <Text style={[styles.badgePillText, styles.badgePillTextModerate]}>{riskLabel}</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={[styles.badgePill, styles.badgePillInOrder]}>
+        <Text style={[styles.badgePillText, styles.badgePillTextInOrder]}>
+          {t('patients.status.inOrder')}
+        </Text>
+      </View>
     );
-  }
+  };
 
-  const formatTick = (value: number) =>
-    activeIndicator.xAxis === 'height'
-      ? t('common:units.heightValue', { value })
-      : formatAgeShort(value);
+  const renderPatientCard = (item: PatientListItem) => {
+    const { child } = item;
+    const fullName = `${child.firstName} ${child.lastName}`;
+    const ageText = formatChildAge(child.birthDate);
 
-  const selectedCheckup =
-    (selectedCheckupId ? checkups.find((item) => item.id === selectedCheckupId) : undefined) ??
-    latest;
-  const selectedIndicatorResult = selectedCheckup.results.find(
-    (res) => res.indicator === activeIndicator.indicator,
-  );
-  const latestIndicatorResult = latest.results.find(
-    (res) => res.indicator === activeIndicator.indicator,
-  );
+    return (
+      <Pressable
+        key={child.id}
+        style={({ pressed }) => [styles.patientCard, pressed && styles.patientCardPressed]}
+        onPress={() => openPatientActions(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`${fullName}, ${ageText}`}
+        testID={`patient-card-${child.id}`}
+      >
+        <View style={styles.patientInfo}>
+          <Text style={styles.childName} numberOfLines={1}>
+            {fullName}
+          </Text>
+          <Text style={styles.childAge}>{ageText}</Text>
+        </View>
 
-  const chartZoneLabels = {
-    upper: t('children.zoneLabels.upper'),
-    normal: t('children.zoneLabels.normal'),
-    lower: t('children.zoneLabels.lower'),
+        <View style={styles.cardRight}>
+          {renderBadge(item)}
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={PALETTE.primary}
+            style={styles.chevron}
+          />
+        </View>
+      </Pressable>
+    );
+  };
+
+  const renderContent = () => {
+    if (loading && !refreshing && patients.length === 0) {
+      return (
+        <View style={styles.centerContainer} testID="patients-loading-state">
+          <ActivityIndicator size="large" color={PALETTE.primary} />
+          <Text style={styles.loadingText}>{t('patients.loading')}</Text>
+        </View>
+      );
+    }
+
+    if (error && patients.length === 0) {
+      return (
+        <View style={styles.centerContainer} testID="patients-error-state">
+          <Ionicons name="alert-circle-outline" size={48} color={PALETTE.feedback.error} />
+          <Text style={styles.errorText}>{error || t('patients.loadError')}</Text>
+          <Pressable
+            style={({ pressed }) => [styles.retryButton, pressed && styles.patientCardPressed]}
+            onPress={() => void reload()}
+            accessibilityRole="button"
+            testID="patients-retry-button"
+          >
+            <Text style={styles.retryButtonText}>{t('patients.retry')}</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+    if (patients.length === 0) {
+      return (
+        <View style={styles.emptyContainer} testID="patients-empty-state">
+          <Ionicons name="people-outline" size={48} color={PALETTE.primary} />
+          <Text style={styles.emptyTitle}>{t('patients.emptyTitle')}</Text>
+          <Text style={styles.emptyDescription}>{t('patients.emptyDescription')}</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.sectionsContainer}>
+        {sections.map((section) => {
+          return (
+            <View key={section.key} style={styles.sectionBlock}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{t(section.titleKey)}</Text>
+                <View
+                  style={[
+                    styles.counterBadge,
+                    section.key === 'SEVERE' && styles.counterBadgeSevere,
+                    section.key === 'RISK' && styles.counterBadgeModerate,
+                    section.key === 'NO_ALERTS' && styles.counterBadgeInOrder,
+                  ]}
+                  testID={`section-counter-${section.key}`}
+                >
+                  <Text
+                    style={[
+                      styles.counterBadgeText,
+                      section.key === 'SEVERE' && styles.counterBadgeTextSevere,
+                      section.key === 'RISK' && styles.counterBadgeTextModerate,
+                      section.key === 'NO_ALERTS' && styles.counterBadgeTextInOrder,
+                    ]}
+                  >
+                    {section.count}
+                  </Text>
+                </View>
+              </View>
+
+              {section.data.length > 0 ? (
+                <View style={styles.cardsList}>{section.data.map(renderPatientCard)}</View>
+              ) : null}
+            </View>
+          );
+        })}
+      </View>
+    );
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.screenTitle}>{t('children.title')}</Text>
-        <Text style={styles.screenDescription}>{t('children.description')}</Text>
-
-        {/* Selector de paciente si hay varios niños vinculados */}
-        {children.length > 1 ? (
-          <View style={styles.patientPillsRow} testID="professional-patient-selector">
-            {children.map((item) => {
-              const isCurrentChild = item.id === child.id;
-              return (
-                <Pressable
-                  key={item.id}
-                  style={[styles.patientPill, isCurrentChild && styles.patientPillActive]}
-                  onPress={() => {
-                    setSelectedChildId(item.id);
-                    setSelectedCheckupId(null);
-                  }}
-                  accessibilityRole="button"
-                  testID={`professional-patient-${item.id}`}
-                >
-                  <Text
-                    style={[styles.patientPillText, isCurrentChild && styles.patientPillTextActive]}
-                  >
-                    {`${item.firstName} ${item.lastName}`}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-
-        <ChildBanner
-          style={styles.childBanner}
-          name={`${child.firstName} ${child.lastName}`}
-          subtitle={t('children.childSubtitle', {
-            age: formatChildAge(child.birthDate),
-            birthDate: formatLongDate(child.birthDate),
-          })}
-        />
-
-        <Pressable
-          style={({ pressed }) => [styles.registerCheckupButton, pressed && styles.pressed]}
-          onPress={() =>
-            router.push({
-              pathname: APP_ROUTES.PROFESSIONAL.ADD_CHECKUP as never,
-              params: { childId: child.id },
-            })
-          }
-          accessibilityRole="button"
-          accessibilityLabel={t('children.registerCheckup')}
-          testID="professional-register-checkup"
-        >
-          <Ionicons name="add-circle-outline" size={18} color={PALETTE.text.light} />
-          <Text style={styles.registerCheckupButtonText}>{t('children.registerCheckup')}</Text>
-        </Pressable>
-
-        {/* Selector de los 4 indicadores OMS: P/E, T/E, P/T, IMC/E */}
-        <View style={styles.indicatorTabsContainer}>
-          {INDICATORS.map((indicator) => {
-            const isSelected = indicator.key === selectedIndicator;
-            return (
+    <SafeAreaView
+      style={styles.container}
+      edges={['top', 'left', 'right']}
+      testID="patients-screen"
+    >
+      <FlatList
+        data={[]}
+        renderItem={() => null}
+        ListHeaderComponent={
+          <>
+            <View style={styles.topHeader}>
+              <Image
+                source={APP_ASSETS.LOGO}
+                style={styles.logo}
+                resizeMode="contain"
+                accessibilityLabel={t('common:brand.logoLabel')}
+              />
               <Pressable
-                key={indicator.key}
-                style={[styles.indicatorTab, isSelected && styles.indicatorTabActive]}
-                onPress={() => setSelectedIndicator(indicator.key)}
+                style={({ pressed }) => [
+                  styles.notificationButton,
+                  pressed && styles.patientCardPressed,
+                ]}
+                onPress={() => router.push(APP_ROUTES.PROFESSIONAL.NOTIFICATIONS)}
                 accessibilityRole="button"
-                accessibilityLabel={t(`alerts.indicator.${indicator.indicator}`)}
-                testID={`professional-indicator-${indicator.key}`}
+                accessibilityLabel={t('drawer.notifications')}
+                testID="professional-notifications-bell"
               >
-                <Text
-                  style={[styles.indicatorTabText, isSelected && styles.indicatorTabTextActive]}
-                >
-                  {t(`caregiver:evolution.indicators.${indicator.key}.code`)}
-                </Text>
+                <View style={styles.bellIconWrapper}>
+                  <Ionicons name="notifications" size={22} color={PALETTE.secondary} />
+                  {unreadCount > 0 ? (
+                    <View style={styles.bellDot} testID="professional-bell-dot" />
+                  ) : null}
+                </View>
               </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Gráfica completa para el profesional: 5 curvas OMS (-3, -2, 0, +2, +3) */}
-        <Card style={styles.chartCard} testID="professional-evolution-chart-card">
-          <View style={styles.chartHeader}>
-            <Text style={styles.chartTitleText}>
-              {t(`alerts.indicator.${activeIndicator.indicator}`)}
-            </Text>
-            <Text style={styles.chartSubtitleText}>{t('children.chartSubtitle')}</Text>
-          </View>
-
-          {curves.status === 'ready' && curves.curves ? (
-            <GrowthChart
-              curves={curves.curves}
-              points={checkupsToPoints(activeIndicator, checkups, child.birthDate)}
-              xAxis={activeIndicator.xAxis}
-              formatTick={formatTick}
-              variant="professional"
-              zoneLabels={chartZoneLabels}
-              selectedCheckupId={selectedCheckup.id}
-              onSelectPoint={(point) => setSelectedCheckupId(point.checkupId ?? null)}
-              testID="professional-growth-chart"
-            />
-          ) : curves.status === 'error' ? (
-            <View style={styles.chartState} testID="professional-evolution-curves-error">
-              <Text style={styles.stateText}>{curves.error ?? t('children.loadError')}</Text>
-              {retryButton(() => void curves.load())}
             </View>
-          ) : (
-            <View style={styles.chartState} testID="professional-evolution-curves-loading">
-              <ActivityIndicator color={PALETTE.primary} />
-              <Text style={styles.stateText}>{t('children.loading')}</Text>
+
+            <View style={styles.titlesBlock}>
+              <Text style={styles.mainTitle}>{t('patients.title')}</Text>
+              <Text style={styles.subTitle}>{t('patients.subtitle')}</Text>
             </View>
-          )}
 
-          <View style={styles.legendRow}>
-            <View style={styles.legendGroup}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, styles.legendDotChild]} />
-                <Text style={styles.legendText}>{child.firstName}</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, styles.legendDotOms]} />
-                <Text style={styles.legendText}>{t('children.legendReference')}</Text>
-              </View>
-            </View>
-            {isFavorable ? (
-              <Text style={styles.favorableTrendText} testID="professional-evolution-growth-trend">
-                {t('caregiver:evolution.favorableTrend')}
-              </Text>
-            ) : null}
-          </View>
+            {renderContent()}
+          </>
+        }
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void refresh()}
+            colors={[PALETTE.primary]}
+            tintColor={PALETTE.primary}
+          />
+        }
+      />
 
-          <Text style={styles.tapPointHint}>{t('children.tapPointHint')}</Text>
-        </Card>
-
-        {/* Aviso permanente en pantalla de que la gráfica apoya la valoración y no es un diagnóstico */}
-        <View
-          style={styles.nonDiagnosticNotice}
-          testID="professional-evolution-non-diagnostic-notice"
-        >
-          <Ionicons name="shield-checkmark-outline" size={20} color={PALETTE.primary} />
-          <Text style={styles.nonDiagnosticNoticeText}>{t('children.nonDiagnosticNotice')}</Text>
-        </View>
-
-        {/* Resumen de la tendencia en texto */}
-        <Card style={styles.trendSummaryCard} testID="professional-evolution-trend-summary-card">
-          <Text style={styles.trendSummaryTitle}>{t('children.trendSummaryTitle')}</Text>
-          <Text style={styles.trendSummaryBody}>
-            {isFavorable ? t('children.trendSummaryFavorable') : t('children.trendSummarySteady')}
-          </Text>
-        </Card>
-
-        {/* Detalle técnico completo del control seleccionado al tocar un punto */}
-        <Card
-          style={styles.selectedRecordCard}
-          testID="professional-evolution-selected-checkup-card"
-        >
-          <View style={styles.recordHeader}>
-            <Text style={styles.recordTitle}>{t('children.selectedRecordTitle')}</Text>
-            <Text style={styles.recordDate}>{formatLongDate(selectedCheckup.measuredAt)}</Text>
-          </View>
-
-          <View style={styles.metricsRow}>
-            <View style={styles.metricCell}>
-              <Text style={styles.metricLabel}>{t('children.weight')}</Text>
-              <Text style={styles.metricValue}>
-                {t('common:units.weightValue', {
-                  value: formatDecimal(selectedCheckup.weightKg),
-                })}
-              </Text>
-            </View>
-            <View style={styles.metricCell}>
-              <Text style={styles.metricLabel}>{t('children.height')}</Text>
-              <Text style={styles.metricValue}>
-                {t('common:units.heightValue', {
-                  value: formatDecimal(selectedCheckup.lengthHeightCm),
-                })}
-              </Text>
-            </View>
-            <View style={styles.metricCell}>
-              <Text style={styles.metricLabel}>{t('children.bmi')}</Text>
-              <Text style={styles.metricValue}>
-                {`${formatDecimal(bodyMassIndex(selectedCheckup.weightKg, selectedCheckup.lengthHeightCm))} ${t('caregiver:evolution.unitKgM2')}`}
-              </Text>
-            </View>
-          </View>
-
-          {selectedIndicatorResult ? (
-            <View style={styles.technicalBox} testID="professional-selected-technical-results">
-              <View style={styles.technicalRow}>
-                <Text style={styles.technicalLabel}>{t('children.zScore')}</Text>
-                <Text style={styles.technicalValue} testID="professional-selected-zscore">
-                  {`z = ${formatDecimal(selectedIndicatorResult.zScore, 2)}`}
-                </Text>
-              </View>
-              <View style={styles.technicalRow}>
-                <Text style={styles.technicalLabel}>{t('children.percentile')}</Text>
-                <Text style={styles.technicalValue} testID="professional-selected-percentile">
-                  {`P${formatDecimal(selectedIndicatorResult.percentile)}`}
-                </Text>
-              </View>
-              <View style={styles.technicalRow}>
-                <Text style={styles.technicalLabel}>{t('children.classification')}</Text>
-                <Text style={styles.technicalBadge} testID="professional-selected-classification">
-                  {t(`children.classifications.${selectedIndicatorResult.classification}`)}
-                </Text>
-              </View>
-            </View>
-          ) : null}
-
-          <View style={styles.divider} />
-
-          <View style={styles.recordedByRow}>
-            <Ionicons name="person" size={18} color={PALETTE.secondary} />
-            <Text style={styles.recordedByLabel}>{t('children.recordedBy')}</Text>
-            <Text style={styles.recordedByValue} testID="professional-selected-recorded-by">
-              {formatCheckupRecorder({
-                recorder: selectedCheckup.recordedBy,
-                origin: selectedCheckup.origin,
-                currentUserId: user?.id,
-                t,
-              })}
-            </Text>
-          </View>
-
-          {selectedCheckup.notes ? (
-            <View style={styles.notesRow}>
-              <Text style={styles.recordedByLabel}>{t('children.notes')}: </Text>
-              <Text style={styles.notesValue}>{selectedCheckup.notes}</Text>
-            </View>
-          ) : null}
-        </Card>
-
-        {/* Último registro con la persona que lo hizo */}
-        <Card style={styles.lastRecordCard} testID="professional-evolution-last-record-card">
-          <View style={styles.recordHeader}>
-            <Text style={styles.recordTitle}>{t('children.lastRecordTitle')}</Text>
-            <Text style={styles.recordDate}>{formatLongDate(latest.measuredAt)}</Text>
-          </View>
-
-          <View style={styles.metricsRow}>
-            <View style={styles.metricCell}>
-              <Text style={styles.metricLabel}>{t('children.weight')}</Text>
-              <Text style={styles.metricValue}>
-                {t('common:units.weightValue', { value: formatDecimal(latest.weightKg) })}
-              </Text>
-            </View>
-            <View style={styles.metricCell}>
-              <Text style={styles.metricLabel}>{t('children.height')}</Text>
-              <Text style={styles.metricValue}>
-                {t('common:units.heightValue', { value: formatDecimal(latest.lengthHeightCm) })}
-              </Text>
-            </View>
-            {latestIndicatorResult ? (
-              <View style={styles.metricCell}>
-                <Text style={styles.metricLabel}>{t('children.zScore')}</Text>
-                <Text style={styles.metricValue}>
-                  {`z = ${formatDecimal(latestIndicatorResult.zScore)}`}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.recordedByRow}>
-            <Ionicons name="person" size={18} color={PALETTE.secondary} />
-            <Text style={styles.recordedByLabel}>{t('children.recordedBy')}</Text>
-            <Text style={styles.recordedByValue}>
-              {formatCheckupRecorder({
-                recorder: latest.recordedBy,
-                origin: latest.origin,
-                currentUserId: user?.id,
-                t,
-              })}
-            </Text>
-          </View>
-        </Card>
-      </ScrollView>
+      <ActionModal
+        visible={selectedChild !== null}
+        title={
+          selectedChild
+            ? `${selectedChild.child.firstName} ${selectedChild.child.lastName}`
+            : undefined
+        }
+        subtitle={selectedChild ? formatChildAge(selectedChild.child.birthDate) : undefined}
+        actions={modalActions}
+        onClose={closePatientActions}
+      />
     </SafeAreaView>
   );
 }
@@ -498,353 +343,235 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: SCREEN_MARGIN,
-    paddingTop: 16,
-    paddingBottom: 28,
+    paddingTop: 12,
+    paddingBottom: 40,
   },
-  screenTitle: {
+  topHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logo: {
+    width: 170,
+    height: 48,
+  },
+  notificationButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: PALETTE.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...CARD_SHADOW,
+  },
+  bellIconWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bellDot: {
+    position: 'absolute',
+    top: -1,
+    right: -2,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: PALETTE.feedback.error,
+  },
+  titlesBlock: {
+    marginBottom: 24,
+  },
+  mainTitle: {
     fontFamily: font('semibold'),
-    fontSize: 22,
-    fontWeight: '600',
+    fontSize: 26,
+    fontWeight: '700',
     color: PALETTE.text.title,
+    letterSpacing: -0.3,
     marginBottom: 4,
   },
-  screenDescription: {
+  subTitle: {
     fontFamily: font('regular'),
-    fontSize: 13,
-    color: PALETTE.text.body,
-    marginBottom: 16,
+    fontSize: 15,
+    color: PALETTE.text.muted,
   },
-  patientPillsRow: {
+  sectionsContainer: {
+    gap: 24,
+  },
+  sectionBlock: {
+    marginBottom: 8,
+  },
+  sectionHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 14,
-  },
-  patientPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: RADIUS_PILL,
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
-  },
-  patientPillActive: {
-    backgroundColor: PALETTE.primary,
-    borderColor: PALETTE.primary,
-  },
-  patientPillText: {
-    fontFamily: font('medium'),
-    fontSize: 13,
-    fontWeight: '500',
-    color: PALETTE.text.title,
-  },
-  patientPillTextActive: {
-    color: PALETTE.text.light,
-  },
-  childBanner: {
+    alignItems: 'center',
     marginBottom: 12,
   },
-  registerCheckupButton: {
-    flexDirection: 'row',
+  sectionTitle: {
+    fontFamily: font('semibold'),
+    fontSize: 18,
+    fontWeight: '700',
+    color: PALETTE.text.title,
+    marginRight: 8,
+  },
+  counterBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: PALETTE.primary,
-    borderRadius: RADIUS_PILL,
-    paddingHorizontal: 20,
-    paddingVertical: 11,
-    marginBottom: 16,
-    alignSelf: 'flex-start',
   },
-  registerCheckupButtonText: {
+  counterBadgeSevere: {
+    backgroundColor: '#FDECE7',
+  },
+  counterBadgeTextSevere: {
+    color: PALETTE.feedback.error,
+  },
+  counterBadgeModerate: {
+    backgroundColor: '#FEF2EC',
+  },
+  counterBadgeTextModerate: {
+    color: PALETTE.secondary,
+  },
+  counterBadgeInOrder: {
+    backgroundColor: '#E8F1F0',
+  },
+  counterBadgeTextInOrder: {
+    color: PALETTE.primary,
+  },
+  counterBadgeText: {
     fontFamily: font('semibold'),
-    fontSize: 14,
-    fontWeight: '600',
-    color: PALETTE.text.light,
+    fontSize: 12,
+    fontWeight: '700',
   },
-  indicatorTabsContainer: {
+  cardsList: {
+    gap: 12,
+  },
+  patientCard: {
     flexDirection: 'row',
-    backgroundColor: PALETTE.primary,
-    borderRadius: 26,
-    padding: 5,
-    marginBottom: 18,
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  indicatorTab: {
-    flex: 1,
-    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
     borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  indicatorTabActive: {
-    backgroundColor: PALETTE.text.light,
-  },
-  indicatorTabText: {
-    fontFamily: font('semibold'),
-    fontSize: 14,
-    fontWeight: '600',
-    color: PALETTE.text.light,
-  },
-  indicatorTabTextActive: {
-    color: PALETTE.primary,
-  },
-  chartCard: {
-    padding: 20,
-    marginBottom: 16,
-  },
-  chartHeader: {
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  chartTitleText: {
-    fontFamily: font('semibold'),
-    fontSize: 17,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-    textAlign: 'center',
-  },
-  chartSubtitleText: {
-    fontFamily: font('regular'),
-    fontSize: 12,
-    color: PALETTE.text.muted,
-    marginTop: 2,
-    textAlign: 'center',
-  },
-  chartState: {
-    alignItems: 'center',
-    gap: 12,
-    height: 180,
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: PALETTE.border.subtle,
-    paddingTop: 14,
-  },
-  legendGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  legendDotChild: {
-    backgroundColor: PALETTE.secondary,
-  },
-  legendDotOms: {
-    backgroundColor: '#7FA89E',
-  },
-  legendText: {
-    fontFamily: font('medium'),
-    fontSize: 12,
-    color: PALETTE.text.body,
-    fontWeight: '500',
-  },
-  favorableTrendText: {
-    fontFamily: font('semibold'),
-    fontSize: 12,
-    fontWeight: '600',
-    color: PALETTE.primary,
-  },
-  tapPointHint: {
-    fontFamily: font('regular'),
-    fontSize: 12,
-    color: PALETTE.text.muted,
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  nonDiagnosticNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: PALETTE.primaryLight,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  nonDiagnosticNoticeText: {
-    flex: 1,
-    fontFamily: font('medium'),
-    fontSize: 13,
-    fontWeight: '500',
-    lineHeight: 18,
-    color: PALETTE.primary,
-  },
-  trendSummaryCard: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 16,
-    gap: 4,
-  },
-  trendSummaryTitle: {
-    fontFamily: font('semibold'),
-    fontSize: 15,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-  },
-  trendSummaryBody: {
-    fontFamily: font('regular'),
-    fontSize: 14,
-    lineHeight: 20,
-    color: PALETTE.text.body,
-  },
-  selectedRecordCard: {
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    marginBottom: 16,
     borderWidth: 1.5,
-    borderColor: PALETTE.primary,
+    borderColor: '#E2E8F0',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    ...CARD_SHADOW,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  lastRecordCard: {
-    paddingHorizontal: 20,
-    paddingVertical: 18,
+  patientCardPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
   },
-  recordHeader: {
-    marginBottom: 12,
+  patientInfo: {
+    flex: 1,
+    marginRight: 10,
   },
-  recordTitle: {
+  childName: {
     fontFamily: font('semibold'),
-    fontSize: 17,
-    fontWeight: '600',
-    color: PALETTE.text.title,
+    fontSize: 15,
+    fontWeight: '700',
+    color: PALETTE.primary,
+    marginBottom: 2,
   },
-  recordDate: {
+  childAge: {
     fontFamily: font('regular'),
     fontSize: 13,
     color: PALETTE.text.muted,
-    marginTop: 2,
   },
-  metricsRow: {
+  cardRight: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
+    alignItems: 'center',
+    gap: 8,
   },
-  metricCell: {
-    flex: 1,
+  badgePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
   },
-  metricLabel: {
+  badgePillSevere: {
+    backgroundColor: '#FDECE7',
+  },
+  badgePillTextSevere: {
     fontFamily: font('medium'),
     fontSize: 12,
-    color: PALETTE.text.muted,
-    fontWeight: '500',
-  },
-  metricValue: {
-    fontFamily: font('semibold'),
-    fontSize: 18,
     fontWeight: '600',
-    color: PALETTE.primary,
-    marginTop: 2,
+    color: PALETTE.feedback.error,
   },
-  technicalBox: {
-    marginTop: 14,
-    backgroundColor: PALETTE.primaryLight,
-    borderRadius: 12,
-    padding: 12,
-    gap: 8,
+  badgePillModerate: {
+    backgroundColor: '#FEF2EC',
   },
-  technicalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  technicalLabel: {
+  badgePillTextModerate: {
     fontFamily: font('medium'),
-    fontSize: 13,
-    fontWeight: '500',
-    color: PALETTE.text.title,
+    fontSize: 12,
+    fontWeight: '600',
+    color: PALETTE.secondary,
   },
-  technicalValue: {
-    fontFamily: font('semibold'),
-    fontSize: 14,
+  badgePillInOrder: {
+    backgroundColor: '#E8F1F0',
+  },
+  badgePillTextInOrder: {
+    fontFamily: font('medium'),
+    fontSize: 12,
     fontWeight: '600',
     color: PALETTE.primary,
   },
-  technicalBadge: {
-    fontFamily: font('semibold'),
-    fontSize: 13,
-    fontWeight: '600',
-    color: PALETTE.secondaryPressed,
+  badgePillText: {},
+  chevron: {
+    marginLeft: 2,
   },
-  divider: {
-    height: 1,
-    backgroundColor: PALETTE.border.default,
-    marginVertical: 12,
-  },
-  recordedByRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  recordedByLabel: {
-    fontFamily: font('medium'),
-    fontSize: 14,
-    fontWeight: '500',
-    color: PALETTE.text.title,
-  },
-  recordedByValue: {
-    fontFamily: font('regular'),
-    fontSize: 14,
-    color: PALETTE.text.muted,
-    flex: 1,
-  },
-  notesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 8,
-  },
-  notesValue: {
-    fontFamily: font('regular'),
-    fontSize: 14,
-    color: PALETTE.text.body,
-  },
-  stateBox: {
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 32,
-  },
-  stateTitle: {
-    fontFamily: font('semibold'),
-    fontSize: 18,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-    textAlign: 'center',
-  },
-  stateText: {
-    fontFamily: font('regular'),
-    fontSize: 14,
-    color: PALETTE.text.body,
-    textAlign: 'center',
-  },
-  stateButton: {
-    backgroundColor: PALETTE.primary,
-    borderRadius: RADIUS_PILL,
-    paddingHorizontal: 28,
-    height: 48,
+  centerContainer: {
+    paddingVertical: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stateButtonText: {
-    fontFamily: font('semibold'),
-    color: PALETTE.text.light,
-    fontSize: 15,
-    fontWeight: '600',
+  loadingText: {
+    marginTop: 12,
+    fontFamily: font('regular'),
+    fontSize: 14,
+    color: PALETTE.text.muted,
   },
-  pressed: {
-    opacity: 0.7,
+  errorText: {
+    marginTop: 12,
+    fontFamily: font('regular'),
+    fontSize: 14,
+    color: PALETTE.feedback.error,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: PALETTE.primary,
+  },
+  retryButtonText: {
+    fontFamily: font('medium'),
+    fontSize: 14,
+    color: PALETTE.text.light,
+  },
+  emptyContainer: {
+    paddingVertical: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    marginTop: 16,
+    fontFamily: font('semibold'),
+    fontSize: 16,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+  },
+  emptyDescription: {
+    marginTop: 8,
+    fontFamily: font('regular'),
+    fontSize: 13,
+    color: PALETTE.text.muted,
+    textAlign: 'center',
+    paddingHorizontal: 24,
   },
 });

@@ -146,6 +146,7 @@ describe('ProfessionalDrawerLayout', () => {
       'follow-up',
       'referral',
       'children',
+      'evolution',
       'add-checkup',
       'messages',
       'chat-detail',
@@ -163,6 +164,8 @@ describe('ProfessionalDrawerLayout', () => {
       expect(options?.drawerItemStyle).toEqual({ display: 'none' });
       expect(options?.headerShown).toBe(false);
     }
+    const evolutionOptions = screens.find((s) => s.props.name === 'evolution')?.props.options;
+    expect(evolutionOptions?.drawerItemStyle).toEqual({ display: 'none' });
   });
 
   it('sets accurate drawer labels and titles for professional views', () => {

@@ -253,7 +253,7 @@ vi.mock('../hooks/useGrowthTrend.js', () => ({
 }));
 
 import EvolutionScreen from '../app/(caregiver)/evolution.js';
-import ProfessionalChildrenScreen from '../app/(professional)/children.js';
+import ProfessionalChildrenScreen from '../app/(professional)/evolution.js';
 import { GrowthChart } from '../components/GrowthChart.js';
 import { Card } from '../components/ui/Card.js';
 import i18n from '../i18n/index.js';

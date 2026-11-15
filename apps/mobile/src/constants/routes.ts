@@ -48,6 +48,7 @@ export const APP_ROUTES = {
     FOLLOW_UP: '/(professional)/follow-up' as const,
     REFERRAL: '/(professional)/referral' as const,
     CHILDREN: '/(professional)/children' as const,
+    EVOLUTION: '/(professional)/evolution' as const,
     ADD_CHECKUP: '/(professional)/add-checkup' as const,
     MESSAGES: '/(professional)/messages' as const,
     CHAT_DETAIL: '/(professional)/chat-detail' as const,
