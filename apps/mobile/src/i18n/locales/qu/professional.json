@@ -7,6 +7,8 @@
     "alertsTitle": "Yuyachikkuna",
     "children": "Llakipi kak wawakuna",
     "childrenTitle": "Llakipi kak wawakuna",
+    "addCheckup": "Kamayta killkay",
+    "addCheckupTitle": "Kamayta killkay",
     "messages": "Willaykuna, katinakunapash",
     "messagesTitle": "Willaykuna, katinakunapash",
     "profile": "Ñukamanta",
@@ -110,7 +112,8 @@
       "POSSIBLE_RISK_OVERWEIGHT": "Posible riesgo de sobrepeso (+1 a +2 DE)",
       "OVERWEIGHT": "Sobrepeso (+2 a +3 DE)",
       "OBESITY": "Obesidad (> +3 DE)"
-    }
+    },
+    "registerCheckup": "Kamayta killkay"
   },
   "messages": {
     "title": "Willaykuna, katinakunapash",
@@ -283,5 +286,19 @@
       "bodyTooLong": "El motivo no puede pasar de {{max}} caracteres.",
       "invalid": "Revisa los datos de la interconsulta."
     }
+  },
+  "addCheckup": {
+    "title": "Wawapak kamayta killkay",
+    "changePatient": "Shuk wawata akllay",
+    "submit": "Wakaychishpa yupay",
+    "saving": "Wakaychikunmi...",
+    "localResultTitle": "Kaypi yupashka (who-growth)",
+    "localSummaryNormal": "Ñawpa yupay: shuyashka ukullapimi kan (OMS).",
+    "localSummaryAlert": "Ñawpa yupay: llakimi rikurin ({{risk}}).",
+    "zScoreValue": "z = {{value}}",
+    "percentileValue": "p{{value}}",
+    "emptyTitle": "Mana tinkishka wawakuna kanchu",
+    "emptySubtitle": "Kamayta killkankapakka shuk tinkishka wawata charinami kanki.",
+    "goBackToPatients": "Wawakunaman riy"
   }
 }
