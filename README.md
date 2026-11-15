@@ -424,7 +424,7 @@ The navigation guard in `apps/mobile/src/app/_layout.tsx` inspects auth status a
   3. `add-checkup`: Central elevated button for recording checkups.
   4. `messages`: Messages and reminders.
   5. `profile`: Profile and role switcher.
-     Hidden screens include `link-professional` («Vincular profesional»), opened from «Mis datos» for each child: search by professional license, confirm, link; «Desvincular» ends the link.
+     Linking a professional (`link-professional`): from the child card in «Mis niños» and Inicio (button «+ Vincular profesional», or the linked professional row that opens `child-professionals` to list and unlink), from the «¡Niño registrado!» screen (`child-registered`) shown after registering a child.
 - **Professional (`PROFESSIONAL`):** Drawer navigation with alerts inbox as home (`apps/mobile/src/app/(professional)/_layout.tsx`):
   1. `index`: Nutritional alerts inbox.
   2. `children`: Children categorized by risk.

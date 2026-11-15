@@ -15,6 +15,7 @@ import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { setActiveChildId } from '../../hooks/useActiveChild.js';
 import { useChildren } from '../../hooks/useChildren.js';
+import { useChildrenProfessionals } from '../../hooks/useChildrenProfessionals.js';
 
 /**
  * Pantalla «Mis niños» (oculta de la barra inferior): lista todos los niños vinculados
@@ -25,11 +26,20 @@ export default function MyChildrenScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
   const { status, children, error, fromCache, stale, lastSyncedAt, loadError, load } =
     useChildren();
+  const { professionals, load: loadProfessionals } = useChildrenProfessionals();
 
   useFocusEffect(
     useCallback(() => {
       void load();
     }, [load]),
+  );
+
+  // Profesionales vigentes de cada niño: al enfocar la pantalla (tras vincular/desvincular) y
+  // cuando cambia la lista de niños.
+  useFocusEffect(
+    useCallback(() => {
+      if (children.length > 0) void loadProfessionals(children);
+    }, [children, loadProfessionals]),
   );
 
   const handleBack = () => {
@@ -112,6 +122,19 @@ export default function MyChildrenScreen() {
                 onPress={() => handleSelectChild(child.id)}
                 accessibilityLabel={t('myChildren.selectChildA11y', { name: child.firstName })}
                 testID={`my-children-card-${child.id}`}
+                professionals={professionals[child.id]}
+                onLinkProfessional={() =>
+                  router.push({
+                    pathname: APP_ROUTES.CAREGIVER.LINK_PROFESSIONAL as never,
+                    params: { childId: child.id },
+                  })
+                }
+                onOpenProfessionals={() =>
+                  router.push({
+                    pathname: APP_ROUTES.CAREGIVER.CHILD_PROFESSIONALS as never,
+                    params: { childId: child.id },
+                  })
+                }
               />
             ))}
           </View>

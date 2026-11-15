@@ -212,6 +212,26 @@ export default function CaregiverTabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="child-registered"
+          options={{
+            title: t('tabs.childRegistered'),
+            headerTitle: t('tabs.childRegisteredHeader'),
+            tabBarStyle: { display: 'none' },
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
+          }}
+        />
+        <Tabs.Screen
+          name="child-professionals"
+          options={{
+            title: t('tabs.childProfessionals'),
+            headerTitle: t('tabs.childProfessionalsHeader'),
+            tabBarStyle: { display: 'none' },
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
+          }}
+        />
+        <Tabs.Screen
           name="edit-child"
           options={{
             title: t('tabs.editChild'),

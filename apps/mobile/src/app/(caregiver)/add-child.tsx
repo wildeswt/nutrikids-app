@@ -29,6 +29,7 @@ import {
   evaluateChildBirthDate,
   type Relationship,
 } from '../../lib/child-form.js';
+import { toChildRegisteredParams } from '../../lib/child-registered-route.js';
 import { createChild } from '../../lib/children-api.js';
 
 export default function AddChildScreen() {
@@ -94,9 +95,12 @@ export default function AddChildScreen() {
 
     setLoading(true);
     try {
-      await createChild(validation.data);
-      // Después de guardar el niño, volver al inicio del cuidador.
-      router.replace(APP_ROUTES.CAREGIVER.HOME as never);
+      const created = await createChild(validation.data);
+      // Tras guardar al niño se ofrece vincular a su profesional (o dejarlo para después).
+      router.replace({
+        pathname: APP_ROUTES.CAREGIVER.CHILD_REGISTERED as never,
+        params: toChildRegisteredParams(created),
+      });
     } catch (err) {
       setGeneralError(formatAuthErrorMessage(err));
     } finally {

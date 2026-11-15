@@ -41,7 +41,11 @@
     "linkProfessional": "Vincular profesional",
     "linkProfessionalHeader": "Vincular profesional",
     "feedingHistory": "Historial de comidas",
-    "feedingHistoryHeader": "Historial de comidas"
+    "feedingHistoryHeader": "Historial de comidas",
+    "childRegistered": "Niño registrado",
+    "childRegisteredHeader": "Niño registrado",
+    "childProfessionals": "Profesionales del niño",
+    "childProfessionalsHeader": "Profesionales del niño"
   },
   "home": {
     "notifications": "Avisos",
@@ -77,7 +81,7 @@
     "emptySubtitle": "Registra a tu niño para seguir su crecimiento y sus controles.",
     "addChild": "Agregar niño",
     "seeMoreA11y": "Ver cómo crece {{name}}",
-    "linkedNotice": "Solo ves a los niños vinculados a tu cuenta",
+    "linkedNotice": "Solo ves a los niños vinculados a tu cuenta.",
     "checkupDate": "Fecha: {{date}}",
     "logFeeding": "Alimentación",
     "logFeedingA11y": "Registrar alimentación de {{name}}",
@@ -111,7 +115,12 @@
   },
   "myChildren": {
     "title": "Mis niños",
-    "selectChildA11y": "Elegir a {{name}} como niño activo"
+    "selectChildA11y": "Elegir a {{name}} como niño activo",
+    "linkProfessional": "Vincular profesional",
+    "linkProfessionalA11y": "Vincular un profesional a {{name}}",
+    "openProfessionalsA11y": "Ver los profesionales de {{name}}",
+    "professionalLinked": "{{specialty}} · Profesional vinculado",
+    "moreProfessionals": "y {{count}} más"
   },
   "addCheckup": {
     "seeHistory": "Ver historial",
@@ -616,9 +625,7 @@
       "loadError": "No pudimos cargar tus datos.",
       "retry": "Reintentar"
     },
-    "professionalsTitle": "Profesionales",
     "noProfessionals": "Todavía no hay profesionales vinculados.",
-    "linkProfessional": "Vincular profesional",
     "unlinkProfessional": "Desvincular",
     "unlinkConfirmTitle": "¿Desvincular a {{name}}?",
     "unlinkConfirmMessage": "{{name}} dejará de ver los controles y alertas de {{child}}.",
@@ -733,5 +740,21 @@
     "successMessage": "{{name}} ya puede ver los controles y alertas de {{child}}.",
     "ok": "Entendido",
     "missingChild": "Elige primero a un niño."
+  },
+  "childRegistered": {
+    "title": "¡Niño registrado!",
+    "subtitle": "{{name}} - {{age}}",
+    "cardTitle": "¿Quieres vincular a su profesional?",
+    "cardBody": "Así podrá ver los controles y las alertas de {{name}}. Solo necesitas su registro profesional.",
+    "later": "También puedes hacerlo después desde Mis niños.",
+    "link": "Vincular profesional",
+    "notNow": "Ahora no",
+    "missing": "No pudimos mostrar los datos del niño registrado.",
+    "goHome": "Ir al inicio"
+  },
+  "childProfessionals": {
+    "title": "Profesionales",
+    "loadError": "No pudimos cargar los profesionales.",
+    "linkAnother": "Vincular otro profesional"
   }
 }

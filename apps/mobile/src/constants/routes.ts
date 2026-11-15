@@ -36,6 +36,8 @@ export const APP_ROUTES = {
     EDIT_CHILD: '/(caregiver)/edit-child' as const,
     PRIVACY: '/(caregiver)/privacy' as const,
     PENDING_SYNC: '/(caregiver)/pending-sync' as const,
+    CHILD_REGISTERED: '/(caregiver)/child-registered' as const,
+    CHILD_PROFESSIONALS: '/(caregiver)/child-professionals' as const,
     LINK_PROFESSIONAL: '/(caregiver)/link-professional' as const,
   },
   PROFESSIONAL: {

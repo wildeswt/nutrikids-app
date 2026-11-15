@@ -6,7 +6,6 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AccountCard } from '../../components/AccountCard.js';
 import { ChildBanner } from '../../components/ChildBanner.js';
-import { ChildProfessionalsSection } from '../../components/ChildProfessionalsSection.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
 import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
@@ -139,8 +138,6 @@ export default function MyDataScreen() {
           >
             <Text style={styles.childPrivacyText}>{t('myData.privacyLink')}</Text>
           </Pressable>
-
-          <ChildProfessionalsSection childId={child.id} childName={child.firstName} />
         </View>
       );
     });
