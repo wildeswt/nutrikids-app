@@ -24,6 +24,7 @@ import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
 import { useActiveChildId } from '../../hooks/useActiveChild.js';
 import { useChildren } from '../../hooks/useChildren.js';
+import { useChildrenProfessionals } from '../../hooks/useChildrenProfessionals.js';
 import { useEducation } from '../../hooks/useEducation.js';
 import { formatRelativeMessageTime, useHomeSummary } from '../../hooks/useHomeSummary.js';
 import { useNotifications } from '../../hooks/useNotifications.js';
@@ -39,6 +40,7 @@ export default function CaregiverHomeScreen() {
   const activeChildId = useActiveChildId();
   const { status, children, error, fromCache, stale, lastSyncedAt, loadError, load } =
     useChildren();
+  const { professionals, load: loadProfessionals } = useChildrenProfessionals();
   const education = useEducation();
   const loadEducation = education.load;
   const { unreadCount, reload: reloadNotifications } = useNotifications();
@@ -63,6 +65,14 @@ export default function CaregiverHomeScreen() {
   );
 
   const activeChild = children.find((item) => item.id === activeChildId) ?? children[0] ?? null;
+
+  // Profesionales vigentes del niño activo (para mostrarlos o invitar a vincular uno)
+  const activeChildKey = activeChild?.id ?? null;
+  useFocusEffect(
+    useCallback(() => {
+      if (activeChildKey) void loadProfessionals([{ id: activeChildKey }]);
+    }, [activeChildKey, loadProfessionals]),
+  );
 
   // Artículos mostrados en Inicio: según la edad del niño activo, o los primeros del catálogo
   const learnArticles = (() => {
@@ -335,19 +345,18 @@ export default function CaregiverHomeScreen() {
         {/* Tarjeta del niño activo (y acceso a «Mis niños» cuando hay varios) */}
         {activeChild ? (
           <View style={styles.activeChildSection}>
-            {children.length > 1 ? (
-              <Pressable
-                style={({ pressed }) => [styles.myChildrenLinkRow, pressed && styles.buttonPressed]}
-                onPress={() => router.push(APP_ROUTES.CAREGIVER.MY_CHILDREN)}
-                accessibilityRole="button"
-                accessibilityLabel={t('home.myChildrenA11y')}
-                testID="home-my-children-link"
-              >
-                <Ionicons name="people-outline" size={16} color={PALETTE.primary} />
-                <Text style={styles.sectionLink}>{t('home.myChildrenLink')}</Text>
-                <Ionicons name="chevron-forward" size={15} color={PALETTE.primary} />
-              </Pressable>
-            ) : null}
+            {/* Acceso permanente a «Mis niños»: ver todos, agregar otro niño, vincular profesionales */}
+            <Pressable
+              style={({ pressed }) => [styles.myChildrenLinkRow, pressed && styles.buttonPressed]}
+              onPress={() => router.push(APP_ROUTES.CAREGIVER.MY_CHILDREN)}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.myChildrenA11y')}
+              testID="home-my-children-link"
+            >
+              <Ionicons name="people-outline" size={16} color={PALETTE.primary} />
+              <Text style={styles.sectionLink}>{t('home.myChildrenLink')}</Text>
+              <Ionicons name="chevron-forward" size={15} color={PALETTE.primary} />
+            </Pressable>
 
             <CaregiverChildCard
               child={activeChild}
@@ -355,6 +364,19 @@ export default function CaregiverHomeScreen() {
               onPress={() =>
                 router.push({
                   pathname: APP_ROUTES.CAREGIVER.EVOLUTION as never,
+                  params: { childId: activeChild.id },
+                })
+              }
+              professionals={professionals[activeChild.id]}
+              onLinkProfessional={() =>
+                router.push({
+                  pathname: APP_ROUTES.CAREGIVER.LINK_PROFESSIONAL as never,
+                  params: { childId: activeChild.id },
+                })
+              }
+              onOpenProfessionals={() =>
+                router.push({
+                  pathname: APP_ROUTES.CAREGIVER.CHILD_PROFESSIONALS as never,
                   params: { childId: activeChild.id },
                 })
               }

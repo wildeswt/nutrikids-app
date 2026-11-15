@@ -279,7 +279,7 @@ describe('Caregiver Screens (NK-21 / NK-66)', () => {
       expect(findElementByTestId(capturedTree, 'start-child-registration-button')).toBeNull();
       expect(html).not.toContain(i18n.t('caregiver:home.linkedNotice'));
 
-      // Link to «Mis niños» appears when multiple children exist
+      // Link to «Mis niños» is always available on Home
       const myChildrenLink = findElementByTestId(capturedTree, 'home-my-children-link');
       expect(myChildrenLink).not.toBeNull();
       (myChildrenLink?.props?.['onPress'] as (() => void) | undefined)?.();
