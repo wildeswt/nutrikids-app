@@ -102,7 +102,7 @@
     "registerFeeding": "Registrar alimentación",
     "registerFeedingA11y": "Registrar alimentación de {{name}}",
     "messageLoading": "Cargando mensajes...",
-    "messageEmpty": "Aún no tienes mensajes de tu equipo de salud.",
+    "messageEmpty": "No tienes mensajes nuevos.",
     "messageError": "No pudimos cargar tu último mensaje.",
     "checkupLoading": "Cargando próximo control...",
     "checkupEmpty": "No tienes controles próximos agendados.",

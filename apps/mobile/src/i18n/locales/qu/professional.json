@@ -18,7 +18,7 @@
     "notificationsTitle": "Willaykuna",
     "alertDetailTitle": "Yuyachikkunamanta",
     "followUpTitle": "Seguimiento clínico",
-    "referralTitle": "Interconsulta",
+    "referralTitle": "Hampikman willay",
     "chatTitle": "Conversación",
     "pendingSyncTitle": "Pendientes de envío"
   },
@@ -154,7 +154,7 @@
     "title": "Detalle de alerta",
     "loading": "Cargando la alerta...",
     "retry": "Reintentar",
-    "unknownChild": "Niño sin identificar",
+    "unknownChild": "Mana riksishka wawa",
     "childSubtitle": "{{age}} · {{birthDate}}",
     "rows": {
       "indicator": "Indicador",
@@ -186,7 +186,7 @@
     },
     "actions": {
       "markReviewed": "Marcar como revisada",
-      "marking": "Guardando...",
+      "marking": "Wakaychikunmi...",
       "followUp": "Registrar seguimiento",
       "referral": "Nueva interconsulta",
       "reviewedNote": "Ya marcaste esta alerta como revisada.",
@@ -243,7 +243,7 @@
     "offline": "Sin conexión · Se guardará en este teléfono y se enviará al recuperar la conexión",
     "actions": {
       "save": "Guardar seguimiento",
-      "saving": "Guardando...",
+      "saving": "Wakaychikunmi...",
       "saveDraft": "Guardar como borrador"
     },
     "draftSaved": "Borrador guardado en este teléfono.",
@@ -261,15 +261,15 @@
     }
   },
   "referral": {
-    "title": "Interconsulta",
+    "title": "Hampikman willay",
     "bannerTitle": "Comunicación entre profesionales",
     "bannerSubtitle": "{{name}} · {{specialty}}",
     "loadingChildren": "Cargando pacientes...",
-    "loadChildrenError": "No pudimos cargar tus pacientes.",
+    "loadChildrenError": "Mana wawakunata hapita usharkanchu.",
     "retry": "Reintentar",
-    "emptyChildrenTitle": "Sin pacientes vinculados",
+    "emptyChildrenTitle": "Mana tinkishka wawakuna kanchu",
     "emptyChildrenSubtitle": "Debes tener al menos un niño vinculado para enviar una interconsulta.",
-    "patientLabel": "Paciente",
+    "patientLabel": "Hampichikuk wawa",
     "patientPlaceholder": "Selecciona un paciente",
     "recipientLabel": "Dirigida a",
     "recipientPlaceholder": "Selecciona un profesional",
