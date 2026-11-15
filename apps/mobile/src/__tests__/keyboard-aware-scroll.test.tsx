@@ -142,7 +142,7 @@ describe('KeyboardAwareScrollView & Keyboard-Avoiding Screens', () => {
   it('renders ChatDetailScreen with message list and bottom input bar', () => {
     const html = renderToString(React.createElement(ChatDetailScreen));
 
-    expect(html).toContain('Equipo de Mateo');
+    expect(html).not.toContain('Equipo de');
     expect(html).toContain(i18n.t('caregiver:chat.inputPlaceholder'));
     expect(html).toContain('Enviar');
   });

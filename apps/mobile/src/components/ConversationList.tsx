@@ -59,7 +59,8 @@ export function formatConversationTime(iso: string, now: Date = new Date()): str
 
 /**
  * Lista compartida de conversaciones para cuidador y profesional (NK-50, RF-19).
- * En cuidador muestra «Equipo de {niño}»; en profesional muestra nombre, apellido y especialidad.
+ * En cuidador y en profesional el título es el nombre de la otra persona; debajo, la especialidad
+ * y el niño.
  */
 export function ConversationList({
   mode,
@@ -104,21 +105,19 @@ export function ConversationList({
     const child = childrenById.get(item.childId);
 
     if (mode === 'caregiver') {
-      const title = child
-        ? t('caregiver:messages.childTeam', { name: child.firstName })
-        : participantName;
-      const subtitle = specialtyLabel
-        ? t('caregiver:messages.teamSubtitle', {
-            specialty: specialtyLabel,
-            professional: participantName,
-          })
-        : child
-          ? participantName
-          : '';
+      // El título es la persona con quien se habla; abajo, su especialidad y el niño del que se trata.
+      const title = participantName;
+      const subtitle =
+        specialtyLabel && child
+          ? t('caregiver:messages.teamSubtitle', {
+              specialty: specialtyLabel,
+              child: child.firstName,
+            })
+          : (specialtyLabel ?? (child ? t('caregiver:chat.about', { name: child.firstName }) : ''));
       return { title, subtitle };
     }
 
-    // En profesional no aplica «Equipo de {niño}»: muestra nombre, apellido y especialidad si aplica.
+    // En profesional: nombre, apellido y especialidad si aplica.
     const title = participantName;
     let subtitle = '';
     if (item.participant.role === 'PROFESSIONAL' && specialtyLabel) {
