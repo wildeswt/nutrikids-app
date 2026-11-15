@@ -25,7 +25,9 @@ const DESIGN_COLORS = {
   shadow: '#000000',
 } as const;
 
-export function NotificationsScreen() {
+export function NotificationsScreen({
+  mode = 'professional',
+}: { mode?: 'caregiver' | 'professional' } = {}) {
   const { t } = useTranslation('common');
   const router = useRouter();
   const { notifications, loading, refreshing, error, refresh, reload, markAsRead } =
@@ -94,12 +96,19 @@ export function NotificationsScreen() {
           if (isUnread) {
             void markAsRead(item.id);
           }
-          // Alert notifications open the alert (NK-33).
+          // Cada notificación abre el evento que la originó (NK-33).
           if (item.entityType === 'alert') {
             router.push({
               pathname: APP_ROUTES.PROFESSIONAL.ALERT_DETAIL as never,
               params: { alertId: item.entityId },
             });
+          } else if (item.entityType === 'reminder') {
+            router.push(APP_ROUTES.CAREGIVER.REMINDERS as never);
+          } else if (item.entityType === 'message') {
+            // ponytail: abre la lista de mensajes; el chat exige childId/withUserId que la notificación no trae.
+            router.push(
+              APP_ROUTES[mode === 'caregiver' ? 'CAREGIVER' : 'PROFESSIONAL'].MESSAGES as never,
+            );
           }
         }}
         accessibilityRole="button"
