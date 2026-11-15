@@ -17,8 +17,10 @@ vi.mock('expo-secure-store', () => ({
 import {
   FeedingApiError,
   createChildFeedingLog,
+  deleteChildFeedingLog,
   isConsentRequiredError,
   isFeedingNetworkError,
+  updateChildFeedingLog,
 } from '../lib/feeding-api.js';
 
 const CHILD_ID = '11111111-1111-4111-8111-111111111111';
@@ -157,6 +159,41 @@ describe('feeding-api', () => {
       expect(isFeedingNetworkError(new TypeError('Failed to fetch'))).toBe(true);
       const apiErr = new FeedingApiError('Error de red en payload', 400);
       expect(isFeedingNetworkError(apiErr)).toBe(false);
+    });
+  });
+  describe('updateChildFeedingLog and deleteChildFeedingLog', () => {
+    it('edits with PATCH /children/:id/feeding-logs/:logId', async () => {
+      const mockFetch = vi.fn().mockResolvedValue(jsonResponse(storedFeedingLog));
+      vi.stubGlobal('fetch', mockFetch);
+
+      const result = await updateChildFeedingLog(CHILD_ID, storedFeedingLog.id, {
+        logDate: '2026-10-18',
+        mealsPerDay: 4,
+        details: 'Cena',
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining(`/children/${CHILD_ID}/feeding-logs/${storedFeedingLog.id}`),
+        expect.objectContaining({ method: 'PATCH' }),
+      );
+      expect(result.id).toBe(storedFeedingLog.id);
+    });
+
+    it('deletes with DELETE and throws the API status on failure', async () => {
+      const ok = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+      vi.stubGlobal('fetch', ok);
+      await deleteChildFeedingLog(CHILD_ID, storedFeedingLog.id);
+      expect(ok).toHaveBeenCalledWith(
+        expect.stringContaining(`/feeding-logs/${storedFeedingLog.id}`),
+        expect.objectContaining({ method: 'DELETE' }),
+      );
+
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({}, 404)));
+      const error = await deleteChildFeedingLog(CHILD_ID, storedFeedingLog.id).catch(
+        (err: unknown) => err,
+      );
+      expect(error).toBeInstanceOf(FeedingApiError);
+      expect((error as FeedingApiError).status).toBe(404);
     });
   });
 });
