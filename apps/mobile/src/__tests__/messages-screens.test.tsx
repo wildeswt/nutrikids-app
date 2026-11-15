@@ -299,7 +299,7 @@ describe('Messages & Chat Screens (NK-50)', () => {
   });
 
   describe('Professional MessagesScreen & ChatDetailScreen', () => {
-    it('no muestra «Equipo de niño» ni «Nuevo mensaje» y muestra nombre, apellido y especialidad', () => {
+    it('muestra subtítulo profesional, niño y cuidador, interconsulta con especialidad y botón Nuevo mensaje', () => {
       const caregiverConv = makeConversation({
         participant: {
           userId: CAREGIVER_ID,
@@ -328,11 +328,14 @@ describe('Messages & Chat Screens (NK-50)', () => {
 
       const html = renderToString(React.createElement(ProfessionalMessagesScreen));
 
-      expect(html).toContain('Andrea Gómez');
-      expect(html).toContain('Carlos Ruiz');
-      expect(html).toContain('Pediatría');
+      expect(html).toContain('Conversa con cuidadores y otros profesionales.');
+      expect(html).not.toContain('conversations-banner');
+      expect(html).toContain('Mateo Gómez');
+      expect(html).toContain('Cuidador · Andrea Gómez');
+      expect(html).toContain('Interconsulta · Mateo Gómez');
+      expect(html).toContain('Pediatría · Carlos Ruiz');
       expect(html).not.toContain('Equipo de');
-      expect(html).not.toContain('Nuevo mensaje');
+      expect(html).toContain('Nuevo mensaje');
       expect(html).toContain('Este canal no atiende urgencias');
     });
 

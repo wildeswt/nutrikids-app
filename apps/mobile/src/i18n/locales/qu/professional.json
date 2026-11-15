@@ -118,12 +118,27 @@
   },
   "messages": {
     "title": "Willaykuna, katinakunapash",
+    "subtitle": "Wawa kamakkunawan, shuk hampikkunawanpash rimanakuy.",
     "description": "Wawa kamakkunawan rimanakuy, mikuymanta katina yuyaykunatapash killkana.",
     "banner": "Conversa con cuidadores y otros profesionales vinculados.",
+    "interconsultationTitle": "Interconsulta · {{name}}",
+    "interconsultationFallback": "Interconsulta",
+    "caregiverSubtitle": "Cuidador · {{name}}",
+    "caregiverFallback": "Cuidador",
     "emergencyNotice": "Este canal no atiende urgencias. Si el niño requiere atención inmediata, acude a un centro de salud.",
     "emptySubtitle": "Cuando inicies o recibas mensajes sobre un niño vinculado, aparecerán aquí.",
     "chatTitleFallback": "Conversación",
-    "chatPrivacy": "Solo tú y los participantes vinculados al niño pueden ver esta conversación."
+    "chatPrivacy": "Solo tú y los participantes vinculados al niño pueden ver esta conversación.",
+    "newMessageModal": {
+      "title": "Mushuk willay",
+      "chooseChild": "Shuk wawata akllay",
+      "chooseRecipient": "Piwan rimanakunata akllay",
+      "caregiversSection": "Wawa kamakkuna",
+      "professionalsSection": "Shuk hampikkuna",
+      "loading": "Tinkishka runakunata mashkakun...",
+      "empty": "Kay wawaqa mana shuk tinkishka runakunata charinchu.",
+      "noChildren": "Manarak tinkishka wawakunata charinkichu."
+    }
   },
   "profile": {
     "title": "Hampikmanta",

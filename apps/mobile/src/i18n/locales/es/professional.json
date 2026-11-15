@@ -118,12 +118,27 @@
   },
   "messages": {
     "title": "Mensajes y Seguimientos",
+    "subtitle": "Conversa con cuidadores y otros profesionales.",
     "description": "Comunicación asistencial con cuidadores y registro de planes de seguimiento nutricional.",
     "banner": "Conversa con cuidadores y otros profesionales vinculados.",
+    "interconsultationTitle": "Interconsulta · {{name}}",
+    "interconsultationFallback": "Interconsulta",
+    "caregiverSubtitle": "Cuidador · {{name}}",
+    "caregiverFallback": "Cuidador",
     "emergencyNotice": "Este canal no atiende urgencias. Si el niño requiere atención inmediata, acude a un centro de salud.",
     "emptySubtitle": "Cuando inicies o recibas mensajes sobre un niño vinculado, aparecerán aquí.",
     "chatTitleFallback": "Conversación",
-    "chatPrivacy": "Solo tú y los participantes vinculados al niño pueden ver esta conversación."
+    "chatPrivacy": "Solo tú y los participantes vinculados al niño pueden ver esta conversación.",
+    "newMessageModal": {
+      "title": "Nuevo mensaje",
+      "chooseChild": "Elige un paciente",
+      "chooseRecipient": "Elige con quién conversar",
+      "caregiversSection": "Cuidadores",
+      "professionalsSection": "Otros profesionales",
+      "loading": "Buscando contactos vinculados...",
+      "empty": "Este paciente no tiene otros contactos vinculados.",
+      "noChildren": "Aún no tienes pacientes vinculados."
+    }
   },
   "profile": {
     "title": "Perfil Profesional",

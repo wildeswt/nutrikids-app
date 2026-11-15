@@ -118,16 +118,21 @@ export function ConversationList({
       return { title, subtitle };
     }
 
-    // En profesional no aplica «Equipo de {niño}»: muestra nombre, apellido y especialidad si aplica.
-    const title = participantName;
-    let subtitle = '';
-    if (item.participant.role === 'PROFESSIONAL' && specialtyLabel) {
-      subtitle = child
-        ? `${specialtyLabel} · ${child.firstName} ${child.lastName}`
-        : specialtyLabel;
-    } else if (child) {
-      subtitle = t('caregiver:chat.about', { name: `${child.firstName} ${child.lastName}` });
+    // En profesional: para cuidadores muestra el nombre del niño y «Cuidador · {nombre}»;
+    // para colegas muestra «Interconsulta · {niño}» y «{especialidad} · {nombre}».
+    const childFullName = child ? `${child.firstName} ${child.lastName}`.trim() : '';
+    if (item.participant.role === 'PROFESSIONAL') {
+      const title = childFullName
+        ? t('professional:messages.interconsultationTitle', { name: childFullName })
+        : t('professional:messages.interconsultationFallback');
+      const subtitle = specialtyLabel ? `${specialtyLabel} · ${participantName}` : participantName;
+      return { title, subtitle };
     }
+
+    const title = childFullName || participantName;
+    const subtitle = childFullName
+      ? t('professional:messages.caregiverSubtitle', { name: participantName })
+      : t('professional:messages.caregiverFallback');
     return { title, subtitle };
   };
 
@@ -250,13 +255,17 @@ export function ConversationList({
         testID="conversations-header"
       />
 
-      <ChildBanner
-        name={
-          mode === 'caregiver' ? t('caregiver:messages.banner') : t('professional:messages.banner')
-        }
-        style={styles.bannerCard}
-        testID="conversations-banner"
-      />
+      {mode === 'caregiver' ? (
+        <ChildBanner
+          name={t('caregiver:messages.banner')}
+          style={styles.bannerCard}
+          testID="conversations-banner"
+        />
+      ) : (
+        <Text style={styles.professionalSubtitle} testID="conversations-subtitle">
+          {t('professional:messages.subtitle')}
+        </Text>
+      )}
 
       <View style={styles.filterPillContainer}>
         <Pressable
@@ -292,8 +301,7 @@ export function ConversationList({
           : t('professional:messages.emergencyNotice')}
       </Text>
 
-      {/* En el profesional no hay "Nuevo mensaje" en esta tarea (NK-50): solo responde en conversaciones existentes. */}
-      {mode === 'caregiver' && onNewMessage ? (
+      {onNewMessage ? (
         <View style={styles.newMsgWrapper}>
           <PrimaryButton
             label={t('caregiver:messages.newMessage')}
@@ -483,6 +491,14 @@ const styles = StyleSheet.create({
   },
   newMsgWrapper: {
     alignItems: 'center',
+  },
+  professionalSubtitle: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    lineHeight: 20,
+    color: PALETTE.text.muted,
+    marginTop: -6,
+    marginBottom: 16,
   },
   pressed: {
     opacity: 0.75,
