@@ -95,13 +95,13 @@ describe('AlertsInboxScreen (NK-32)', () => {
     setHook();
   });
 
-  it('asks for the open alerts by default and shows the three status chips', () => {
+  it('asks for the open alerts by default and shows the two status chips', () => {
     const html = renderToString(React.createElement(AlertsInboxScreen));
 
     expect(mocks.useAlerts).toHaveBeenCalledWith(['GENERATED', 'PENDING_REVIEW']);
     expect(html).toContain('Sin revisar');
-    expect(html).toContain('Generadas');
-    expect(html).toContain('Pendientes de revisión');
+    expect(html).toContain('Atendidas');
+    expect(html).not.toContain('Pendientes de revisión');
   });
 
   it('reloads when the screen gains focus', () => {
