@@ -42,7 +42,8 @@
     "fetch": "Kamaykunata mana rikuchiy usharkanchikchu. Kutin rurapay.",
     "create": "Kamayta mana wakaychiy usharkanchikchu. Kutin rurapay.",
     "missingChild": "Kamayta killkankapakka wawata akllana kanmi.",
-    "offlineNoLocalDb": "Necesitas conexión para guardar el control en este dispositivo"
+    "offlineNoLocalDb": "Necesitas conexión para guardar el control en este dispositivo",
+    "delete": "No pudimos eliminar el control. Intenta de nuevo."
   },
   "growthTrend": {
     "fetch": "No pudimos cargar la tendencia de crecimiento. Intenta de nuevo."
@@ -81,7 +82,8 @@
     "erasureRequest": "No pudimos enviar la solicitud de eliminación. Intenta de nuevo.",
     "erasureList": "No pudimos ver tus solicitudes de eliminación. Intenta de nuevo.",
     "erasureCancel": "No pudimos cancelar la solicitud. Intenta de nuevo.",
-    "missingChild": "Falta elegir el niño."
+    "missingChild": "Falta elegir el niño.",
+    "removeChild": "No pudimos eliminar al niño. Intenta de nuevo."
   },
   "account": {
     "fetch": "No pudimos cargar tu cuenta. Intenta de nuevo.",

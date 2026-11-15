@@ -120,7 +120,10 @@
     "linkProfessionalA11y": "Vincular un profesional a {{name}}",
     "openProfessionalsA11y": "Ver los profesionales de {{name}}",
     "professionalLinked": "{{specialty}} · Profesional vinculado",
-    "moreProfessionals": "y {{count}} más"
+    "moreProfessionals": "y {{count}} más",
+    "menuA11y": "Más opciones de {{name}}",
+    "editChild": "Editar datos",
+    "removeChild": "Eliminar"
   },
   "addCheckup": {
     "seeHistory": "Ver historial",
@@ -717,7 +720,11 @@
       "correction": "Corrige un control anterior",
       "yes": "Sí",
       "no": "No"
-    }
+    },
+    "removeChildConfirmTitle": "¿Eliminar a {{name}}?",
+    "removeChildConfirmMessage": "Dejarás de ver a {{name}}, sus controles y su historial, y los profesionales vinculados tampoco podrán verlos.",
+    "removeChildConfirm": "Sí, eliminar",
+    "removeChildErrorTitle": "No pudimos eliminar al niño"
   },
   "linkProfessional": {
     "title": "Vincular profesional",
@@ -757,5 +764,16 @@
     "title": "Profesionales",
     "loadError": "No pudimos cargar los profesionales.",
     "linkAnother": "Vincular otro profesional"
+  },
+  "checkupActions": {
+    "correct": "Corregir control",
+    "delete": "Eliminar control",
+    "deleteTitle": "¿Eliminar este control?",
+    "deleteMessage": "El control del {{date}} dejará de verse en el historial y en las gráficas. Si solo te equivocaste en un dato, mejor usa «Corregir control».",
+    "deleteConfirm": "Sí, eliminar",
+    "deleteErrorTitle": "No pudimos eliminar el control",
+    "correctTitle": "Corregir control",
+    "menuA11y": "Más opciones del control",
+    "menuTitle": "Control"
   }
 }

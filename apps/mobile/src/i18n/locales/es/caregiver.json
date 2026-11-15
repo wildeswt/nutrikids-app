@@ -114,6 +114,9 @@
     "timeHoursAgo_other": "Hace {{count}} h"
   },
   "myChildren": {
+    "menuA11y": "Más opciones de {{name}}",
+    "editChild": "Editar datos",
+    "removeChild": "Eliminar",
     "title": "Mis niños",
     "selectChildA11y": "Elegir a {{name}} como niño activo",
     "linkProfessional": "Vincular profesional",
@@ -660,10 +663,25 @@
       "forbidden": "Solo el representante legal de {{name}} puede corregir sus datos."
     }
   },
+  "checkupActions": {
+    "menuA11y": "Más opciones del control",
+    "menuTitle": "Control",
+    "correct": "Corregir control",
+    "delete": "Eliminar control",
+    "deleteTitle": "¿Eliminar este control?",
+    "deleteMessage": "El control del {{date}} dejará de verse en el historial y en las gráficas. Si solo te equivocaste en un dato, mejor usa «Corregir control».",
+    "deleteConfirm": "Sí, eliminar",
+    "deleteErrorTitle": "No pudimos eliminar el control",
+    "correctTitle": "Corregir control"
+  },
   "privacy": {
     "back": "Volver",
     "title": "Privacidad e historial",
     "intro": "Aquí decides sobre los datos de tus niños. Solo el representante legal puede usar estas opciones.",
+    "removeChildConfirmTitle": "¿Eliminar a {{name}}?",
+    "removeChildConfirmMessage": "Dejarás de ver a {{name}}, sus controles y su historial, y los profesionales vinculados tampoco podrán verlos.",
+    "removeChildConfirm": "Sí, eliminar",
+    "removeChildErrorTitle": "No pudimos eliminar al niño",
     "consentTitle": "Permiso para guardar los datos",
     "consentStatusActive": "Vigente",
     "consentAcceptedOn": "Aceptado el {{date}}",
