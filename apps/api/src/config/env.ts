@@ -12,6 +12,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../../.env'), quiet: true }
 
 const DEV_TEST_JWT_SECRET = 'nutrikids-dev-test-jwt-secret-key-min-32-chars';
 const DEV_TEST_INVITE_CODES = 'NK-PROF-2026';
+const DEV_TEST_TOTP_KEY = 'nutrikids-dev-test-totp-encryption-key-32+';
 
 /**
  * Classification cutoffs (z-scores) read from configuration (RF-08).
@@ -69,6 +70,8 @@ const EnvSchema = z
     LOOKUP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(10),
     LOOKUP_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
     PROFESSIONAL_INVITE_CODES: z.string().optional(),
+    /** Clave (≥32 caracteres) para cifrar la clave TOTP de los profesionales (NK-10). */
+    TOTP_ENCRYPTION_KEY: z.string().optional(),
     /** Plazo (horas) para revisar una alerta sin revisar antes de marcarla vencida (NK-30). */
     ALERT_REVIEW_DEADLINE_HOURS: z.coerce.number().int().positive().default(72),
     /** Plazo (horas) para alertas de riesgo grave (z < −3). */
@@ -96,6 +99,16 @@ const EnvSchema = z
         code: 'custom',
         path: ['JWT_ACCESS_SECRET'],
         message: 'JWT_ACCESS_SECRET debe tener al menos 32 caracteres (obligatorio en producción)',
+      });
+    }
+
+    const totpKey = raw.TOTP_ENCRYPTION_KEY?.trim() || (isProd ? '' : DEV_TEST_TOTP_KEY);
+    if (totpKey.length < 32) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['TOTP_ENCRYPTION_KEY'],
+        message:
+          'TOTP_ENCRYPTION_KEY debe tener al menos 32 caracteres (obligatorio en producción)',
       });
     }
 
@@ -156,6 +169,7 @@ const EnvSchema = z
       LOOKUP_MAX_ATTEMPTS: raw.LOOKUP_MAX_ATTEMPTS,
       LOOKUP_WINDOW_MINUTES: raw.LOOKUP_WINDOW_MINUTES,
       PROFESSIONAL_INVITE_CODES: inviteCodes,
+      TOTP_ENCRYPTION_KEY: totpKey,
       CLASSIFICATION_CUTOFFS: Object.freeze(cutoffs) as Readonly<Cutoffs>,
       ALERT_REVIEW_DEADLINE_HOURS: raw.ALERT_REVIEW_DEADLINE_HOURS,
       ALERT_REVIEW_DEADLINE_SEVERE_HOURS: raw.ALERT_REVIEW_DEADLINE_SEVERE_HOURS,

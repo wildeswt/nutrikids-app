@@ -104,6 +104,10 @@
     "network": "No hay conexión. Verifica tu internet e intenta de nuevo.",
     "conflict": "Este mensaje ya fue enviado con otro contenido."
   },
+  "twoFactor": {
+    "status": "No pudimos consultar la verificación en dos pasos.",
+    "regenerate": "No pudimos generar nuevos códigos. Intenta de nuevo."
+  },
   "professionals": {
     "lookup": "No pudimos buscar al profesional. Intenta de nuevo.",
     "notFound": "No encontramos un profesional con ese registro. Revisa el número e intenta de nuevo.",

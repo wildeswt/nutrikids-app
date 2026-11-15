@@ -19,14 +19,16 @@ Common rules:
 
 ## Authentication (`/auth`)
 
-| Method and path              | Guards                            | Description                                            | Details            |
-| ---------------------------- | --------------------------------- | ------------------------------------------------------ | ------------------ |
-| `POST /auth/register`        | -                                 | Creates a caregiver and/or professional account.       | [auth.md](auth.md) |
-| `POST /auth/login`           | login rate limit (per IP + email) | Email and password; returns access and refresh tokens. | [auth.md](auth.md) |
-| `POST /auth/refresh`         | -                                 | Rotates the refresh token.                             | [auth.md](auth.md) |
-| `POST /auth/logout`          | -                                 | Revokes the refresh token.                             | [auth.md](auth.md) |
-| `POST /auth/forgot-password` | rate limit                        | Starts password recovery.                              | [auth.md](auth.md) |
-| `POST /auth/reset-password`  | -                                 | Sets a new password with the recovery token.           | [auth.md](auth.md) |
+| Method and path                 | Guards                            | Description                                                                                                         | Details            |
+| ------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `POST /auth/register`           | -                                 | Creates a caregiver and/or professional account.                                                                    | [auth.md](auth.md) |
+| `POST /auth/login`              | login rate limit (per IP + email) | Email and password; professionals also send the TOTP or a recovery code (NK-10). Returns access and refresh tokens. | [auth.md](auth.md) |
+| `POST /auth/refresh`            | -                                 | Rotates the refresh token.                                                                                          | [auth.md](auth.md) |
+| `POST /auth/logout`             | -                                 | Revokes the refresh token.                                                                                          | [auth.md](auth.md) |
+| `POST /auth/forgot-password`    | rate limit                        | Starts password recovery.                                                                                           | [auth.md](auth.md) |
+| `POST /auth/reset-password`     | -                                 | Sets a new password with the recovery token.                                                                        | [auth.md](auth.md) |
+| `GET /auth/2fa/status`          | role `PROFESSIONAL`               | Whether two-factor is enabled and recovery codes left.                                                              | [auth.md](auth.md) |
+| `POST /auth/2fa/recovery-codes` | role `PROFESSIONAL`, rate limit   | Replaces the recovery codes (needs a current TOTP code).                                                            | [auth.md](auth.md) |
 
 ## Children, links and consent (`/children`)
 

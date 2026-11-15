@@ -134,7 +134,20 @@
     "switchToCaregiver": "Cambiar a vista Cuidador",
     "pendingSync": "Pendientes de envío ({{count}})",
     "pendingSyncDescription": "Registros guardados en este dispositivo",
-    "logout": "Cerrar Sesión"
+    "logout": "Cerrar Sesión",
+    "twoFactor": {
+      "title": "Verificación en dos pasos",
+      "statusEnabled": "Activa",
+      "statusLoading": "Consultando estado...",
+      "remaining": "Códigos de recuperación disponibles: {{count}}",
+      "lowCodes": "Te quedan pocos códigos de recuperación. Genera nuevos.",
+      "regenerate": "Generar nuevos códigos de recuperación",
+      "regenerateDescription": "Ingresa el código actual de tu aplicación autenticadora. Los códigos anteriores dejarán de funcionar.",
+      "totpLabel": "Código de autenticación (6 dígitos)",
+      "confirm": "Generar códigos",
+      "done": "Listo",
+      "invalidCode": "Código incorrecto o ya usado. Espera el siguiente código e inténtalo nuevamente."
+    }
   },
   "alertDetail": {
     "title": "Detalle de alerta",

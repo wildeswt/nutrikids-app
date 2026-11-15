@@ -4,7 +4,14 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app.js';
 import { hashPassword } from '../lib/password.js';
 import { prisma } from '../lib/prisma.js';
+import { generateTotp } from '../lib/totp.js';
 import { hashRefreshToken, verifyAccessToken } from '../services/token.service.js';
+import {
+  EMPTY_TWO_FACTOR,
+  mockTwoFactorStore,
+  snapshot,
+  type MemProfessionalWith2fa,
+} from './helpers/twoFactorStore.js';
 
 interface MockUserRecord {
   id: string;
@@ -14,7 +21,7 @@ interface MockUserRecord {
   lastName: string;
   status: string;
   caregiver: { userId: string } | null;
-  professional: { userId: string; specialty: string } | null;
+  professional: MemProfessionalWith2fa | null;
 }
 
 describe('POST /auth/login y límite de intentos', () => {
@@ -51,6 +58,7 @@ describe('POST /auth/login y límite de intentos', () => {
         professional: {
           userId: '00000000-0000-4000-8000-000000000020',
           specialty: 'pediatrics',
+          ...EMPTY_TWO_FACTOR,
         },
       },
       {
@@ -70,8 +78,11 @@ describe('POST /auth/login y límite de intentos', () => {
     }: {
       where: { email: string };
     }) => {
-      return users.find((u) => u.email === where.email) ?? null;
+      const found = users.find((u) => u.email === where.email);
+      return found ? snapshot(found) : null;
     }) as never);
+
+    mockTwoFactorStore(() => users.flatMap((u) => (u.professional ? [u.professional] : [])));
 
     vi.spyOn(prisma.refreshToken, 'create').mockImplementation((async ({
       data,
@@ -83,7 +94,7 @@ describe('POST /auth/login y límite de intentos', () => {
     }) as never);
   });
 
-  it('inicia sesión como cuidador o cuenta mixta devolviendo roles, especialidad y tokens', async () => {
+  it('inicia sesión como cuidador o cuenta mixta (tras el segundo factor) devolviendo roles, especialidad y tokens', async () => {
     const app = createApp();
     const logSpy = vi.spyOn(console, 'log');
     const errorSpy = vi.spyOn(console, 'error');
@@ -104,15 +115,29 @@ describe('POST /auth/login y límite de intentos', () => {
       lastName: 'Pérez',
       roles: ['CAREGIVER'],
       specialty: null,
+      licenseNumber: null,
     });
     expect(refreshTokens[0]?.tokenHash).toBe(hashRefreshToken(parsedCaregiver.refreshToken));
     expect(JSON.stringify(caregiverRes.body)).not.toContain(plainPassword);
     expect(JSON.stringify(logSpy.mock.calls)).not.toContain(plainPassword);
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(plainPassword);
 
-    const dualRes = await request(app)
+    // La cuenta mixta tiene perfil profesional: primero activa el segundo factor (NK-10).
+    const challengeRes = await request(app)
       .post('/auth/login')
       .send({ email: 'elena@hospital.ec', password: plainPassword });
+    expect(challengeRes.status).toBe(200);
+    const challenge = AuthResponseSchema.parse(challengeRes.body);
+    if (!challenge.requiresTwoFactor || !challenge.setup) throw new Error('Se esperaba el QR');
+    expect(refreshTokens).toHaveLength(1);
+
+    const dualRes = await request(app)
+      .post('/auth/login')
+      .send({
+        email: 'elena@hospital.ec',
+        password: plainPassword,
+        totpCode: generateTotp(challenge.setup.secret),
+      });
 
     expect(dualRes.status).toBe(200);
     const parsedDual = AuthResponseSchema.parse(dualRes.body);

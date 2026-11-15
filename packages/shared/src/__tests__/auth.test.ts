@@ -5,6 +5,7 @@ import {
   LoginInputSchema,
   LogoutInputSchema,
   RefreshInputSchema,
+  RegenerateRecoveryCodesInputSchema,
   RegisterInputSchema,
 } from '../index.js';
 
@@ -143,6 +144,7 @@ describe('AuthUserSchema (lista blanca)', () => {
       'firstName',
       'id',
       'lastName',
+      'licenseNumber',
       'roles',
       'specialty',
     ]);
@@ -190,5 +192,46 @@ describe('AuthResponseSchema', () => {
   it('con segundo factor pendiente no lleva tokens', () => {
     expect(AuthResponseSchema.safeParse({ requiresTwoFactor: true }).success).toBe(true);
     expect(AuthResponseSchema.safeParse({ requiresTwoFactor: false, user }).success).toBe(false);
+  });
+
+  it('acepta los datos de activación con QR y descarta tokens en el desafío', () => {
+    const parsed = AuthResponseSchema.parse({
+      requiresTwoFactor: true,
+      setup: {
+        secret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+        otpauthUri: 'otpauth://totp/NutriKids:luis%40hospital.ec?secret=JBSW',
+        qrCodeDataUrl: 'data:image/png;base64,iVBOR',
+      },
+      accessToken: 'no-debe-pasar',
+    });
+    expect(parsed).not.toHaveProperty('accessToken');
+    expect(
+      AuthResponseSchema.safeParse({
+        requiresTwoFactor: true,
+        setup: { secret: 'corto', otpauthUri: 'http://x', qrCodeDataUrl: 'x' },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('acepta códigos de recuperación al activar el segundo factor', () => {
+    const result = AuthResponseSchema.safeParse({
+      requiresTwoFactor: false,
+      accessToken: 'a',
+      refreshToken: 'r',
+      expiresIn: 900,
+      user,
+      recoveryCodes: ['ABCD-EFGH'],
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('RegenerateRecoveryCodesInputSchema', () => {
+  it('exige un código TOTP de 6 dígitos y nada más', () => {
+    expect(RegenerateRecoveryCodesInputSchema.safeParse({ totpCode: '123456' }).success).toBe(true);
+    expect(RegenerateRecoveryCodesInputSchema.safeParse({ totpCode: '12345' }).success).toBe(false);
+    expect(RegenerateRecoveryCodesInputSchema.safeParse({ totpCode: '123456', x: 1 }).success).toBe(
+      false,
+    );
   });
 });

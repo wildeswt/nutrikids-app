@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LanguageSelector } from '../../components/LanguageSelector.js';
+import { TwoFactorCard } from '../../components/TwoFactorCard.js';
 import { SignOutPendingDialog } from '../../components/SignOutPendingDialog.js';
 import { Card } from '../../components/ui/Card.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
@@ -75,6 +76,8 @@ export default function ProfessionalProfileScreen() {
             style={styles.switchButton}
           />
         )}
+
+        <TwoFactorCard />
 
         <LanguageSelector />
 
