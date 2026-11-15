@@ -3,7 +3,7 @@ import DateTimePicker, { type DateTimePickerEvent } from '@react-native-communit
 import { CHECKUP_NOTES_MAX, type Position } from '@nutrikids/shared';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -44,7 +44,9 @@ function isoToLocalDate(iso: string): Date | null {
   return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
 
-export function CheckupFormContent({ roleMode = 'CAREGIVER' }: { roleMode?: CheckupRoleMode }) {
+export default function AddCheckupScreen({
+  roleMode = 'CAREGIVER',
+}: { roleMode?: CheckupRoleMode } = {}) {
   const isProfessional = roleMode === 'PROFESSIONAL';
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'professional', 'common']);
@@ -203,7 +205,7 @@ export function CheckupFormContent({ roleMode = 'CAREGIVER' }: { roleMode?: Chec
     ? (isoToLocalDate(activeChild.birthDate) ?? undefined)
     : undefined;
 
-  const liveLocalEvaluation = useMemo(() => {
+  const liveLocalEvaluation = (() => {
     if (!activeChild || !parsedIsoDate) return null;
     const weightKg = parseDecimalInput(weightText);
     const lengthHeightCm = parseDecimalInput(heightText);
@@ -217,7 +219,7 @@ export function CheckupFormContent({ roleMode = 'CAREGIVER' }: { roleMode?: Chec
       lengthHeightCm,
       position,
     });
-  }, [activeChild, heightText, parsedIsoDate, position, weightText]);
+  })();
 
   const isLoadingChildren = childrenStatus === 'idle' || childrenStatus === 'loading';
 
@@ -637,9 +639,7 @@ export function CheckupFormContent({ roleMode = 'CAREGIVER' }: { roleMode?: Chec
   );
 }
 
-export default function AddCheckupScreen() {
-  return <CheckupFormContent roleMode="CAREGIVER" />;
-}
+export const CheckupFormContent = AddCheckupScreen;
 
 const styles = StyleSheet.create({
   container: {
