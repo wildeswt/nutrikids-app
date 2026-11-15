@@ -120,6 +120,9 @@ importers:
       '@nutrikids/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@nutrikids/who-growth':
+        specifier: workspace:*
+        version: link:../../packages/who-growth
       '@react-native-community/datetimepicker':
         specifier: 9.2.1
         version: 9.2.1(expo@58.0.23)(react-native@0.88.1(@babel/core@7.29.7)(@react-native/metro-config@0.88.1(@babel/core@7.29.7))(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
