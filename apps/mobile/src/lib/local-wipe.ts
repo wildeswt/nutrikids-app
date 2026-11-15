@@ -146,8 +146,9 @@ export async function hasUnsentSyncRecords(
     const syncState = await readSyncStateFromDb(db, userId);
     return syncState.pending + syncState.sending + syncState.error > 0;
   } catch {
-    // Ante una lectura fallida no se descartan datos silenciosamente si no se pudo verificar.
-    return false;
+    // Si no se pudo verificar la cola, se asume que hay pendientes: conservar es la opción
+    // segura, porque borrar trabajo clínico sin comprobarlo no se puede deshacer.
+    return true;
   }
 }
 

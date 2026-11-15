@@ -327,6 +327,33 @@ describe('local wipe, session expiration, and user isolation (NK-63)', () => {
     );
     expect(await hasUnsentSyncRecords(USER_A, { getLocalDb: async () => db })).toBe(true);
 
+    // Si la cola no se puede leer, se asume que hay pendientes y no se borra nada.
+    secureStoreValues.delete(FOLLOW_UP_STORAGE_KEY);
+    const unreadable = await cleanupOnSessionExpired(USER_A, {
+      stopAndWaitSync: stopAndWaitMock,
+      getLocalDb: async () => {
+        throw new Error('base ilegible');
+      },
+    });
+    expect(unreadable).toEqual({ hadUnsentRecords: true, wiped: false });
+    secureStoreValues.set(
+      FOLLOW_UP_STORAGE_KEY,
+      JSON.stringify({
+        drafts: {},
+        pending: [
+          {
+            userId: USER_A,
+            childId: CHILD_ID,
+            establish: false,
+            queuedAt: '2026-11-14T11:30:00.000Z',
+            input: {
+              items: [{ id: ITEM_2, type: 'observation', details: 'Seguimiento pendiente' }],
+            },
+          },
+        ],
+      }),
+    );
+
     // Al eliminar el pendiente legacy y quedar solo ítems SENT, la expiración sí borra todo.
     secureStoreValues.delete(FOLLOW_UP_STORAGE_KEY);
     const withoutPendingResult = await cleanupOnSessionExpired(USER_A, {
