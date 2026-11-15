@@ -150,4 +150,36 @@ describe('buildCreateCheckupInput', () => {
 
     expect(result.ok && 'confirmOutlier' in result.input).toBe(false);
   });
+
+  it('trims notes and omits them when empty or whitespace-only', () => {
+    const withNotes = buildCreateCheckupInput(
+      { ...validForm, notesText: '  Buen apetito hoy  ' },
+      { ...CHILD_ID_FIELDS, confirmOutlier: false, now: NOW },
+    );
+    expect(withNotes).toMatchObject({ ok: true, input: { notes: 'Buen apetito hoy' } });
+
+    const blank = buildCreateCheckupInput(
+      { ...validForm, notesText: '   ' },
+      { ...CHILD_ID_FIELDS, confirmOutlier: false, now: NOW },
+    );
+    expect(blank.ok && 'notes' in blank.input).toBe(false);
+  });
+
+  it('accepts 500-character notes and rejects longer text', () => {
+    const maxNotes = 'a'.repeat(500);
+    const ok = buildCreateCheckupInput(
+      { ...validForm, notesText: maxNotes },
+      { ...CHILD_ID_FIELDS, confirmOutlier: false, now: NOW },
+    );
+    expect(ok).toMatchObject({ ok: true, input: { notes: maxNotes } });
+
+    const tooLong = buildCreateCheckupInput(
+      { ...validForm, notesText: 'a'.repeat(501) },
+      { ...CHILD_ID_FIELDS, confirmOutlier: false, now: NOW },
+    );
+    expect(tooLong).toEqual({
+      ok: false,
+      error: { code: 'notesTooLong', max: 500 },
+    });
+  });
 });

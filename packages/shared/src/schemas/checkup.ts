@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { IsoDateTimeSchema, UuidSchema, requiredText } from './common.js';
 import { IndicatorSchema, OriginSchema, PositionSchema } from './enums.js';
+import { MessageParticipantSchema, type MessageParticipant } from './message.js';
 
 /**
  * Controles antropométricos y resultados de indicadores OMS.
@@ -11,6 +12,8 @@ export const WEIGHT_MIN_KG = 2;
 export const WEIGHT_MAX_KG = 40;
 export const LENGTH_HEIGHT_MIN_CM = 40;
 export const LENGTH_HEIGHT_MAX_CM = 140;
+/** Largo máximo de las observaciones del control (coincide con `checkups_notes_check`). */
+export const CHECKUP_NOTES_MAX = 500;
 
 /**
  * Rango plausible esperado para niños de 12 a 60 meses.
@@ -91,6 +94,8 @@ export const BaseCheckupInputObject = z.strictObject({
   weightKg: WeightKgSchema,
   lengthHeightCm: LengthHeightCmSchema,
   position: PositionSchema,
+  /** Observaciones opcionales registradas junto al control (máx. 500 caracteres). */
+  notes: requiredText(CHECKUP_NOTES_MAX).optional(),
   /** Bandera de confirmación cuando el peso o la talla están fuera del rango plausible. */
   confirmOutlier: z.boolean().optional(),
   /** Cálculo local del celular (opcional); el servidor lo descarta y recalcula. */
@@ -156,6 +161,13 @@ export const CaregiverIndicatorResultSchema = z.object({
   referenceVersion: requiredText(50),
 });
 
+/**
+ * Persona que registró un control antropométrico (NK-73).
+ * Mismos datos mínimos que un participante de mensaje: nunca expone email, teléfono ni documento.
+ */
+export const CheckupRecorderSchema = MessageParticipantSchema;
+export type CheckupRecorder = MessageParticipant;
+
 const BaseCheckupResponseShape = {
   id: UuidSchema,
   childId: UuidSchema,
@@ -165,10 +177,13 @@ const BaseCheckupResponseShape = {
   position: PositionSchema,
   origin: OriginSchema,
   recordedById: UuidSchema,
+  recordedBy: CheckupRecorderSchema.nullable(),
   /** Control original al que este control corrige (null si no es una corrección). */
   correctedCheckupId: UuidSchema.nullable(),
   /** Derivado: `true` si ningún otro control lo corrige (es el que cuenta para gráficas y alertas). */
   isCurrent: z.boolean(),
+  /** Observaciones registradas junto al control (`null` si no se ingresaron). */
+  notes: z.string().nullable(),
   createdAt: IsoDateTimeSchema,
 };
 

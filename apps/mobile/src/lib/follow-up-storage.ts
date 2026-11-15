@@ -1,10 +1,10 @@
-import { CreateFollowUpInputSchema, FollowUpTypeSchema, UuidSchema } from '@nutrikids/shared';
+import { CreateFollowUpBatchInputSchema, UuidSchema } from '@nutrikids/shared';
 import * as SecureStore from 'expo-secure-store';
 import { z } from 'zod';
 import type { FollowUpFormData } from './follow-up-form.js';
 
 /**
- * Follow-ups kept on the phone (NK-34): drafts the professional saved, and follow-ups saved
+ * Follow-ups kept on the phone (NK-34, NK-75): drafts the professional saved, and follow-ups saved
  * without connection that wait to be sent. Everything is clinical text, so it goes to SecureStore
  * (encrypted by the device), scoped by user.
  *
@@ -13,30 +13,84 @@ import type { FollowUpFormData } from './follow-up-form.js';
  */
 export const FOLLOW_UP_STORAGE_KEY = 'nutrikids.followups';
 
+/** Schema de formulario con soporte de migración desde borradores de un solo ítem. */
+const FormDraftSchema = z.preprocess(
+  (val: unknown) => {
+    if (typeof val === 'object' && val !== null) {
+      const v = val as Record<string, unknown>;
+      if ('type' in v || 'details' in v) {
+        const type = v.type as string | null | undefined;
+        const details = typeof v.details === 'string' ? v.details : '';
+        return {
+          observations: type === 'observation' ? details : (v.observations ?? ''),
+          intervention:
+            type === 'intervention' || type === 'recommendation' ? details : (v.intervention ?? ''),
+          referral: type === 'referral' ? details : (v.referral ?? ''),
+          nextCheckupText: typeof v.nextCheckupText === 'string' ? v.nextCheckupText : '',
+          establish: typeof v.establish === 'boolean' ? v.establish : true,
+        };
+      }
+    }
+    return val;
+  },
+  z.object({
+    observations: z.string().default(''),
+    intervention: z.string().default(''),
+    referral: z.string().default(''),
+    nextCheckupText: z.string().default(''),
+    establish: z.boolean().default(true),
+  }),
+);
+
 const DraftSchema = z.object({
   userId: UuidSchema,
   childId: UuidSchema,
   alertId: UuidSchema.optional(),
-  form: z.object({
-    type: FollowUpTypeSchema.nullable(),
-    details: z.string(),
-    nextCheckupText: z.string(),
-    establish: z.boolean(),
-  }),
+  form: FormDraftSchema,
   savedAt: z.string(),
   /** Why the server refused this follow-up when it was sent from the queue. */
   lastError: z.string().optional(),
 });
 
-const PendingSchema = z.object({
+const PendingBatchSchema = z.object({
   userId: UuidSchema,
   childId: UuidSchema,
   alertId: UuidSchema.optional(),
   /** Move the alert to «seguimiento establecido» after the follow-up is saved. */
   establish: z.boolean(),
-  input: CreateFollowUpInputSchema,
+  input: CreateFollowUpBatchInputSchema,
   queuedAt: z.string(),
 });
+
+/** Schema con preprocesamiento para migrar colas antiguas de un solo ítem sin perder datos. */
+const PendingSchema = z.preprocess((val: unknown) => {
+  if (typeof val === 'object' && val !== null) {
+    const v = val as Record<string, unknown>;
+    const input = v.input as Record<string, unknown> | undefined;
+    if (input && !('items' in input) && 'id' in input && 'type' in input && 'details' in input) {
+      return {
+        userId: v.userId,
+        childId: v.childId,
+        alertId: v.alertId ?? input.alertId,
+        establish: Boolean(v.establish),
+        queuedAt: typeof v.queuedAt === 'string' ? v.queuedAt : new Date().toISOString(),
+        input: {
+          groupId: input.groupId,
+          alertId: input.alertId ?? v.alertId,
+          nextCheckupDate: input.nextCheckupDate,
+          items: [
+            {
+              id: input.id,
+              type: input.type,
+              details: input.details,
+            },
+          ],
+        },
+      };
+    }
+  }
+  return val;
+}, PendingBatchSchema);
 
 const StoreSchema = z.object({
   drafts: z.record(z.string(), DraftSchema),
@@ -44,7 +98,8 @@ const StoreSchema = z.object({
 });
 
 export type FollowUpDraft = z.infer<typeof DraftSchema>;
-export type PendingFollowUp = z.infer<typeof PendingSchema>;
+export type PendingFollowUp = z.infer<typeof PendingBatchSchema>;
+export type FollowUpPending = PendingFollowUp;
 type Store = z.infer<typeof StoreSchema>;
 
 const memoryStorage = new Map<string, string>();
@@ -161,16 +216,29 @@ export async function listPending(userId: string): Promise<PendingFollowUp[]> {
   return store.pending.filter((entry) => entry.userId === userId);
 }
 
-/** Queues a follow-up; queuing the same follow-up `id` again replaces it instead of repeating it. */
-export function addPending(entry: Omit<PendingFollowUp, 'queuedAt'>, now = new Date()) {
+/** Queues a follow-up batch; queuing the same batch again replaces it instead of repeating it. */
+export function addPending(
+  entry: Omit<PendingFollowUp, 'queuedAt'>,
+  now = new Date(),
+): Promise<void> {
   return update((store) => {
-    store.pending = store.pending.filter((item) => item.input.id !== entry.input.id);
+    const entryIds = new Set(entry.input.items.map((it) => it.id));
+    if (entry.input.groupId) entryIds.add(entry.input.groupId);
+
+    store.pending = store.pending.filter((item) => {
+      const gId = item.input.groupId;
+      if (gId && entryIds.has(gId)) return false;
+      return !item.input.items.some((it) => entryIds.has(it.id));
+    });
     store.pending.push({ ...entry, queuedAt: now.toISOString() });
   });
 }
 
-export function removePending(followUpId: string): Promise<void> {
+export function removePending(batchOrFollowUpId: string): Promise<void> {
   return update((store) => {
-    store.pending = store.pending.filter((item) => item.input.id !== followUpId);
+    store.pending = store.pending.filter((item) => {
+      if (item.input.groupId === batchOrFollowUpId) return false;
+      return !item.input.items.some((it) => it.id === batchOrFollowUpId);
+    });
   });
 }

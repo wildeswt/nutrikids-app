@@ -32,12 +32,47 @@ export const ReminderStatusSchema = z.enum(['pending', 'sent', 'completed']);
 export const CreateFollowUpInputSchema = z.strictObject({
   /** UUID generado en el cliente para garantizar idempotencia sin conexión. */
   id: UuidSchema,
+  /** Identificador de grupo para vincular seguimientos de una misma consulta (opcional). */
+  groupId: UuidSchema.optional(),
   type: FollowUpTypeSchema,
   details: requiredText(FOLLOW_UP_DETAILS_MAX),
   /** Fecha del próximo control (`AAAA-MM-DD`); crea un recordatorio. */
   nextCheckupDate: IsoDateSchema.optional(),
   /** Alerta del mismo niño a la que responde el seguimiento (opcional). */
   alertId: UuidSchema.optional(),
+});
+
+/** Ítem individual dentro de un lote de seguimientos clínicos. */
+export const CreateFollowUpBatchItemSchema = z.strictObject({
+  /** UUID generado en el cliente para garantizar idempotencia sin conexión. */
+  id: UuidSchema,
+  type: FollowUpTypeSchema,
+  details: requiredText(FOLLOW_UP_DETAILS_MAX),
+});
+
+/** `POST /children/:childId/follow-ups/batch`. Registro atómico de hasta 3 seguimientos clínicos (NK-75). */
+export const CreateFollowUpBatchInputSchema = z.strictObject({
+  /** UUID de grupo opcional; si no se provee, el servidor lo deriva del id del primer ítem. */
+  groupId: UuidSchema.optional(),
+  /** Alerta del mismo niño a la que responden los seguimientos (opcional). */
+  alertId: UuidSchema.optional(),
+  /** Fecha del próximo control (`AAAA-MM-DD`); crea un recordatorio para el lote. */
+  nextCheckupDate: IsoDateSchema.optional(),
+  /** 1 a 3 ítems con un solo ítem por tipo de seguimiento (rechaza tipos repetidos). */
+  items: z
+    .array(CreateFollowUpBatchItemSchema)
+    .min(1)
+    .max(3)
+    .refine(
+      (items) => {
+        const types = new Set(items.map((item) => item.type));
+        return types.size === items.length;
+      },
+      {
+        message: 'No se permiten tipos de seguimiento repetidos en el mismo lote',
+        path: ['items'],
+      },
+    ),
 });
 
 // ---------- Salida ----------
@@ -53,6 +88,7 @@ export const ReminderResponseSchema = z.object({
 export const FollowUpResponseSchema = z.object({
   id: UuidSchema,
   childId: UuidSchema,
+  groupId: UuidSchema.nullable().default(null),
   alertId: UuidSchema.nullable(),
   professionalId: UuidSchema,
   type: FollowUpTypeSchema,
@@ -62,8 +98,13 @@ export const FollowUpResponseSchema = z.object({
   reminder: ReminderResponseSchema.nullable(),
 });
 
+export const FollowUpBatchResponseSchema = z.array(FollowUpResponseSchema);
+
 export type FollowUpType = z.infer<typeof FollowUpTypeSchema>;
 export type ReminderStatus = z.infer<typeof ReminderStatusSchema>;
 export type CreateFollowUpInput = z.infer<typeof CreateFollowUpInputSchema>;
+export type CreateFollowUpBatchItem = z.infer<typeof CreateFollowUpBatchItemSchema>;
+export type CreateFollowUpBatchInput = z.infer<typeof CreateFollowUpBatchInputSchema>;
 export type ReminderResponse = z.infer<typeof ReminderResponseSchema>;
 export type FollowUpResponse = z.infer<typeof FollowUpResponseSchema>;
+export type FollowUpBatchResponse = z.infer<typeof FollowUpBatchResponseSchema>;

@@ -24,7 +24,6 @@ import { formatShortDate } from '../../i18n/format.js';
 import { formatDateInput } from '../../lib/checkup-form.js';
 import { formatChildAge } from '../../lib/children-api.js';
 import {
-  FOLLOW_UP_TYPES,
   NEXT_CHECKUP_SHORTCUT_DAYS,
   formatNextCheckupLong,
   minNextCheckupDate,
@@ -41,7 +40,6 @@ export default function FollowUpScreen() {
   const { alertId, childId } = useLocalSearchParams<{ alertId?: string; childId?: string }>();
   const follow = useFollowUpForm({ alertId, childId });
   const { load, form, setForm } = follow;
-  const [showTypeMenu, setShowTypeMenu] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
@@ -131,8 +129,11 @@ export default function FollowUpScreen() {
       </Text>
     ) : null;
 
-  const hasTypeError = errorCode === 'typeRequired';
-  const hasDetailsError = errorCode === 'detailsRequired' || errorCode === 'detailsTooLong';
+  const hasObservationsError =
+    errorCode === 'detailsTooLong' && follow.formError?.field === 'observations';
+  const hasInterventionError =
+    errorCode === 'detailsTooLong' && follow.formError?.field === 'intervention';
+  const hasReferralError = errorCode === 'detailsTooLong' && follow.formError?.field === 'referral';
   const hasDateError = errorCode === 'dateInvalid' || errorCode === 'datePast';
   const longNextCheckup = formatNextCheckupLong(form.nextCheckupText);
   const minDate = minNextCheckupDate();
@@ -173,85 +174,65 @@ export default function FollowUpScreen() {
             </Text>
           ) : null}
 
-          {/* Tipo de seguimiento (un tipo por seguimiento) */}
+          {/* Secciones de seguimiento clínico (NK-75) */}
+          {/* 1. Observaciones clínicas */}
           <View style={styles.fieldGroup}>
-            <PillField
-              label={t('followUp.typeLabel')}
-              error={hasTypeError}
-              testID="follow-up-type-field"
-            >
-              <Pressable
-                style={({ pressed }) => [styles.selectorPressable, pressed && styles.pressed]}
-                onPress={() => {
-                  setShowTypeMenu((open) => !open);
-                  setShowDatePicker(false);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={t('followUp.typeLabel')}
-                accessibilityState={{ expanded: showTypeMenu }}
-                testID="follow-up-type"
-              >
-                <Text
-                  style={form.type ? styles.selectValue : styles.selectPlaceholder}
-                  numberOfLines={1}
-                >
-                  {form.type ? t(`followUp.types.${form.type}`) : t('followUp.typePlaceholder')}
-                </Text>
-                <Ionicons
-                  name={showTypeMenu ? 'chevron-up' : 'chevron-down'}
-                  size={22}
-                  color={PALETTE.text.title}
-                />
-              </Pressable>
-            </PillField>
-            {showTypeMenu ? (
-              <View style={styles.dropdownMenu} testID="follow-up-type-menu">
-                {FOLLOW_UP_TYPES.map((type) => {
-                  const selected = type === form.type;
-                  return (
-                    <Pressable
-                      key={type}
-                      style={[styles.dropdownOption, selected && styles.dropdownOptionSelected]}
-                      onPress={() => {
-                        setForm({ type });
-                        setShowTypeMenu(false);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected }}
-                      testID={`follow-up-type-${type}`}
-                    >
-                      <Text style={[styles.optionText, selected && styles.optionTextSelected]}>
-                        {t(`followUp.types.${type}`)}
-                      </Text>
-                      {selected ? (
-                        <Ionicons name="checkmark" size={20} color={PALETTE.primary} />
-                      ) : null}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ) : null}
-            {fieldError('typeRequired')}
-          </View>
-
-          {/* Detalle */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>{t('followUp.detailsLabel')}</Text>
-            <View style={[styles.textAreaBox, hasDetailsError && styles.textAreaBoxError]}>
+            <Text style={styles.fieldLabel}>{t('followUp.sections.observationsLabel')}</Text>
+            <View style={[styles.textAreaBox, hasObservationsError && styles.textAreaBoxError]}>
               <KeyboardAwareTextInput
                 style={styles.textArea}
-                value={form.details}
-                onChangeText={(details) => setForm({ details })}
+                value={form.observations}
+                onChangeText={(observations) => setForm({ observations })}
                 multiline
                 textAlignVertical="top"
-                placeholder={t(`followUp.detailsPlaceholder.${form.type ?? 'none'}`)}
+                placeholder={t('followUp.sections.observationsPlaceholder')}
                 placeholderTextColor={PALETTE.input.placeholder}
-                accessibilityLabel={t('followUp.detailsLabel')}
-                testID="follow-up-details"
+                accessibilityLabel={t('followUp.sections.observationsLabel')}
+                testID="follow-up-observations"
               />
             </View>
-            {fieldError('detailsRequired', 'detailsTooLong')}
+            {hasObservationsError ? fieldError('detailsTooLong') : null}
           </View>
+
+          {/* 2. Intervención nutricional */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{t('followUp.sections.interventionLabel')}</Text>
+            <View style={[styles.textAreaBox, hasInterventionError && styles.textAreaBoxError]}>
+              <KeyboardAwareTextInput
+                style={styles.textArea}
+                value={form.intervention}
+                onChangeText={(intervention) => setForm({ intervention })}
+                multiline
+                textAlignVertical="top"
+                placeholder={t('followUp.sections.interventionPlaceholder')}
+                placeholderTextColor={PALETTE.input.placeholder}
+                accessibilityLabel={t('followUp.sections.interventionLabel')}
+                testID="follow-up-intervention"
+              />
+            </View>
+            {hasInterventionError ? fieldError('detailsTooLong') : null}
+          </View>
+
+          {/* 3. Derivación */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{t('followUp.sections.referralLabel')}</Text>
+            <View style={[styles.textAreaBox, hasReferralError && styles.textAreaBoxError]}>
+              <KeyboardAwareTextInput
+                style={styles.textArea}
+                value={form.referral}
+                onChangeText={(referral) => setForm({ referral })}
+                multiline
+                textAlignVertical="top"
+                placeholder={t('followUp.sections.referralPlaceholder')}
+                placeholderTextColor={PALETTE.input.placeholder}
+                accessibilityLabel={t('followUp.sections.referralLabel')}
+                testID="follow-up-referral"
+              />
+            </View>
+            {hasReferralError ? fieldError('detailsTooLong') : null}
+          </View>
+
+          {fieldError('atLeastOneRequired')}
 
           {/* Próximo control */}
           <View style={styles.fieldGroup}>
@@ -263,7 +244,6 @@ export default function FollowUpScreen() {
                 <Pressable
                   onPress={() => {
                     setShowDatePicker((open) => !open);
-                    setShowTypeMenu(false);
                   }}
                   accessibilityRole="button"
                   accessibilityLabel={t('followUp.openDatePicker')}
@@ -279,7 +259,6 @@ export default function FollowUpScreen() {
                 style={({ pressed }) => [styles.selectorPressable, pressed && styles.pressed]}
                 onPress={() => {
                   setShowDatePicker((open) => !open);
-                  setShowTypeMenu(false);
                 }}
                 accessibilityRole="button"
                 accessibilityLabel={t('followUp.nextCheckupLabel')}
@@ -466,31 +445,6 @@ const styles = StyleSheet.create({
     fontFamily: font('regular'),
     fontSize: 16,
     color: PALETTE.input.placeholder,
-  },
-  dropdownMenu: {
-    backgroundColor: PALETTE.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: PALETTE.border.input,
-    overflow: 'hidden',
-  },
-  dropdownOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 13,
-  },
-  dropdownOptionSelected: { backgroundColor: PALETTE.primaryLight },
-  optionText: {
-    fontFamily: font('regular'),
-    fontSize: 15,
-    color: PALETTE.text.body,
-  },
-  optionTextSelected: {
-    fontFamily: font('semibold'),
-    fontWeight: '600',
-    color: PALETTE.primary,
   },
   textAreaBox: {
     backgroundColor: PALETTE.input.background,

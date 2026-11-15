@@ -4,6 +4,7 @@ import {
   CreateCheckupInputSchema,
   CreateChildInputSchema,
   CreateFeedingLogInputSchema,
+  CreateFollowUpBatchInputSchema,
   CreateFollowUpInputSchema,
   EndProfessionalAssignmentInputSchema,
   GrantConsentInputSchema,
@@ -15,6 +16,7 @@ import {
   type CreateCheckupInput,
   type CreateChildInput,
   type CreateFeedingLogInput,
+  type CreateFollowUpBatchInput,
   type CreateFollowUpInput,
   type EndProfessionalAssignmentInput,
   type GrantConsentInput,
@@ -49,7 +51,9 @@ import {
   updateCaregiverLink,
 } from '../services/children.service.js';
 import { createFeedingLog, listFeedingLogs } from '../services/feedingLogs.service.js';
-import { createFollowUp } from '../services/followUps.service.js';
+import { logAuditEvent } from '../services/audit.service.js';
+import { createFollowUp, createFollowUpBatch } from '../services/followUps.service.js';
+import { getGrowthTrend } from '../services/growthTrend.service.js';
 
 const ChildProfessionalParamsSchema = z.object({
   childId: UuidSchema,
@@ -355,6 +359,27 @@ export function createChildrenRouter(): Router {
   );
 
   /**
+   * GET /children/:childId/growth-trend
+   * Tendencia de crecimiento por indicador para el cuidador (NK-74).
+   * Devuelve solo FAVORABLE o NONE; nunca expone puntajes z, percentiles ni clasificaciones (RF-14).
+   * Accesible para cuidador vinculado y profesional vinculado.
+   */
+  router.get(
+    '/:childId/growth-trend',
+    requirePermission('checkup:read'),
+    requireLink('childId'),
+    auditHealth({
+      action: 'READ',
+      entityType: 'checkups',
+      getEntityId: (req) => req.params.childId as string,
+    }),
+    async (req, res) => {
+      const trends = await getGrowthTrend(req.auth!, req.params.childId as string);
+      res.status(200).json(trends);
+    },
+  );
+
+  /**
    * POST /children/:childId/checkups
    * Registra un control con UUID generado en el cliente; reenviar el mismo id devuelve el control
    * existente (200) sin duplicarlo. `origin` y `recordedById` los asigna el servidor.
@@ -370,6 +395,10 @@ export function createChildrenRouter(): Router {
       action: 'CREATE',
       entityType: 'checkups',
       getEntityId: (_req, res) => res.locals.auditEntityId as string | undefined,
+      // Solo se registra si tiene observaciones, nunca el texto ingresado.
+      getDetails: (_req, res) => {
+        return res.locals.auditHasNotes ? { hasNotes: true } : undefined;
+      },
     }),
     async (req, res) => {
       const { checkup, created } = await createCheckup(
@@ -379,6 +408,7 @@ export function createChildrenRouter(): Router {
         req.body as CreateCheckupInput,
       );
       res.locals.auditEntityId = checkup.id;
+      res.locals.auditHasNotes = checkup.notes !== null;
       res.status(created ? 201 : 200).json(checkup);
     },
   );
@@ -463,6 +493,44 @@ export function createChildrenRouter(): Router {
       );
       res.locals.auditEntityId = followUp.id;
       res.status(created ? 201 : 200).json(followUp);
+    },
+  );
+
+  /**
+   * POST /children/:childId/follow-ups/batch
+   * Registra un lote de 1 a 3 seguimientos clínicos (observación, intervención, derivación)
+   * atómicamente vinculados bajo el mismo `groupId` (NK-75). Idempotente por los `id` del lote.
+   * Si incluye `nextCheckupDate`, crea un único recordatorio enlazado al primer ítem del lote.
+   * Auditoría `CREATE` con un registro por fila creada.
+   */
+  router.post(
+    '/:childId/follow-ups/batch',
+    requireRole('PROFESSIONAL'),
+    requirePermission('followup:create'),
+    requireLink('childId'),
+    requireActiveConsent('childId'),
+    validateRequest({ body: CreateFollowUpBatchInputSchema }),
+    async (req, res) => {
+      const { followUps, created } = await createFollowUpBatch(
+        req.auth!,
+        req.params.childId as string,
+        req.body as CreateFollowUpBatchInput,
+      );
+
+      if (created) {
+        for (const fu of followUps) {
+          logAuditEvent({
+            userId: req.auth!.userId,
+            action: 'CREATE',
+            entityType: 'follow_ups',
+            entityId: fu.id,
+          }).catch((err) => {
+            console.error('[children.routes] Error al auditar seguimiento por lote:', err);
+          });
+        }
+      }
+
+      res.status(created ? 201 : 200).json(followUps);
     },
   );
 

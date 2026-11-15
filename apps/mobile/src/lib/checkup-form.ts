@@ -1,4 +1,5 @@
 import {
+  CHECKUP_NOTES_MAX,
   CreateCheckupInputSchema,
   LENGTH_HEIGHT_MAX_CM,
   LENGTH_HEIGHT_MIN_CM,
@@ -17,6 +18,7 @@ export interface CheckupFormData {
   weightText: string;
   heightText: string;
   position: Position;
+  notesText?: string;
 }
 
 /** Why the form cannot be sent; each code maps to a message in `caregiver:addCheckup.errors`. */
@@ -27,6 +29,7 @@ export type CheckupFormError =
   | { code: 'dateBeforeBirth' }
   | { code: 'weightRange'; min: number; max: number }
   | { code: 'heightRange'; min: number; max: number }
+  | { code: 'notesTooLong'; max: number }
   /** Valid but atypical values: the caregiver must confirm them (`confirmOutlier`). */
   | { code: 'outlier' }
   | { code: 'invalid' };
@@ -108,6 +111,11 @@ export function buildCreateCheckupInput(
     };
   }
 
+  const trimmedNotes = form.notesText?.trim() ?? '';
+  if (trimmedNotes.length > CHECKUP_NOTES_MAX) {
+    return { ok: false, error: { code: 'notesTooLong', max: CHECKUP_NOTES_MAX } };
+  }
+
   const isOutlier = !isPlausibleWeight(weightKg) || !isPlausibleLengthHeight(lengthHeightCm);
   if (isOutlier && !options.confirmOutlier) return { ok: false, error: { code: 'outlier' } };
 
@@ -117,6 +125,7 @@ export function buildCreateCheckupInput(
     weightKg,
     lengthHeightCm,
     position: form.position,
+    ...(trimmedNotes.length > 0 ? { notes: trimmedNotes } : {}),
     ...(isOutlier ? { confirmOutlier: true } : {}),
   });
 

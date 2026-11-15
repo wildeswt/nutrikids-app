@@ -21,10 +21,13 @@ import { PALETTE } from '../../constants/colors.js';
 import { CARD_SHADOW, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
+import { useOptionalAuth } from '../../context/auth-context.js';
 import { useCheckups } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
+import { useGrowthTrend } from '../../hooks/useGrowthTrend.js';
 import { useReferenceCurves } from '../../hooks/useReferenceCurves.js';
 import { formatAgeShort, formatDecimal, formatLongDate } from '../../i18n/format.js';
+import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
 import { formatChildAge } from '../../lib/children-api.js';
 import {
   INDICATORS,
@@ -36,6 +39,8 @@ import {
 
 export default function EvolutionScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
+  const auth = useOptionalAuth();
+  const user = auth?.user ?? null;
   const router = useRouter();
   const params = useLocalSearchParams<{ childId?: string }>();
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PE');
@@ -60,8 +65,12 @@ export default function EvolutionScreen() {
     load: loadCheckups,
   } = useCheckups(child?.id ?? null);
 
+  const { trends: growthTrends } = useGrowthTrend(child?.id ?? null);
+
   const activeIndicator =
     INDICATORS.find((item) => item.key === selectedIndicator) ?? INDICATORS[0]!;
+  const activeTrend = growthTrends?.find((item) => item.indicator === activeIndicator.indicator);
+  const isFavorable = activeTrend?.trend === 'FAVORABLE';
   const latest = latestCheckup(checkups);
   const position = curvesPositionFor(activeIndicator, latest);
 
@@ -273,15 +282,23 @@ export default function EvolutionScreen() {
 
           {/* Leyenda del gráfico */}
           <View style={styles.legendRow}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.legendDotChild]} />
-              <Text style={styles.legendText}>{child.firstName}</Text>
+            <View style={styles.legendGroup}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, styles.legendDotChild]} />
+                <Text style={styles.legendText}>{child.firstName}</Text>
+              </View>
+
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, styles.legendDotOms]} />
+                <Text style={styles.legendText}>{t('evolution.legendReference')}</Text>
+              </View>
             </View>
 
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.legendDotOms]} />
-              <Text style={styles.legendText}>{t('evolution.legendReference')}</Text>
-            </View>
+            {isFavorable ? (
+              <Text style={styles.favorableTrendText} testID="evolution-growth-trend">
+                {t('evolution.favorableTrend')}
+              </Text>
+            ) : null}
           </View>
         </Card>
 
@@ -327,9 +344,29 @@ export default function EvolutionScreen() {
             <Ionicons name="person" size={18} color={PALETTE.secondary} />
             <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>
             <Text style={styles.recordedByValue} numberOfLines={1}>
-              {t(`evolution.origin.${latest.origin}`)}
+              {formatCheckupRecorder({
+                recorder: latest.recordedBy,
+                origin: latest.origin,
+                currentUserId: user?.id,
+                t,
+              })}
             </Text>
           </View>
+
+          {latest.notes ? (
+            <View style={styles.notesRow}>
+              <Ionicons
+                name="document-text-outline"
+                size={18}
+                color={PALETTE.secondary}
+                style={styles.notesIcon}
+              />
+              <View style={styles.notesContent}>
+                <Text style={styles.recordedByLabel}>{t('evolution.notes')}</Text>
+                <Text style={styles.notesValue}>{latest.notes}</Text>
+              </View>
+            </View>
+          ) : null}
         </Card>
       </ScrollView>
 
@@ -463,6 +500,11 @@ const styles = StyleSheet.create({
     borderTopColor: PALETTE.border.subtle,
     paddingTop: 14,
   },
+  legendGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -484,6 +526,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: PALETTE.text.body,
     fontWeight: '500',
+  },
+  favorableTrendText: {
+    fontFamily: font('semibold'),
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2D5F5A',
   },
   lastRecordCard: {
     paddingHorizontal: 20,
@@ -552,6 +600,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: PALETTE.text.muted,
     flex: 1,
+  },
+  notesRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 10,
+  },
+  notesIcon: {
+    marginTop: 2,
+  },
+  notesContent: {
+    flex: 1,
+    gap: 2,
+  },
+  notesValue: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    lineHeight: 20,
+    color: PALETTE.text.body,
   },
   modalOverlay: {
     flex: 1,
