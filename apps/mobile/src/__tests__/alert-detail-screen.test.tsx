@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   back: vi.fn(),
   canGoBack: vi.fn(() => true),
   useAlertDetail: vi.fn(),
-  pending: { pendingCount: 0, syncPending: vi.fn(async () => {}) },
+  pending: { pendingCount: 0, refreshPending: vi.fn(async () => {}) },
   focusEffects: [] as (() => void)[],
   width: 390,
 }));
@@ -144,11 +144,11 @@ describe('AlertDetailScreen (NK-33)', () => {
     expect(mocks.useAlertDetail).toHaveBeenCalledWith('22222222-2222-4222-8222-222222222222');
   });
 
-  it('sends the follow-ups saved without connection, then reloads, when the screen gains focus', async () => {
+  it('refreshes the pending follow-up count, then reloads, when the screen gains focus', async () => {
     html();
     mocks.focusEffects.forEach((cb) => cb());
     await vi.waitFor(() => expect(reload).toHaveBeenCalled());
-    expect(mocks.pending.syncPending).toHaveBeenCalled();
+    expect(mocks.pending.refreshPending).toHaveBeenCalled();
   });
 
   it('tells how many follow-ups are waiting on the phone', () => {
@@ -157,6 +157,8 @@ describe('AlertDetailScreen (NK-33)', () => {
     expect(html()).toContain('Tienes 2 seguimientos guardados en este teléfono por enviar.');
     mocks.pending.pendingCount = 1;
     expect(html()).toContain('Tienes 1 seguimiento guardado en este teléfono por enviar.');
+    (byTestId('alert-detail-pending')?.props?.['onPress'] as () => void)();
+    expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.PROFESSIONAL.PENDING_SYNC);
   });
 
   it('shows the child banner, the indicator, the result and the reason', () => {

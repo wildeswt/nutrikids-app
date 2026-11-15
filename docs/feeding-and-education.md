@@ -42,15 +42,15 @@ Newest `logDate` first. `from` / `to` (`YYYY-MM-DD`, inclusive) are optional; `l
 - **Audit**: `POST` writes `CREATE` / `feeding_logs` with the log id; `GET` writes `READ` / `feeding_logs` with the child id (same as checkups).
 - Logs are not immutable at database level (no trigger), but the API offers no edit or delete: a wrong entry is a new log. Add that endpoint if the app needs it.
 
-### Offline decision (NK-39)
+### Offline decision (NK-39 → NK-62B)
 
-**Feeding stays out of the offline sync queue for now.** NK-27 keeps queueing only checkups and `POST /sync/checkups` (NK-28) only receives checkups.
+En NK-39 se pospuso la cola sin conexión para alimentación dejando el endpoint `POST /children/:childId/feeding-logs` listo para reintentos idempotentes gracias al `id` generado en el cliente.
 
-- Checkups need the queue because a missing measurement cannot be re-created later and the server must recompute indicators and alerts. A feeding log is a small, low-risk record the caregiver can enter again.
-- Generalizing the queue means a new entity type in the local store, a new batch endpoint and per-type conflict rules (NK-27/NK-28 scope).
-- The endpoint is already safe to retry: the client-generated `id` makes `POST` idempotent. If a later iteration wants offline feeding, the app can queue these `POST`s and replay them one by one (a `POST /sync/feeding-logs` batch can be added then) **without any API or schema change**.
+En **NK-62 (parte B)** la alimentación se integra en la cola general `sync_queue` (`kind = 'feeding'`) **sin cambios de API ni de esquema**:
 
-The app should therefore require a connection to save feeding for now and show a clear message when offline.
+- Si el dispositivo está `offline` o el envío falla por error de red (nunca ante `4xx` como falta de consentimiento o validación), `createFeedingWithOfflineFallback` encola `{ childId, ...input }` con el mismo `id` UUID y la pantalla muestra «Sin conexión · se guardó en este dispositivo y se enviará al reconectar» antes de volver atrás.
+- `SYNC_QUEUE_PROCESSORS.feeding` (`processFeedingQueue`) reenvía uno a uno con `POST /children/:childId/feeding-logs`; `200`/`201` pasa a `'SENT'`, `4xx` definitivo pasa a `'ERROR'` sin reintento automático y red/`5xx`/`408`/`429` vuelven a `'LOCAL'` con espera creciente.
+- En entornos sin base local SQLCipher (Expo Go / web), se mantiene el error de conexión previo conservando los datos escritos en el formulario.
 
 ## Educational content — `GET /education`
 

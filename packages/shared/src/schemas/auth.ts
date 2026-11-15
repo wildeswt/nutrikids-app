@@ -142,6 +142,8 @@ export const AuthUserSchema = z.object({
   lastName: z.string(),
   roles: z.array(UserRoleSchema).min(1),
   specialty: SpecialtySchema.nullable(),
+  /** Registro profesional (solo profesionales); lo ve únicamente su propietario. */
+  licenseNumber: z.string().nullable().optional(),
 });
 
 /**

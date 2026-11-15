@@ -1,5 +1,8 @@
 import type { CaregiverCheckupResponse, ChildResponse, Position } from '@nutrikids/shared';
 import { PositionSchema } from '@nutrikids/shared';
+import type { LocalWhoEvaluation } from './checkup-form.js';
+
+export type CheckupRoleMode = 'CAREGIVER' | 'PROFESSIONAL';
 
 /**
  * Route params of `checkup-saved`. Router params are strings, so the checkup returned by the API
@@ -24,6 +27,9 @@ export interface SavedCheckupView {
   weightKg: number;
   lengthHeightCm: number;
   position: Position;
+  pendingSync?: boolean;
+  localEvaluation?: LocalWhoEvaluation | null;
+  roleMode?: CheckupRoleMode;
 }
 
 export function toCheckupSavedParams(
@@ -31,9 +37,14 @@ export function toCheckupSavedParams(
   checkup: Pick<
     CaregiverCheckupResponse,
     'measuredAt' | 'weightKg' | 'lengthHeightCm' | 'position'
-  >,
+  > & { savedLocally?: boolean; localOnly?: boolean },
+  extra?: {
+    localEvaluation?: LocalWhoEvaluation | null;
+    roleMode?: CheckupRoleMode;
+  },
 ): CheckupSavedParams {
-  return {
+  const isPendingSync = Boolean(checkup.savedLocally || checkup.localOnly);
+  const params: CheckupSavedParams = {
     childId: child.id,
     childName: child.firstName,
     birthDate: child.birthDate,
@@ -42,6 +53,16 @@ export function toCheckupSavedParams(
     lengthHeightCm: String(checkup.lengthHeightCm),
     position: checkup.position,
   };
+  if (isPendingSync) {
+    params.pendingSync = '1';
+  }
+  if (extra?.localEvaluation) {
+    params.localEvaluation = JSON.stringify(extra.localEvaluation);
+  }
+  if (extra?.roleMode) {
+    params.roleMode = extra.roleMode;
+  }
+  return params;
 }
 
 type RawParams = Partial<Record<keyof CheckupSavedParams, string | string[] | undefined>>;
@@ -70,6 +91,23 @@ export function parseCheckupSavedParams(params: RawParams): SavedCheckupView | n
     return null;
   }
 
+  const pendingSync = single(params.pendingSync) === '1';
+  const rawEval = single(params.localEvaluation);
+  let localEvaluation: LocalWhoEvaluation | null = null;
+  if (rawEval) {
+    try {
+      const parsed = JSON.parse(rawEval) as LocalWhoEvaluation;
+      if (parsed && Array.isArray(parsed.results)) {
+        localEvaluation = parsed;
+      }
+    } catch {
+      localEvaluation = null;
+    }
+  }
+  const rawRole = single(params.roleMode);
+  const roleMode: CheckupRoleMode | undefined =
+    rawRole === 'PROFESSIONAL' || rawRole === 'CAREGIVER' ? rawRole : undefined;
+
   return {
     childId,
     childName: single(params.childName) ?? '',
@@ -78,5 +116,8 @@ export function parseCheckupSavedParams(params: RawParams): SavedCheckupView | n
     weightKg,
     lengthHeightCm,
     position: position.data,
+    ...(pendingSync ? { pendingSync: true } : {}),
+    ...(localEvaluation ? { localEvaluation } : {}),
+    ...(roleMode ? { roleMode } : {}),
   };
 }

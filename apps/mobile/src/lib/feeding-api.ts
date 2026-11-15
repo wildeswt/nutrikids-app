@@ -96,3 +96,34 @@ export async function createChildFeedingLog(
   const rawJson: unknown = await response.json();
   return FeedingLogResponseSchema.parse(rawJson);
 }
+
+/**
+ * Lista los registros de alimentación de un niño (`GET /children/:childId/feeding-logs`),
+ * del más reciente al más antiguo.
+ */
+export async function fetchChildFeedingLogs(
+  childId: string,
+  range: { from?: string; to?: string; limit?: number } = {},
+): Promise<FeedingLogResponse[]> {
+  const params = new URLSearchParams();
+  if (range.from) params.set('from', range.from);
+  if (range.to) params.set('to', range.to);
+  if (range.limit) params.set('limit', String(range.limit));
+  const query = params.toString();
+
+  let response: Response;
+  try {
+    response = await authFetch(`/children/${childId}/feeding-logs${query ? `?${query}` : ''}`);
+  } catch (err) {
+    throw new FeedingApiError(i18n.t('errors:feeding.network', OFFLINE_FALLBACK), 0, {
+      isNetwork: true,
+      cause: err,
+    });
+  }
+
+  if (!response.ok) {
+    throw await toApiError(response, i18n.t('errors:feeding.create', CREATE_FALLBACK));
+  }
+
+  return FeedingLogResponseSchema.array().parse(await response.json());
+}

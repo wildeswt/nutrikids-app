@@ -274,7 +274,7 @@ describe('MyDataScreen («Mis datos»)', () => {
 
   it('reloads the children every time the screen gains focus', () => {
     render(MyDataScreen);
-    mocks.focusCallbacks.at(-1)!();
+    mocks.focusCallbacks[0]!();
 
     expect(mocks.loadChildren).toHaveBeenCalledTimes(1);
   });
@@ -518,7 +518,7 @@ describe('ChildPrivacyPanel (consent, export and deletion)', () => {
 
   it('reads the requests every time the screen gains focus', () => {
     render(MateoPanel);
-    mocks.focusCallbacks.at(-1)!();
+    mocks.focusCallbacks[0]!();
 
     expect(mocks.loadRights).toHaveBeenCalledTimes(1);
   });

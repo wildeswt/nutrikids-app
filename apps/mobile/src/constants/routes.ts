@@ -21,6 +21,7 @@ export const APP_ROUTES = {
     ADD_CHECKUP: '/(caregiver)/add-checkup' as const,
     CHECKUP_SAVED: '/(caregiver)/checkup-saved' as const,
     FEEDING: '/(caregiver)/feeding' as const,
+    FEEDING_HISTORY: '/(caregiver)/feeding-history' as const,
     MESSAGES: '/(caregiver)/messages' as const,
     CHAT_DETAIL: '/(caregiver)/chat-detail' as const,
     PROFILE: '/(caregiver)/profile' as const,
@@ -34,6 +35,8 @@ export const APP_ROUTES = {
     MY_DATA: '/(caregiver)/my-data' as const,
     EDIT_CHILD: '/(caregiver)/edit-child' as const,
     PRIVACY: '/(caregiver)/privacy' as const,
+    PENDING_SYNC: '/(caregiver)/pending-sync' as const,
+    LINK_PROFESSIONAL: '/(caregiver)/link-professional' as const,
   },
   PROFESSIONAL: {
     GROUP: '(professional)',
@@ -43,10 +46,13 @@ export const APP_ROUTES = {
     FOLLOW_UP: '/(professional)/follow-up' as const,
     REFERRAL: '/(professional)/referral' as const,
     CHILDREN: '/(professional)/children' as const,
+    ADD_CHECKUP: '/(professional)/add-checkup' as const,
     MESSAGES: '/(professional)/messages' as const,
     CHAT_DETAIL: '/(professional)/chat-detail' as const,
     PROFILE: '/(professional)/profile' as const,
     NOTIFICATIONS: '/(professional)/notifications' as const,
+    PENDING_SYNC: '/(professional)/pending-sync' as const,
+    LINK_PROFESSIONAL: '/(caregiver)/link-professional' as const,
   },
 } as const;
 

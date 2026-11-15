@@ -115,6 +115,7 @@ describe('POST /auth/login y límite de intentos', () => {
       lastName: 'Pérez',
       roles: ['CAREGIVER'],
       specialty: null,
+      licenseNumber: null,
     });
     expect(refreshTokens[0]?.tokenHash).toBe(hashRefreshToken(parsedCaregiver.refreshToken));
     expect(JSON.stringify(caregiverRes.body)).not.toContain(plainPassword);

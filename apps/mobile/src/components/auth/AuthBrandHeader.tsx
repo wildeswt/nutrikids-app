@@ -94,7 +94,6 @@ export const authStyles = StyleSheet.create({
     fontFamily: font('regular'),
     fontSize: 15,
     color: PALETTE.text.body,
-    height: '100%',
     paddingVertical: 0,
   },
   errorBox: {

@@ -9,10 +9,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AUTH_STATUS } from '../constants/routes.js';
 import { AuthProvider, useAuth } from '../context/auth-context.js';
+import { ConnectionProvider } from '../context/connection-context.js';
 import '../i18n/index.js';
 import { restoreLanguagePreference } from '../i18n/language.js';
 import { usePushNavigation } from '../hooks/usePushNavigation.js';
 import { resolveGuardRedirect } from '../lib/navigation-guard.js';
+import { syncEngine } from '../lib/sync/index.js';
 
 export function NavigationGuard() {
   const { status, activeRole } = useAuth();
@@ -52,6 +54,27 @@ export function NavigationGuard() {
   );
 }
 
+function SyncLifecycle() {
+  const { status, user } = useAuth();
+
+  useEffect(() => {
+    if (status === AUTH_STATUS.AUTHENTICATED && user?.id) {
+      void syncEngine.start(user.id);
+      return () => {
+        syncEngine.stop();
+      };
+    }
+
+    if (status === AUTH_STATUS.UNAUTHENTICATED) {
+      syncEngine.stop();
+    }
+
+    return undefined;
+  }, [status, user?.id]);
+
+  return null;
+}
+
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
@@ -89,9 +112,12 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <StatusBar style="dark" />
-        <AuthProvider>
-          <NavigationGuard />
-        </AuthProvider>
+        <ConnectionProvider>
+          <AuthProvider>
+            <SyncLifecycle />
+            <NavigationGuard />
+          </AuthProvider>
+        </ConnectionProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

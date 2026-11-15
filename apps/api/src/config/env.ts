@@ -67,6 +67,8 @@ const EnvSchema = z
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
     LOGIN_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
     LOGIN_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
+    LOOKUP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(10),
+    LOOKUP_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),
     PROFESSIONAL_INVITE_CODES: z.string().optional(),
     /** Clave (≥32 caracteres) para cifrar la clave TOTP de los profesionales (NK-10). */
     TOTP_ENCRYPTION_KEY: z.string().optional(),
@@ -164,6 +166,8 @@ const EnvSchema = z
       REFRESH_TOKEN_TTL_DAYS: raw.REFRESH_TOKEN_TTL_DAYS,
       LOGIN_MAX_ATTEMPTS: raw.LOGIN_MAX_ATTEMPTS,
       LOGIN_WINDOW_MINUTES: raw.LOGIN_WINDOW_MINUTES,
+      LOOKUP_MAX_ATTEMPTS: raw.LOOKUP_MAX_ATTEMPTS,
+      LOOKUP_WINDOW_MINUTES: raw.LOOKUP_WINDOW_MINUTES,
       PROFESSIONAL_INVITE_CODES: inviteCodes,
       TOTP_ENCRYPTION_KEY: totpKey,
       CLASSIFICATION_CUTOFFS: Object.freeze(cutoffs) as Readonly<Cutoffs>,

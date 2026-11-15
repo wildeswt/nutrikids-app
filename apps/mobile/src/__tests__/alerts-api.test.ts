@@ -42,9 +42,11 @@ describe('fetchAlerts', () => {
     const mock = stubFetch([]);
     const childId = '11111111-1111-4111-8111-111111111111';
 
-    await fetchAlerts({ statuses: ALERT_STATUS_FILTERS.GENERATED, childId });
+    await fetchAlerts({ statuses: ALERT_STATUS_FILTERS.ATTENDED, childId });
 
-    expect(mock.mock.calls[0]?.[0]).toContain(`/alerts?status=GENERATED&childId=${childId}`);
+    expect(mock.mock.calls[0]?.[0]).toContain(
+      `/alerts?status=REVIEWED,FOLLOW_UP_ESTABLISHED&childId=${childId}`,
+    );
   });
 
   it('throws the API message when the request fails', async () => {

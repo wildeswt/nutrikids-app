@@ -40,6 +40,7 @@ vi.mock('../context/auth-context.js', () => ({
     activeRole: 'CAREGIVER',
     status: 'authenticated',
   }),
+  useOptionalAuth: () => null,
 }));
 
 vi.mock('../hooks/useMessageThread.js', () => ({

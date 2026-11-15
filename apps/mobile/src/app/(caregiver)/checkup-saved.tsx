@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { SecondaryButton } from '../../components/ui/SecondaryButton.js';
@@ -16,11 +16,19 @@ import { formatChildAge } from '../../lib/children-api.js';
 
 export default function CheckupSavedScreen() {
   const router = useRouter();
-  const { t } = useTranslation(['caregiver', 'common']);
+  const { t } = useTranslation(['caregiver', 'professional', 'common']);
   const params = useLocalSearchParams();
   const saved = parseCheckupSavedParams(params);
+  const isProfessional = saved?.roleMode === 'PROFESSIONAL';
 
   const handleGoToEvolution = () => {
+    if (isProfessional) {
+      router.replace({
+        pathname: APP_ROUTES.PROFESSIONAL.CHILDREN as never,
+        params: saved ? { childId: saved.childId } : {},
+      });
+      return;
+    }
     router.replace({
       pathname: APP_ROUTES.CAREGIVER.EVOLUTION as never,
       params: saved ? { childId: saved.childId } : {},
@@ -28,7 +36,9 @@ export default function CheckupSavedScreen() {
   };
 
   const handleGoToHome = () => {
-    router.replace(APP_ROUTES.CAREGIVER.HOME);
+    router.replace(
+      (isProfessional ? APP_ROUTES.PROFESSIONAL.ALERTS : APP_ROUTES.CAREGIVER.HOME) as never,
+    );
   };
 
   if (!saved) {
@@ -52,7 +62,7 @@ export default function CheckupSavedScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
         {/* Ícono de éxito superior */}
         <View style={styles.successIconWrapper}>
           <Ionicons name="checkmark" size={68} color="#FFFFFF" />
@@ -99,6 +109,66 @@ export default function CheckupSavedScreen() {
             </View>
           </View>
 
+          {/* Resultado calculado localmente con who-growth */}
+          {saved.localEvaluation ? (
+            <View
+              style={[
+                styles.whoResultCard,
+                saved.localEvaluation.hasAlert && styles.whoResultCardAlert,
+              ]}
+              testID="checkup-saved-who-result"
+            >
+              <Text style={styles.whoResultTitle}>
+                {isProfessional
+                  ? t('professional:addCheckup.localResultTitle')
+                  : t('checkupSaved.localResultTitle')}
+              </Text>
+              {isProfessional ? (
+                <View style={styles.whoResultList}>
+                  <Text style={styles.whoResultSummary}>
+                    {saved.localEvaluation.hasAlert
+                      ? t('professional:addCheckup.localSummaryAlert', {
+                          risk: t(
+                            `professional:children.classifications.${saved.localEvaluation.primary}`,
+                          ),
+                        })
+                      : t('professional:addCheckup.localSummaryNormal')}
+                  </Text>
+                  {saved.localEvaluation.results.map((item) => (
+                    <View key={item.indicator} style={styles.whoIndicatorRow}>
+                      <View style={styles.whoIndicatorInfo}>
+                        <Text style={styles.whoIndicatorLabel}>
+                          {t(`professional:alerts.indicator.${item.indicator}`)}
+                        </Text>
+                        <Text style={styles.whoIndicatorClass}>
+                          {t(`professional:children.classifications.${item.classification}`)}
+                        </Text>
+                      </View>
+                      <Text style={styles.whoIndicatorMetrics}>
+                        {t('professional:addCheckup.zScoreValue', {
+                          value: formatDecimal(item.zScore, 2),
+                        })}{' '}
+                        ·{' '}
+                        {t('professional:addCheckup.percentileValue', {
+                          value: formatDecimal(item.percentile, 0),
+                        })}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.whoResultList}>
+                  <Text style={styles.whoResultSummary}>
+                    {saved.localEvaluation.hasAlert
+                      ? t('checkupSaved.localResultAlert')
+                      : t('checkupSaved.localResultNormal')}
+                  </Text>
+                  <Text style={styles.whoResultFootnote}>{t('checkupSaved.whoNotice')}</Text>
+                </View>
+              )}
+            </View>
+          ) : null}
+
           <View style={styles.divider} />
 
           {/* Nota del equipo de salud */}
@@ -111,6 +181,28 @@ export default function CheckupSavedScreen() {
             />
             <Text style={styles.noteText}>{t('checkupSaved.teamNote')}</Text>
           </View>
+
+          {saved.pendingSync ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.pendingNotice,
+                pressed && styles.pendingNoticePressed,
+              ]}
+              onPress={() =>
+                router.push(
+                  (isProfessional
+                    ? APP_ROUTES.PROFESSIONAL.PENDING_SYNC
+                    : APP_ROUTES.CAREGIVER.PENDING_SYNC) as never,
+                )
+              }
+              accessibilityRole="button"
+              accessibilityLabel={t('checkupSaved.pendingSyncNotice')}
+              testID="checkup-saved-pending-notice"
+            >
+              <Ionicons name="cloud-offline-outline" size={18} color="#E14100" />
+              <Text style={styles.pendingNoticeText}>{t('checkupSaved.pendingSyncNotice')}</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={styles.spacer} />
@@ -131,7 +223,7 @@ export default function CheckupSavedScreen() {
             testID="checkup-saved-go-home"
           />
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -142,7 +234,7 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.background,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 36,
     paddingBottom: 24,
@@ -211,6 +303,69 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: PALETTE.text.title,
   },
+  whoResultCard: {
+    backgroundColor: '#EDF6F4',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#C5DFDA',
+    padding: 14,
+    marginBottom: 14,
+    gap: 8,
+  },
+  whoResultCardAlert: {
+    backgroundColor: '#FEF2EC',
+    borderColor: '#FAD1BF',
+  },
+  whoResultTitle: {
+    fontFamily: font('semibold'),
+    fontSize: 13,
+    fontWeight: '600',
+    color: PALETTE.primary,
+  },
+  whoResultList: {
+    gap: 8,
+  },
+  whoResultSummary: {
+    fontFamily: font('regular'),
+    fontSize: 13,
+    lineHeight: 19,
+    color: PALETTE.text.body,
+  },
+  whoResultFootnote: {
+    fontFamily: font('regular'),
+    fontSize: 11,
+    color: PALETTE.text.muted,
+  },
+  whoIndicatorRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: PALETTE.border.default,
+  },
+  whoIndicatorInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  whoIndicatorLabel: {
+    fontFamily: font('medium'),
+    fontSize: 12,
+    fontWeight: '500',
+    color: PALETTE.text.title,
+  },
+  whoIndicatorClass: {
+    fontFamily: font('regular'),
+    fontSize: 11,
+    color: PALETTE.text.muted,
+  },
+  whoIndicatorMetrics: {
+    fontFamily: font('semibold'),
+    fontSize: 12,
+    fontWeight: '600',
+    color: PALETTE.primary,
+  },
   divider: {
     height: 1,
     backgroundColor: PALETTE.border.default,
@@ -231,6 +386,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: PALETTE.text.body,
+  },
+  pendingNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FEF2EC',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 16,
+  },
+  pendingNoticePressed: {
+    opacity: 0.85,
+  },
+  pendingNoticeText: {
+    fontFamily: font('medium'),
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#E14100',
   },
   spacer: {
     flex: 1,

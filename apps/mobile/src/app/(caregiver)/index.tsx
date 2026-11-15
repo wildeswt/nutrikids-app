@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CaregiverChildCard } from '../../components/CaregiverChildCard.js';
+import { OfflineDataNotice } from '../../components/OfflineDataNotice.js';
 import { Card } from '../../components/ui/Card.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { APP_ASSETS } from '../../constants/assets.js';
@@ -36,7 +37,8 @@ export default function CaregiverHomeScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
   const { user } = useAuth();
   const activeChildId = useActiveChildId();
-  const { status, children, error, load } = useChildren();
+  const { status, children, error, fromCache, stale, lastSyncedAt, loadError, load } =
+    useChildren();
   const education = useEducation();
   const loadEducation = education.load;
   const { unreadCount, reload: reloadNotifications } = useNotifications();
@@ -266,6 +268,14 @@ export default function CaregiverHomeScreen() {
         {/* Saludo personalizado con el nombre del cuidador */}
         <Text style={styles.greetingTitle}>{greetingText}</Text>
 
+        <OfflineDataNotice
+          fromCache={fromCache}
+          stale={stale}
+          lastSyncedAt={lastSyncedAt}
+          testID="home-offline-notice"
+          style={styles.offlineNotice}
+        />
+
         {/* Estado de carga de niños */}
         {status === 'loading' ? (
           <Card style={styles.loadingCard} testID="caregiver-children-loading">
@@ -274,8 +284,23 @@ export default function CaregiverHomeScreen() {
           </Card>
         ) : null}
 
-        {/* Estado de error de niños */}
-        {status === 'error' ? (
+        {/* Estado de error de niños (sin datos ni conexión vs error real) */}
+        {status === 'error' && loadError === 'needs-connection' ? (
+          <Card style={styles.offlineEmptyCard} testID="caregiver-children-needs-connection">
+            <Ionicons name="cloud-offline-outline" size={28} color={PALETTE.primary} />
+            <Text style={styles.offlineEmptyText}>{t('common:offline.noDataMessage')}</Text>
+            <Pressable
+              style={({ pressed }) => [styles.offlineRetryButton, pressed && styles.buttonPressed]}
+              onPress={() => void load()}
+              accessibilityRole="button"
+              accessibilityLabel={t('home.retryA11y')}
+            >
+              <Text style={styles.retryButtonText}>{t('home.retry')}</Text>
+            </Pressable>
+          </Card>
+        ) : null}
+
+        {status === 'error' && loadError !== 'needs-connection' ? (
           <Card style={styles.errorCard} testID="caregiver-children-error">
             <Ionicons name="alert-circle-outline" size={24} color={PALETTE.feedback.error} />
             <Text style={styles.errorText}>{error || t('home.loadError')}</Text>
@@ -337,15 +362,20 @@ export default function CaregiverHomeScreen() {
           </View>
         ) : null}
 
-        {/* Sección: Para ti */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('home.forYou')}</Text>
-          <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.MESSAGES)}>
-            <Text style={styles.sectionLink}>{t('home.seeAll')}</Text>
-          </Pressable>
-        </View>
+        {/* Solo hay mensajes que mostrar si hay un niño registrado */}
+        {activeChild ? (
+          <>
+            {/* Sección: Para ti */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('home.forYou')}</Text>
+              <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.MESSAGES)}>
+                <Text style={styles.sectionLink}>{t('home.seeAll')}</Text>
+              </Pressable>
+            </View>
 
-        {renderForYouCard()}
+            {renderForYouCard()}
+          </>
+        ) : null}
 
         {/* Acceso a Alimentación en fila propia del Home */}
         <Pressable
@@ -375,15 +405,20 @@ export default function CaregiverHomeScreen() {
           </Card>
         </Pressable>
 
-        {/* Sección: Próximo control */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('home.nextCheckup')}</Text>
-          <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.REMINDERS)}>
-            <Text style={styles.sectionLink}>{t('home.schedule')}</Text>
-          </Pressable>
-        </View>
+        {/* Solo hay controles y mensajes que mostrar si hay un niño registrado */}
+        {activeChild ? (
+          <>
+            {/* Sección: Próximo control */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('home.nextCheckup')}</Text>
+              <Pressable onPress={() => router.push(APP_ROUTES.CAREGIVER.REMINDERS)}>
+                <Text style={styles.sectionLink}>{t('home.schedule')}</Text>
+              </Pressable>
+            </View>
 
-        {renderNextCheckupCard()}
+            {renderNextCheckupCard()}
+          </>
+        ) : null}
 
         {/* Sección: Aprende en casa (artículos según la edad del niño activo) */}
         <View style={styles.sectionHeader}>
@@ -499,6 +534,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: PALETTE.text.title,
     marginBottom: 16,
+  },
+  offlineNotice: {
+    marginBottom: 16,
+  },
+  offlineEmptyCard: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    marginBottom: 24,
+    gap: 10,
+  },
+  offlineEmptyText: {
+    fontFamily: font('regular'),
+    fontSize: 13,
+    color: PALETTE.text.body,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  offlineRetryButton: {
+    backgroundColor: PALETTE.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
   },
   loadingCard: {
     alignItems: 'center',

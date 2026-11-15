@@ -267,16 +267,15 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   readOnlyText: {
-    flex: 1,
     fontFamily: font('regular'),
     fontSize: 15,
     color: PALETTE.text.body,
   },
   input: {
-    flex: 1,
     fontFamily: font('regular'),
     fontSize: 15,
     color: PALETTE.text.body,
+    paddingVertical: 0,
   },
   hint: {
     fontFamily: font('regular'),

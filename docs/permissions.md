@@ -65,6 +65,10 @@ router.post(
 
 Implemented in `src/routes/children.routes.ts` and `src/services/children.service.ts`.
 
+### 6.0 Looking up a professional by license (`GET /professionals/lookup`)
+
+Only caregivers can call it, to confirm the identity of the professional they are about to link. It matches the license exactly (trimmed), returns `professionalId`, `firstName`, `lastName` and `specialty` only, answers the same generic `404` for unknown and suspended professionals, and is limited per user (`LOOKUP_MAX_ATTEMPTS` / `LOOKUP_WINDOW_MINUTES`, hits and misses count) so it cannot be used to enumerate professionals. Every lookup is audited (`READ` `professionals`, `details: { found }`, never the license searched). Linking is immediate, with no acceptance step by the professional.
+
 ### 6.1 Creating and Ending Professional Links (`professional_children`)
 
 In PostgreSQL, the RLS policy on `professional_children` allows `professional_id = app_user_id() OR app_has_child_access(child_id)`. Without application rules, any registered professional could self-assign to any child if their UUID were known.
@@ -80,6 +84,7 @@ Therefore, `POST /children/:childId/professionals` and `PATCH /children/:childId
 
 Any other actor receives `403 Forbidden`. In addition:
 
+- The child must have an **active informed consent** (`consents.revoked_at IS NULL`); otherwise `403 Forbidden` (creating a link only).
 - The target professional must exist and be active (`404 Not Found` otherwise).
 - No conflicting active link may already exist for that child (`409 Conflict`, enforced in DB with partial index `professional_children_active_unique_idx`).
 - `endDate` must be greater than or equal to `startDate` (`400 Bad Request`).

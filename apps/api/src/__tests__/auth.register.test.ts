@@ -109,6 +109,7 @@ describe('POST /auth/register', () => {
       lastName: 'Andrade',
       roles: ['CAREGIVER'],
       specialty: null,
+      licenseNumber: null,
     });
 
     // Verifica que la contraseña se guardó con Argon2id y nunca en claro

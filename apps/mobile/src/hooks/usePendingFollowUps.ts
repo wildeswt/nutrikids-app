@@ -1,23 +1,24 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/auth-context.js';
 import { listPending } from '../lib/follow-up-storage.js';
-import { flushPendingFollowUps } from '../lib/follow-up-sync.js';
+import { useSyncStatus } from './useSyncStatus.js';
 
 /**
- * Follow-ups this professional saved without connection (NK-34). `syncPending` tries to send them
- * and counts the ones still waiting for the given alert, so the alert detail can say so.
+ * Consulta cuántos seguimientos siguen esperando en la cola general para una alerta.
+ *
+ * El envío automático corre en segundo plano desde el motor de sincronización; este hook
+ * observa cambios del motor (`useSyncStatus`) y actualiza el contador sin forzar un vaciado.
  */
 export function usePendingFollowUps(alertId: string | undefined) {
   const { user } = useAuth();
   const userId = user?.id ?? null;
+  const syncStatus = useSyncStatus();
   const [pendingCount, setPendingCount] = useState(0);
 
-  const syncPending = useCallback(async (): Promise<void> => {
-    if (!userId) return;
-    try {
-      await flushPendingFollowUps(userId);
-    } catch {
-      /* they stay queued */
+  const refreshPending = useCallback(async (): Promise<void> => {
+    if (!userId) {
+      setPendingCount(0);
+      return;
     }
     try {
       const pending = await listPending(userId);
@@ -27,5 +28,15 @@ export function usePendingFollowUps(alertId: string | undefined) {
     }
   }, [userId, alertId]);
 
-  return { pendingCount, syncPending };
+  useEffect(() => {
+    void refreshPending();
+  }, [
+    refreshPending,
+    syncStatus.pending,
+    syncStatus.sending,
+    syncStatus.error,
+    syncStatus.lastSyncedAt,
+  ]);
+
+  return { pendingCount, refreshPending };
 }
