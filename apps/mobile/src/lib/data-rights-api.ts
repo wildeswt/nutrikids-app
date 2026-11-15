@@ -103,6 +103,14 @@ export async function requestErasure(childId: string): Promise<ErasureRequestRes
   return ErasureRequestResponseSchema.parse(rawJson);
 }
 
+/** Soft-deletes the child (`DELETE /children/:childId`, legal representative only). */
+export async function removeChild(childId: string): Promise<void> {
+  const response = await authFetch(`/children/${childId}`, { method: 'DELETE' });
+  if (!response.ok) {
+    throw await toApiError(response, i18n.t('errors:dataRights.removeChild'));
+  }
+}
+
 /** History of deletion requests of a child, newest first (legal representative only). */
 export async function fetchErasureRequests(childId: string): Promise<ErasureRequestResponse[]> {
   const response = await authFetch(`/children/${childId}/erasure-requests`);

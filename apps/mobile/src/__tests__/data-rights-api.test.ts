@@ -22,6 +22,7 @@ import {
   isIdentityLockedError,
   isNotLegalRepresentativeError,
   rectifyChild,
+  removeChild,
   requestErasure,
 } from '../lib/data-rights-api.js';
 
@@ -235,6 +236,22 @@ describe('data-rights-api', () => {
         expect.objectContaining({ method: 'DELETE' }),
       );
       expect(result.status).toBe('cancelled');
+    });
+    it('removeChild sends DELETE /children/:childId and fails with the API status', async () => {
+      const ok = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+      vi.stubGlobal('fetch', ok);
+      await removeChild(CHILD_ID);
+      expect(ok).toHaveBeenCalledWith(
+        expect.stringContaining(`/children/${CHILD_ID}`),
+        expect.objectContaining({ method: 'DELETE' }),
+      );
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ error: { message: 'no' } }, 403)),
+      );
+      const error = await removeChild(CHILD_ID).catch((err: unknown) => err);
+      expect(isNotLegalRepresentativeError(error)).toBe(true);
     });
   });
 });

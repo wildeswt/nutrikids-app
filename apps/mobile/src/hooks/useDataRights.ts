@@ -7,6 +7,7 @@ import {
   fetchErasureRequests,
   isNotLegalRepresentativeError,
   rectifyChild,
+  removeChild,
   requestErasure,
 } from '../lib/data-rights-api.js';
 import { buildHistoryCsv, deliverHistoryCsv, historyFileName } from '../lib/history-export.js';
@@ -38,7 +39,9 @@ export function useDataRights(childId: string | null) {
     requests: [],
     error: null,
   });
-  const [busy, setBusy] = useState<'erasure' | 'cancel' | 'export' | 'rectify' | null>(null);
+  const [busy, setBusy] = useState<'erasure' | 'cancel' | 'export' | 'rectify' | 'remove' | null>(
+    null,
+  );
   const latestLoad = useRef(0);
 
   const load = useCallback(async (): Promise<ErasureRequestResponse[] | null> => {
@@ -93,6 +96,16 @@ export function useDataRights(childId: string | null) {
     [childId, run],
   );
 
+  /** Soft-deletes the child: it stops showing in the app. */
+  const remove = useCallback(
+    (): Promise<void> =>
+      run('remove', async () => {
+        if (!childId) throw new Error(i18n.t('errors:dataRights.missingChild'));
+        await removeChild(childId);
+      }),
+    [childId, run],
+  );
+
   const cancelDeletion = useCallback(
     (requestId: string): Promise<ErasureRequestResponse> =>
       run('cancel', async () => {
@@ -137,6 +150,7 @@ export function useDataRights(childId: string | null) {
     load,
     requestDeletion,
     cancelDeletion,
+    remove,
     exportHistory,
     rectify,
   };

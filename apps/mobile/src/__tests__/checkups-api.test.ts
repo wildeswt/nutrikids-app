@@ -16,7 +16,9 @@ vi.mock('expo-secure-store', () => ({
 
 import {
   CheckupApiError,
+  correctChildCheckup,
   createChildCheckup,
+  deleteChildCheckup,
   fetchChildCheckups,
   isConsentRequiredError,
 } from '../lib/checkups-api.js';
@@ -207,6 +209,45 @@ describe('checkups-api', () => {
         isConsentRequiredError(new CheckupApiError('Falta el consentimiento (dato inválido)', 400)),
       ).toBe(false);
       expect(isConsentRequiredError(new Error('consentimiento'))).toBe(false);
+    });
+  });
+  describe('correctChildCheckup and deleteChildCheckup', () => {
+    it('corrects with POST /checkups/:id/correction', async () => {
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValue(new Response(JSON.stringify(storedCheckup), { status: 201 }));
+      vi.stubGlobal('fetch', mockFetch);
+
+      await correctChildCheckup(storedCheckup.id, {
+        id: '44444444-4444-4444-8444-444444444444',
+        measuredAt: storedCheckup.measuredAt,
+        weightKg: 13.2,
+        lengthHeightCm: 91.5,
+        position: 'STANDING',
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining(`/checkups/${storedCheckup.id}/correction`),
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    it('deletes with DELETE /checkups/:id and throws the API status on failure', async () => {
+      const ok = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+      vi.stubGlobal('fetch', ok);
+      await deleteChildCheckup(storedCheckup.id);
+      expect(ok).toHaveBeenCalledWith(
+        expect.stringContaining(`/checkups/${storedCheckup.id}`),
+        expect.objectContaining({ method: 'DELETE' }),
+      );
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(new Response(JSON.stringify({}), { status: 403 })),
+      );
+      const error = await deleteChildCheckup(storedCheckup.id).catch((err: unknown) => err);
+      expect(error).toBeInstanceOf(CheckupApiError);
+      expect((error as CheckupApiError).status).toBe(403);
     });
   });
 });
