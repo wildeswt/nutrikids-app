@@ -2,18 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { ProfessionalResultCard } from '../../components/ProfessionalResultCard.js';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { PALETTE } from '../../constants/colors.js';
@@ -26,14 +19,29 @@ import { filterActiveProfessionals } from '../../lib/messages-api.js';
 import { listLinkedProfessionals, unlinkProfessional } from '../../lib/professionals-api.js';
 import type { ProfessionalAssignmentResponse } from '@nutrikids/shared';
 
+export interface ChildProfessionalsScreenProps {
+  initialProfessionals?: ProfessionalAssignmentResponse[];
+  initialStatus?: 'loading' | 'ready' | 'error';
+}
+
 /** Profesionales vinculados a un niño: se ven y se pueden desvincular o agregar otro. */
-export default function ChildProfessionalsScreen() {
+export default function ChildProfessionalsScreen({
+  initialProfessionals,
+  initialStatus,
+}: ChildProfessionalsScreenProps = {}) {
   const router = useRouter();
   const { t } = useTranslation(['caregiver', 'common']);
   const params = useLocalSearchParams<{ childId?: string }>();
   const { children, load } = useChildren();
-  const [professionals, setProfessionals] = useState<ProfessionalAssignmentResponse[]>([]);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [professionals, setProfessionals] = useState<ProfessionalAssignmentResponse[]>(
+    initialProfessionals ?? [],
+  );
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
+    initialStatus ?? (initialProfessionals ? 'ready' : 'loading'),
+  );
+  const [targetUnlink, setTargetUnlink] = useState<ProfessionalAssignmentResponse | null>(null);
+  const [unlinking, setUnlinking] = useState(false);
+  const [unlinkError, setUnlinkError] = useState<string | null>(null);
 
   const childId = params.childId ?? null;
   const child = children.find((item) => item.id === childId) ?? null;
@@ -59,32 +67,22 @@ export default function ChildProfessionalsScreen() {
   };
 
   const confirmUnlink = (item: ProfessionalAssignmentResponse) => {
-    const name = `${item.firstName ?? ''} ${item.lastName ?? ''}`.trim();
-    const childName = child?.firstName ?? '';
-    Alert.alert(
-      t('myData.unlinkConfirmTitle', { name }),
-      t('myData.unlinkConfirmMessage', { name, child: childName }),
-      [
-        { text: t('common:actions.cancel'), style: 'cancel' },
-        {
-          text: t('myData.unlinkConfirm'),
-          style: 'destructive',
-          onPress: () => {
-            void (async () => {
-              try {
-                await unlinkProfessional(item.childId, item.professionalId);
-                await reload();
-              } catch (err) {
-                Alert.alert(
-                  t('myData.unlinkError'),
-                  err instanceof Error ? err.message : undefined,
-                );
-              }
-            })();
-          },
-        },
-      ],
-    );
+    setTargetUnlink(item);
+  };
+
+  const handlePerformUnlink = async () => {
+    if (!targetUnlink) return;
+    setUnlinking(true);
+    try {
+      await unlinkProfessional(targetUnlink.childId, targetUnlink.professionalId);
+      setTargetUnlink(null);
+      await reload();
+    } catch (err) {
+      setTargetUnlink(null);
+      setUnlinkError(err instanceof Error ? err.message : t('myData.unlinkError'));
+    } finally {
+      setUnlinking(false);
+    }
   };
 
   const goLink = () => {
@@ -180,6 +178,42 @@ export default function ChildProfessionalsScreen() {
           />
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={targetUnlink !== null}
+        tone="danger"
+        icon="person-remove-outline"
+        title={t('myData.unlinkConfirmTitle', {
+          name: targetUnlink
+            ? `${targetUnlink.firstName ?? ''} ${targetUnlink.lastName ?? ''}`.trim()
+            : '',
+        })}
+        message={t('myData.unlinkConfirmMessage', {
+          name: targetUnlink
+            ? `${targetUnlink.firstName ?? ''} ${targetUnlink.lastName ?? ''}`.trim()
+            : '',
+          child: child?.firstName ?? '',
+        })}
+        confirmLabel={t('myData.unlinkConfirm')}
+        loading={unlinking}
+        onConfirm={() => void handlePerformUnlink()}
+        onCancel={() => {
+          if (!unlinking) setTargetUnlink(null);
+        }}
+        testID="child-professionals-unlink-dialog"
+      />
+
+      <ConfirmDialog
+        visible={unlinkError !== null}
+        tone="danger"
+        icon="alert-circle-outline"
+        title={t('myData.unlinkError')}
+        message={unlinkError ?? ''}
+        confirmLabel={t('common:actions.accept')}
+        onConfirm={() => setUnlinkError(null)}
+        onCancel={() => setUnlinkError(null)}
+        testID="child-professionals-error-dialog"
+      />
     </SafeAreaView>
   );
 }
