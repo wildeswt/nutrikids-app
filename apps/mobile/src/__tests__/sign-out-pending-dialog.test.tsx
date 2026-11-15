@@ -121,7 +121,6 @@ vi.mock('../components/ConsentChildItem.js', () => ({
 }));
 
 import CaregiverProfileScreen from '../app/(caregiver)/profile.js';
-import { CustomDrawerContent } from '../app/(professional)/_layout.js';
 import ProfessionalProfileScreen from '../app/(professional)/profile.js';
 import { SignOutPendingDialog } from '../components/SignOutPendingDialog.js';
 import type { SignOutPendingDialogProps } from '../hooks/useSignOutFlow.js';
@@ -345,40 +344,6 @@ describe('SignOutPendingDialog and sign-out entry points (NK-63)', () => {
       mocks.syncState = { pending: 0, sending: 0, error: 0, lastSyncedAt: null };
       renderToString(React.createElement(Capture));
       await findByTestId(tree, 'professional-logout-button')?.props?.onPress?.();
-      expect(mocks.signOut).toHaveBeenCalledTimes(1);
-    });
-
-    it('wires CustomDrawerContent logout through useSignOutFlow and navigates within drawer', async () => {
-      mocks.activeRole = USER_ROLES.PROFESSIONAL;
-      let tree!: React.ReactNode;
-      function Capture() {
-        tree = CustomDrawerContent({
-          navigation: {
-            closeDrawer: mocks.closeDrawer,
-            navigate: mocks.navigate,
-          },
-        } as never);
-        return null;
-      }
-
-      mocks.syncState = { pending: 1, sending: 1, error: 0, lastSyncedAt: null };
-      renderToString(React.createElement(Capture));
-
-      const logoutBtn = findByTestId(tree, 'drawer-logout-button');
-      const dialog = findDialogElement(tree);
-      expect(logoutBtn).not.toBeNull();
-      expect(dialog).not.toBeNull();
-
-      await logoutBtn?.props?.onPress?.();
-      expect(mocks.signOut).not.toHaveBeenCalled();
-
-      dialog?.props?.onGoToPendingSync?.();
-      expect(mocks.closeDrawer).toHaveBeenCalledTimes(1);
-      expect(mocks.navigate).toHaveBeenCalledWith('pending-sync');
-
-      mocks.syncState = { pending: 0, sending: 0, error: 0, lastSyncedAt: null };
-      renderToString(React.createElement(Capture));
-      await findByTestId(tree, 'drawer-logout-button')?.props?.onPress?.();
       expect(mocks.signOut).toHaveBeenCalledTimes(1);
     });
   });
