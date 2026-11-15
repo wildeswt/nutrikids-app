@@ -187,32 +187,43 @@ export interface ChartZonePositions {
   normalZoneTop: number;
   /** Vertical center (px) of the zone between -2 and -3. */
   lowerZoneTop: number;
+  /** Vertical position (px) at the left edge (xMin) for each of the 5 curves. */
+  curveLeftTops: Record<'-3' | '-2' | '0' | '+2' | '+3', number>;
   /** Vertical position (px) at the right edge (xMax) for each of the 5 curves. */
   curveRightTops: Record<'-3' | '-2' | '0' | '+2' | '+3', number>;
 }
 
 /**
  * Vertical pixel positions for the zone labels between the WHO curves and for the 5 curve ends.
+ * Zone labels are positioned at 20% of the horizontal span so left-aligned labels sit cleanly
+ * inside each band without overlapping the sloping dashed lines.
  */
 export function computeZonePositions(
   curves: Curves,
   domain: ChartDomain,
   plotHeight: number,
 ): ChartZonePositions {
-  const xMid = (domain.xMin + domain.xMax) / 2;
+  const xLabel = domain.xMin + (domain.xMax - domain.xMin) * 0.2;
   const yToTop = (y: number) =>
     plotHeight - ((y - domain.yMin) / (domain.yMax - domain.yMin)) * plotHeight;
 
-  const midPlus3 = interpolateAt(curves['+3'], xMid);
-  const midPlus2 = interpolateAt(curves['+2'], xMid);
-  const midZero = interpolateAt(curves['0'], xMid);
-  const midMinus2 = interpolateAt(curves['-2'], xMid);
-  const midMinus3 = interpolateAt(curves['-3'], xMid);
+  const labelPlus3 = interpolateAt(curves['+3'], xLabel);
+  const labelPlus2 = interpolateAt(curves['+2'], xLabel);
+  const labelZero = interpolateAt(curves['0'], xLabel);
+  const labelMinus2 = interpolateAt(curves['-2'], xLabel);
+  const labelMinus3 = interpolateAt(curves['-3'], xLabel);
 
   return {
-    upperZoneTop: yToTop((midPlus3 + midPlus2) / 2),
-    normalZoneTop: yToTop(midZero),
-    lowerZoneTop: yToTop((midMinus2 + midMinus3) / 2),
+    upperZoneTop: yToTop((labelPlus3 + labelPlus2) / 2),
+    normalZoneTop: yToTop((labelPlus2 + labelZero) / 2),
+    lowerZoneTop: yToTop((labelMinus2 + labelMinus3) / 2),
+    curveLeftTops: {
+      '+3': yToTop(interpolateAt(curves['+3'], domain.xMin)),
+      '+2': yToTop(interpolateAt(curves['+2'], domain.xMin)),
+      '0': yToTop(interpolateAt(curves['0'], domain.xMin)),
+      '-2': yToTop(interpolateAt(curves['-2'], domain.xMin)),
+      '-3': yToTop(interpolateAt(curves['-3'], domain.xMin)),
+    },
     curveRightTops: {
       '+3': yToTop(interpolateAt(curves['+3'], domain.xMax)),
       '+2': yToTop(interpolateAt(curves['+2'], domain.xMax)),

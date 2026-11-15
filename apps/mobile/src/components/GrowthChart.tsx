@@ -52,11 +52,11 @@ const Z_CURVE_LABELS: ReadonlyArray<{
   key: '-3' | '-2' | '0' | '+2' | '+3';
   text: string;
 }> = [
-  { key: '+3', text: '+3 DE' },
-  { key: '+2', text: '+2 DE' },
-  { key: '0', text: '0 DE' },
-  { key: '-2', text: '−2 DE' },
-  { key: '-3', text: '−3 DE' },
+  { key: '+3', text: '+3' },
+  { key: '+2', text: '+2' },
+  { key: '0', text: '0' },
+  { key: '-2', text: '−2' },
+  { key: '-3', text: '−3' },
 ];
 
 export interface GrowthChartProps {
