@@ -14,20 +14,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PALETTE } from '../constants/colors.js';
+import { FIELD_HEIGHT, RADIUS_PILL, SCREEN_MARGIN } from '../constants/layout.js';
+import { font } from '../constants/typography.js';
 import { useAuth } from '../context/auth-context.js';
 import { useKeyboardOverlap } from '../hooks/useKeyboardBottomInset.js';
 import { useMessageThread } from '../hooks/useMessageThread.js';
 import { formatLongDate, formatTime } from '../i18n/format.js';
 import { fetchConversations } from '../lib/messages-api.js';
+import { ChildBanner } from './ChildBanner.js';
 
 const LOCAL_COLORS = {
   white: '#FFFFFF',
-  otherBubble: '#FFEADF',
   otherSender: '#9A3412',
   myMeta: '#D1E0DE',
-  inputBg: '#F5F5F5',
-  inputBorder: '#E5E7EB',
-  failedTag: '#FEE2E2',
 } as const;
 
 const POLL_INTERVAL_MS = 15_000;
@@ -222,7 +221,7 @@ export function ChatThread({
       accessibilityLabel={t('caregiver:chat.back')}
       testID="chat-back-button"
     >
-      <Ionicons name="chevron-back" size={20} color={PALETTE.text.title} />
+      <Ionicons name="arrow-back" size={24} color={PALETTE.text.title} />
       <Text style={styles.backText}>{t('caregiver:chat.back')}</Text>
     </Pressable>
   );
@@ -267,12 +266,12 @@ export function ChatThread({
 
           <Text style={styles.chatTitle}>{screenTitle}</Text>
 
-          <View style={styles.headerCard}>
-            <Text style={styles.headerDoctorTitle}>{headerPrimary}</Text>
-            {headerSubtitle ? (
-              <Text style={styles.headerChildSubtitle}>{headerSubtitle}</Text>
-            ) : null}
-          </View>
+          <ChildBanner
+            name={headerPrimary}
+            subtitle={headerSubtitle ?? undefined}
+            style={styles.headerCard}
+            testID="chat-context-banner"
+          />
 
           {loading && messages.length === 0 ? (
             <View style={styles.stateBox} testID="chat-loading">
@@ -453,12 +452,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 22,
-    paddingTop: 10,
+    paddingHorizontal: SCREEN_MARGIN,
+    paddingTop: 12,
     paddingBottom: 16,
   },
   footerContainer: {
-    paddingHorizontal: 22,
+    paddingHorizontal: SCREEN_MARGIN,
     paddingTop: 8,
     paddingBottom: 16,
     backgroundColor: PALETTE.background,
@@ -467,44 +466,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: 4,
-    marginBottom: 14,
+    gap: 8,
+    marginBottom: 8,
     paddingVertical: 4,
   },
   backText: {
-    fontSize: 16,
+    fontFamily: font('medium'),
     fontWeight: '500',
-    color: PALETTE.text.title,
+    fontSize: 20,
+    color: PALETTE.text.body,
   },
   chatTitle: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 32,
     color: PALETTE.text.title,
     marginBottom: 16,
   },
   headerCard: {
-    backgroundColor: PALETTE.secondary,
-    borderRadius: 24,
-    paddingVertical: 16,
-    paddingHorizontal: 22,
     marginBottom: 24,
-    shadowColor: PALETTE.secondary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  headerDoctorTitle: {
-    color: LOCAL_COLORS.white,
-    fontSize: 17,
-    fontWeight: '800',
-    marginBottom: 3,
-  },
-  headerChildSubtitle: {
-    color: LOCAL_COLORS.white,
-    fontSize: 13,
-    fontWeight: '500',
-    opacity: 0.95,
   },
   loadOlderButton: {
     alignSelf: 'center',
@@ -516,14 +496,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   loadOlderText: {
-    fontSize: 13,
+    fontFamily: font('semibold'),
     fontWeight: '600',
+    fontSize: 13,
     color: PALETTE.primary,
   },
   dateSeparator: {
+    fontFamily: font('medium'),
+    fontWeight: '500',
     textAlign: 'center',
     fontSize: 13,
-    fontWeight: '500',
     color: PALETTE.text.muted,
     marginBottom: 12,
     marginTop: 4,
@@ -536,26 +518,29 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   otherMessageBubble: {
-    backgroundColor: LOCAL_COLORS.otherBubble,
-    borderRadius: 22,
+    backgroundColor: PALETTE.secondaryLight,
+    borderRadius: RADIUS_PILL,
     borderTopLeftRadius: 6,
     paddingVertical: 14,
     paddingHorizontal: 18,
     maxWidth: '85%',
   },
   otherSenderName: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 13,
-    fontWeight: '700',
     color: LOCAL_COLORS.otherSender,
     marginBottom: 6,
   },
   otherMessageText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     lineHeight: 20,
     color: PALETTE.text.body,
     marginBottom: 4,
   },
   otherTimeText: {
+    fontFamily: font('regular'),
     fontSize: 11,
     color: PALETTE.text.muted,
     alignSelf: 'flex-end',
@@ -566,19 +551,21 @@ const styles = StyleSheet.create({
   },
   myMessageBubble: {
     backgroundColor: PALETTE.primary,
-    borderRadius: 22,
+    borderRadius: RADIUS_PILL,
     borderTopRightRadius: 6,
     paddingVertical: 14,
     paddingHorizontal: 18,
     maxWidth: '85%',
   },
   mySenderName: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 13,
-    fontWeight: '700',
     color: LOCAL_COLORS.white,
     marginBottom: 6,
   },
   myMessageText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     lineHeight: 20,
     color: LOCAL_COLORS.white,
@@ -592,12 +579,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   myMetaText: {
+    fontFamily: font('regular'),
     fontSize: 11,
     color: LOCAL_COLORS.myMeta,
   },
   retryInlineText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     fontSize: 11,
-    fontWeight: '700',
     color: LOCAL_COLORS.white,
     textDecorationLine: 'underline',
   },
@@ -611,8 +600,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sendErrorText: {
-    fontSize: 13,
+    fontFamily: font('semibold'),
     fontWeight: '600',
+    fontSize: 13,
     color: PALETTE.feedback.error,
     textAlign: 'center',
   },
@@ -624,33 +614,29 @@ const styles = StyleSheet.create({
   },
   textInputWrapper: {
     flex: 1,
-    backgroundColor: LOCAL_COLORS.inputBg,
-    borderRadius: 24,
+    backgroundColor: PALETTE.input.background,
+    borderRadius: RADIUS_PILL,
     borderWidth: 1,
-    borderColor: LOCAL_COLORS.inputBorder,
+    borderColor: PALETTE.border.input,
     paddingHorizontal: 18,
     paddingVertical: 8,
-    minHeight: 50,
+    minHeight: FIELD_HEIGHT,
     maxHeight: 120,
     justifyContent: 'center',
   },
   textInput: {
+    fontFamily: font('regular'),
     fontSize: 15,
     color: PALETTE.text.body,
     paddingVertical: 4,
   },
   sendButton: {
     backgroundColor: PALETTE.primary,
-    borderRadius: 26,
-    height: 50,
-    paddingHorizontal: 24,
+    borderRadius: RADIUS_PILL,
+    height: FIELD_HEIGHT,
+    paddingHorizontal: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: PALETTE.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
   },
   sendButtonDisabled: {
     opacity: 0.5,
@@ -659,17 +645,20 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.primaryPressed,
   },
   sendButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: LOCAL_COLORS.white,
     fontSize: 15,
-    fontWeight: '700',
   },
   charCountText: {
+    fontFamily: font('regular'),
     fontSize: 11,
     color: PALETTE.text.muted,
     textAlign: 'right',
     marginBottom: 6,
   },
   privacyNote: {
+    fontFamily: font('regular'),
     fontSize: 12,
     color: PALETTE.text.muted,
     textAlign: 'center',
@@ -683,12 +672,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   stateText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.muted,
     textAlign: 'center',
     lineHeight: 20,
   },
   errorStateText: {
+    fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.feedback.error,
     textAlign: 'center',
@@ -697,14 +688,15 @@ const styles = StyleSheet.create({
   retryButton: {
     marginTop: 4,
     backgroundColor: PALETTE.primary,
-    borderRadius: 22,
+    borderRadius: RADIUS_PILL,
     paddingHorizontal: 22,
     paddingVertical: 10,
   },
   retryButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
     color: LOCAL_COLORS.white,
     fontSize: 14,
-    fontWeight: '700',
   },
   pressed: {
     opacity: 0.75,

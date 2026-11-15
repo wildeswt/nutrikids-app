@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CHECKUP_NOTES_MAX,
   CaregiverCheckupResponseSchema,
   CaregiverIndicatorResultSchema,
   CheckupResponseSchema,
@@ -137,6 +138,37 @@ describe('CreateCheckupInputSchema y CorrectCheckupInputSchema', () => {
     ).toBe(false);
     expect(CreateCheckupInputSchema.safeParse({ ...mateoCheckup, id: 'abc' }).success).toBe(false);
   });
+
+  it('acepta notas opcionales, recorta espacios y rechaza vacías o > 500 caracteres', () => {
+    const parsed = CreateCheckupInputSchema.parse({
+      ...mateoCheckup,
+      notes: '  Desayunó bien hoy  ',
+    });
+    expect(parsed.notes).toBe('Desayunó bien hoy');
+
+    const correction = CorrectCheckupInputSchema.parse({
+      ...mateoCheckup,
+      notes: '  Corrección de peso  ',
+    });
+    expect(correction.notes).toBe('Corrección de peso');
+
+    expect(CreateCheckupInputSchema.safeParse({ ...mateoCheckup, notes: '' }).success).toBe(false);
+    expect(CreateCheckupInputSchema.safeParse({ ...mateoCheckup, notes: '   ' }).success).toBe(
+      false,
+    );
+    expect(
+      CreateCheckupInputSchema.safeParse({
+        ...mateoCheckup,
+        notes: 'a'.repeat(CHECKUP_NOTES_MAX + 1),
+      }).success,
+    ).toBe(false);
+    expect(
+      CreateCheckupInputSchema.safeParse({
+        ...mateoCheckup,
+        notes: 'a'.repeat(CHECKUP_NOTES_MAX),
+      }).success,
+    ).toBe(true);
+  });
 });
 
 describe('IndicatorResultSchema y respuestas de control (profesional vs cuidador)', () => {
@@ -155,8 +187,10 @@ describe('IndicatorResultSchema y respuestas de control (profesional vs cuidador
     childId: '4a2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c',
     origin: 'CAREGIVER',
     recordedById: '6c2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c',
+    recordedBy: null,
     correctedCheckupId: null,
     isCurrent: true,
+    notes: null,
     createdAt: '2026-10-18T14:31:00Z',
     results: [resultRow],
   };
@@ -179,6 +213,13 @@ describe('IndicatorResultSchema y respuestas de control (profesional vs cuidador
     expect(Object.keys(CaregiverCheckupResponseSchema.shape)).not.toContain('results');
     const parsed = CaregiverCheckupResponseSchema.parse(fullCheckup);
     expect(parsed).not.toHaveProperty('results');
+    expect(parsed.notes).toBeNull();
+  });
+
+  it('ambas respuestas conservan notes cuando tiene texto', () => {
+    const withNotes = { ...fullCheckup, notes: 'Tomó sopa en el almuerzo' };
+    expect(CheckupResponseSchema.parse(withNotes).notes).toBe('Tomó sopa en el almuerzo');
+    expect(CaregiverCheckupResponseSchema.parse(withNotes).notes).toBe('Tomó sopa en el almuerzo');
   });
 
   it('CaregiverIndicatorResultSchema (cuidador) no expone z, percentil ni clasificación', () => {

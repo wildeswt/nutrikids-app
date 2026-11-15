@@ -1,4 +1,4 @@
-import type { AuditAction, AuditEntityType } from '@nutrikids/shared';
+import type { AuditAction, AuditDetails, AuditEntityType } from '@nutrikids/shared';
 import type { Request, RequestHandler, Response } from 'express';
 import { logAuditEvent } from '../services/audit.service.js';
 
@@ -13,6 +13,8 @@ export interface AuditConfig {
    * `req.params.checkupId`, `req.params.childId` o `req.params.id`.
    */
   getEntityId?: (req: Request, res: Response) => string | null | undefined;
+  /** Detalles estructurados opcionales (p. ej. banderas sin texto clínico sensible). */
+  getDetails?: (req: Request, res: Response) => AuditDetails | null | undefined;
 }
 
 /**
@@ -42,11 +44,14 @@ export function auditHealth(config: AuditConfig): RequestHandler {
           (req.params.id as string | undefined) ??
           null);
 
+      const details = config.getDetails ? config.getDetails(req, res) : undefined;
+
       logAuditEvent({
         userId,
         action: config.action,
         entityType: config.entityType,
         entityId,
+        ...(details ? { details } : {}),
       }).catch((err) => {
         // La falla de auditoría no interrumpe la respuesta al cliente
         console.error('[auditHealth] Error al registrar evento de auditoría:', err);

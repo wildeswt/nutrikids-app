@@ -5,6 +5,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UseFollowUpFormResult } from '../hooks/useFollowUpForm.js';
 import { CHILD_ID, makeDetail } from './alerts-fixtures.js';
 
+const runtime = vi.hoisted(() => ({
+  slots: [] as unknown[],
+  index: 0,
+}));
+
 const mocks = vi.hoisted(() => ({
   back: vi.fn(),
   replace: vi.fn(),
@@ -12,8 +17,6 @@ const mocks = vi.hoisted(() => ({
   useFollowUpForm: vi.fn(),
   params: {} as Record<string, string>,
   effects: [] as (() => void)[],
-  menuOpen: false,
-  setMenuOpen: vi.fn(),
 }));
 
 vi.mock('expo-router', () => ({
@@ -27,8 +30,20 @@ vi.mock('react', async (importOriginal) => {
   return {
     ...actual,
     useEffect: (effect: () => void) => mocks.effects.push(effect),
-    // The screen's only state is whether the type menu is open.
-    useState: () => [mocks.menuOpen, mocks.setMenuOpen],
+    useState: (initial: unknown) => {
+      const slot = runtime.index++;
+      if (!(slot in runtime.slots)) {
+        runtime.slots[slot] =
+          typeof initial === 'function' ? (initial as () => unknown)() : initial;
+      }
+      const set = (value: unknown) => {
+        runtime.slots[slot] =
+          typeof value === 'function'
+            ? (value as (prev: unknown) => unknown)(runtime.slots[slot])
+            : value;
+      };
+      return [runtime.slots[slot], set];
+    },
   };
 });
 
@@ -81,7 +96,13 @@ function setHook(overrides: Partial<UseFollowUpFormResult> = {}) {
     fatalError: null,
     child: mateo,
     alertStatus: 'PENDING_REVIEW',
-    form: { type: null, details: '', nextCheckupText: '', establish: true },
+    form: {
+      observations: '',
+      intervention: '',
+      referral: '',
+      nextCheckupText: '',
+      establish: true,
+    },
     setForm,
     canEstablish: true,
     offline: false,
@@ -99,6 +120,7 @@ function setHook(overrides: Partial<UseFollowUpFormResult> = {}) {
 }
 
 interface Node {
+  type?: unknown;
   props?: Record<string, unknown>;
 }
 
@@ -113,15 +135,23 @@ function find(node: unknown, predicate: (n: Node) => boolean): Node | null {
   if (!node || typeof node !== 'object') return null;
   const el = node as Node;
   if (predicate(el)) return el;
-  const children = el.props?.['children'];
-  for (const child of Array.isArray(children) ? children : [children]) {
-    const found = find(child, predicate);
+  if (typeof el.type === 'function' && el.type.name === 'ScreenHeader') {
+    const rendered = (el.type as (props: Record<string, unknown>) => unknown)(el.props ?? {});
+    const found = find(rendered, predicate);
     if (found) return found;
+  }
+  const branches = [el.props?.['children'], el.props?.['rightIcon']];
+  for (const branch of branches) {
+    for (const child of Array.isArray(branch) ? branch : [branch]) {
+      const found = find(child, predicate);
+      if (found) return found;
+    }
   }
   return null;
 }
 
 function byTestId(testID: string): Node | null {
+  runtime.index = 0;
   let tree: unknown = null;
   function Capture() {
     tree = FollowUpScreen();
@@ -131,14 +161,18 @@ function byTestId(testID: string): Node | null {
   return find(tree, (n) => n.props?.['testID'] === testID);
 }
 
-const html = () => renderToString(React.createElement(FollowUpScreen));
+const html = () => {
+  runtime.index = 0;
+  return renderToString(React.createElement(FollowUpScreen));
+};
 const press = (testID: string) => (byTestId(testID)?.props?.['onPress'] as () => unknown)();
 
 describe('FollowUpScreen (NK-34)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.effects.length = 0;
-    mocks.menuOpen = false;
+    runtime.slots.length = 0;
+    runtime.index = 0;
     mocks.params = { alertId: ALERT_ID, childId: CHILD_ID };
     mocks.canGoBack.mockReturnValue(true);
     save.mockResolvedValue('sent');
@@ -159,45 +193,46 @@ describe('FollowUpScreen (NK-34)', () => {
     expect(out).toContain('Laura Pérez · Nutrición');
   });
 
-  it('has the type selector, the details, the next checkup and both buttons (Figma)', () => {
+  it('has the three sections (observaciones, intervención, derivación), next checkup and buttons', () => {
     const out = html();
-    expect(out).toContain('Tipo de seguimiento');
-    expect(out).toContain('Elige el tipo');
-    expect(out).toContain('Detalle del seguimiento');
+    expect(out).toContain('Observaciones clínicas');
+    expect(out).toContain('Intervención nutricional');
+    expect(out).toContain('Derivación');
     expect(out).toContain('Próximo control');
     expect(out).toContain('DD/MM/AAAA (opcional)');
     expect(out).toContain('Guardar seguimiento');
     expect(out).toContain('Guardar como borrador');
   });
 
-  describe('type selector', () => {
-    it('opens and closes from the selector', () => {
-      expect(html()).not.toContain('follow-up-type-menu');
-      press('follow-up-type');
-      expect(mocks.setMenuOpen).toHaveBeenCalled();
+  describe('sections (NK-75)', () => {
+    it('allows typing in observations, intervention, and referral', () => {
+      const obsInput = byTestId('follow-up-observations');
+      (obsInput?.props?.['onChangeText'] as (text: string) => void)('Nota de peso');
+      expect(setForm).toHaveBeenCalledWith({ observations: 'Nota de peso' });
+
+      const interInput = byTestId('follow-up-intervention');
+      (interInput?.props?.['onChangeText'] as (text: string) => void)('Plan de alimentación');
+      expect(setForm).toHaveBeenCalledWith({ intervention: 'Plan de alimentación' });
+
+      const refInput = byTestId('follow-up-referral');
+      (refInput?.props?.['onChangeText'] as (text: string) => void)('Derivar a pediatría');
+      expect(setForm).toHaveBeenCalledWith({ referral: 'Derivar a pediatría' });
     });
 
-    it('lists the four follow-up types when open and picks one', () => {
-      mocks.menuOpen = true;
+    it('shows the filled section values', () => {
+      setHook({
+        form: {
+          observations: 'Obs guardada',
+          intervention: 'Inter guardada',
+          referral: 'Ref guardada',
+          nextCheckupText: '',
+          establish: true,
+        },
+      });
       const out = html();
-      expect(out).toContain('follow-up-type-menu');
-      for (const label of [
-        'Observación clínica',
-        'Recomendación',
-        'Intervención nutricional',
-        'Derivación',
-      ]) {
-        expect(out).toContain(label);
-      }
-
-      press('follow-up-type-intervention');
-      expect(setForm).toHaveBeenCalledWith({ type: 'intervention' });
-      expect(mocks.setMenuOpen).toHaveBeenCalledWith(false);
-    });
-
-    it('shows the chosen type', () => {
-      setHook({ form: { type: 'referral', details: '', nextCheckupText: '', establish: true } });
-      expect(html()).toContain('Derivación');
+      expect(out).toContain('Obs guardada');
+      expect(out).toContain('Inter guardada');
+      expect(out).toContain('Ref guardada');
     });
   });
 
@@ -211,9 +246,50 @@ describe('FollowUpScreen (NK-34)', () => {
       });
     });
 
+    it('displays the chosen date in long format', () => {
+      setHook({
+        form: {
+          observations: '',
+          intervention: '',
+          referral: '',
+          nextCheckupText: '25/10/2026',
+          establish: true,
+        },
+      });
+      const out = html();
+      expect(out).toContain('25 de octubre de 2026');
+      expect(out).not.toContain('25/10/2026');
+    });
+
+    it('opens the date picker from the calendar icon and updates the date on selection', () => {
+      expect(byTestId('follow-up-date-picker')).toBeNull();
+      press('follow-up-date-picker-button');
+      expect(byTestId('follow-up-date-picker')).not.toBeNull();
+
+      const picker = byTestId('follow-up-date-picker');
+      expect(picker?.props?.['minimumDate']).toBeInstanceOf(Date);
+      const onChange = picker?.props?.['onChange'] as (
+        event: { type: string },
+        date?: Date,
+      ) => void;
+      onChange({ type: 'set' }, new Date(2026, 9, 25));
+      expect(setForm).toHaveBeenCalledWith({ nextCheckupText: '25/10/2026' });
+    });
+
+    it('opens the date picker when tapping the date field itself', () => {
+      press('follow-up-next-checkup');
+      expect(html()).toContain('follow-up-date-picker');
+    });
+
     it('can remove the chosen date', () => {
       setHook({
-        form: { type: null, details: '', nextCheckupText: '25/11/2026', establish: true },
+        form: {
+          observations: '',
+          intervention: '',
+          referral: '',
+          nextCheckupText: '25/11/2026',
+          establish: true,
+        },
       });
       press('follow-up-clear-date');
       expect(setForm).toHaveBeenCalledWith({ nextCheckupText: '' });
@@ -278,9 +354,14 @@ describe('FollowUpScreen (NK-34)', () => {
 
   describe('messages', () => {
     it.each([
-      [{ code: 'typeRequired' }, 'Elige el tipo de seguimiento.'],
-      [{ code: 'detailsRequired' }, 'Escribe el detalle del seguimiento.'],
-      [{ code: 'detailsTooLong', max: 2000 }, 'El detalle no puede pasar de 2000 caracteres.'],
+      [
+        { code: 'atLeastOneRequired' },
+        'Completa al menos una sección (observaciones, intervención o derivación).',
+      ],
+      [
+        { code: 'detailsTooLong', field: 'observations', max: 2000 },
+        'El detalle no puede pasar de 2000 caracteres.',
+      ],
       [{ code: 'dateInvalid' }, 'Escribe la fecha como DD/MM/AAAA.'],
       [{ code: 'datePast' }, 'La fecha del próximo control no puede ser anterior a hoy.'],
     ] as const)('explains %o', (formError, text) => {

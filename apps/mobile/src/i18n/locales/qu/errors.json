@@ -5,6 +5,7 @@
   "timeout": "{{url}}-wan tinkinkapak pachaka tukurirkami",
   "invalidResponse": "Servidorpak kutichikka mana shuyashka shinachu kan.",
   "sessionRefreshNetwork": "Yaykushkata mushukyachinkapak internet pantarirkami. Kikinpak internetta rikuy.",
+  "offlineNoData": "Conéctate a internet una vez para descargar tu información",
   "http": {
     "401": "Correopash pakalla shimipash pantashkami. Kutin rikuy.",
     "403": "Mana yaykuy ushanichu, mana kashpaka hampikpak kayana yupay pantashkami.",
@@ -40,15 +41,39 @@
   "checkups": {
     "fetch": "Kamaykunata mana rikuchiy usharkanchikchu. Kutin rurapay.",
     "create": "Kamayta mana wakaychiy usharkanchikchu. Kutin rurapay.",
-    "missingChild": "Kamayta killkankapakka wawata akllana kanmi."
+    "missingChild": "Kamayta killkankapakka wawata akllana kanmi.",
+    "offlineNoLocalDb": "Necesitas conexión para guardar el control en este dispositivo"
+  },
+  "growthTrend": {
+    "fetch": "No pudimos cargar la tendencia de crecimiento. Intenta de nuevo."
+  },
+  "feeding": {
+    "create": "No pudimos guardar la alimentación. Intenta de nuevo.",
+    "missingChild": "Falta elegir el niño para registrar su alimentación.",
+    "network": "Necesitas conexión para guardar la alimentación. Inténtalo de nuevo cuando vuelvas a tener internet."
   },
   "reference": {
-    "fetch": "OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay."
+    "fetch": "OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay.",
+    "offlineNoData": "Conéctate una vez para descargar las curvas"
   },
   "alerts": {
     "list": "Mana yuyachikkunata apamunkapak ushashkanchu. Kutin yachay.",
     "detail": "No pudimos cargar la alerta. Intenta de nuevo.",
     "review": "No pudimos marcar la alerta como revisada. Intenta de nuevo."
+  },
+  "followUps": {
+    "create": "No pudimos guardar el seguimiento. Intenta de nuevo."
+  },
+  "growth": {
+    "fetch": "No pudimos cargar el estado de crecimiento. Intenta de nuevo."
+  },
+  "reminders": {
+    "fetch": "No pudimos cargar los recordatorios. Intenta de nuevo.",
+    "create": "No pudimos guardar el recordatorio. Intenta de nuevo.",
+    "complete": "No pudimos marcar el recordatorio como realizado. Intenta de nuevo."
+  },
+  "education": {
+    "fetch": "No pudimos descargar los artículos. Intenta de nuevo."
   },
   "dataRights": {
     "rectify": "No pudimos guardar los cambios. Intenta de nuevo.",
@@ -61,20 +86,6 @@
   "account": {
     "fetch": "No pudimos cargar tu cuenta. Intenta de nuevo.",
     "update": "No pudimos guardar tus datos. Intenta de nuevo."
-  },
-  "reminders": {
-    "fetch": "No pudimos cargar los recordatorios. Intenta de nuevo.",
-    "create": "No pudimos guardar el recordatorio. Intenta de nuevo.",
-    "complete": "No pudimos marcar el recordatorio como realizado. Intenta de nuevo."
-  },
-  "growth": {
-    "fetch": "No pudimos cargar el estado de crecimiento. Intenta de nuevo."
-  },
-  "followUps": {
-    "create": "No pudimos guardar el seguimiento. Intenta de nuevo."
-  },
-  "education": {
-    "fetch": "No pudimos descargar los artículos. Intenta de nuevo."
   },
   "referrals": {
     "professionals": "No pudimos cargar los profesionales vinculados al niño. Intenta de nuevo.",

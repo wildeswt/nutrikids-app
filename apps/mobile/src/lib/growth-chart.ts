@@ -37,6 +37,14 @@ export function bodyMassIndex(weightKg: number, lengthHeightCm: number): number 
   return weightKg / (meters * meters);
 }
 
+export interface ChartCheckupPoint<
+  T extends Pick<CaregiverCheckupResponse, 'id' | 'measuredAt' | 'weightKg' | 'lengthHeightCm'> =
+    CaregiverCheckupResponse,
+> extends CurvePoint {
+  checkupId: string;
+  checkup: T;
+}
+
 /** Where a checkup lands on the chart of an indicator. */
 export function checkupToPoint(
   indicator: IndicatorInfo,
@@ -56,15 +64,17 @@ export function checkupToPoint(
   }
 }
 
-/** Chart points of the child, ordered along the X axis (the API returns newest first). */
-export function checkupsToPoints(
-  indicator: IndicatorInfo,
-  checkups: readonly CaregiverCheckupResponse[],
-  birthDate: string,
-): CurvePoint[] {
+/** Chart points of the child with their source checkup, ordered along the X axis (oldest first). */
+export function checkupsToPoints<
+  T extends Pick<CaregiverCheckupResponse, 'id' | 'measuredAt' | 'weightKg' | 'lengthHeightCm'>,
+>(indicator: IndicatorInfo, checkups: readonly T[], birthDate: string): ChartCheckupPoint<T>[] {
   return checkups
-    .map((checkup) => checkupToPoint(indicator, checkup, birthDate))
-    .sort((a, b) => a.x - b.x);
+    .map((checkup) => ({
+      ...checkupToPoint(indicator, checkup, birthDate),
+      checkupId: checkup.id,
+      checkup,
+    }))
+    .sort((a, b) => a.x - b.x || a.checkup.measuredAt.localeCompare(b.checkup.measuredAt));
 }
 
 /** The checkup with the latest measurement date. */
@@ -135,8 +145,8 @@ export function downsample(series: readonly CurvePoint[], limit = MAX_SAMPLES): 
 
 /**
  * Window of the chart: around the child's points (never narrower than the minimum span and never
- * outside the reference table), with the vertical range taken from the -2 / +2 curves in that
- * window and the child's points. Returns `null` when there is nothing to draw.
+ * outside the reference table), with the vertical range taken from all 5 WHO curves (-3, -2, 0,
+ * +2, +3) in that window and the child's points. Returns `null` when there is nothing to draw.
  */
 export function computeDomain(
   curves: Curves,
@@ -158,14 +168,70 @@ export function computeDomain(
   const xMax = Math.min(center + half, tableMax);
   if (xMax <= xMin) return null;
 
-  const lower = clipSeries(curves['-2'], xMin, xMax);
-  const upper = clipSeries(curves['+2'], xMin, xMax);
-  const ys = [...lower, ...upper, ...points].map((point) => point.y);
+  const lower3 = clipSeries(curves['-3'], xMin, xMax);
+  const lower2 = clipSeries(curves['-2'], xMin, xMax);
+  const upper2 = clipSeries(curves['+2'], xMin, xMax);
+  const upper3 = clipSeries(curves['+3'], xMin, xMax);
+  const ys = [...lower3, ...lower2, ...upper2, ...upper3, ...points].map((point) => point.y);
   const rawMin = Math.min(...ys);
   const rawMax = Math.max(...ys);
   const padding = (rawMax - rawMin) * 0.08 || 1;
 
   return { xMin, xMax, yMin: rawMin - padding, yMax: rawMax + padding };
+}
+
+export interface ChartZonePositions {
+  /** Vertical center (px) of the zone between +2 and +3. */
+  upperZoneTop: number;
+  /** Vertical center (px) of the zone between -2 and +2. */
+  normalZoneTop: number;
+  /** Vertical center (px) of the zone between -2 and -3. */
+  lowerZoneTop: number;
+  /** Vertical position (px) at the left edge (xMin) for each of the 5 curves. */
+  curveLeftTops: Record<'-3' | '-2' | '0' | '+2' | '+3', number>;
+  /** Vertical position (px) at the right edge (xMax) for each of the 5 curves. */
+  curveRightTops: Record<'-3' | '-2' | '0' | '+2' | '+3', number>;
+}
+
+/**
+ * Vertical pixel positions for the zone labels between the WHO curves and for the 5 curve ends.
+ * Zone labels are positioned at 20% of the horizontal span so left-aligned labels sit cleanly
+ * inside each band without overlapping the sloping dashed lines.
+ */
+export function computeZonePositions(
+  curves: Curves,
+  domain: ChartDomain,
+  plotHeight: number,
+): ChartZonePositions {
+  const xLabel = domain.xMin + (domain.xMax - domain.xMin) * 0.2;
+  const yToTop = (y: number) =>
+    plotHeight - ((y - domain.yMin) / (domain.yMax - domain.yMin)) * plotHeight;
+
+  const labelPlus3 = interpolateAt(curves['+3'], xLabel);
+  const labelPlus2 = interpolateAt(curves['+2'], xLabel);
+  const labelZero = interpolateAt(curves['0'], xLabel);
+  const labelMinus2 = interpolateAt(curves['-2'], xLabel);
+  const labelMinus3 = interpolateAt(curves['-3'], xLabel);
+
+  return {
+    upperZoneTop: yToTop((labelPlus3 + labelPlus2) / 2),
+    normalZoneTop: yToTop((labelPlus2 + labelZero) / 2),
+    lowerZoneTop: yToTop((labelMinus2 + labelMinus3) / 2),
+    curveLeftTops: {
+      '+3': yToTop(interpolateAt(curves['+3'], domain.xMin)),
+      '+2': yToTop(interpolateAt(curves['+2'], domain.xMin)),
+      '0': yToTop(interpolateAt(curves['0'], domain.xMin)),
+      '-2': yToTop(interpolateAt(curves['-2'], domain.xMin)),
+      '-3': yToTop(interpolateAt(curves['-3'], domain.xMin)),
+    },
+    curveRightTops: {
+      '+3': yToTop(interpolateAt(curves['+3'], domain.xMax)),
+      '+2': yToTop(interpolateAt(curves['+2'], domain.xMax)),
+      '0': yToTop(interpolateAt(curves['0'], domain.xMax)),
+      '-2': yToTop(interpolateAt(curves['-2'], domain.xMax)),
+      '-3': yToTop(interpolateAt(curves['-3'], domain.xMax)),
+    },
+  };
 }
 
 export interface PixelPoint {
@@ -210,6 +276,52 @@ export function toSegments(points: readonly PixelPoint[]): LineSegment[] {
       angle: (Math.atan2(dy, dx) * 180) / Math.PI,
     });
   }
+  return segments;
+}
+
+/** Dashed segments along a polyline with consistent dash and gap lengths in pixels. */
+export function toDashedSegments(
+  points: readonly PixelPoint[],
+  dashLength = 5,
+  gapLength = 4,
+): LineSegment[] {
+  const segments: LineSegment[] = [];
+  const cycle = dashLength + gapLength;
+  let phase = 0;
+
+  for (let i = 1; i < points.length; i += 1) {
+    const from = points[i - 1]!;
+    const to = points[i]!;
+    const dx = to.left - from.left;
+    const dy = to.top - from.top;
+    const segLen = Math.hypot(dx, dy);
+    if (segLen === 0) continue;
+
+    const ux = dx / segLen;
+    const uy = dy / segLen;
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+    let pos = 0;
+
+    while (pos < segLen) {
+      if (phase < dashLength) {
+        const step = Math.min(dashLength - phase, segLen - pos);
+        const mid = pos + step / 2;
+        segments.push({
+          centerX: from.left + ux * mid,
+          centerY: from.top + uy * mid,
+          length: step,
+          angle,
+        });
+        pos += step;
+        phase = (phase + step) % cycle;
+      } else {
+        const step = Math.min(cycle - phase, segLen - pos);
+        pos += step;
+        phase = (phase + step) % cycle;
+      }
+    }
+  }
+
   return segments;
 }
 

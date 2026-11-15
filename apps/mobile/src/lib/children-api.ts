@@ -11,6 +11,17 @@ import { formatAge } from '../i18n/format.js';
 import i18n from '../i18n/index.js';
 import { authFetch, parseApiError } from './api.js';
 
+/** Error de la API de niños que conserva el código HTTP para distinguir 401/403/404 de 5xx. */
+export class ChildApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ChildApiError';
+    this.status = status;
+  }
+}
+
 /**
  * Child age in years and months in plain language for the caregiver (e.g. "3 años y 5 meses").
  * Delegates to the shared i18n `formatAge` so the text follows the active language.
@@ -30,7 +41,7 @@ export async function fetchCaregiverChildren(): Promise<ChildResponse[]> {
   if (!response.ok) {
     const payload: unknown = await response.json().catch(() => ({}));
     const parsed = parseApiError(payload, i18n.t('errors:consent.childList'));
-    throw new Error(parsed.message);
+    throw new ChildApiError(parsed.message, response.status);
   }
 
   const rawJson: unknown = await response.json();
@@ -55,7 +66,7 @@ export async function createChild(input: CreateChildInput): Promise<ChildRespons
   if (!response.ok) {
     const payload: unknown = await response.json().catch(() => ({}));
     const parsed = parseApiError(payload, i18n.t('errors:children.create'));
-    throw new Error(parsed.message);
+    throw new ChildApiError(parsed.message, response.status);
   }
 
   const rawJson: unknown = await response.json();
@@ -68,7 +79,10 @@ export async function fetchChild(childId: string): Promise<ChildResponse> {
 
   if (!response.ok) {
     const payload: unknown = await response.json().catch(() => ({}));
-    throw new Error(parseApiError(payload, i18n.t('errors:children.fetch')).message);
+    throw new ChildApiError(
+      parseApiError(payload, i18n.t('errors:children.fetch')).message,
+      response.status,
+    );
   }
 
   const rawJson: unknown = await response.json();

@@ -145,12 +145,36 @@ describe('Follow-ups API (/children/:childId/follow-ups)', { timeout: 60000 }, (
       .set('Authorization', user.token)
       .send(body);
 
+  const postFollowUpBatch = (user: TestUser, childId: string, body: Record<string, unknown>) =>
+    request(app)
+      .post(`/children/${childId}/follow-ups/batch`)
+      .set('Authorization', user.token)
+      .send(body);
+
   const baseBody = (extra: Record<string, unknown> = {}) => ({
     id: crypto.randomUUID(),
     type: 'recommendation',
     details: 'Añadir una merienda con proteína',
     ...extra,
   });
+
+  const batchBody = (itemsCount = 2, extra: Record<string, unknown> = {}) => {
+    const types: ('observation' | 'intervention' | 'referral' | 'recommendation')[] = [
+      'observation',
+      'intervention',
+      'referral',
+      'recommendation',
+    ];
+    const items = Array.from({ length: itemsCount }, (_, i) => ({
+      id: crypto.randomUUID(),
+      type: types[i]!,
+      details: `Detalle del seguimiento ${types[i]}`,
+    }));
+    return {
+      items,
+      ...extra,
+    };
+  };
 
   async function remindersFor(followUpId: string) {
     const { rows } = await admin.query(
@@ -402,6 +426,189 @@ describe('Follow-ups API (/children/:childId/follow-ups)', { timeout: 60000 }, (
       const { childId } = await setup();
       const res = await request(app).post(`/children/${childId}/follow-ups`).send(baseBody());
       expect(res.status).toBe(401);
+    });
+  });
+
+  describe('lote de seguimientos (POST /children/:childId/follow-ups/batch, NK-75)', () => {
+    it('crea 1, 2 y 3 seguimientos con el mismo groupId derivado deterministamente', async () => {
+      const { professional, childId } = await setup();
+
+      // 1 ítem: groupId derivado de items[0].id
+      const b1 = batchBody(1);
+      const res1 = await postFollowUpBatch(professional, childId, b1);
+      expect(res1.status).toBe(201);
+      expect(res1.body).toHaveLength(1);
+      expect(res1.body[0].id).toBe(b1.items[0]!.id);
+      expect(res1.body[0].groupId).toBe(b1.items[0]!.id);
+
+      // 2 ítems con groupId explícito
+      const explicitGroupId = crypto.randomUUID();
+      const b2 = batchBody(2, { groupId: explicitGroupId });
+      const res2 = await postFollowUpBatch(professional, childId, b2);
+      expect(res2.status).toBe(201);
+      expect(res2.body).toHaveLength(2);
+      expect(res2.body[0].groupId).toBe(explicitGroupId);
+      expect(res2.body[1].groupId).toBe(explicitGroupId);
+
+      // 3 ítems con próximo control y alerta: un solo recordatorio vinculado a items[0]
+      const alert = await wastingAlert(professional, childId);
+      const nextCheckupDate = isoDateDaysFromNow(10);
+      const b3 = batchBody(3, { alertId: alert.id, nextCheckupDate });
+      const res3 = await postFollowUpBatch(professional, childId, b3);
+      expect(res3.status).toBe(201);
+      expect(res3.body).toHaveLength(3);
+      const expectedGroupId = b3.items[0]!.id;
+      for (const item of res3.body) {
+        expect(item.groupId).toBe(expectedGroupId);
+        expect(item.alertId).toBe(alert.id);
+        expect(item.nextCheckupDate).toBe(nextCheckupDate);
+      }
+      expect(res3.body[0].reminder).not.toBeNull();
+      expect(res3.body[0].reminder.type).toBe('next_checkup');
+      expect(res3.body[1].reminder).toBeNull();
+      expect(res3.body[2].reminder).toBeNull();
+
+      const reminders = await remindersFor(b3.items[0]!.id);
+      expect(reminders).toHaveLength(1);
+    });
+
+    it('idempotencia: reenviar el mismo lote responde 200 y no duplica seguimientos ni recordatorio', async () => {
+      const { professional, childId } = await setup();
+      const nextCheckupDate = isoDateDaysFromNow(14);
+      const b = batchBody(2, { nextCheckupDate });
+
+      const first = await postFollowUpBatch(professional, childId, b);
+      expect(first.status).toBe(201);
+
+      const replay = await postFollowUpBatch(professional, childId, b);
+      expect(replay.status).toBe(200);
+      expect(replay.body).toEqual(first.body);
+
+      // Verificar en BD que no se duplicaron
+      const { rows } = await admin.query(
+        `SELECT count(*)::int AS n FROM follow_ups WHERE group_id = $1`,
+        [replay.body[0].groupId],
+      );
+      expect(rows[0].n).toBe(2);
+
+      const reminders = await remindersFor(b.items[0]!.id);
+      expect(reminders).toHaveLength(1);
+    });
+
+    it('atomicidad: si un ítem falla o pertenece a otro niño no se guarda ninguno', async () => {
+      const { caregiver, professional, childId } = await setup();
+      const otherChild = await seedChild(caregiver.userId);
+      await linkProfessional(otherChild, professional.userId);
+
+      // Crear un seguimiento previo en otherChild
+      const foreignId = crypto.randomUUID();
+      await postFollowUp(professional, otherChild, {
+        id: foreignId,
+        type: 'observation',
+        details: 'Previo en otro niño',
+      });
+
+      // Intentar crear un lote en childId que incluye foreignId
+      const newId = crypto.randomUUID();
+      const conflictBatch = {
+        items: [
+          { id: newId, type: 'intervention' as const, details: 'Nuevo intento' },
+          { id: foreignId, type: 'referral' as const, details: 'ID que ya pertenece a otro niño' },
+        ],
+      };
+
+      const res = await postFollowUpBatch(professional, childId, conflictBatch);
+      expect(res.status).toBe(409);
+
+      // Verificar que el nuevo ítem NO se guardó
+      const checkNew = await admin.query(`SELECT id FROM follow_ups WHERE id = $1`, [newId]);
+      expect(checkNew.rows).toHaveLength(0);
+
+      // Si falla la validación de próximo control pasado, tampoco se guarda ningún ítem
+      const pastBatch = batchBody(2, { nextCheckupDate: isoDateDaysFromNow(-1) });
+      const pastRes = await postFollowUpBatch(professional, childId, pastBatch);
+      expect(pastRes.status).toBe(400);
+      const checkPast = await admin.query(`SELECT id FROM follow_ups WHERE id = ANY($1::uuid[])`, [
+        pastBatch.items.map((item) => item.id),
+      ]);
+      expect(checkPast.rows).toHaveLength(0);
+    });
+
+    it('rechaza tipos repetidos, lote vacío o más de 3 ítems con 400', async () => {
+      const { professional, childId } = await setup();
+
+      const dupTypes = {
+        items: [
+          { id: crypto.randomUUID(), type: 'observation', details: 'Obs 1' },
+          { id: crypto.randomUUID(), type: 'observation', details: 'Obs 2 repetida' },
+        ],
+      };
+      expect((await postFollowUpBatch(professional, childId, dupTypes)).status).toBe(400);
+
+      const empty = { items: [] };
+      expect((await postFollowUpBatch(professional, childId, empty)).status).toBe(400);
+
+      const over3 = batchBody(3);
+      over3.items.push({
+        id: crypto.randomUUID(),
+        type: 'recommendation' as const,
+        details: 'Cuarto ítem',
+      });
+      expect((await postFollowUpBatch(professional, childId, over3)).status).toBe(400);
+    });
+
+    it('rechaza con 403 para cuidador, enfermería, profesional sin vínculo y sin consentimiento', async () => {
+      const { caregiver, childId } = await setup();
+      const nurse = await createUser('PROFESSIONAL', 'nursing');
+      await linkProfessional(childId, nurse.userId);
+      const stranger = await createUser('PROFESSIONAL');
+
+      const noConsentChild = await seedChild(caregiver.userId, false);
+      const linkedProf = await createUser('PROFESSIONAL');
+      await linkProfessional(noConsentChild, linkedProf.userId);
+
+      const b = batchBody(2);
+      expect((await postFollowUpBatch(caregiver, childId, b)).status).toBe(403);
+      expect((await postFollowUpBatch(nurse, childId, b)).status).toBe(403);
+      expect((await postFollowUpBatch(stranger, childId, b)).status).toBe(403);
+      expect((await postFollowUpBatch(linkedProf, noConsentChild, b)).status).toBe(403);
+    });
+
+    it('creación individual sigue funcionando con groupId null', async () => {
+      const { professional, childId } = await setup();
+      const res = await postFollowUp(professional, childId, baseBody());
+      expect(res.status).toBe(201);
+      expect(res.body.groupId).toBeNull();
+    });
+
+    it('auditoría: registra un evento CREATE por cada fila creada en el lote', async () => {
+      const { professional, childId } = await setup();
+      const b = batchBody(2);
+      const res = await postFollowUpBatch(professional, childId, b);
+      expect(res.status).toBe(201);
+
+      const ids = [b.items[0]!.id, b.items[1]!.id];
+      let counts = 0;
+      for (let i = 0; i < 20 && counts < 2; i += 1) {
+        const { rows } = await admin.query(
+          `SELECT count(*)::int AS n FROM audit_logs
+            WHERE user_id = $1 AND action = 'CREATE' AND entity_type = 'follow_ups' AND entity_id = ANY($2::uuid[])`,
+          [professional.userId, ids],
+        );
+        counts = rows[0].n as number;
+        if (counts < 2) await new Promise((r) => setTimeout(r, 100));
+      }
+      expect(counts).toBe(2);
+
+      // Reenviar el mismo lote (200) no duplica entradas de auditoría
+      const replay = await postFollowUpBatch(professional, childId, b);
+      expect(replay.status).toBe(200);
+      const { rows: replayRows } = await admin.query(
+        `SELECT count(*)::int AS n FROM audit_logs
+          WHERE user_id = $1 AND action = 'CREATE' AND entity_type = 'follow_ups' AND entity_id = ANY($2::uuid[])`,
+        [professional.userId, ids],
+      );
+      expect(replayRows[0].n).toBe(2);
     });
   });
 });

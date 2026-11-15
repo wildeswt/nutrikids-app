@@ -7,6 +7,8 @@
     "alertsTitle": "Yuyachikkuna",
     "children": "Llakipi kak wawakuna",
     "childrenTitle": "Llakipi kak wawakuna",
+    "addCheckup": "Kamayta killkay",
+    "addCheckupTitle": "Kamayta killkay",
     "messages": "Willaykuna, katinakunapash",
     "messagesTitle": "Willaykuna, katinakunapash",
     "profile": "Ñukamanta",
@@ -16,7 +18,8 @@
     "alertDetailTitle": "Yuyachikkunamanta",
     "followUpTitle": "Seguimiento clínico",
     "referralTitle": "Interconsulta",
-    "chatTitle": "Conversación"
+    "chatTitle": "Conversación",
+    "pendingSyncTitle": "Pendientes de envío"
   },
   "alerts": {
     "title": "Yuyachikkuna",
@@ -60,7 +63,57 @@
   },
   "children": {
     "title": "Llakipi kak wawakuna",
-    "description": "Kikinwan tinkishka wawakuna, wiñay tupuypi ima llaki kashkamanta ñankuna."
+    "description": "Kikinwan tinkishka wawakuna, wiñay tupuypi ima llaki kashkamanta ñankuna.",
+    "patientLabel": "Hampichikuk wawa",
+    "childSubtitle": "{{age}} · {{birthDate}} punchapi wacharirka",
+    "chartSubtitle": "OMS rikuchik ñankuna (−3, −2, 0, +2, +3 DE)",
+    "legendReference": "OMS ñankuna (−3 manta +3 DE kama)",
+    "zoneLabels": {
+      "upper": "Zona +2 a +3 DE",
+      "normal": "Shuyashka tupuy (−2 a +2 DE)",
+      "lower": "Zona −2 a −3 DE"
+    },
+    "nonDiagnosticNotice": "Kay rikuchikka wiñayta rikunkapak yanapanmi, mana kikinllamanta diagnósticochu kan.",
+    "tapPointHint": "Maykan iñuta llapiy chay kamaymanta tukuy tupuyta rikunkapak.",
+    "trendSummaryTitle": "Wiñay imashina rikurikun",
+    "trendSummaryFavorable": "Kay tupuyka kipa kamaykunapi alliman wiñakushkatami rikuchin.",
+    "trendSummarySteady": "Hampik katikuywan wiñay ñanta rikukunchik.",
+    "trendDelta": "z tikray: {{delta}}",
+    "selectedRecordTitle": "Akllashka kamaymanta",
+    "lastRecordTitle": "Kipa kamay",
+    "weight": "Llasay",
+    "height": "Hatunkay",
+    "bmi": "IMC",
+    "position": "Imashina tupushka",
+    "zScore": "Puntaje z",
+    "percentile": "Percentil",
+    "classification": "Clasificación técnica",
+    "recordedBy": "Killkarka",
+    "notes": "Observaciones",
+    "loading": "Wiñay tupuykunata apamukun...",
+    "loadError": "Wawapak tupuykunata mana apamuy usharkanchikchu.",
+    "retry": "Kutin yachana",
+    "emptyTitle": "Mana tinkishka wawakuna kanchu",
+    "emptySubtitle": "Tinkishka wawakunata charishpaka, kaypimi OMS ñankunata rikunki.",
+    "noCheckupsTitle": "Manarakmi {{name}}-pak kamaykuna kanchu",
+    "noCheckupsSubtitle": "Manarakmi tupuykuna rikuchinkapak kanchu.",
+    "classifications": {
+      "SEVERE_UNDERWEIGHT": "Bajo peso grave (< −3 DE)",
+      "UNDERWEIGHT": "Bajo peso (−3 a −2 DE)",
+      "MODERATE_UNDERWEIGHT": "Bajo peso moderado (−3 a −2 DE)",
+      "SEVERE_STUNTING": "Talla baja severa (< −3 DE)",
+      "STUNTING": "Talla baja (−3 a −2 DE)",
+      "MODERATE_STUNTING": "Talla baja moderada (−3 a −2 DE)",
+      "SEVERE_WASTING": "Emaciación grave (< −3 DE)",
+      "WASTING": "Emaciación (−3 a −2 DE)",
+      "MODERATE_WASTING": "Emaciación moderada (−3 a −2 DE)",
+      "NORMAL": "Adecuado (−2 a +2 DE)",
+      "OVERWEIGHT_RISK": "Riesgo de sobrepeso (+1 a +2 DE)",
+      "POSSIBLE_RISK_OVERWEIGHT": "Posible riesgo de sobrepeso (+1 a +2 DE)",
+      "OVERWEIGHT": "Sobrepeso (+2 a +3 DE)",
+      "OBESITY": "Obesidad (> +3 DE)"
+    },
+    "registerCheckup": "Kamayta killkay"
   },
   "messages": {
     "title": "Willaykuna, katinakunapash",
@@ -79,6 +132,8 @@
     "noSpecialty": "Mana churashkachu",
     "activeRole": "Kunan ruray:",
     "switchToCaregiver": "Wawa kamak rikuchikman tikray",
+    "pendingSync": "Pendientes de envío ({{count}})",
+    "pendingSyncDescription": "Registros guardados en este dispositivo",
     "logout": "Llukshiy"
   },
   "alertDetail": {
@@ -94,6 +149,8 @@
       "reason": "Motivo"
     },
     "checkupValue": "{{date}} · {{weight}} · {{height}}",
+    "checkupRecordedBy": "Registrado por {{name}}",
+    "checkupNotes": "Observaciones: {{notes}}",
     "checkupUnknown": "Control no disponible",
     "result": {
       "below": "Puntaje z por debajo de −{{limit}}",
@@ -148,8 +205,18 @@
       "referral": "Indica a quién se deriva al niño y por qué.",
       "none": "Elige primero el tipo de seguimiento."
     },
+    "sections": {
+      "observationsLabel": "Observaciones clínicas",
+      "observationsPlaceholder": "Escribe lo que observaste en el control y en el registro de crecimiento...",
+      "interventionLabel": "Intervención nutricional",
+      "interventionPlaceholder": "Describe la intervención nutricional indicada...",
+      "referralLabel": "Derivación",
+      "referralPlaceholder": "Indica a quién se deriva al niño y por qué..."
+    },
     "nextCheckupLabel": "Próximo control",
     "nextCheckupPlaceholder": "DD/MM/AAAA (opcional)",
+    "openDatePicker": "Elegir fecha en el calendario",
+    "closeDatePicker": "Listo",
     "nextCheckupShortcuts": {
       "7": "1 semana",
       "14": "2 semanas",
@@ -170,6 +237,7 @@
     "rejected": "El servidor no aceptó el seguimiento que estaba guardado en este teléfono: {{reason}}",
     "alertNotMoved": "El seguimiento se guardó, pero no pudimos actualizar la alerta: {{reason}}",
     "errors": {
+      "atLeastOneRequired": "Completa al menos una sección (observaciones, intervención o derivación).",
       "typeRequired": "Elige el tipo de seguimiento.",
       "detailsRequired": "Escribe el detalle del seguimiento.",
       "detailsTooLong": "El detalle no puede pasar de {{max}} caracteres.",
@@ -218,5 +286,19 @@
       "bodyTooLong": "El motivo no puede pasar de {{max}} caracteres.",
       "invalid": "Revisa los datos de la interconsulta."
     }
+  },
+  "addCheckup": {
+    "title": "Wawapak kamayta killkay",
+    "changePatient": "Shuk wawata akllay",
+    "submit": "Wakaychishpa yupay",
+    "saving": "Wakaychikunmi...",
+    "localResultTitle": "Kaypi yupashka (who-growth)",
+    "localSummaryNormal": "Ñawpa yupay: shuyashka ukullapimi kan (OMS).",
+    "localSummaryAlert": "Ñawpa yupay: llakimi rikurin ({{risk}}).",
+    "zScoreValue": "z = {{value}}",
+    "percentileValue": "p{{value}}",
+    "emptyTitle": "Mana tinkishka wawakuna kanchu",
+    "emptySubtitle": "Kamayta killkankapakka shuk tinkishka wawata charinami kanki.",
+    "goBackToPatients": "Wawakunaman riy"
   }
 }

@@ -1,8 +1,10 @@
+import type { AccountResponse } from '@nutrikids/shared';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import type { AccountResponse } from '@nutrikids/shared';
 import { PALETTE } from '../constants/colors.js';
+import { RADIUS_PILL } from '../constants/layout.js';
+import { font } from '../constants/typography.js';
 import { useAuth } from '../context/auth-context.js';
 import {
   fetchAccount,
@@ -17,11 +19,15 @@ import {
   type AccountFormErrors,
   type AccountFormValues,
 } from '../lib/account-form.js';
+import { PillField } from './ui/PillField.js';
+import { PrimaryButton } from './ui/PrimaryButton.js';
+import { SecondaryButton } from './ui/SecondaryButton.js';
 
 /**
  * "Mi cuenta" on the My data screen (NK-55): name, email and contact phone, editable.
  * Changing the email (the login credential) asks for the current password.
  */
+// NOTE: lib/account-api.ts supports PATCH /account, so account fields are editable inline.
 export function AccountCard() {
   const { t } = useTranslation('caregiver');
   const { updateUser } = useAuth();
@@ -118,27 +124,32 @@ export function AccountCard() {
 
   if (!editing) {
     return (
-      <View style={styles.card} testID="my-data-account">
-        <Row label={t('myData.name')} value={`${account.firstName} ${account.lastName}`} />
-        <Row label={t('myData.email')} value={account.email} />
-        <Row label={t('myData.phone')} value={account.phone ?? '-'} />
+      <View style={styles.section} testID="my-data-account">
+        <PillField label={t('myData.name')}>
+          <Text style={styles.readOnlyText}>{`${account.firstName} ${account.lastName}`}</Text>
+        </PillField>
+        <PillField label={t('myData.email')}>
+          <Text style={styles.readOnlyText}>{account.email}</Text>
+        </PillField>
+        <PillField label={t('myData.phone')}>
+          <Text style={styles.readOnlyText}>{account.phone ?? '-'}</Text>
+        </PillField>
         {saved ? (
           <Text style={styles.successText} accessibilityRole="alert" testID="account-saved">
             {t('myData.account.saved')}
           </Text>
         ) : null}
-        <Pressable
-          style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
-          onPress={() => {
-            setSaved(false);
-            setEditing(true);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={t('myData.account.edit')}
-          testID="my-data-edit-account"
-        >
-          <Text style={styles.primaryButtonText}>{t('myData.account.edit')}</Text>
-        </Pressable>
+        <View style={styles.buttonWrapper}>
+          <PrimaryButton
+            label={t('myData.account.edit')}
+            onPress={() => {
+              setSaved(false);
+              setEditing(true);
+            }}
+            accessibilityLabel={t('myData.account.edit')}
+            testID="my-data-edit-account"
+          />
+        </View>
       </View>
     );
   }
@@ -146,7 +157,7 @@ export function AccountCard() {
   const needsPassword = emailChanged(values, account);
 
   return (
-    <View style={styles.card} testID="account-form">
+    <View style={styles.section} testID="account-form">
       <Field
         label={t('myData.account.firstName')}
         value={values.firstName}
@@ -197,36 +208,21 @@ export function AccountCard() {
           {formError}
         </Text>
       ) : null}
-      <Pressable
-        style={({ pressed }) => [styles.primaryButton, (pressed || saving) && styles.pressed]}
-        onPress={() => void handleSave()}
-        disabled={saving}
-        accessibilityRole="button"
-        accessibilityState={{ disabled: saving }}
-        testID="account-save"
-      >
-        <Text style={styles.primaryButtonText}>
-          {saving ? t('myData.account.saving') : t('myData.account.save')}
-        </Text>
-      </Pressable>
-      <Pressable
-        style={styles.secondaryButton}
-        onPress={handleCancel}
-        disabled={saving}
-        accessibilityRole="button"
-        testID="account-cancel"
-      >
-        <Text style={styles.secondaryButtonText}>{t('myData.account.cancel')}</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{value}</Text>
+      <View style={styles.buttonGroup}>
+        <PrimaryButton
+          label={saving ? t('myData.account.saving') : t('myData.account.save')}
+          onPress={() => void handleSave()}
+          loading={saving}
+          disabled={saving}
+          testID="account-save"
+        />
+        <SecondaryButton
+          label={t('myData.account.cancel')}
+          onPress={handleCancel}
+          disabled={saving}
+          testID="account-cancel"
+        />
+      </View>
     </View>
   );
 }
@@ -244,66 +240,79 @@ interface FieldProps {
 
 function Field({ label, error, testID, ...input }: FieldProps) {
   return (
-    <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+    <PillField label={label} error={error}>
       <TextInput
         {...input}
-        style={[styles.input, error ? styles.inputError : null]}
+        style={styles.input}
+        placeholderTextColor={PALETTE.input.placeholder}
         accessibilityLabel={label}
         testID={testID}
       />
-      {error ? (
-        <Text style={styles.errorText} accessibilityRole="alert">
-          {error}
-        </Text>
-      ) : null}
-    </View>
+    </PillField>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: PALETTE.surface,
-    borderRadius: 25,
+    borderRadius: RADIUS_PILL,
     borderWidth: 1,
     borderColor: PALETTE.border.default,
     padding: 20,
     marginBottom: 24,
     gap: 12,
   },
-  row: { gap: 2 },
-  rowLabel: { fontSize: 13, color: PALETTE.text.muted, fontWeight: '600' },
-  rowValue: { fontSize: 16, color: PALETTE.text.title, fontWeight: '700' },
-  field: { gap: 4 },
-  fieldLabel: { fontSize: 13, color: PALETTE.text.muted, fontWeight: '600' },
+  section: {
+    marginBottom: 24,
+    gap: 14,
+  },
+  readOnlyText: {
+    fontFamily: font('regular'),
+    fontSize: 15,
+    color: PALETTE.text.body,
+  },
   input: {
-    backgroundColor: PALETTE.input.background,
-    borderWidth: 1,
-    borderColor: PALETTE.border.default,
-    borderRadius: 25,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: PALETTE.text.title,
+    fontFamily: font('regular'),
+    fontSize: 15,
+    color: PALETTE.text.body,
+    paddingVertical: 0,
   },
-  inputError: { borderColor: PALETTE.feedback.error },
-  hint: { fontSize: 13, color: PALETTE.text.muted },
-  errorText: { fontSize: 13, color: PALETTE.feedback.error },
-  successText: { fontSize: 14, color: PALETTE.primary, fontWeight: '700' },
-  primaryButton: {
-    backgroundColor: PALETTE.primary,
-    borderRadius: 25,
-    paddingVertical: 14,
+  hint: {
+    fontFamily: font('regular'),
+    fontSize: 13,
+    color: PALETTE.text.muted,
+  },
+  errorText: {
+    fontFamily: font('regular'),
+    fontSize: 13,
+    color: PALETTE.feedback.error,
+  },
+  successText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 14,
+    color: PALETTE.primary,
+  },
+  buttonWrapper: {
     alignItems: 'center',
+    marginTop: 6,
   },
-  primaryButtonText: { color: PALETTE.text.light, fontSize: 16, fontWeight: '700' },
+  buttonGroup: {
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 6,
+  },
   secondaryButton: {
-    borderRadius: 25,
+    borderRadius: RADIUS_PILL,
     borderWidth: 1,
     borderColor: PALETTE.primary,
     paddingVertical: 12,
     alignItems: 'center',
   },
-  secondaryButtonText: { color: PALETTE.primary, fontSize: 15, fontWeight: '700' },
-  pressed: { opacity: 0.8 },
+  secondaryButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    color: PALETTE.primary,
+    fontSize: 15,
+  },
 });

@@ -2,6 +2,7 @@ import { Linking, Platform } from 'react-native';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('expo-constants', () => ({
+  ExecutionEnvironment: { StoreClient: 'storeClient' },
   default: {
     expoConfig: {
       extra: {

@@ -68,3 +68,11 @@ The representative can also see and edit their own account data (name, email, co
 | `PATCH /account` | Body (strict, at least one field): `firstName`, `lastName`, `phone` (empty string clears it), `email`. Changing the email needs `currentPassword`. | `UPDATE` / `users` (field names, not values) |
 
 A wrong `currentPassword` answers `403` and a registered email answers `409`; nothing changes in either case. Professionals can edit their name and email too (they have no phone).
+
+## Local device storage and sign-out erasure (NK-63)
+
+The mobile app stores an encrypted SQLite database (`nutrikids.db`, SQLCipher key in `SecureStore`) and user-scoped drafts on the phone for offline use ([offline.md](offline.md)).
+
+- **Manual sign-out:** once the push token is unregistered and the server session is revoked, the app waits for any active sync cycle to finish, deletes the encrypted database and its encryption key (`wipeLocalData()`), and removes residual user drafts/legacy queues from `SecureStore` and local files. If any step fails, sign-out still finishes immediately and a retry marker (`nutrikids.localDb.pendingWipe`) ensures deletion completes on the next app launch.
+- **Unsent records guard:** if unsent checkups, follow-ups, or feeding logs exist (`LOCAL`, `SENDING`, or `ERROR`), the user must explicitly choose either to sync before signing out or to confirm discarding those unsent local records.
+- **Automatic token expiration:** if session renewal fails permanently and unsent records remain on the phone, the encrypted database is preserved (strictly isolated by `user_id`) so clinical work is not lost silently; if no unsent records exist, local storage is wiped automatically.

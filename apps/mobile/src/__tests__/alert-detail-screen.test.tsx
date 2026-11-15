@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   back: vi.fn(),
   canGoBack: vi.fn(() => true),
   useAlertDetail: vi.fn(),
-  pending: { pendingCount: 0, syncPending: vi.fn(async () => {}) },
+  pending: { pendingCount: 0, refreshPending: vi.fn(async () => {}) },
   focusEffects: [] as (() => void)[],
   width: 390,
 }));
@@ -91,6 +91,7 @@ function setHook(overrides: Partial<UseAlertDetailResult> = {}) {
 }
 
 interface Node {
+  type?: unknown;
   props?: Record<string, unknown>;
 }
 
@@ -99,6 +100,11 @@ function find(node: unknown, predicate: (n: Node) => boolean): Node | null {
   if (!node || typeof node !== 'object') return null;
   const el = node as Node;
   if (predicate(el)) return el;
+  if (typeof el.type === 'function' && el.type.name === 'ScreenHeader') {
+    const rendered = (el.type as (props: Record<string, unknown>) => unknown)(el.props ?? {});
+    const found = find(rendered, predicate);
+    if (found) return found;
+  }
   const children = el.props?.['children'];
   for (const child of Array.isArray(children) ? children : [children]) {
     const found = find(child, predicate);
@@ -138,11 +144,11 @@ describe('AlertDetailScreen (NK-33)', () => {
     expect(mocks.useAlertDetail).toHaveBeenCalledWith('22222222-2222-4222-8222-222222222222');
   });
 
-  it('sends the follow-ups saved without connection, then reloads, when the screen gains focus', async () => {
+  it('refreshes the pending follow-up count, then reloads, when the screen gains focus', async () => {
     html();
     mocks.focusEffects.forEach((cb) => cb());
     await vi.waitFor(() => expect(reload).toHaveBeenCalled());
-    expect(mocks.pending.syncPending).toHaveBeenCalled();
+    expect(mocks.pending.refreshPending).toHaveBeenCalled();
   });
 
   it('tells how many follow-ups are waiting on the phone', () => {
@@ -151,6 +157,8 @@ describe('AlertDetailScreen (NK-33)', () => {
     expect(html()).toContain('Tienes 2 seguimientos guardados en este teléfono por enviar.');
     mocks.pending.pendingCount = 1;
     expect(html()).toContain('Tienes 1 seguimiento guardado en este teléfono por enviar.');
+    (byTestId('alert-detail-pending')?.props?.['onPress'] as () => void)();
+    expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.PROFESSIONAL.PENDING_SYNC);
   });
 
   it('shows the child banner, the indicator, the result and the reason', () => {
@@ -169,6 +177,13 @@ describe('AlertDetailScreen (NK-33)', () => {
     expect(out).toContain('10 de noviembre de 2026');
     expect(out).toContain('12,2 kg');
     expect(out).toContain('97,0 cm');
+    expect(out).not.toContain('Observaciones:');
+  });
+
+  it('shows checkup notes in the Control row when present', () => {
+    setHook({ checkups: [makeCheckup({ notes: 'Control tras cuadro viral' })] });
+    const out = html();
+    expect(out).toContain('Observaciones: Control tras cuadro viral');
   });
 
   it('marks the overdue tag only when the alert is overdue', () => {

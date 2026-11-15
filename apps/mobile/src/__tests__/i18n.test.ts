@@ -4,6 +4,7 @@ import {
   formatAgeShort,
   formatDecimal,
   formatLongDate,
+  formatMonthShort,
   formatShortDate,
 } from '../i18n/format.js';
 import i18n, {
@@ -127,6 +128,7 @@ describe('i18n (RT-10)', () => {
     expect(formatAgeShort(39)).toBe('3 años 3m');
     expect(formatLongDate('2026-10-18')).toBe('18 de octubre de 2026');
     expect(formatShortDate('2026-10-16')).toBe('16 oct');
+    expect(formatMonthShort('2026-10-18')).toBe('Oct');
     expect(formatDecimal(12.2)).toBe('12,2');
   });
 });

@@ -121,6 +121,23 @@ describe(
       ...overrides,
     });
 
+    /** La auditoría se escribe al cerrar la respuesta: espera brevemente a que aparezca. */
+    async function waitForAudit(checkupId: string): Promise<Record<string, unknown>[]> {
+      let rows: Record<string, unknown>[] = [];
+      for (let i = 0; i < 30; i++) {
+        rows = (
+          await admin.query(
+            `SELECT * FROM audit_logs WHERE action = 'CREATE' AND entity_type = 'checkups'
+             AND entity_id = $1::uuid`,
+            [checkupId],
+          )
+        ).rows;
+        if (rows.length >= 1) return rows;
+        await new Promise((r) => setTimeout(r, 150));
+      }
+      return rows;
+    }
+
     async function setup() {
       const caregiver = await createUser('CAREGIVER');
       const childId = await seedChild(caregiver.userId);
@@ -144,12 +161,69 @@ describe(
           childId,
           origin: 'CAREGIVER',
           recordedById: caregiver.userId,
+          recordedBy: {
+            userId: caregiver.userId,
+            firstName: 'Test',
+            lastName: 'User',
+            role: 'CAREGIVER',
+            specialty: null,
+          },
           correctedCheckupId: null,
           isCurrent: true,
+          notes: null,
           weightKg: 12.5,
           lengthHeightCm: 90,
         });
         expect(res.body).not.toHaveProperty('results');
+      });
+
+      it('stores trimmed notes, returns them on GET and excludes note text from audit_logs', async () => {
+        const { caregiver, childId } = await setup();
+        const pro = await createUser('PROFESSIONAL');
+        await linkProfessional(childId, pro.userId);
+        const noteText = 'Desayunó avena y fruta antes del control';
+        const payload = body({ notes: `  ${noteText}  ` });
+
+        const res = await request(app)
+          .post(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token)
+          .send(payload);
+
+        expect(res.status).toBe(201);
+        expect(res.body.notes).toBe(noteText);
+
+        const asCaregiver = await request(app)
+          .get(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token);
+        expect(asCaregiver.status).toBe(200);
+        expect(asCaregiver.body[0].notes).toBe(noteText);
+
+        const asPro = await request(app)
+          .get(`/children/${childId}/checkups`)
+          .set('Authorization', pro.token);
+        expect(asPro.status).toBe(200);
+        expect(asPro.body[0].notes).toBe(noteText);
+
+        const audits = await waitForAudit(payload.id as string);
+        expect(audits).toHaveLength(1);
+        expect(audits[0]!.details).toEqual({ hasNotes: true });
+        expect(JSON.stringify(audits[0])).not.toContain(noteText);
+      });
+
+      it('rejects empty or >500-char notes with 400', async () => {
+        const { caregiver, childId } = await setup();
+
+        const blank = await request(app)
+          .post(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token)
+          .send(body({ notes: '   ' }));
+        expect(blank.status).toBe(400);
+
+        const tooLong = await request(app)
+          .post(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token)
+          .send(body({ notes: 'x'.repeat(501) }));
+        expect(tooLong.status).toBe(400);
       });
 
       it('linked professional records checkup with PROFESSIONAL origin and the 4 indicators', async () => {
@@ -166,6 +240,13 @@ describe(
         expect(CheckupResponseSchema.safeParse(res.body).success).toBe(true);
         expect(res.body.origin).toBe('PROFESSIONAL');
         expect(res.body.recordedById).toBe(pro.userId);
+        expect(res.body.recordedBy).toEqual({
+          userId: pro.userId,
+          firstName: 'Test',
+          lastName: 'User',
+          role: 'PROFESSIONAL',
+          specialty: 'pediatrics',
+        });
         const indicators = (res.body.results as { indicator: string }[]).map((r) => r.indicator);
         expect(indicators.sort()).toEqual([
           'BMI_FOR_AGE',
@@ -327,6 +408,40 @@ describe(
         expect(current.rows.map((r) => r.id)).toEqual([fix.id]);
       });
 
+      it('correction stores its own notes without altering original notes or leaking text to audit', async () => {
+        const { caregiver, childId } = await setup();
+        const original = body({ notes: 'Observación original' });
+        await request(app)
+          .post(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token)
+          .send(original)
+          .expect(201);
+
+        const correctedNote = 'Peso rectificado en báscula calibrada';
+        const fix = body({ weightKg: 13.1, notes: `  ${correctedNote}  ` });
+        const res = await request(app)
+          .post(`/checkups/${original.id}/correction`)
+          .set('Authorization', caregiver.token)
+          .send(fix);
+
+        expect(res.status).toBe(201);
+        expect(res.body.notes).toBe(correctedNote);
+
+        const list = await request(app)
+          .get(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token);
+        const byId = new Map(
+          (list.body as Array<{ id: string; notes: string | null }>).map((c) => [c.id, c]),
+        );
+        expect(byId.get(original.id as string)?.notes).toBe('Observación original');
+        expect(byId.get(fix.id as string)?.notes).toBe(correctedNote);
+
+        const audits = await waitForAudit(fix.id as string);
+        expect(audits).toHaveLength(1);
+        expect(audits[0]!.details).toEqual({ hasNotes: true });
+        expect(JSON.stringify(audits[0])).not.toContain(correctedNote);
+      });
+
       it('resending the same correction is idempotent and same checkup cannot be corrected twice', async () => {
         const { caregiver, childId } = await setup();
         const original = body();
@@ -447,6 +562,75 @@ describe(
         expect(asPro.status).toBe(200);
         expect(asPro.body[0].results).toHaveLength(4);
         expect(asStranger.status).toBe(403);
+      });
+
+      it('returns recordedBy: null when recorder user is anonymized or inactive', async () => {
+        const { caregiver, childId } = await setup();
+        const payload = body();
+        await request(app)
+          .post(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token)
+          .send(payload)
+          .expect(201);
+
+        // Deactivate recorder (suspended account)
+        await admin.query(`UPDATE users SET status = 'suspended' WHERE id = $1`, [
+          caregiver.userId,
+        ]);
+
+        const res = await request(app)
+          .get(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token);
+
+        expect(res.status).toBe(200);
+        expect(res.body[0].recordedBy).toBeNull();
+      });
+
+      it('does not leak professional sensitive fields (email, phone, license) to caregiver', async () => {
+        const { caregiver, childId } = await setup();
+        const pro = await createUser('PROFESSIONAL');
+        await linkProfessional(childId, pro.userId);
+
+        const checkupPayload = body();
+        await request(app)
+          .post(`/children/${childId}/checkups`)
+          .set('Authorization', pro.token)
+          .send(checkupPayload)
+          .expect(201);
+
+        const res = await request(app)
+          .get(`/children/${childId}/checkups`)
+          .set('Authorization', caregiver.token);
+
+        expect(res.status).toBe(200);
+        const checkup = res.body.find((c: { id: string }) => c.id === checkupPayload.id);
+        expect(checkup).toBeDefined();
+        expect(checkup.recordedBy).toEqual({
+          userId: pro.userId,
+          firstName: 'Test',
+          lastName: 'User',
+          role: 'PROFESSIONAL',
+          specialty: 'pediatrics',
+        });
+        // Verify absence of sensitive professional fields
+        expect(checkup.recordedBy).not.toHaveProperty('email');
+        expect(checkup.recordedBy).not.toHaveProperty('phone');
+        expect(checkup.recordedBy).not.toHaveProperty('licenseNumber');
+        expect(checkup.recordedBy).not.toHaveProperty('license_number');
+        expect(checkup.recordedBy).not.toHaveProperty('document');
+        expect(checkup.recordedBy).not.toHaveProperty('passwordHash');
+        expect(checkup.recordedBy).not.toHaveProperty('password_hash');
+      });
+
+      it('unlinked professional receives 403 when trying to list child checkups', async () => {
+        const { childId } = await setup();
+        const unlinkedPro = await createUser('PROFESSIONAL');
+
+        const res = await request(app)
+          .get(`/children/${childId}/checkups`)
+          .set('Authorization', unlinkedPro.token);
+
+        expect(res.status).toBe(403);
       });
     });
   },

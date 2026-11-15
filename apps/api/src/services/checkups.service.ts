@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import type {
   CaregiverCheckupResponse,
   CaregiverIndicatorResult,
+  CheckupRecorder,
   CheckupResponse,
   CorrectCheckupInput,
   CreateCheckupInput,
@@ -27,6 +28,7 @@ import { withUser } from '../lib/prisma.js';
 import { createAlertsForResults } from './alerts.service.js';
 import { assertActiveConsent, assertChildAgeInOmsRange } from './children.service.js';
 import { notifyNewAlerts } from './notifications.service.js';
+import { decryptUserNames } from './pii.service.js';
 
 /** Viewer profile under which checkup is queried or recorded: determines `origin` and response shape. */
 export type CheckupViewer = 'CAREGIVER' | 'PROFESSIONAL';
@@ -39,7 +41,24 @@ export interface CheckupWriteResult {
   created: boolean;
 }
 
-type CheckupRow = Prisma.CheckupGetPayload<{ include: { results: true } }>;
+export const checkupInclude = {
+  results: true,
+  recordedBy: {
+    select: {
+      id: true,
+      firstNameEnc: true,
+      lastNameEnc: true,
+      status: true,
+      professional: {
+        select: {
+          specialty: true,
+        },
+      },
+    },
+  },
+} as const satisfies Prisma.CheckupInclude;
+
+type CheckupRow = Prisma.CheckupGetPayload<{ include: typeof checkupInclude }>;
 type IndicatorResultRow = CheckupRow['results'][number];
 
 const round2 = (v: number): number => Math.round(v * 100) / 100;
@@ -70,6 +89,29 @@ function formatCaregiverIndicatorResult(r: IndicatorResultRow): CaregiverIndicat
   };
 }
 
+/** Resolves recorder identity for checkup responses without leaking sensitive fields (NK-73). */
+function formatCheckupRecorder(
+  user: CheckupRow['recordedBy'] | null | undefined,
+  origin: 'CAREGIVER' | 'PROFESSIONAL',
+): CheckupRecorder | null {
+  if (!user || user.status !== 'active') {
+    return null;
+  }
+  const specialty = user.professional?.specialty ?? null;
+  const role: 'CAREGIVER' | 'PROFESSIONAL' = specialty ? 'PROFESSIONAL' : origin;
+  const { firstName, lastName } = decryptUserNames({
+    firstNameEnc: user.firstNameEnc,
+    lastNameEnc: user.lastNameEnc,
+  });
+  return {
+    userId: user.id,
+    firstName,
+    lastName,
+    role,
+    specialty,
+  };
+}
+
 function formatCheckupResponse(
   row: CheckupRow,
   isCurrent: boolean,
@@ -84,8 +126,10 @@ function formatCheckupResponse(
     position: row.position,
     origin: row.origin,
     recordedById: row.recordedById,
+    recordedBy: formatCheckupRecorder(row.recordedBy, row.origin),
     correctedCheckupId: row.correctedCheckupId,
     isCurrent,
+    notes: row.notes ?? null,
     createdAt: row.createdAt.toISOString(),
   };
 
@@ -182,6 +226,9 @@ function mapCheckupDbError(err: unknown): never {
       'El niño no cuenta con un consentimiento informado vigente para registrar datos',
     );
   }
+  if (/checkups_notes_check/i.test(message)) {
+    throw HttpError.badRequest('Las observaciones deben tener entre 1 y 500 caracteres');
+  }
   throw err;
 }
 
@@ -216,7 +263,7 @@ async function loadExistingCheckup(
 ): Promise<CheckupInsertResult | null> {
   const existing = await tx.checkup.findUnique({
     where: { id: params.id },
-    include: { results: true },
+    include: checkupInclude,
   });
   if (!existing) {
     return null;
@@ -295,16 +342,17 @@ export async function insertCheckup(
     position: input.position,
   });
 
+  const notes = input.notes ?? null;
   let inserted: number;
   try {
     inserted = await tx.$executeRaw`
       INSERT INTO checkups (
         id, child_id, measured_at, weight_kg, length_height_cm,
-        position, origin, recorded_by_id, corrected_checkup_id
+        position, origin, recorded_by_id, corrected_checkup_id, notes
       ) VALUES (
         ${input.id}::uuid, ${childId}::uuid, ${measuredAt}, ${input.weightKg}, ${input.lengthHeightCm},
         ${input.position}::"Position", ${viewer}::"Origin", ${auth.userId}::uuid,
-        ${correctedCheckupId}::uuid
+        ${correctedCheckupId}::uuid, ${notes}
       )
       ON CONFLICT (id) DO NOTHING`;
   } catch (err) {
@@ -331,7 +379,7 @@ export async function insertCheckup(
   });
   const created = await tx.checkup.findUniqueOrThrow({
     where: { id: input.id },
-    include: { results: true },
+    include: checkupInclude,
   });
   // RF-11: each result with a risk condition raises an alert in this same transaction.
   const alertIds = await createAlertsForResults(tx, created.results, auth.userId);
@@ -447,7 +495,7 @@ export async function listChildCheckups(
   return withUser(auth.userId, async (tx) => {
     const rows = await tx.checkup.findMany({
       where: { childId },
-      include: { results: true },
+      include: checkupInclude,
       orderBy: [{ measuredAt: 'desc' }, { createdAt: 'desc' }],
     });
 

@@ -1,270 +1,262 @@
-import { USER_ROLES, type ChildResponse } from '@nutrikids/shared';
-import { Ionicons } from '@expo/vector-icons';
+import { USER_ROLES } from '@nutrikids/shared';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChildBanner } from '../../components/ChildBanner.js';
 import { ConsentChildItem } from '../../components/ConsentChildItem.js';
 import { LanguageSelector } from '../../components/LanguageSelector.js';
+import { SignOutPendingDialog } from '../../components/SignOutPendingDialog.js';
+import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
+import { PALETTE } from '../../constants/colors.js';
+import { BUTTON_HEIGHT, BUTTON_WIDTH, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
-import { fetchCaregiverChildren } from '../../lib/consent-api.js';
+import { useSignOutFlow } from '../../hooks/useSignOutFlow.js';
+import { useSyncStatus } from '../../hooks/useSyncStatus.js';
 
 export { ConsentChildItem };
 
 export default function CaregiverProfileScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
   const router = useRouter();
-  const { user, activeRole, switchRole, signOut } = useAuth();
-  const [children, setChildren] = useState<ChildResponse[]>([]);
-  const [loadingChildren, setLoadingChildren] = useState(true);
+  const { user, activeRole, switchRole } = useAuth();
+  const syncStatus = useSyncStatus();
+  const signOutFlow = useSignOutFlow({
+    onGoToPendingSync: () => router.push(APP_ROUTES.CAREGIVER.PENDING_SYNC as never),
+  });
+
+  const pendingSyncCount = syncStatus.pending + syncStatus.sending;
+  const showPendingSyncRow = pendingSyncCount > 0 || syncStatus.error > 0;
 
   const hasDualRole =
     user?.roles.includes(USER_ROLES.CAREGIVER) && user?.roles.includes(USER_ROLES.PROFESSIONAL);
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadChildren() {
-      try {
-        const list = await fetchCaregiverChildren();
-        if (isMounted) setChildren(list);
-      } catch {
-        // En caso de que falle (ej. offline temporal), se mantiene lista vacía
-      } finally {
-        if (isMounted) setLoadingChildren(false);
-      }
-    }
-    void loadChildren();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
+  const roleLabel = t('common:roles.CAREGIVER');
+
+  // Mismas filas que el diseño de Figma. Los permisos de los niños se gestionan en «Privacidad».
+  const accountLinks = [
+    ['myData', 'profile.myData', 'profile.myDataDescription', APP_ROUTES.CAREGIVER.MY_DATA],
+    [
+      'consents',
+      'profile.consentsTitle',
+      'profile.consentsRowDescription',
+      APP_ROUTES.CAREGIVER.PRIVACY,
+    ],
+    ['privacy', 'profile.privacy', 'profile.privacyDescription', APP_ROUTES.CAREGIVER.PRIVACY],
+  ] as const;
+
+  const renderLink = (key: string, title: string, subtitle: string, route: string) => (
+    <Pressable
+      key={key}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      onPress={() => router.push(route as never)}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      testID={`profile-link-${key}`}
+    >
+      <View style={styles.rowText}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        <Text style={styles.rowSubtitle}>{subtitle}</Text>
+      </View>
+      <Text style={styles.chevron}>›</Text>
+    </Pressable>
+  );
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer} testID="caregiver-profile-screen">
-      <View style={styles.card}>
-        <Text style={styles.title}>{t('profile.title')}</Text>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        testID="caregiver-profile-screen"
+      >
+        <ScreenHeader
+          title={t('profile.title')}
+          showBack={false}
+          style={styles.header}
+          testID="profile-header"
+        />
 
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>{t('profile.name')}</Text>
-          <Text style={styles.value}>
-            {user?.firstName} {user?.lastName}
+        <ChildBanner
+          name={fullName ? t('myData.bannerTitle', { name: fullName, role: roleLabel }) : roleLabel}
+          subtitle={user?.email}
+          style={styles.banner}
+          testID="profile-banner"
+        />
+
+        <Text style={styles.fieldLabel}>{t('profile.activeRole')}</Text>
+        <View style={styles.activeRow}>
+          <Text style={styles.activeRoleText}>
+            {activeRole ? t(`common:roles.${activeRole}`) : '-'}
           </Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>{t('profile.email')}</Text>
-          <Text style={styles.value}>{user?.email}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>{t('profile.activeRole')}</Text>
-          <Text style={styles.badge}>{activeRole ? t(`common:roles.${activeRole}`) : '-'}</Text>
+          <View style={styles.chip}>
+            <Text style={styles.chipText}>{t('profile.activeBadge')}</Text>
+          </View>
         </View>
 
         {hasDualRole && (
           <Pressable
-            style={({ pressed }) => [styles.switchButton, pressed && styles.buttonPressed]}
+            style={({ pressed }) => [styles.outlineButton, pressed && styles.pressed]}
             onPress={() => void switchRole(USER_ROLES.PROFESSIONAL)}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.switchToProfessional')}
           >
-            <Text style={styles.switchButtonText}>{t('profile.switchToProfessional')}</Text>
+            <Text style={styles.outlineButtonText}>{t('profile.switchToProfessional')}</Text>
           </Pressable>
         )}
 
-        {/* Sección de consentimientos informados por niño (Criterios NK-20) */}
-        <View style={styles.sectionContainer} testID="consents-section">
-          <Text style={styles.sectionTitle}>{t('profile.consentsTitle')}</Text>
-          <Text style={styles.sectionDescription}>{t('profile.consentsDescription')}</Text>
+        <Text style={[styles.sectionTitle, styles.sectionSpacing]}>{t('profile.account')}</Text>
+        {accountLinks.map(([key, title, subtitle, route]) =>
+          renderLink(key, t(title), t(subtitle), route),
+        )}
+        {showPendingSyncRow
+          ? renderLink(
+              'pendingSync',
+              t('profile.pendingSync', { count: pendingSyncCount }),
+              t('profile.pendingSyncDescription'),
+              APP_ROUTES.CAREGIVER.PENDING_SYNC,
+            )
+          : null}
 
-          {loadingChildren ? (
-            <ActivityIndicator size="small" color="#16A34A" style={styles.loader} />
-          ) : children.length > 0 ? (
-            children.map((child) => <ConsentChildItem key={child.id} child={child} />)
-          ) : (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>{t('profile.noChildren')}</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.sectionContainer}>
+        <View style={styles.sectionSpacing}>
           <LanguageSelector />
         </View>
 
-        {/* Derechos sobre los datos (NK-55) */}
-        <View style={styles.sectionContainer}>
-          {(
-            [
-              ['myData', APP_ROUTES.CAREGIVER.MY_DATA, 'person-outline'],
-              ['privacy', APP_ROUTES.CAREGIVER.PRIVACY, 'shield-checkmark-outline'],
-            ] as const
-          ).map(([key, route, icon]) => (
-            <Pressable
-              key={key}
-              style={({ pressed }) => [styles.linkRow, pressed && styles.buttonPressed]}
-              onPress={() => router.push(route)}
-              accessibilityRole="button"
-              accessibilityLabel={t(`profile.${key}`)}
-              testID={`profile-link-${key}`}
-            >
-              <Ionicons name={icon} size={22} color="#14532D" />
-              <View style={styles.linkText}>
-                <Text style={styles.linkTitle}>{t(`profile.${key}`)}</Text>
-                <Text style={styles.linkSubtitle}>{t(`profile.${key}Description`)}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#6B7280" />
-            </Pressable>
-          ))}
-        </View>
-
         <Pressable
-          style={({ pressed }) => [styles.logoutButton, pressed && styles.buttonPressed]}
-          onPress={() => void signOut()}
+          style={({ pressed }) => [styles.logoutButton, pressed && styles.pressed]}
+          onPress={() => void signOutFlow.requestSignOut()}
+          disabled={signOutFlow.isSigningOut}
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.logout')}
+          accessibilityState={{ disabled: signOutFlow.isSigningOut }}
+          testID="caregiver-logout-button"
         >
           <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </Pressable>
-      </View>
-    </ScrollView>
+      </ScrollView>
+
+      <SignOutPendingDialog {...signOutFlow.dialogProps} />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    backgroundColor: '#F0FDF4',
-    padding: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  card: {
-    width: '100%',
-    maxWidth: 480,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    gap: 14,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#14532D',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-    paddingBottom: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  value: {
-    fontSize: 14,
-    color: '#111827',
-  },
-  badge: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#15803D',
-    backgroundColor: '#DCFCE7',
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-  },
-  switchButton: {
-    backgroundColor: '#059669',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  switchButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  sectionContainer: {
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    paddingTop: 14,
+  container: { flex: 1, backgroundColor: PALETTE.background },
+  scrollContent: {
+    paddingHorizontal: SCREEN_MARGIN,
+    paddingTop: 12,
+    paddingBottom: 32,
     gap: 10,
   },
+  header: { paddingHorizontal: 0, paddingTop: 0, marginBottom: 6 },
+  banner: { marginBottom: 14 },
+  fieldLabel: {
+    fontFamily: font('medium'),
+    fontWeight: '500',
+    fontSize: 18,
+    color: PALETTE.text.title,
+  },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#14532D',
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 20,
+    color: PALETTE.text.title,
   },
-  sectionDescription: {
-    fontSize: 12,
-    color: '#6B7280',
-    lineHeight: 16,
-  },
-  linkRow: {
+  sectionSpacing: { marginTop: 14 },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 12,
+    backgroundColor: PALETTE.input.background,
+    borderRadius: RADIUS_PILL,
+    borderWidth: 2,
+    borderColor: PALETTE.border.input,
+    paddingLeft: 22,
+    paddingRight: 18,
+    paddingVertical: 11,
   },
-  linkText: {
+  rowText: { flex: 1, gap: 2 },
+  rowTitle: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 16,
+    color: PALETTE.primary,
+  },
+  rowSubtitle: {
+    fontFamily: font('regular'),
+    fontSize: 13,
+    color: PALETTE.text.muted,
+  },
+  chevron: {
+    fontFamily: font('medium'),
+    fontWeight: '500',
+    fontSize: 22,
+    color: PALETTE.primary,
+  },
+  activeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: PALETTE.input.background,
+    borderRadius: RADIUS_PILL,
+    borderWidth: 2,
+    borderColor: PALETTE.border.input,
+    paddingLeft: 22,
+    paddingRight: 14,
+    paddingVertical: 12,
+  },
+  activeRoleText: {
     flex: 1,
-    gap: 2,
+    fontFamily: font('medium'),
+    fontWeight: '500',
+    fontSize: 16,
+    color: PALETTE.text.title,
   },
-  linkTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1F2937',
+  chip: {
+    backgroundColor: PALETTE.primary,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
-  linkSubtitle: {
-    fontSize: 12,
-    color: '#6B7280',
-    lineHeight: 16,
+  chipText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 13,
+    color: PALETTE.text.light,
   },
-  loader: {
-    marginVertical: 12,
-  },
-  emptyBox: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 12,
+  outlineButton: {
+    borderWidth: 2,
+    borderColor: PALETTE.primary,
+    borderRadius: RADIUS_PILL,
+    minHeight: BUTTON_HEIGHT,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyText: {
-    fontSize: 13,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 18,
+  outlineButtonText: {
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 16,
+    color: PALETTE.primary,
   },
   logoutButton: {
-    backgroundColor: '#FEE2E2',
-    borderColor: '#FCA5A5',
-    borderWidth: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
+    marginTop: 24,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: BUTTON_WIDTH,
+    minHeight: BUTTON_HEIGHT,
+    borderWidth: 2,
+    borderColor: PALETTE.secondary,
+    borderRadius: RADIUS_PILL,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 6,
   },
   logoutButtonText: {
-    color: '#DC2626',
-    fontSize: 14,
-    fontWeight: '700',
+    fontFamily: font('semibold'),
+    fontWeight: '600',
+    fontSize: 16,
+    color: PALETTE.secondary,
   },
-  buttonPressed: {
-    opacity: 0.85,
-  },
+  pressed: { opacity: 0.85 },
 });

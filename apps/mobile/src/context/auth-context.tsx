@@ -1,5 +1,13 @@
 import { USER_ROLES, type AuthResponse, type AuthUser, type UserRole } from '@nutrikids/shared';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { AUTH_STATUS, type AuthStatus } from '../constants/routes.js';
 import i18n from '../i18n/index.js';
 import {
@@ -8,7 +16,11 @@ import {
   onSessionRefreshError,
   onSessionUpdated,
 } from '../lib/api.js';
-import { clearDrafts } from '../lib/follow-up-storage.js';
+import {
+  cleanupOnSessionExpired,
+  retryPendingLocalWipeIfNeeded,
+  wipeUserLocalStorage,
+} from '../lib/local-wipe.js';
 import {
   initPushNotifications,
   registerPushNotifications,
@@ -48,6 +60,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [status, setStatus] = useState<AuthStatus>(AUTH_STATUS.LOADING);
   const [session, setSession] = useState<StoredSession | null>(null);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const sessionRef = useRef<StoredSession | null>(null);
+  sessionRef.current = session;
 
   // Load session from secure storage on startup.
   useEffect(() => {
@@ -56,11 +70,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initPushNotifications();
 
     async function initializeSession() {
+      await retryPendingLocalWipeIfNeeded().catch(() => {});
+
       try {
         const stored = await getStoredSession();
         if (!isMounted) return;
 
         if (stored) {
+          sessionRef.current = stored;
           setSession(stored);
           setStatus(AUTH_STATUS.AUTHENTICATED);
           if (stored.user.roles.includes(USER_ROLES.PROFESSIONAL)) {
@@ -69,11 +86,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
             });
           }
         } else {
+          sessionRef.current = null;
           setSession(null);
           setStatus(AUTH_STATUS.UNAUTHENTICATED);
         }
       } catch {
         if (!isMounted) return;
+        sessionRef.current = null;
         setSession(null);
         setStatus(AUTH_STATUS.UNAUTHENTICATED);
       }
@@ -89,11 +108,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Listen to api client session expiration, renewal, and refresh error events.
   useEffect(() => {
     const unsubExpired = onSessionExpired(() => {
+      const expiredUserId = sessionRef.current?.user.id ?? null;
+      sessionRef.current = null;
       setSession(null);
       setStatus(AUTH_STATUS.UNAUTHENTICATED);
+      void cleanupOnSessionExpired(expiredUserId);
     });
 
     const unsubUpdated = onSessionUpdated((updatedSession) => {
+      sessionRef.current = updatedSession;
       setSession(updatedSession);
       setRefreshError(null);
       setStatus(AUTH_STATUS.AUTHENTICATED);
@@ -117,6 +140,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signIn = useCallback(
     async (authResponse: AuthenticatedAuthResponse, preferredRole?: UserRole): Promise<void> => {
+      await retryPendingLocalWipeIfNeeded().catch(() => {});
+
       const userRoles = authResponse.user.roles;
       let targetRole: UserRole;
 
@@ -137,6 +162,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
 
       await saveStoredSession(newSession);
+      sessionRef.current = newSession;
       setSession(newSession);
       setRefreshError(null);
       setStatus(AUTH_STATUS.AUTHENTICATED);
@@ -158,24 +184,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.warn('Could not unregister push device during signOut:', pushErr);
     }
 
-    // 2. Revoke refresh token and clear storage.
+    // 2. Revoke refresh token, wait for sync engine stop, and wipe local storage cleanly.
+    let targetUserId = sessionRef.current?.user.id ?? session?.user.id ?? null;
     try {
       // Read latest persisted session directly to guarantee using the most recent rotated token.
       const latestSession = await getStoredSession();
+      if (latestSession?.user.id) {
+        targetUserId = latestSession.user.id;
+      }
       const tokenToRevoke = latestSession?.refreshToken ?? session?.refreshToken;
       if (tokenToRevoke) {
         await logoutSessionRequest(tokenToRevoke);
       }
     } finally {
-      // Clinical drafts do not stay on the phone after sign-out (follow-ups still waiting to be
-      // sent are kept, scoped to their user, so they are not lost).
-      await clearDrafts().catch(() => {});
+      await wipeUserLocalStorage({ userId: targetUserId });
       await clearStoredSession();
+      sessionRef.current = null;
       setSession(null);
       setRefreshError(null);
       setStatus(AUTH_STATUS.UNAUTHENTICATED);
     }
-  }, [session?.refreshToken]);
+  }, [session?.refreshToken, session?.user.id]);
 
   const switchRole = useCallback(
     async (newRole: UserRole): Promise<void> => {
@@ -217,6 +246,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useOptionalAuth(): AuthContextValue | null {
+  return useContext(AuthContext);
 }
 
 export function useAuth(): AuthContextValue {

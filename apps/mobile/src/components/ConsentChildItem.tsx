@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { PALETTE } from '../constants/colors.js';
 import { APP_ROUTES } from '../constants/routes.js';
 import { useConsent } from '../hooks/useConsent.js';
 import { formatNumericDate } from '../i18n/format.js';
@@ -85,10 +86,6 @@ export function ConsentChildItem({ child }: ConsentChildItemProps) {
       {consent && !consent.revokedAt && (
         <View style={styles.consentDetails}>
           <Text style={styles.consentDetailText}>
-            <Text style={styles.detailLabel}>{t('consentItem.version')}</Text>
-            {consent.textVersion}
-          </Text>
-          <Text style={styles.consentDetailText}>
             <Text style={styles.detailLabel}>{t('consentItem.date')}</Text>
             {formatDate(consent.grantedAt)}
           </Text>
@@ -129,7 +126,7 @@ export function ConsentChildItem({ child }: ConsentChildItemProps) {
 
 const styles = StyleSheet.create({
   childConsentCard: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: PALETTE.input.background,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -159,7 +156,7 @@ const styles = StyleSheet.create({
   },
   badgeRevoked: {
     backgroundColor: '#FEE2E2',
-    color: '#DC2626',
+    color: PALETTE.feedback.error,
   },
   badgeNone: {
     backgroundColor: '#F3F4F6',
@@ -179,7 +176,7 @@ const styles = StyleSheet.create({
   },
   itemErrorText: {
     fontSize: 11,
-    color: '#DC2626',
+    color: PALETTE.feedback.error,
   },
   childActionsRow: {
     flexDirection: 'row',
@@ -211,7 +208,7 @@ const styles = StyleSheet.create({
   actionButtonRevokeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#DC2626',
+    color: PALETTE.feedback.error,
   },
   buttonPressed: {
     opacity: 0.85,

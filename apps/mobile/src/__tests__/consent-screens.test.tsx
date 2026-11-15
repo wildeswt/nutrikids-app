@@ -79,6 +79,16 @@ vi.mock('../context/auth-context.js', () => ({
   }),
 }));
 
+vi.mock('../hooks/useChildren.js', () => ({
+  useChildren: () => ({
+    status: 'empty',
+    children: [],
+    error: null,
+    load: vi.fn(),
+    create: vi.fn(),
+  }),
+}));
+
 vi.mock('../hooks/useConsent.js', () => ({
   useConsent: () => mocks.hookState,
 }));
@@ -128,12 +138,43 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
   });
 
   describe('CaregiverHomeScreen - Flujo Pre-Registro', () => {
-    it('muestra aviso y acción para aceptar consentimiento antes de registrar datos del niño', () => {
-      const html = renderToString(React.createElement(CaregiverHomeScreen));
+    it('muestra acción para agregar niño que abre consentimiento en modo pre-registro', () => {
+      let capturedTree: unknown = null;
+      function Capture() {
+        capturedTree = CaregiverHomeScreen();
+        return capturedTree as React.ReactElement;
+      }
+      const html = renderToString(React.createElement(Capture));
 
       expect(html).toContain('María');
-      expect(html).toContain('+ Registrar nuevo niño');
-      expect(html).toContain(i18n.t('caregiver:home.consentNotice'));
+      expect(html).toContain(i18n.t('caregiver:home.addChild'));
+
+      const findByTestId = (
+        node: unknown,
+        id: string,
+      ): { props?: Record<string, unknown> } | null => {
+        if (!node || typeof node !== 'object') return null;
+        const el = node as { props?: { testID?: string; children?: unknown } };
+        if (el.props?.testID === id) return el as { props?: Record<string, unknown> };
+        const children = el.props?.children;
+        if (Array.isArray(children)) {
+          for (const child of children) {
+            const found = findByTestId(child, id);
+            if (found) return found;
+          }
+        } else if (children) {
+          return findByTestId(children, id);
+        }
+        return null;
+      };
+
+      const addButton = findByTestId(capturedTree, 'empty-add-child-button');
+      expect(addButton).not.toBeNull();
+      (addButton?.props?.['onPress'] as (() => void) | undefined)?.();
+      expect(mocks.push).toHaveBeenCalledWith({
+        pathname: APP_ROUTES.CAREGIVER.CONSENT,
+        params: { mode: 'register' },
+      });
     });
   });
 
@@ -207,7 +248,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       expect(mocks.replace).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.ADD_CHILD);
     });
 
-    it('muestra versión del texto aceptado y fecha en modo vista con opción de revocar', () => {
+    it('muestra fecha y estado en modo vista con opción de revocar', () => {
       mocks.searchParams = {
         childId: 'c0000000-0000-0000-0000-000000000001',
         childName: 'Sofía Morales',
@@ -221,9 +262,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
 
       const html = renderToString(React.createElement(ConsentScreen));
 
-      // Debe mostrar la versión aceptada y la fecha
-      expect(html).toContain('Versión aceptada:');
-      expect(html).toContain('v1');
+      expect(html).not.toContain('Versión aceptada:');
       expect(html).toContain(i18n.t('consent:screen.grantedAtLabel'));
       expect(html).toContain('ACTIVO');
 
@@ -260,7 +299,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
 
       expect(html).toContain(i18n.t('caregiver:profile.title'));
       expect(html).toContain(i18n.t('caregiver:profile.consentsTitle'));
-      expect(html).toContain(i18n.t('caregiver:profile.consentsDescription'));
+      expect(html).toContain(i18n.t('caregiver:profile.consentsRowDescription'));
     });
 
     it('enlaza a «Mis datos» y a «Privacidad e historial»', () => {
@@ -277,7 +316,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       expect(tree).toBeTruthy();
     });
 
-    it('ConsentChildItem muestra versión, fecha y botón de revocar en perfil', () => {
+    it('ConsentChildItem muestra fecha y botón de revocar en perfil', () => {
       mocks.hookState = {
         ...mocks.hookState,
         status: 'active',
@@ -297,8 +336,7 @@ describe('Consent Screens & Components Rendering (NK-20)', () => {
       expect(html).toContain('Sofía');
       expect(html).toContain('Morales');
       expect(html).toContain('ACTIVO');
-      expect(html).toContain('Versión aceptada:');
-      expect(html).toContain('v1');
+      expect(html).not.toContain('Versión aceptada:');
       expect(html).toContain('Fecha:');
       expect(html).toContain(i18n.t('caregiver:consentItem.revoke'));
       expect(html).toContain('Ver documento');

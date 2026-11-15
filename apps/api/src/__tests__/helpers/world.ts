@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import pg from 'pg';
 import { env } from '../../config/env.js';
+import { encryptChildNames, encryptPhone, encryptUserNames } from '../../services/pii.service.js';
 import { signAccessToken } from '../../services/token.service.js';
 
 /**
@@ -36,14 +37,19 @@ export async function createUser(
 ): Promise<TestUser> {
   const userId = crypto.randomUUID();
   const email = `sys-${userId}@nutrikids.local`;
+  const names = encryptUserNames({
+    firstName: 'Prueba',
+    lastName: role === 'CAREGIVER' ? 'Cuidadora' : 'Profesional',
+  });
   await admin.query(
     `INSERT INTO users (id, email, password_hash, first_name, last_name, status, updated_at)
-     VALUES ($1, $2, 'hash', 'Prueba', $3, 'active', now())`,
-    [userId, email, role === 'CAREGIVER' ? 'Cuidadora' : 'Profesional'],
+     VALUES ($1, $2, 'hash', $3, $4, 'active', now())`,
+    [userId, email, names.firstNameEnc, names.lastNameEnc],
   );
   if (role === 'CAREGIVER') {
-    await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, '+593990000')`, [
+    await admin.query(`INSERT INTO caregivers (user_id, phone) VALUES ($1, $2)`, [
       userId,
+      encryptPhone('+593990000'),
     ]);
   } else {
     await admin.query(
@@ -72,10 +78,11 @@ export async function seedChild(
 ): Promise<string> {
   const { consent = true, legalRepresentative = true } = options;
   const childId = crypto.randomUUID();
+  const childNames = encryptChildNames({ firstName: 'Mateo', lastName: 'Sintetico' });
   await admin.query(
     `INSERT INTO children (id, first_name, last_name, birth_date, sex)
-     VALUES ($1, 'Mateo', 'Sintetico', CURRENT_DATE - 1095, 'MALE')`,
-    [childId],
+     VALUES ($1, $2, $3, CURRENT_DATE - 1095, 'MALE')`,
+    [childId, childNames.firstNameEnc, childNames.lastNameEnc],
   );
   await admin.query(
     `INSERT INTO caregiver_children (caregiver_id, child_id, relationship, is_legal_representative)

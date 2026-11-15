@@ -1,53 +1,64 @@
-import type { AlertStatus, CreateFollowUpInput, FollowUpResponse } from '@nutrikids/shared';
-import { fetchAlertDetail, updateAlertStatus } from './alerts-api.js';
-import { isoDateToInput } from './follow-up-form.js';
-import { FollowUpApiError, FollowUpOfflineError, createFollowUp } from './follow-ups-api.js';
+import type { AlertStatus, CreateFollowUpBatchInput, FollowUpResponse } from '@nutrikids/shared';
+import { establishAlert, sendFollowUpBatchAndAlert } from './follow-up-alert.js';
 import {
   addPending,
+  batchToFormData,
   draftKey,
+  enqueuePendingFollowUpInDb,
   listPending,
+  listPendingFollowUpsInDb,
   removePending,
   saveDraft,
 } from './follow-up-storage.js';
+import { FollowUpApiError, FollowUpOfflineError } from './follow-ups-api.js';
+import type { LocalDb } from './local-db/types.js';
+import { tryGetLocalDatabase } from './offline-read.js';
+import { flushFollowUpQueue, syncEngine, type SendFollowUpBatchFn } from './sync/index.js';
+
+export { establishAlert };
 
 export interface FollowUpSubmission {
   userId: string;
   childId: string;
   alertId?: string | undefined;
   establish: boolean;
-  input: CreateFollowUpInput;
+  input: CreateFollowUpBatchInput;
 }
 
 export type SubmitResult =
-  /** Saved on the server. `alertError` is set when the alert could not be moved afterwards. */
+  /** Guardado en el servidor. `alertError` se define si falló mover la alerta después. */
   | {
       kind: 'sent';
-      followUp: FollowUpResponse;
+      followUps: FollowUpResponse[];
       alertStatus: AlertStatus | null;
       alertError?: string;
     }
-  /** No connection: saved on the phone and sent later (see `flushPendingFollowUps`). */
+  /** Sin conexión: guardado en el teléfono para enviarlo cuando vuelva el servicio. */
   | { kind: 'queued' };
 
-/**
- * Moves the alert to «seguimiento establecido». The follow-up proves the professional looked at the
- * alert, so one still waiting for review goes through `REVIEWED` first (the state machine has no
- * shortcut). Returns the final status.
- */
-export async function establishAlert(alertId: string): Promise<AlertStatus> {
-  const alert = await fetchAlertDetail(alertId);
-  let status = alert.status;
-  if (status === 'FOLLOW_UP_ESTABLISHED') return status;
-  if (status === 'PENDING_REVIEW') {
-    status = (await updateAlertStatus(alertId, 'REVIEWED')).status;
-  }
-  if (status === 'REVIEWED') {
-    status = (await updateAlertStatus(alertId, 'FOLLOW_UP_ESTABLISHED')).status;
-  }
-  return status;
+export interface SubmitFollowUpOptions {
+  /** Cuando es `false` se encola directamente sin intentar red. */
+  isOnline?: boolean;
+  db?: LocalDb | null;
 }
 
-/** A refused request that will not succeed by itself (validation, permission, conflict). */
+export interface FlushResult {
+  sent: number;
+  /** Siguen esperando envío (sin conexión o en espera creciente). */
+  remaining: number;
+  /** Rechazados definitivamente (4xx) por el servidor. */
+  rejected: number;
+}
+
+export interface FlushFollowUpOptions {
+  db?: LocalDb | null;
+  now?: string;
+  sendFollowUp?: SendFollowUpBatchFn;
+  ignoreSchedule?: boolean;
+  random?: () => number;
+}
+
+/** Rechazo definitivo del servidor que no se resolverá reintentando (validación, permiso, conflicto). */
 function isPermanent(err: unknown): err is FollowUpApiError {
   return (
     err instanceof FollowUpApiError &&
@@ -58,106 +69,115 @@ function isPermanent(err: unknown): err is FollowUpApiError {
   );
 }
 
-/**
- * Sends a follow-up and, when asked, moves its alert forward. Sending again with the same `id` is
- * safe (the API returns the existing follow-up), so a half-finished attempt can simply be repeated.
- * Throws when the server refuses the follow-up for good (`FollowUpApiError` 4xx); the caller shows it.
- */
-async function send(
+async function enqueueOfflineSubmission(
   submission: FollowUpSubmission,
-): Promise<Extract<SubmitResult, { kind: 'sent' }>> {
-  const followUp = await createFollowUp(submission.childId, submission.input);
-  if (!submission.establish || !submission.alertId) {
-    return { kind: 'sent', followUp, alertStatus: null };
-  }
-  try {
-    const alertStatus = await establishAlert(submission.alertId);
-    return { kind: 'sent', followUp, alertStatus };
-  } catch (err) {
-    // No connection while moving the alert: let the caller queue the whole thing and retry.
-    if (err instanceof FollowUpOfflineError || isNetworkFailure(err))
-      throw new FollowUpOfflineError({ cause: err });
-    // Anything else (for example someone else already moved the alert): the follow-up is saved.
-    return {
-      kind: 'sent',
-      followUp,
-      alertStatus: null,
-      alertError: err instanceof Error ? err.message : String(err),
-    };
-  }
-}
+  db: LocalDb | null,
+): Promise<SubmitResult> {
+  const entry = {
+    userId: submission.userId,
+    childId: submission.childId,
+    ...(submission.alertId ? { alertId: submission.alertId } : {}),
+    establish: submission.establish,
+    input: submission.input,
+  };
 
-function isNetworkFailure(err: unknown): boolean {
-  // `authFetch` lets the `fetch` TypeError ("Network request failed") through.
-  return err instanceof TypeError;
+  if (db) {
+    await enqueuePendingFollowUpInDb(db, entry);
+    await syncEngine.refreshState();
+    return { kind: 'queued' };
+  }
+
+  await addPending(entry);
+  return { kind: 'queued' };
 }
 
 /**
- * Saves a follow-up: sent now when there is connection, otherwise kept on the phone to be sent when
- * it comes back («Sin conexión · Se guardará en este teléfono...»).
+ * Envía o encola un lote de seguimiento clínico.
+ *
+ * Con base local cifrada encola en `sync_queue` (tipo `'follow-up'`) y actualiza el estado del
+ * motor de sincronización. Si no hay base local disponible, degrada al almacén en SecureStore.
  */
-export async function submitFollowUp(submission: FollowUpSubmission): Promise<SubmitResult> {
+export async function submitFollowUp(
+  submission: FollowUpSubmission,
+  options?: SubmitFollowUpOptions,
+): Promise<SubmitResult> {
+  const db =
+    options && 'db' in options ? (options.db ?? null) : await tryGetLocalDatabase('follow-up');
+
+  if (options?.isOnline === false) {
+    return enqueueOfflineSubmission(submission, db);
+  }
+
   try {
-    return await send(submission);
+    return await sendFollowUpBatchAndAlert(submission);
   } catch (err) {
     if (err instanceof FollowUpOfflineError) {
-      await addPending({
-        userId: submission.userId,
-        childId: submission.childId,
-        ...(submission.alertId ? { alertId: submission.alertId } : {}),
-        establish: submission.establish,
-        input: submission.input,
-      });
-      return { kind: 'queued' };
+      return enqueueOfflineSubmission(submission, db);
     }
     throw err;
   }
 }
 
-export interface FlushResult {
-  sent: number;
-  /** Still waiting (no connection yet). */
-  remaining: number;
-  /** Refused by the server: kept as drafts with the reason so the professional can fix them. */
-  rejected: number;
-}
-
-/**
- * Tries to send the follow-ups this user saved without connection. Stops at the first one that
- * still cannot be sent for lack of connection. A follow-up the server refuses for good moves to the
- * drafts with the server message instead of being lost.
- */
-export async function flushPendingFollowUps(userId: string): Promise<FlushResult> {
+async function flushLegacySecureStore(userId: string): Promise<FlushResult> {
   const pending = await listPending(userId);
   const result: FlushResult = { sent: 0, remaining: pending.length, rejected: 0 };
 
   for (const entry of pending) {
+    const mainId = entry.input.items[0]?.id ?? entry.input.groupId ?? '';
     try {
-      await send(entry);
-      await removePending(entry.input.id);
+      await sendFollowUpBatchAndAlert(entry);
+      await removePending(mainId);
       result.sent += 1;
       result.remaining -= 1;
     } catch (err) {
       if (err instanceof FollowUpOfflineError) break;
       if (!isPermanent(err)) break;
+
       await saveDraft(draftKey(userId, entry), {
         userId,
         childId: entry.childId,
         alertId: entry.alertId,
-        form: {
-          type: entry.input.type,
-          details: entry.input.details,
-          nextCheckupText: entry.input.nextCheckupDate
-            ? isoDateToInput(entry.input.nextCheckupDate)
-            : '',
-          establish: entry.establish,
-        },
+        form: batchToFormData(entry.input, entry.establish),
         lastError: err.message,
       });
-      await removePending(entry.input.id);
+      await removePending(mainId);
       result.rejected += 1;
       result.remaining -= 1;
     }
   }
+
   return result;
+}
+
+/**
+ * Envía los seguimientos pendientes del usuario. Cuando la base local está disponible delega al
+ * procesador del motor general; sin base local conserva el flujo clásico en SecureStore.
+ */
+export async function flushPendingFollowUps(
+  userId: string,
+  options?: FlushFollowUpOptions,
+): Promise<FlushResult> {
+  const db =
+    options && 'db' in options ? (options.db ?? null) : await tryGetLocalDatabase('follow-up');
+  if (!db) {
+    return flushLegacySecureStore(userId);
+  }
+
+  const summary = await flushFollowUpQueue({
+    db,
+    userId,
+    now: options?.now,
+    sendFollowUp: options?.sendFollowUp,
+    ignoreSchedule: options?.ignoreSchedule ?? true,
+    random: options?.random,
+  });
+
+  const remaining = await listPendingFollowUpsInDb(db, userId);
+  await syncEngine.refreshState();
+
+  return {
+    sent: summary.synced,
+    remaining: remaining.length,
+    rejected: summary.failedPermanent,
+  };
 }

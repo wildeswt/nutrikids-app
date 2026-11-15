@@ -8,11 +8,13 @@ import {
   checkupsToPoints,
   clipSeries,
   computeDomain,
+  computeZonePositions,
   curvesPositionFor,
   downsample,
   interpolateAt,
   latestCheckup,
   projectPoint,
+  toDashedSegments,
   toSegments,
 } from '../lib/growth-chart.js';
 
@@ -29,8 +31,10 @@ const makeCheckup = (measuredAt: string, weightKg: number, lengthHeightCm: numbe
   position: 'STANDING' as const,
   origin: 'CAREGIVER' as const,
   recordedById: 'u',
+  recordedBy: null,
   correctedCheckupId: null,
   isCurrent: true,
+  notes: null,
   createdAt: measuredAt,
 });
 
@@ -60,7 +64,7 @@ describe('growth-chart points', () => {
     expect(bodyMassIndex(12, 90)).toBeCloseTo(14.81, 2);
   });
 
-  it('orders the points along the X axis', () => {
+  it('orders the points along the X axis and preserves the source checkup metadata', () => {
     const points = checkupsToPoints(
       indicator('PE'),
       [
@@ -71,6 +75,11 @@ describe('growth-chart points', () => {
     );
 
     expect(points.map((point) => point.y)).toEqual([10.2, 13.4]);
+    expect(points.map((point) => point.checkupId)).toEqual([
+      '2025-05-10T12:00:00.000Z',
+      '2026-11-10T12:00:00.000Z',
+    ]);
+    expect(points[0]!.checkup.weightKg).toBe(10.2);
   });
 
   it('finds the latest checkup', () => {
@@ -155,13 +164,27 @@ describe('growth-chart domain and projection', () => {
     expect(domain.xMax - domain.xMin).toBe(10);
   });
 
-  it('fits the vertical range to the -2 / +2 curves and the child points', () => {
+  it('fits the vertical range to all 5 WHO curves (-3 to +3) and the child points', () => {
     const outlier = computeDomain(curves, [{ x: 30, y: 30 }], 'age')!;
     const inside = computeDomain(curves, [{ x: 30, y: 12 }], 'age')!;
 
+    expect(inside.yMin).toBeLessThan(curves['-3'][24]!.y);
     expect(inside.yMin).toBeLessThan(curves['-2'][24]!.y);
     expect(inside.yMax).toBeGreaterThan(curves['+2'][36]!.y);
+    expect(inside.yMax).toBeGreaterThan(curves['+3'][36]!.y);
     expect(outlier.yMax).toBeGreaterThan(30);
+  });
+
+  it('computes vertical zone positions and right-edge curve positions ordered from +3 down to -3', () => {
+    const domain = computeDomain(curves, [{ x: 30, y: 12 }], 'age')!;
+    const zones = computeZonePositions(curves, domain, 180);
+
+    expect(zones.upperZoneTop).toBeLessThan(zones.normalZoneTop);
+    expect(zones.normalZoneTop).toBeLessThan(zones.lowerZoneTop);
+    expect(zones.curveRightTops['+3']).toBeLessThan(zones.curveRightTops['+2']);
+    expect(zones.curveRightTops['+2']).toBeLessThan(zones.curveRightTops['0']);
+    expect(zones.curveRightTops['0']).toBeLessThan(zones.curveRightTops['-2']);
+    expect(zones.curveRightTops['-2']).toBeLessThan(zones.curveRightTops['-3']);
   });
 
   it('returns null when there is nothing to draw', () => {
@@ -187,6 +210,24 @@ describe('growth-chart domain and projection', () => {
     expect(flat).toEqual({ centerX: 5, centerY: 10, length: 10, angle: 0 });
     expect(diagonal).toEqual({ centerX: 10, centerY: 15, length: 10, angle: 90 });
     expect(toSegments([{ left: 0, top: 0 }])).toEqual([]);
+  });
+
+  it('builds dashed segments with gaps along a polyline', () => {
+    const dashes = toDashedSegments(
+      [
+        { left: 0, top: 10 },
+        { left: 20, top: 10 },
+      ],
+      5,
+      4,
+    );
+
+    expect(dashes).toEqual([
+      { centerX: 2.5, centerY: 10, length: 5, angle: 0 },
+      { centerX: 11.5, centerY: 10, length: 5, angle: 0 },
+      { centerX: 19, centerY: 10, length: 2, angle: 0 },
+    ]);
+    expect(toDashedSegments([{ left: 0, top: 0 }])).toEqual([]);
   });
 
   it('creates evenly spaced rounded axis ticks', () => {

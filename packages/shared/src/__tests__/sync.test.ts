@@ -42,6 +42,12 @@ describe('SyncCheckupItemSchema', () => {
       false,
     );
   });
+
+  it('acepta notas opcionales recortadas y rechaza notas vacías', () => {
+    const parsed = SyncCheckupItemSchema.parse({ ...item, notes: '  Con fiebre leve  ' });
+    expect(parsed.notes).toBe('Con fiebre leve');
+    expect(SyncCheckupItemSchema.safeParse({ ...item, notes: '   ' }).success).toBe(false);
+  });
 });
 
 describe('SyncCheckupsInputSchema', () => {

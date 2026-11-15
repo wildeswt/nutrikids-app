@@ -28,6 +28,7 @@
     "checkLegalA11y": "Ñukami kamachik kamak kani, willaykunata hapinkapak ari ninimi",
     "checkRevocation": "Hamutanimi, kay ari ninataka ñukamanta pankamanta ima pachapash kichuy ushanimi.",
     "checkRevocationA11y": "Kay ari ninata kichuy ushanata hamutanimi",
+    "versionLine": "Versión {{version}} del texto · {{date}}",
     "notNow": "Kunanka mana"
   },
   "alerts": {

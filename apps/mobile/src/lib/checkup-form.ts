@@ -1,4 +1,5 @@
 import {
+  CHECKUP_NOTES_MAX,
   CreateCheckupInputSchema,
   LENGTH_HEIGHT_MAX_CM,
   LENGTH_HEIGHT_MIN_CM,
@@ -7,8 +8,21 @@ import {
   isPlausibleLengthHeight,
   isPlausibleWeight,
   type CreateCheckupInput,
+  type Indicator,
   type Position,
+  type Sex,
 } from '@nutrikids/shared';
+import {
+  ageInMonths,
+  adjustLengthHeight,
+  calculateZScore,
+  classify,
+  getLmsParameters,
+  percentileFromZScore,
+  type MeasurementPosition,
+  type RiskCategory,
+  type WhoIndicator,
+} from '@nutrikids/who-growth';
 import { generateUuid } from './uuid.js';
 
 export interface CheckupFormData {
@@ -17,6 +31,7 @@ export interface CheckupFormData {
   weightText: string;
   heightText: string;
   position: Position;
+  notesText?: string;
 }
 
 /** Why the form cannot be sent; each code maps to a message in `caregiver:addCheckup.errors`. */
@@ -27,12 +42,94 @@ export type CheckupFormError =
   | { code: 'dateBeforeBirth' }
   | { code: 'weightRange'; min: number; max: number }
   | { code: 'heightRange'; min: number; max: number }
+  | { code: 'notesTooLong'; max: number }
   /** Valid but atypical values: the caregiver must confirm them (`confirmOutlier`). */
   | { code: 'outlier' }
   | { code: 'invalid' };
 
+export interface LocalWhoResult {
+  indicator: Indicator;
+  zScore: number;
+  percentile: number;
+  classification: RiskCategory;
+}
+
+export interface LocalWhoEvaluation {
+  results: LocalWhoResult[];
+  primary: RiskCategory;
+  hasAlert: boolean;
+}
+
 export type CheckupFormResult =
-  { ok: true; input: CreateCheckupInput } | { ok: false; error: CheckupFormError };
+  | { ok: true; input: CreateCheckupInput; localEvaluation: LocalWhoEvaluation | null }
+  | { ok: false; error: CheckupFormError };
+
+const round2 = (v: number): number => Math.round(v * 100) / 100;
+
+/**
+ * Computes the 4 WHO growth indicators locally using `@nutrikids/who-growth`.
+ * Returns `null` if the measurement or age falls outside the WHO reference tables.
+ */
+export function calculateLocalWhoResults(params: {
+  sex: Sex;
+  birthDate: string;
+  measuredAt: string;
+  weightKg: number;
+  lengthHeightCm: number;
+  position: Position;
+}): LocalWhoEvaluation | null {
+  try {
+    const position: MeasurementPosition =
+      params.position === 'RECUMBENT' ? 'recumbent' : 'standing';
+    const ageMonths = ageInMonths(params.birthDate, params.measuredAt);
+
+    const z = (ind: WhoIndicator, x: number, value: number, pos?: MeasurementPosition): number => {
+      const { l, m, s } = getLmsParameters(ind, params.sex, x, pos);
+      return round2(calculateZScore(value, l, m, s));
+    };
+
+    const tableLhfa: MeasurementPosition = ageMonths < 24 ? 'recumbent' : 'standing';
+    const lhfaValue = adjustLengthHeight(params.lengthHeightCm, position, tableLhfa);
+    const wflX = Math.round(params.lengthHeightCm * 2) / 2;
+    const bmi = params.weightKg / (params.lengthHeightCm / 100) ** 2;
+
+    const zs = {
+      WEIGHT_FOR_AGE: z('WEIGHT_FOR_AGE', ageMonths, params.weightKg),
+      LENGTH_HEIGHT_FOR_AGE: z('LENGTH_HEIGHT_FOR_AGE', ageMonths, lhfaValue),
+      WEIGHT_FOR_LENGTH_HEIGHT: z('WEIGHT_FOR_LENGTH_HEIGHT', wflX, params.weightKg, position),
+      BMI_FOR_AGE: z('BMI_FOR_AGE', ageMonths, bmi),
+    } as const;
+
+    const overall = classify({
+      zWFA: zs.WEIGHT_FOR_AGE,
+      zLHFA: zs.LENGTH_HEIGHT_FOR_AGE,
+      zWFLH: zs.WEIGHT_FOR_LENGTH_HEIGHT,
+      zBFA: zs.BMI_FOR_AGE,
+    });
+
+    const classOf: Record<Indicator, RiskCategory> = {
+      WEIGHT_FOR_AGE: classify({ zWFA: zs.WEIGHT_FOR_AGE }).primary,
+      LENGTH_HEIGHT_FOR_AGE: classify({ zLHFA: zs.LENGTH_HEIGHT_FOR_AGE }).primary,
+      WEIGHT_FOR_LENGTH_HEIGHT: classify({ zWFLH: zs.WEIGHT_FOR_LENGTH_HEIGHT }).primary,
+      BMI_FOR_AGE: classify({ zBFA: zs.BMI_FOR_AGE }).primary,
+    };
+
+    const results: LocalWhoResult[] = (Object.keys(zs) as Indicator[]).map((indicator) => ({
+      indicator,
+      zScore: zs[indicator],
+      percentile: round2(percentileFromZScore(zs[indicator])),
+      classification: classOf[indicator],
+    }));
+
+    return {
+      results,
+      primary: overall.primary,
+      hasAlert: overall.hasAlert,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export function parseDecimalInput(raw: string): number {
   return Number.parseFloat(raw.trim().replace(',', '.'));
@@ -81,7 +178,7 @@ export function measuredAtFromIsoDate(isoDate: string, now: Date = new Date()): 
  */
 export function buildCreateCheckupInput(
   form: CheckupFormData,
-  options: { birthDate: string; confirmOutlier: boolean; now?: Date; id?: string },
+  options: { birthDate: string; sex?: Sex; confirmOutlier: boolean; now?: Date; id?: string },
 ): CheckupFormResult {
   const now = options.now ?? new Date();
 
@@ -108,19 +205,38 @@ export function buildCreateCheckupInput(
     };
   }
 
+  const trimmedNotes = form.notesText?.trim() ?? '';
+  if (trimmedNotes.length > CHECKUP_NOTES_MAX) {
+    return { ok: false, error: { code: 'notesTooLong', max: CHECKUP_NOTES_MAX } };
+  }
+
   const isOutlier = !isPlausibleWeight(weightKg) || !isPlausibleLengthHeight(lengthHeightCm);
   if (isOutlier && !options.confirmOutlier) return { ok: false, error: { code: 'outlier' } };
 
+  const measuredAt = measuredAtFromIsoDate(isoDate, now);
+  const localEvaluation = options.sex
+    ? calculateLocalWhoResults({
+        sex: options.sex,
+        birthDate: options.birthDate,
+        measuredAt,
+        weightKg,
+        lengthHeightCm,
+        position: form.position,
+      })
+    : null;
+
   const parsed = CreateCheckupInputSchema.safeParse({
     id: options.id ?? generateUuid(),
-    measuredAt: measuredAtFromIsoDate(isoDate, now),
+    measuredAt,
     weightKg,
     lengthHeightCm,
     position: form.position,
+    ...(trimmedNotes.length > 0 ? { notes: trimmedNotes } : {}),
     ...(isOutlier ? { confirmOutlier: true } : {}),
+    ...(localEvaluation ? { results: localEvaluation.results } : {}),
   });
 
   return parsed.success
-    ? { ok: true, input: parsed.data }
+    ? { ok: true, input: parsed.data, localEvaluation }
     : { ok: false, error: { code: 'invalid' } };
 }
