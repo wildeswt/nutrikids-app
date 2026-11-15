@@ -368,20 +368,19 @@ export async function getSyncItemById(
 }
 
 /**
- * Lista los controles pendientes (`LOCAL`, `SENDING`, `ERROR`) y los enviados (`SENT`)
- * desde `sentSinceIso` (p. ej. últimas 24 horas) para la pantalla «Pendientes de envío».
+ * Lista todos los elementos pendientes (`LOCAL`, `SENDING`, `ERROR`) y los enviados (`SENT`)
+ * desde `sentSinceIso` (p. ej. últimas 24 horas) de todos los tipos en `sync_queue`.
  */
-export async function listCheckupsWithRecentSent(
+export async function listWithRecentSent(
   db: LocalDb,
   userId: string,
   sentSinceIso: string,
-): Promise<Array<Extract<SyncQueueRecord, { kind: 'checkup' }>>> {
+): Promise<SyncQueueRecord[]> {
   const normalizedSince = toUtcIso(IsoDateTimeSchema.parse(sentSinceIso));
   const rows = await db.getAllAsync<SyncQueueRow>(
     `SELECT id, user_id, kind, payload, status, attempts, next_attempt_at, last_error, created_at, updated_at
      FROM sync_queue
      WHERE user_id = ?
-       AND kind = 'checkup'
        AND (
          status IN ('LOCAL', 'SENDING', 'ERROR')
          OR (status = 'SENT' AND updated_at >= ?)
@@ -393,14 +392,29 @@ export async function listCheckupsWithRecentSent(
     [userId, normalizedSince],
   );
 
-  const records: Array<Extract<SyncQueueRecord, { kind: 'checkup' }>> = [];
+  const records: SyncQueueRecord[] = [];
   for (const row of rows) {
     const parsed = parseRow(row);
-    if (parsed !== null && parsed.kind === 'checkup') {
+    if (parsed !== null) {
       records.push(parsed);
     }
   }
   return records;
+}
+
+/**
+ * Lista los controles pendientes (`LOCAL`, `SENDING`, `ERROR`) y los enviados (`SENT`)
+ * desde `sentSinceIso` (p. ej. últimas 24 horas) para la pantalla «Pendientes de envío».
+ */
+export async function listCheckupsWithRecentSent(
+  db: LocalDb,
+  userId: string,
+  sentSinceIso: string,
+): Promise<Array<Extract<SyncQueueRecord, { kind: 'checkup' }>>> {
+  const records = await listWithRecentSent(db, userId, sentSinceIso);
+  return records.filter(
+    (record): record is Extract<SyncQueueRecord, { kind: 'checkup' }> => record.kind === 'checkup',
+  );
 }
 
 /**
@@ -455,6 +469,7 @@ export const syncQueueRepository = {
   listByStatus: listSyncItemsByStatus,
   listByKindAndStatuses: listSyncItemsByKindAndStatuses,
   listDue: listDueSyncItems,
+  listWithRecentSent,
   listCheckupsWithRecentSent,
   updateStatus: updateSyncItemStatus,
   countPending: countPendingSyncItems,

@@ -1,10 +1,17 @@
-import type { SyncCheckupItem, SyncCheckupsResponse } from '@nutrikids/shared';
+import type {
+  CreateFeedingLogInput,
+  FeedingLogResponse,
+  SyncCheckupItem,
+  SyncCheckupsResponse,
+} from '@nutrikids/shared';
 import i18n from '../../i18n/index.js';
 import type { FollowUpBatchRequest, SentFollowUpBatchResult } from '../follow-up-alert.js';
 import { getHttpStatus } from '../offline-read.js';
 import { metaRepository } from '../local-db/meta-repository.js';
 import { syncQueueRepository, type SyncQueueRecord } from '../local-db/sync-queue-repository.js';
 import type { LocalDb, SyncQueueKind } from '../local-db/types.js';
+import { computeBackoffMs } from './backoff.js';
+import { isRetryableSyncError } from './sync-api.js';
 
 /** Firma de la función de transporte que envía un lote de controles al servidor. */
 export type PostSyncCheckupsFn = (items: SyncCheckupItem[]) => Promise<SyncCheckupsResponse>;
@@ -12,6 +19,12 @@ export type PostSyncCheckupsFn = (items: SyncCheckupItem[]) => Promise<SyncCheck
 export type SendFollowUpBatchFn = (
   request: FollowUpBatchRequest,
 ) => Promise<SentFollowUpBatchResult>;
+
+/** Firma de la función de transporte que envía un registro de alimentación al servidor. */
+export type SendFeedingLogFn = (
+  childId: string,
+  input: CreateFeedingLogInput,
+) => Promise<FeedingLogResponse>;
 
 /** Resumen agregado del procesamiento de la cola de sincronización. */
 export interface FlushQueueSummary {
@@ -33,6 +46,7 @@ export interface SyncQueueProcessorContext {
   onProgress?: () => Promise<void> | void;
   post?: PostSyncCheckupsFn;
   sendFollowUp?: SendFollowUpBatchFn;
+  sendFeeding?: SendFeedingLogFn;
 }
 
 /** Contrato genérico de un procesador especializado para un `kind` de `sync_queue`. */
@@ -133,4 +147,114 @@ export async function recordSyncSuccessTimestamp(
   normalizedNow: string,
 ): Promise<void> {
   await metaRepository.set(db, syncLastSyncedMetaKey(userId), normalizedNow);
+}
+
+/**
+ * Procesa secuencialmente elementos de un `kind` en `sync_queue` uno por uno.
+ * Un error transitorio (red, 5xx, 408, 429) programa espera creciente y detiene la tanda actual;
+ * un 401 vuelve a `'LOCAL'` sin backoff; un 4xx definitivo pasa a `'ERROR'` sin reintento.
+ */
+export async function processSequentialQueue<K extends SyncQueueKind, TNormalized>(
+  context: SyncQueueProcessorContext,
+  options: {
+    kind: K;
+    normalize: (payload: Extract<SyncQueueRecord, { kind: K }>['payload']) => TNormalized | null;
+    send: (normalized: TNormalized) => Promise<void>;
+    isRetryable?: (error: unknown) => boolean;
+  },
+): Promise<FlushQueueSummary> {
+  const { db, userId, normalizedNow, nowMs, ignoreSchedule, random, onProgress } = context;
+  const dueItems = await listDueQueueItemsByKind(
+    db,
+    userId,
+    options.kind,
+    normalizedNow,
+    ignoreSchedule,
+  );
+  const summary = createEmptyFlushSummary();
+
+  if (dueItems.length === 0) {
+    return summary;
+  }
+
+  for (const item of dueItems) {
+    summary.batches += 1;
+    summary.attempted += 1;
+
+    const normalizePayload = options.normalize as (payload: unknown) => TNormalized | null;
+    const normalized = normalizePayload(item.payload);
+    if (!normalized) {
+      await syncQueueRepository.updateStatus(db, userId, item.id, 'ERROR', {
+        nextAttemptAt: null,
+        lastError: i18n.t('errors:invalidResponse'),
+      });
+      summary.failedPermanent += 1;
+      if (onProgress) {
+        await onProgress();
+      }
+      continue;
+    }
+
+    await syncQueueRepository.updateStatus(db, userId, item.id, 'SENDING');
+    if (onProgress) {
+      await onProgress();
+    }
+
+    try {
+      await options.send(normalized);
+
+      await syncQueueRepository.updateStatus(db, userId, item.id, 'SENT', {
+        nextAttemptAt: null,
+        lastError: null,
+      });
+      await recordSyncSuccessTimestamp(db, userId, normalizedNow);
+      summary.synced += 1;
+
+      if (onProgress) {
+        await onProgress();
+      }
+    } catch (error) {
+      const readableError = getReadableSyncError(error);
+      const retryable = options.isRetryable
+        ? options.isRetryable(error)
+        : isRetryableSyncError(error);
+
+      if (retryable) {
+        const delayMs = computeBackoffMs(item.attempts, random);
+        await syncQueueRepository.updateStatus(db, userId, item.id, 'LOCAL', {
+          attempts: item.attempts + 1,
+          nextAttemptAt: new Date(nowMs + delayMs).toISOString(),
+          lastError: readableError,
+        });
+        summary.deferredRetry += 1;
+
+        if (onProgress) {
+          await onProgress();
+        }
+        break;
+      }
+
+      if (isAuthExpiredSyncError(error)) {
+        await syncQueueRepository.updateStatus(db, userId, item.id, 'LOCAL');
+        summary.deferredRetry += 1;
+
+        if (onProgress) {
+          await onProgress();
+        }
+        break;
+      }
+
+      await syncQueueRepository.updateStatus(db, userId, item.id, 'ERROR', {
+        nextAttemptAt: null,
+        lastError: readableError,
+      });
+      summary.failedPermanent += 1;
+
+      if (onProgress) {
+        await onProgress();
+      }
+    }
+  }
+
+  return summary;
 }

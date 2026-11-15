@@ -274,7 +274,7 @@ Implementado en `apps/mobile/src/lib/sync/queue-processor.ts`, `follow-up-proces
 
 ### Procesadores por tipo en `sync_queue`
 
-- **`SYNC_QUEUE_PROCESSORS` (`sync-engine.ts`):** mapa extensible por `kind` (`checkup`, `follow-up`, preparado para añadir `feeding` en la parte B sin reescribir el motor ni los temporizadores).
+- **`SYNC_QUEUE_PROCESSORS` (`sync-engine.ts`):** mapa extensible por `kind` (`checkup`, `follow-up` y `feeding`), todos compartiendo el mismo ciclo single-flight, recuperación al iniciar y temporizadores.
 - **Ejecución de `follow-up` (`processFollowUpQueue`):** los lotes NK-75 (`{ childId, alertId?, establish, batch }`) se envían **uno a uno** mediante `POST /children/:childId/follow-ups/batch` y, cuando aplica, `establishAlert(alertId)`.
 - **Idempotencia al mover la alerta:** si el lote ya se guardó en el servidor (`200`/`201`) pero falla la red o hay un error transitorio al cambiar el estado de la alerta, el elemento permanece en `'LOCAL'` con espera creciente y al reintentar el lote responde `200 OK` sin duplicar seguimientos ni recordatorios antes de reintentar `establishAlert`.
 - **Estados por elemento en `sync_queue`:**
@@ -289,3 +289,28 @@ Implementado en `apps/mobile/src/lib/sync/queue-processor.ts`, `follow-up-proces
 - **Borradores en `meta`:** cuando la base local cifrada está disponible, `saveDraft`/`getDraft`/`clearDraft`/`clearDrafts` leen y escriben JSON validado con Zod en `meta` bajo la clave `followup-draft:<userId>:<draftKey>`.
 - **Migración idempotente al arrancar (`migrateLegacyFollowUpStorage`):** en `syncEngine.start(userId)`, si no existe la marca `followup-migration:v1:<userId>` en `meta`, migra los pendientes y borradores de ese `userId` desde `nutrikids.followups` (SecureStore) hacia `sync_queue` y `meta` junto con la marca de migración dentro de **una sola transacción SQLite**. El almacén antiguo de ese usuario solo se limpia tras confirmar la escritura nueva (respetando los datos de otros usuarios); si falla a mitad, SQLite revierte todo y SecureStore permanece intacto.
 - **Degradación sin SQLCipher (Expo Go / web):** cuando `tryGetLocalDatabase()` devuelve `null`, `follow-up-storage.ts` y `follow-up-sync.ts` conservan en tiempo de ejecución la implementación heredada sobre SecureStore sin romper el flujo de seguimiento ni los borradores.
+
+## 12. Alimentación sin conexión y pantalla común «Pendientes de envío» (NK-62, parte B)
+
+Implementado en `apps/mobile/src/lib/sync/feeding-processor.ts`, `apps/mobile/src/lib/offline-feeding.ts`, `apps/mobile/src/lib/pending-sync.ts`, `apps/mobile/src/components/PendingSyncList.tsx`, `(professional)/pending-sync.tsx` y las actualizaciones en `useFeedingLog.ts`, `feeding.tsx`, `usePendingSyncItems.ts`, `(professional)/profile.tsx` y `(professional)/alert-detail.tsx`.
+
+### Procesador y captura sin conexión de alimentación
+
+1. **Procesador `feeding` (`processFeedingQueue` / `flushFeedingQueue`):**
+   - Registrado como `SYNC_QUEUE_PROCESSORS.feeding`. Normaliza el payload de `sync_queue` (`{ childId, input: CreateFeedingLogInput }`) validando con `UuidSchema` y `CreateFeedingLogInputSchema` y envía los elementos uno a uno mediante `POST /children/:childId/feeding-logs` (`createChildFeedingLog`).
+   - `200`/`201` → `'SENT'` y actualiza `lastSyncedAt`; `4xx` definitivo (consentimiento, vínculo, validación) → `'ERROR'` con el mensaje del servidor y sin reintento automático; `401` → `'LOCAL'` sin espera; fallo de red (`FeedingApiError` con `isNetwork: true` o `TypeError`) / `5xx` / `408` / `429` → `'LOCAL'` incrementando `attempts` con espera creciente y deteniendo la tanda actual.
+2. **Captura sin conexión (`createFeedingWithOfflineFallback`):**
+   - Reutiliza `executeOfflineWriteFallback` (patrón compartido con `offline-checkup.ts`): fija `attemptId` antes del primer intento; si está `offline` o el envío falla por **red** (nunca ante `4xx` HTTP), encola `{ childId, ...input }` con `kind = 'feeding'` y el mismo `id` dentro de `db.withTransactionAsync`, devolviendo `{ ..., savedLocally: true }`.
+   - En `feeding.tsx`, cuando hay base local muestra la confirmación «Sin conexión · se guardó en este dispositivo y se enviará al reconectar» y vuelve atrás tras el mismo retardo que en línea. Si no hay base local (Expo Go / web), lanza `OfflineFeedingSaveError` manteniendo el error de conexión previo sin perder los campos escritos.
+
+### Pantalla común «Pendientes de envío» (`PendingSyncList`)
+
+- **Fuente de datos unificada (`listPendingSyncItemsInDb`, `usePendingSyncItems`):** lee de `sync_queue` (`syncQueueRepository.listWithRecentSent`) los elementos `LOCAL`, `SENDING`, `ERROR` y `SENT` de las últimas 24 horas para **todos los tipos** (`checkup`, `follow-up` y `feeding`), resolviendo el nombre del niño desde `children` o `'Paciente'` como respaldo.
+- **Resúmenes y acciones por tipo (`PendingSyncList.tsx`):**
+  - `checkup`: «Control del {fecha} · {peso} kg · {talla} cm»; descartar elimina cola + registro `LOCAL` en `checkups`.
+  - `follow-up`: «Seguimiento clínico · {n} tipo(s)» con línea de próximo control si existe; descartar elimina de `sync_queue`.
+  - `feeding`: «Alimentación del {fecha} · {n} comidas»; descartar elimina de `sync_queue`.
+  - Reintentar (`retryPendingSyncItem`) devuelve cualquier tipo a `'LOCAL'` con `attempts = 0` y sin espera, disparando `syncEngine.syncNow()`.
+- **Rutas de cuidador y profesional:**
+  - `(caregiver)/pending-sync.tsx` y `(professional)/pending-sync.tsx` (`APP_ROUTES.PROFESSIONAL.PENDING_SYNC`, oculta en el drawer de `(professional)/_layout.tsx`) envuelven `PendingSyncList` con su ruta de respaldo respectiva (`CAREGIVER.HOME` y `PROFESSIONAL.ALERTS`).
+  - `(professional)/profile.tsx` muestra la fila «Pendientes de envío ({N})» solo cuando `N > 0` o hay errores, y `(professional)/alert-detail.tsx` enlaza su aviso de seguimientos pendientes a `APP_ROUTES.PROFESSIONAL.PENDING_SYNC`.

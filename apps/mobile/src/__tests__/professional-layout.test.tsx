@@ -59,6 +59,8 @@ interface DrawerScreenElement {
     options?: {
       title?: string;
       drawerLabel?: string;
+      headerShown?: boolean;
+      drawerItemStyle?: { display?: string };
       drawerIcon?: (props: { color: string; size: number }) => React.ReactNode;
     };
   };
@@ -101,15 +103,15 @@ describe('ProfessionalDrawerLayout', () => {
       'chat-detail',
       'profile',
       'notifications',
+      'pending-sync',
     ]);
     expect(screenNames[0]).toBe('index');
   });
 
-  it('hides alert detail, follow-up, referral, and chat detail from the drawer', () => {
+  it('hides alert detail, follow-up, referral, chat detail, and pending sync from the drawer', () => {
     const screens = getDrawerScreens();
-    for (const name of ['alert-detail', 'follow-up', 'referral', 'chat-detail']) {
-      const options = screens.find((s) => s.props.name === name)?.props.options as
-        { drawerItemStyle?: { display?: string }; headerShown?: boolean } | undefined;
+    for (const name of ['alert-detail', 'follow-up', 'referral', 'chat-detail', 'pending-sync']) {
+      const options = screens.find((s) => s.props.name === name)?.props.options;
       expect(options?.drawerItemStyle).toEqual({ display: 'none' });
       expect(options?.headerShown).toBe(false);
     }

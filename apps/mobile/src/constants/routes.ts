@@ -48,6 +48,7 @@ export const APP_ROUTES = {
     CHAT_DETAIL: '/(professional)/chat-detail' as const,
     PROFILE: '/(professional)/profile' as const,
     NOTIFICATIONS: '/(professional)/notifications' as const,
+    PENDING_SYNC: '/(professional)/pending-sync' as const,
   },
 } as const;
 

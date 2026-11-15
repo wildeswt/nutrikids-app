@@ -359,9 +359,15 @@ export default function AlertDetailScreen() {
   const actions = (
     <View style={styles.actions} testID="alert-detail-actions">
       {pendingCount > 0 && (
-        <Text style={styles.noteText} testID="alert-detail-pending">
-          {t('alertDetail.pending', { count: pendingCount })}
-        </Text>
+        <Pressable
+          onPress={() => router.push(APP_ROUTES.PROFESSIONAL.PENDING_SYNC as never)}
+          accessibilityRole="link"
+          testID="alert-detail-pending"
+        >
+          <Text style={[styles.noteText, styles.pendingLinkText]}>
+            {t('alertDetail.pending', { count: pendingCount })}
+          </Text>
+        </Pressable>
       )}
       {actionError && (
         <Text style={styles.actionError} testID="alert-detail-action-error">
@@ -619,6 +625,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: PALETTE.text.muted,
     textAlign: 'center',
+  },
+  pendingLinkText: {
+    color: PALETTE.primary,
+    textDecorationLine: 'underline',
   },
   centerBox: { alignItems: 'center', gap: 12, paddingVertical: 48 },
   mutedText: {

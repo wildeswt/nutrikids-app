@@ -5,12 +5,14 @@ import {
   subscribeToConnectivity,
   type ConnectivityStatus,
 } from '../connectivity.js';
+import { createChildFeedingLog } from '../feeding-api.js';
 import { sendFollowUpBatchAndAlert } from '../follow-up-alert.js';
 import { migrateLegacyFollowUpStorage } from '../follow-up-migration.js';
 import { metaRepository, type LocalDb, type SyncQueueKind } from '../local-db/index.js';
 import { nowUtcIso, toUtcIso } from '../local-db/payload-codec.js';
 import { tryGetLocalDatabase } from '../offline-read.js';
 import { processCheckupQueue } from './checkup-processor.js';
+import { processFeedingQueue } from './feeding-processor.js';
 import { processFollowUpQueue } from './follow-up-processor.js';
 import {
   createEmptyFlushSummary,
@@ -18,17 +20,23 @@ import {
   syncLastSyncedMetaKey,
   type FlushQueueSummary,
   type PostSyncCheckupsFn,
+  type SendFeedingLogFn,
   type SendFollowUpBatchFn,
   type SyncQueueProcessor,
 } from './queue-processor.js';
 import { postSyncCheckups } from './sync-api.js';
 
-export type { PostSyncCheckupsFn, SendFollowUpBatchFn } from './queue-processor.js';
+export type {
+  PostSyncCheckupsFn,
+  SendFeedingLogFn,
+  SendFollowUpBatchFn,
+} from './queue-processor.js';
 
 /** Mapa extensible de procesadores por tipo de elemento en `sync_queue`. */
 export const SYNC_QUEUE_PROCESSORS: Partial<Record<SyncQueueKind, SyncQueueProcessor>> = {
   checkup: processCheckupQueue,
   'follow-up': processFollowUpQueue,
+  feeding: processFeedingQueue,
 };
 
 const REGISTERED_PROCESSOR_KINDS = Object.keys(SYNC_QUEUE_PROCESSORS) as SyncQueueKind[];
@@ -52,16 +60,29 @@ export interface FlushSyncQueueOptions {
   kinds?: readonly SyncQueueKind[];
   post?: PostSyncCheckupsFn;
   sendFollowUp?: SendFollowUpBatchFn;
+  sendFeeding?: SendFeedingLogFn;
   ignoreSchedule?: boolean;
   random?: () => number;
   onProgress?: () => void | Promise<void>;
 }
 
 /** Opciones de ejecución de vaciado restringido a controles (`flushCheckupQueue`). */
-export type FlushCheckupQueueOptions = Omit<FlushSyncQueueOptions, 'kinds' | 'sendFollowUp'>;
+export type FlushCheckupQueueOptions = Omit<
+  FlushSyncQueueOptions,
+  'kinds' | 'sendFollowUp' | 'sendFeeding'
+>;
 
 /** Opciones de ejecución de vaciado restringido a seguimientos (`flushFollowUpQueue`). */
-export type FlushFollowUpQueueOptions = Omit<FlushSyncQueueOptions, 'kinds' | 'post'>;
+export type FlushFollowUpQueueOptions = Omit<
+  FlushSyncQueueOptions,
+  'kinds' | 'post' | 'sendFeeding'
+>;
+
+/** Opciones de ejecución de vaciado restringido a alimentación (`flushFeedingQueue`). */
+export type FlushFeedingQueueOptions = Omit<
+  FlushSyncQueueOptions,
+  'kinds' | 'post' | 'sendFollowUp'
+>;
 
 /** Resumen numérico del ciclo de sincronización ejecutado. */
 export type FlushCheckupQueueResult = FlushQueueSummary;
@@ -71,6 +92,7 @@ export interface SyncEngineDependencies {
   getDb?: () => Promise<LocalDb | null>;
   post?: PostSyncCheckupsFn;
   sendFollowUp?: SendFollowUpBatchFn;
+  sendFeeding?: SendFeedingLogFn;
   migrateLegacyFollowUps?: (db: LocalDb, userId: string) => Promise<unknown>;
   getConnectivity?: () => Promise<ConnectivityStatus>;
   subscribeToConnectivity?: (listener: (status: ConnectivityStatus) => void) => () => void;
@@ -200,6 +222,7 @@ async function executeFlushSyncQueue(options: FlushSyncQueueOptions): Promise<Fl
     kinds = REGISTERED_PROCESSOR_KINDS,
     post = postSyncCheckups,
     sendFollowUp = sendFollowUpBatchAndAlert,
+    sendFeeding = createChildFeedingLog,
     ignoreSchedule = false,
     random = Math.random,
     onProgress,
@@ -225,6 +248,7 @@ async function executeFlushSyncQueue(options: FlushSyncQueueOptions): Promise<Fl
       onProgress,
       post,
       sendFollowUp,
+      sendFeeding,
     });
     mergeFlushSummaries(summary, kindSummary);
   }
@@ -280,6 +304,16 @@ export async function flushFollowUpQueue(
 }
 
 /**
+ * Envía uno a uno los registros de alimentación pendientes del usuario en `sync_queue`.
+ * Garantiza ejecución single-flight por base de datos y usuario.
+ */
+export async function flushFeedingQueue(
+  options: FlushFeedingQueueOptions,
+): Promise<FlushQueueSummary> {
+  return flushSyncQueue({ ...options, kinds: ['feeding'] });
+}
+
+/**
  * Motor reactivo de sincronización sin conexión:
  * - Migra datos heredados de seguimientos (SecureStore → SQLite) al iniciar.
  * - Recupera elementos `'SENDING'` interrumpidos al iniciar.
@@ -307,6 +341,7 @@ export class SyncEngine {
       getDb: dependencies.getDb ?? (() => tryGetLocalDatabase('sync-engine')),
       post: dependencies.post ?? postSyncCheckups,
       sendFollowUp: dependencies.sendFollowUp ?? sendFollowUpBatchAndAlert,
+      sendFeeding: dependencies.sendFeeding ?? createChildFeedingLog,
       migrateLegacyFollowUps:
         dependencies.migrateLegacyFollowUps ??
         ((db, userId) => migrateLegacyFollowUpStorage(db, userId)),
@@ -548,6 +583,7 @@ export class SyncEngine {
           now: new Date(this.deps.now()).toISOString(),
           post: this.deps.post,
           sendFollowUp: this.deps.sendFollowUp,
+          sendFeeding: this.deps.sendFeeding,
           ignoreSchedule,
           random: this.deps.random,
           onProgress: () => this.refreshStateFromDb(db, userId, myGeneration),

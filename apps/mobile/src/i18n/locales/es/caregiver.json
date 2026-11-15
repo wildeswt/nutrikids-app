@@ -177,6 +177,7 @@
     "submit": "Guardar alimentación",
     "saving": "Guardando...",
     "savedSuccess": "¡Alimentación guardada!",
+    "savedOffline": "Sin conexión · se guardó en este dispositivo y se enviará al reconectar",
     "loading": "Cargando a tus niños...",
     "loadError": "No pudimos cargar a tus niños.",
     "retry": "Intentar de nuevo",
@@ -339,7 +340,7 @@
     "privacy": "Privacidad e historial",
     "privacyDescription": "Permisos, historial y borrado de datos",
     "pendingSync": "Pendientes de envío ({{count}})",
-    "pendingSyncDescription": "Controles guardados en este dispositivo"
+    "pendingSyncDescription": "Registros guardados en este dispositivo"
   },
   "pendingSync": {
     "back": "Volver",
@@ -348,7 +349,12 @@
     "offlineBanner_other": "Sin conexión · {{count}} controles por enviar",
     "offlineBannerZero": "Sin conexión · Sin controles pendientes",
     "recordSummary": "Control del {{date}} · {{weight}} kg · {{height}} cm",
-    "childFallback": "Niño",
+    "followUpSummary_one": "Seguimiento clínico · {{count}} tipo",
+    "followUpSummary_other": "Seguimiento clínico · {{count}} tipos",
+    "followUpNextCheckup": "Próximo control: {{date}}",
+    "feedingSummary_one": "Alimentación del {{date}} · {{count}} comida",
+    "feedingSummary_other": "Alimentación del {{date}} · {{count}} comidas",
+    "childFallback": "Paciente",
     "status": {
       "local": "Guardado en este dispositivo",
       "sending": "Enviando...",
@@ -364,6 +370,10 @@
     "loading": "Cargando controles pendientes...",
     "discardConfirmTitle": "¿Descartar este control?",
     "discardConfirmMessage": "Este control no se enviará y se borrará de este dispositivo",
+    "discardFollowUpTitle": "¿Descartar este seguimiento?",
+    "discardFollowUpMessage": "Este seguimiento no se enviará y se borrará de este dispositivo",
+    "discardFeedingTitle": "¿Descartar esta alimentación?",
+    "discardFeedingMessage": "Este registro no se enviará y se borrará de este dispositivo",
     "discardConfirmAction": "Descartar",
     "discardCancelAction": "Cancelar",
     "errorFallback": "No se pudo enviar este control."

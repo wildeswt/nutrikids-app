@@ -1,4 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { USER_ROLES } from '@nutrikids/shared';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -7,12 +9,18 @@ import { Card } from '../../components/ui/Card.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { PALETTE } from '../../constants/colors.js';
 import { BUTTON_HEIGHT, BUTTON_WIDTH, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
+import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
+import { useSyncStatus } from '../../hooks/useSyncStatus.js';
 
 export default function ProfessionalProfileScreen() {
   const { t } = useTranslation(['professional', 'common']);
+  const router = useRouter();
   const { user, activeRole, switchRole, signOut } = useAuth();
+  const syncStatus = useSyncStatus();
+  const pendingSyncCount = syncStatus.pending + syncStatus.sending;
+  const showPendingSyncRow = pendingSyncCount > 0 || syncStatus.error > 0;
 
   const hasDualRole =
     user?.roles.includes(USER_ROLES.CAREGIVER) && user?.roles.includes(USER_ROLES.PROFESSIONAL);
@@ -55,6 +63,25 @@ export default function ProfessionalProfileScreen() {
         )}
 
         <LanguageSelector />
+
+        {showPendingSyncRow ? (
+          <Pressable
+            style={({ pressed }) => [styles.linkRow, pressed && styles.buttonPressed]}
+            onPress={() => router.push(APP_ROUTES.PROFESSIONAL.PENDING_SYNC as never)}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.pendingSync', { count: pendingSyncCount })}
+            testID="profile-link-pendingSync"
+          >
+            <Ionicons name="cloud-upload-outline" size={22} color={PALETTE.primary} />
+            <View style={styles.linkText}>
+              <Text style={styles.linkTitle}>
+                {t('profile.pendingSync', { count: pendingSyncCount })}
+              </Text>
+              <Text style={styles.linkSubtitle}>{t('profile.pendingSyncDescription')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={PALETTE.text.muted} />
+          </Pressable>
+        ) : null}
 
         <Pressable
           style={({ pressed }) => [styles.logoutButton, pressed && styles.buttonPressed]}
@@ -123,6 +150,32 @@ const styles = StyleSheet.create({
   },
   switchButton: {
     marginTop: 6,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: PALETTE.input.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: PALETTE.border.subtle,
+    padding: 12,
+  },
+  linkText: {
+    flex: 1,
+    gap: 2,
+  },
+  linkTitle: {
+    fontFamily: font('semibold'),
+    fontSize: 15,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+  },
+  linkSubtitle: {
+    fontFamily: font('regular'),
+    fontSize: 12,
+    color: PALETTE.text.muted,
+    lineHeight: 16,
   },
   logoutButton: {
     width: '100%',

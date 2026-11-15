@@ -157,6 +157,8 @@ describe('AlertDetailScreen (NK-33)', () => {
     expect(html()).toContain('Tienes 2 seguimientos guardados en este teléfono por enviar.');
     mocks.pending.pendingCount = 1;
     expect(html()).toContain('Tienes 1 seguimiento guardado en este teléfono por enviar.');
+    (byTestId('alert-detail-pending')?.props?.['onPress'] as () => void)();
+    expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.PROFESSIONAL.PENDING_SYNC);
   });
 
   it('shows the child banner, the indicator, the result and the reason', () => {

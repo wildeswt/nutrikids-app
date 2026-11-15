@@ -1,5 +1,6 @@
 export * from './backoff.js';
 export * from './checkup-processor.js';
+export * from './feeding-processor.js';
 export * from './follow-up-processor.js';
 export {
   createEmptyFlushSummary,

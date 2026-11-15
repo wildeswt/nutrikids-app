@@ -167,6 +167,14 @@ export default function ProfessionalDrawerLayout() {
           ),
         }}
       />
+      <Drawer.Screen
+        name="pending-sync"
+        options={{
+          title: t('drawer.pendingSyncTitle'),
+          headerShown: false,
+          drawerItemStyle: { display: 'none' },
+        }}
+      />
     </Drawer>
   );
 }
