@@ -625,9 +625,7 @@
       "loadError": "No pudimos cargar tus datos.",
       "retry": "Reintentar"
     },
-    "professionalsTitle": "Profesionales",
     "noProfessionals": "Todavía no hay profesionales vinculados.",
-    "linkProfessional": "Vincular profesional",
     "unlinkProfessional": "Desvincular",
     "unlinkConfirmTitle": "¿Desvincular a {{name}}?",
     "unlinkConfirmMessage": "{{name}} dejará de ver los controles y alertas de {{child}}.",
