@@ -90,8 +90,9 @@ export default function FeedingHistoryScreen() {
   };
 
   const handleBack = () => {
+    // Opened from the feeding form, which is the previous screen in the tabs' history.
     if (router.canGoBack()) router.back();
-    else router.replace(APP_ROUTES.CAREGIVER.FEEDING);
+    else router.replace(APP_ROUTES.CAREGIVER.FEEDING as never);
   };
 
   const dayLabel = (logDate: string) => {
@@ -141,17 +142,18 @@ export default function FeedingHistoryScreen() {
     return logs.map((log) => {
       const { meals, text } = parseFeedingDetails(log.details);
       return (
-        <Pressable
-          key={log.id}
-          style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-          onPress={() => setDetailLog(log)}
-          accessibilityRole="button"
-          accessibilityLabel={t('feedingHistory.openDetailA11y', { date: dayLabel(log.logDate) })}
-          testID={`feeding-history-item-${log.id}`}
-        >
-          <View style={styles.cardTop}>
-            <Text style={styles.cardDate}>{dayLabel(log.logDate)}</Text>
-            <View style={styles.cardTopRight}>
+        <View key={log.id} style={styles.cardWrap}>
+          <Pressable
+            style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+            onPress={() => setDetailLog(log)}
+            accessibilityRole="button"
+            accessibilityLabel={t('feedingHistory.openDetailA11y', {
+              date: dayLabel(log.logDate),
+            })}
+            testID={`feeding-history-item-${log.id}`}
+          >
+            <View style={styles.cardTop}>
+              <Text style={styles.cardDate}>{dayLabel(log.logDate)}</Text>
               {log.mealsPerDay !== null ? (
                 <View style={styles.chip}>
                   <Text style={styles.chipText}>
@@ -159,40 +161,42 @@ export default function FeedingHistoryScreen() {
                   </Text>
                 </View>
               ) : null}
-              <CardMenuButton
-                testID={`feeding-history-menu-${log.id}`}
-                accessibilityLabel={t('feedingHistory.menuA11y')}
-                title={t('feedingHistory.detailTitle')}
-                subtitle={dayLabel(log.logDate)}
-                actions={[
-                  {
-                    id: 'edit-feeding',
-                    label: t('feedingHistory.edit'),
-                    icon: 'create-outline',
-                    onPress: () => handleEdit(log),
-                  },
-                  {
-                    id: 'delete-feeding',
-                    label: t('feedingHistory.delete'),
-                    icon: 'trash-outline',
-                    destructive: true,
-                    onPress: () => setDeleteTarget(log),
-                  },
-                ]}
-              />
             </View>
-          </View>
-          {meals.length > 0 ? (
-            <Text style={styles.cardMeals}>
-              {meals.map((id) => t(`feeding.meals.${id}`)).join(' · ')}
-            </Text>
-          ) : null}
-          {text ? (
-            <Text style={styles.cardText} numberOfLines={2}>
-              {text}
-            </Text>
-          ) : null}
-        </Pressable>
+            {meals.length > 0 ? (
+              <Text style={styles.cardMeals}>
+                {meals.map((id) => t(`feeding.meals.${id}`)).join(' · ')}
+              </Text>
+            ) : null}
+            {text ? (
+              <Text style={styles.cardText} numberOfLines={2}>
+                {text}
+              </Text>
+            ) : null}
+          </Pressable>
+          {/* Sibling of the card (not inside it): a button cannot contain another button on web. */}
+          <CardMenuButton
+            style={styles.cardMenu}
+            testID={`feeding-history-menu-${log.id}`}
+            accessibilityLabel={t('feedingHistory.menuA11y')}
+            title={t('feedingHistory.detailTitle')}
+            subtitle={dayLabel(log.logDate)}
+            actions={[
+              {
+                id: 'edit-feeding',
+                label: t('feedingHistory.edit'),
+                icon: 'create-outline',
+                onPress: () => handleEdit(log),
+              },
+              {
+                id: 'delete-feeding',
+                label: t('feedingHistory.delete'),
+                icon: 'trash-outline',
+                destructive: true,
+                onPress: () => setDeleteTarget(log),
+              },
+            ]}
+          />
+        </View>
       );
     });
   };
@@ -311,6 +315,8 @@ export default function FeedingHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
+  cardWrap: { position: 'relative' },
+  cardMenu: { position: 'absolute', top: 10, right: 12 },
   cardTopRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   detailBody: { gap: 6, marginBottom: 20 },
   detailLabel: {
@@ -361,7 +367,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 6,
   },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 44 },
   cardDate: {
     flex: 1,
     fontFamily: font('semibold'),
