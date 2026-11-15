@@ -117,10 +117,14 @@ export function ConnectionBar({
       ? { kind: 'hidden', count: 0 }
       : (stateOverride ?? liveState);
 
-  const visibleState: VisibleConnectionBarState | null =
-    resolvedState.kind === 'hidden'
-      ? null
-      : { kind: resolvedState.kind, count: resolvedState.count };
+  // Stable identity: the animation effect below depends on `visibleState`; a fresh object every
+  // render re-ran it forever (setExitingState) and crashed with "Maximum update depth exceeded".
+  const visibleKind = resolvedState.kind === 'hidden' ? null : resolvedState.kind;
+  const visibleCount = resolvedState.count;
+  const visibleState = useMemo<VisibleConnectionBarState | null>(
+    () => (visibleKind === null ? null : { kind: visibleKind, count: visibleCount }),
+    [visibleKind, visibleCount],
+  );
 
   const [exitingState, setExitingState] = useState<VisibleConnectionBarState | null>(null);
   const activeState = visibleState ?? exitingState;
