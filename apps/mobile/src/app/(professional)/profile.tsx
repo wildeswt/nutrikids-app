@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LanguageSelector } from '../../components/LanguageSelector.js';
+import { SignOutPendingDialog } from '../../components/SignOutPendingDialog.js';
 import { Card } from '../../components/ui/Card.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { PALETTE } from '../../constants/colors.js';
@@ -12,13 +13,17 @@ import { BUTTON_HEIGHT, BUTTON_WIDTH, RADIUS_PILL, SCREEN_MARGIN } from '../../c
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
+import { useSignOutFlow } from '../../hooks/useSignOutFlow.js';
 import { useSyncStatus } from '../../hooks/useSyncStatus.js';
 
 export default function ProfessionalProfileScreen() {
   const { t } = useTranslation(['professional', 'common']);
   const router = useRouter();
-  const { user, activeRole, switchRole, signOut } = useAuth();
+  const { user, activeRole, switchRole } = useAuth();
   const syncStatus = useSyncStatus();
+  const signOutFlow = useSignOutFlow({
+    onGoToPendingSync: () => router.push(APP_ROUTES.PROFESSIONAL.PENDING_SYNC as never),
+  });
   const pendingSyncCount = syncStatus.pending + syncStatus.sending;
   const showPendingSyncRow = pendingSyncCount > 0 || syncStatus.error > 0;
 
@@ -85,11 +90,18 @@ export default function ProfessionalProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.logoutButton, pressed && styles.buttonPressed]}
-          onPress={() => void signOut()}
+          onPress={() => void signOutFlow.requestSignOut()}
+          disabled={signOutFlow.isSigningOut}
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.logout')}
+          accessibilityState={{ disabled: signOutFlow.isSigningOut }}
+          testID="professional-logout-button"
         >
           <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </Pressable>
       </Card>
+
+      <SignOutPendingDialog {...signOutFlow.dialogProps} />
     </ScrollView>
   );
 }

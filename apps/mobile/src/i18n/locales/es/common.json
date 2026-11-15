@@ -129,5 +129,24 @@
       "alert_pending_review": "Alerta pendiente de revisión",
       "alert_overdue": "Alerta vencida sin revisar"
     }
+  },
+  "signOutPending": {
+    "title_one": "Tienes 1 registro sin enviar",
+    "title_other": "Tienes {{count}} registros sin enviar",
+    "body": "Si cierras sesión sin enviarlos se borrarán de este teléfono. Sincroniza primero para no perderlos.",
+    "syncAndSignOut": "Sincronizar y salir",
+    "syncing": "Sincronizando...",
+    "offlineHint": "Necesitas conexión para enviarlos",
+    "syncFailed_one": "No se pudo enviar 1 registro",
+    "syncFailed_other": "No se pudieron enviar {{count}} registros",
+    "goToPendingSync": "Ir a Pendientes de envío",
+    "signOutAndDelete": "Salir y borrar datos",
+    "signingOut": "Cerrando sesión...",
+    "confirmDeleteTitle": "Confirmar cierre de sesión",
+    "confirmDeleteBody_one": "Se perderá 1 registro que no se ha enviado. Esta acción no se puede deshacer",
+    "confirmDeleteBody_other": "Se perderán {{count}} registros que no se han enviado. Esta acción no se puede deshacer",
+    "confirmDeleteAction": "Salir y borrar datos",
+    "cancel": "Cancelar",
+    "closeA11y": "Cancelar cierre de sesión"
   }
 }

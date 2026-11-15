@@ -456,6 +456,20 @@ export class SyncEngine {
     this.setState(DEFAULT_SYNC_STATE);
   };
 
+  /** Detiene el motor y espera a que concluya cualquier ciclo de envío o arranque en curso. */
+  stopAndWait = async (): Promise<void> => {
+    const pendingStart = this.startPromise;
+    const pendingCycle = this.inFlightCycle;
+
+    this.stop();
+
+    await Promise.allSettled([pendingStart, pendingCycle]);
+
+    while (this.inFlightCycle) {
+      await this.inFlightCycle.catch(() => {});
+    }
+  };
+
   /** Fuerza un intento manual inmediato ignorando el tiempo de espera (`next_attempt_at`). */
   syncNow = async (): Promise<void> => {
     const userId = this.activeUserId;

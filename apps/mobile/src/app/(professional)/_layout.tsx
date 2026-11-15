@@ -4,10 +4,12 @@ import { Drawer, DrawerContentScrollView, DrawerItemList } from 'expo-router/dra
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SignOutPendingDialog } from '../../components/SignOutPendingDialog.js';
 import { PALETTE } from '../../constants/colors.js';
 import { RADIUS_PILL } from '../../constants/layout.js';
 import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
+import { useSignOutFlow } from '../../hooks/useSignOutFlow.js';
 
 type DrawerContentProps = Parameters<
   NonNullable<React.ComponentProps<typeof Drawer>['drawerContent']>
@@ -15,7 +17,13 @@ type DrawerContentProps = Parameters<
 
 export function CustomDrawerContent(props: DrawerContentProps) {
   const { t } = useTranslation(['professional', 'common']);
-  const { user, switchRole, signOut } = useAuth();
+  const { user, switchRole } = useAuth();
+  const signOutFlow = useSignOutFlow({
+    onGoToPendingSync: () => {
+      props.navigation?.closeDrawer?.();
+      props.navigation?.navigate?.('pending-sync' as never);
+    },
+  });
   const hasDualRole =
     user?.roles.includes(USER_ROLES.CAREGIVER) && user?.roles.includes(USER_ROLES.PROFESSIONAL);
 
@@ -53,12 +61,19 @@ export function CustomDrawerContent(props: DrawerContentProps) {
 
         <Pressable
           style={({ pressed }) => [styles.logoutButton, pressed && styles.buttonPressed]}
-          onPress={() => void signOut()}
+          onPress={() => void signOutFlow.requestSignOut()}
+          disabled={signOutFlow.isSigningOut}
+          accessibilityRole="button"
+          accessibilityLabel={t('drawer.logout')}
+          accessibilityState={{ disabled: signOutFlow.isSigningOut }}
+          testID="drawer-logout-button"
         >
           <Ionicons name="log-out-outline" size={18} color={PALETTE.feedback.error} />
           <Text style={styles.logoutButtonText}>{t('drawer.logout')}</Text>
         </Pressable>
       </View>
+
+      <SignOutPendingDialog {...signOutFlow.dialogProps} />
     </View>
   );
 }

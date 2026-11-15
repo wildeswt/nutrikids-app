@@ -156,6 +156,16 @@ async function writeRaw(value: string): Promise<void> {
   }
 }
 
+async function deleteRaw(): Promise<void> {
+  if (await hasSecureStore()) {
+    await SecureStore.deleteItemAsync(FOLLOW_UP_STORAGE_KEY, SECURE_STORE_OPTIONS);
+  } else if (typeof window !== 'undefined' && window.localStorage) {
+    window.localStorage.removeItem(FOLLOW_UP_STORAGE_KEY);
+  } else {
+    memoryStorage.delete(FOLLOW_UP_STORAGE_KEY);
+  }
+}
+
 export async function readLegacyFollowUpStore(): Promise<LegacyFollowUpStore> {
   try {
     const raw = await readRaw();
@@ -522,14 +532,39 @@ export async function clearRejectedFollowUpInDb(
 // ---------------------------------------------------------------------------
 
 export async function clearLegacyUserFollowUpData(userId: string): Promise<void> {
-  await updateLegacyStore((store) => {
+  const run = async (): Promise<void> => {
+    const store = await readLegacyFollowUpStore();
     for (const [key, draft] of Object.entries(store.drafts)) {
       if (draft.userId === userId || key.startsWith(`${userId}:`)) {
         delete store.drafts[key];
       }
     }
     store.pending = store.pending.filter((entry) => entry.userId !== userId);
-  });
+
+    if (Object.keys(store.drafts).length === 0 && store.pending.length === 0) {
+      await deleteRaw();
+      return;
+    }
+
+    await writeRaw(JSON.stringify(store));
+  };
+
+  const next = queue.then(run, run);
+  queue = next.catch(() => undefined);
+  await next;
+}
+
+/** Elimina por completo el respaldo residual de seguimientos en SecureStore sin abrir SQLite. */
+export async function clearAllLegacyFollowUpData(): Promise<void> {
+  const next = queue.then(deleteRaw, deleteRaw);
+  queue = next.catch(() => undefined);
+  await next;
+}
+
+/** Cuenta seguimientos pendientes guardados en el respaldo de SecureStore para un usuario. */
+export async function countLegacyPendingFollowUps(userId: string): Promise<number> {
+  const store = await readLegacyFollowUpStore();
+  return store.pending.filter((entry) => entry.userId === userId).length;
 }
 
 function legacyGetDraft(key: string): Promise<FollowUpDraft | null> {

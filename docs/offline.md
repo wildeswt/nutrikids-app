@@ -314,3 +314,33 @@ Implementado en `apps/mobile/src/lib/sync/feeding-processor.ts`, `apps/mobile/sr
 - **Rutas de cuidador y profesional:**
   - `(caregiver)/pending-sync.tsx` y `(professional)/pending-sync.tsx` (`APP_ROUTES.PROFESSIONAL.PENDING_SYNC`, oculta en el drawer de `(professional)/_layout.tsx`) envuelven `PendingSyncList` con su ruta de respaldo respectiva (`CAREGIVER.HOME` y `PROFESSIONAL.ALERTS`).
   - `(professional)/profile.tsx` muestra la fila «Pendientes de envío ({N})» solo cuando `N > 0` o hay errores, y `(professional)/alert-detail.tsx` enlaza su aviso de seguimientos pendientes a `APP_ROUTES.PROFESSIONAL.PENDING_SYNC`.
+
+## 13. Cierre de sesión con pendientes y borrado del almacenamiento local (NK-63)
+
+Implementado en `apps/mobile/src/lib/local-wipe.ts`, `apps/mobile/src/lib/sync/sync-engine.ts` (`stopAndWait`), `apps/mobile/src/context/auth-context.tsx`, `apps/mobile/src/hooks/useSignOutFlow.ts`, `apps/mobile/src/components/SignOutPendingDialog.tsx` y conectado en los tres puntos de salida (`app/(caregiver)/profile.tsx`, `app/(professional)/profile.tsx` y `CustomDrawerContent` en `app/(professional)/_layout.tsx`).
+
+### Flujo de cierre de sesión manual (`useSignOutFlow` + `SignOutPendingDialog`)
+
+1. **Sin pendientes (`LOCAL + SENDING + ERROR === 0`):** llama a `signOut()` directamente sin mostrar diálogo y ejecuta la limpieza local completa.
+2. **Con pendientes (`> 0`, incluyendo controles, seguimientos o alimentación):** abre `SignOutPendingDialog` con el conteo («Tienes {{count}} registros sin enviar») y tres opciones:
+   - **Sincronizar y salir:** bloqueada sin conexión («Necesitas conexión para enviarlos»). Con conexión invoca `syncEngine.syncNow()` y espera el resultado: si la cola queda en `0`, cierra sesión y borra; si quedan registros (error de red o rechazo del servidor), conserva la sesión abierta, muestra «No se pudieron enviar {{count}} registros» y ofrece ir a «Pendientes de envío» para revisarlos o corregirlos.
+   - **Salir y borrar datos:** exige una segunda confirmación («Se perderán {{count}} registros que no se han enviado. Esta acción no se puede deshacer») antes de cerrar sesión y descartar los datos locales.
+   - **Cancelar:** cierra el diálogo sin enviar ni borrar nada.
+3. Todas las acciones bloquean el doble toque y muestran estado de carga mientras se ejecutan.
+
+### Qué se borra y tolerancia a fallos (`wipeUserLocalStorage`)
+
+- Tras desregistrar el token push y revocar la sesión en el servidor, `signOut()` ejecuta `wipeUserLocalStorage({ userId })`:
+  1. Detiene `syncEngine` y espera a que concluya cualquier ciclo de envío en curso (`syncEngine.stopAndWait()`).
+  2. Elimina la base SQLite cifrada y su clave maestra en `SecureStore` (`wipeLocalData()`).
+  3. Limpia los datos residuales del usuario en `SecureStore` y sistema de archivos (`clearLegacyUserFollowUpData` / `clearAllLegacyFollowUpData` en `nutrikids.followups` y `clearReferralDraft`), sin reabrir SQLite después del borrado.
+- **Tolerancia a fallos:** si cualquier paso de limpieza falla, **nunca** impide cerrar la sesión. Se registra en consola únicamente el nombre de la operación fallida (sin datos personales ni identificadores de usuario o niño) y se escribe la marca `nutrikids.localDb.pendingWipe` en `SecureStore` para reintentar automáticamente al próximo arranque o inicio de sesión (`retryPendingLocalWipeIfNeeded()`).
+
+### Cierre automático por sesión expirada (`onSessionExpired`) y aislamiento entre usuarios
+
+- Cuando el refresco de token falla de forma definitiva (`onSessionExpired`), `AuthProvider` cierra la sesión en memoria y delega en `cleanupOnSessionExpired(expiredUserId)`:
+  - Detiene `syncEngine` (`stopAndWait()`).
+  - Verifica si existen registros sin enviar (`hasUnsentSyncRecords`) del usuario cuya sesión expiró.
+  - **Si hay pendientes:** **NO se borra la base cifrada ni la cola.** El envío ya no es posible sin sesión válida y descartar trabajo clínico sin avisar sería peor que conservarlo cifrado; como toda la base y `sync_queue` están aisladas por `user_id`, los registros permanecen protegidos en disco hasta que ese mismo usuario vuelva a iniciar sesión y se sincronicen automáticamente.
+  - **Si no hay pendientes:** se ejecuta el borrado completo (`wipeUserLocalStorage`).
+- **Otro usuario en el mismo teléfono:** todas las lecturas y vaciados de `sync_queue`, cachés y borradores filtran estrictamente por `user_id`, de modo que un segundo usuario no ve ni envía registros pendientes dejados por una sesión expirada previa.

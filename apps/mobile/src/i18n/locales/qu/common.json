@@ -129,5 +129,24 @@
       "alert_pending_review": "Qawanapaq willay",
       "alert_overdue": "Pacha yallisqa willay"
     }
+  },
+  "signOutPending": {
+    "title_one": "1 mana kachasqa killkaymi tiyan",
+    "title_other": "{{count}} mana kachasqa killkaykunam tiyan",
+    "body": "Mana kachaspa lluqsikpika kay karurimana ukhumanta pichasqam kanka. Mana chinkachinapaq ñawpaqta kachay.",
+    "syncAndSignOut": "Kachay hinaspa lluqsiy",
+    "syncing": "Kachachkan...",
+    "offlineHint": "Kachanapaq internetmi minishtirin",
+    "syncFailed_one": "Manam 1 killkayta kachayta atikurchu",
+    "syncFailed_other": "Manam {{count}} killkaykunata kachayta atikurchu",
+    "goToPendingSync": "Kachanapaq suyachkaqkunaman riy",
+    "signOutAndDelete": "Lluqsiy hinaspa willaykunata pichay",
+    "signingOut": "Lluqsichkan...",
+    "confirmDeleteTitle": "Lluqsinapaq allichay",
+    "confirmDeleteBody_one": "1 mana kachasqa killkaymi chinkanka. Kay ruraytaqa manam kutichiy atikunchu",
+    "confirmDeleteBody_other": "{{count}} mana kachasqa killkaykunam chinkanka. Kay ruraytaqa manam kutichiy atikunchu",
+    "confirmDeleteAction": "Lluqsiy hinaspa willaykunata pichay",
+    "cancel": "Mana ari",
+    "closeA11y": "Lluqsiyta saqiy"
   }
 }

@@ -6,9 +6,11 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ConsentChildItem } from '../../components/ConsentChildItem.js';
 import { LanguageSelector } from '../../components/LanguageSelector.js';
+import { SignOutPendingDialog } from '../../components/SignOutPendingDialog.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { useAuth } from '../../context/auth-context.js';
+import { useSignOutFlow } from '../../hooks/useSignOutFlow.js';
 import { useSyncStatus } from '../../hooks/useSyncStatus.js';
 import { fetchCaregiverChildren } from '../../lib/consent-api.js';
 
@@ -17,8 +19,11 @@ export { ConsentChildItem };
 export default function CaregiverProfileScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
   const router = useRouter();
-  const { user, activeRole, switchRole, signOut } = useAuth();
+  const { user, activeRole, switchRole } = useAuth();
   const syncStatus = useSyncStatus();
+  const signOutFlow = useSignOutFlow({
+    onGoToPendingSync: () => router.push(APP_ROUTES.CAREGIVER.PENDING_SYNC as never),
+  });
   const [children, setChildren] = useState<ChildResponse[]>([]);
   const [loadingChildren, setLoadingChildren] = useState(true);
 
@@ -143,11 +148,18 @@ export default function CaregiverProfileScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.logoutButton, pressed && styles.buttonPressed]}
-          onPress={() => void signOut()}
+          onPress={() => void signOutFlow.requestSignOut()}
+          disabled={signOutFlow.isSigningOut}
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.logout')}
+          accessibilityState={{ disabled: signOutFlow.isSigningOut }}
+          testID="caregiver-logout-button"
         >
           <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </Pressable>
       </View>
+
+      <SignOutPendingDialog {...signOutFlow.dialogProps} />
     </ScrollView>
   );
 }
