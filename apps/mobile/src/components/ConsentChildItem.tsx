@@ -1,12 +1,13 @@
 import type { ChildResponse } from '@nutrikids/shared';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { PALETTE } from '../constants/colors.js';
 import { APP_ROUTES } from '../constants/routes.js';
 import { useConsent } from '../hooks/useConsent.js';
 import { formatNumericDate } from '../i18n/format.js';
+import { ConfirmDialog } from './ui/ConfirmDialog.js';
 
 interface ConsentChildItemProps {
   child: ChildResponse;
@@ -23,32 +24,26 @@ export function ConsentChildItem({ child }: ConsentChildItemProps) {
     return formatNumericDate(new Date(isoString));
   };
 
-  const handleRevoke = () => {
-    Alert.alert(
-      t('consentItem.revokeTitle'),
-      t('consentItem.revokeMessage', { name: `${child.firstName} ${child.lastName}` }),
-      [
-        { text: t('common:actions.cancel'), style: 'cancel' },
-        {
-          text: t('consentItem.revokeConfirm'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await revoke();
-              Alert.alert(
-                t('consentItem.revokeSuccessTitle'),
-                t('consentItem.revokeSuccessMessage'),
-              );
-            } catch (err) {
-              Alert.alert(
-                t('consentItem.revokeErrorTitle'),
-                err instanceof Error ? err.message : t('consentItem.revokeErrorMessage'),
-              );
-            }
-          },
-        },
-      ],
-    );
+  const [confirming, setConfirming] = useState(false);
+  const [notice, setNotice] = useState<{ title: string; message: string; error?: boolean } | null>(
+    null,
+  );
+
+  const performRevoke = async () => {
+    setConfirming(false);
+    try {
+      await revoke();
+      setNotice({
+        title: t('consentItem.revokeSuccessTitle'),
+        message: t('consentItem.revokeSuccessMessage'),
+      });
+    } catch (err) {
+      setNotice({
+        title: t('consentItem.revokeErrorTitle'),
+        message: err instanceof Error ? err.message : t('consentItem.revokeErrorMessage'),
+        error: true,
+      });
+    }
   };
 
   const handleView = () => {
@@ -113,13 +108,38 @@ export function ConsentChildItem({ child }: ConsentChildItemProps) {
         {consent && !consent.revokedAt && (
           <Pressable
             style={({ pressed }) => [styles.actionButtonRevoke, pressed && styles.buttonPressed]}
-            onPress={handleRevoke}
+            onPress={() => setConfirming(true)}
             testID={`revoke-consent-${child.id}`}
           >
             <Text style={styles.actionButtonRevokeText}>{t('consentItem.revoke')}</Text>
           </Pressable>
         )}
       </View>
+      <ConfirmDialog
+        visible={confirming}
+        tone="danger"
+        icon="shield-outline"
+        title={t('consentItem.revokeTitle')}
+        message={t('consentItem.revokeMessage', {
+          name: `${child.firstName} ${child.lastName}`,
+        })}
+        confirmLabel={t('consentItem.revokeConfirm')}
+        cancelLabel={t('common:actions.cancel')}
+        onConfirm={() => void performRevoke()}
+        onCancel={() => setConfirming(false)}
+        testID={`revoke-consent-dialog-${child.id}`}
+      />
+      <ConfirmDialog
+        visible={notice !== null}
+        tone={notice?.error ? 'danger' : 'primary'}
+        icon={notice?.error ? 'alert-circle-outline' : 'checkmark-circle-outline'}
+        title={notice?.title ?? ''}
+        message={notice?.message}
+        confirmLabel={t('common:actions.accept')}
+        onConfirm={() => setNotice(null)}
+        onCancel={() => setNotice(null)}
+        testID={`consent-notice-dialog-${child.id}`}
+      />
     </View>
   );
 }
