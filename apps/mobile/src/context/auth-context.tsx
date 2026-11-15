@@ -80,11 +80,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           sessionRef.current = stored;
           setSession(stored);
           setStatus(AUTH_STATUS.AUTHENTICATED);
-          if (stored.user.roles.includes(USER_ROLES.PROFESSIONAL)) {
-            void registerPushNotifications().catch((err) => {
-              console.warn('Could not register push notifications on session restore:', err);
-            });
-          }
+          // Every role gets push: professionals for alerts, caregivers for messages and reminders.
+          void registerPushNotifications().catch((err) => {
+            console.warn('Could not register push notifications on session restore:', err);
+          });
         } else {
           sessionRef.current = null;
           setSession(null);
@@ -167,11 +166,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setRefreshError(null);
       setStatus(AUTH_STATUS.AUTHENTICATED);
 
-      if (authResponse.user.roles.includes(USER_ROLES.PROFESSIONAL)) {
-        void registerPushNotifications().catch((err) => {
-          console.warn('Could not register push notifications on signIn:', err);
-        });
-      }
+      void registerPushNotifications().catch((err) => {
+        console.warn('Could not register push notifications on signIn:', err);
+      });
     },
     [],
   );
