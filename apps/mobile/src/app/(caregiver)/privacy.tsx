@@ -3,17 +3,10 @@ import { ERASURE_LEGAL_DEADLINE_DAYS, type ChildResponse } from '@nutrikids/shar
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { SecondaryButton } from '../../components/ui/SecondaryButton.js';
 import { PALETTE } from '../../constants/colors.js';
@@ -54,6 +47,10 @@ export function ChildPrivacyPanel({
     revoke: revokeConsent,
   } = useConsent(child.id);
   const [revokingConsent, setRevokingConsent] = useState(false);
+  const [confirm, setConfirm] = useState<'revoke' | 'delete' | 'cancel' | null>(null);
+  const [notice, setNotice] = useState<{ title: string; message: string; error?: boolean } | null>(
+    null,
+  );
   const name = `${child.firstName} ${child.lastName}`;
 
   // The tabs keep their screens mounted, so the requests are read again each time this one is shown.
@@ -65,14 +62,15 @@ export function ChildPrivacyPanel({
   );
 
   const showError = (title: string, err: unknown, fallback: string) =>
-    Alert.alert(
+    setNotice({
       title,
-      isNotLegalRepresentativeError(err)
+      error: true,
+      message: isNotLegalRepresentativeError(err)
         ? t('privacy.forbidden', { name: child.firstName })
         : err instanceof Error
           ? err.message
           : fallback,
-    );
+    });
 
   const handleExport = async () => {
     try {
@@ -82,54 +80,33 @@ export function ChildPrivacyPanel({
     }
   };
 
-  const handleRequestDeletion = () => {
-    Alert.alert(
-      t('privacy.deleteConfirmTitle', { name: child.firstName }),
-      t('privacy.deleteConfirmMessage', { days: ERASURE_LEGAL_DEADLINE_DAYS }),
-      [
-        { text: t('common:actions.cancel'), style: 'cancel' },
-        {
-          text: t('privacy.deleteConfirm'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await requestDeletion();
-              Alert.alert(
-                t('privacy.requestedTitle'),
-                t('privacy.requestedMessage', { name: child.firstName }),
-              );
-            } catch (err) {
-              showError(t('privacy.deleteErrorTitle'), err, t('privacy.deleteErrorTitle'));
-            }
-          },
-        },
-      ],
-    );
+  const closeConfirm = () => setConfirm(null);
+
+  const handleRequestDeletion = async () => {
+    closeConfirm();
+    try {
+      await requestDeletion();
+      setNotice({
+        title: t('privacy.requestedTitle'),
+        message: t('privacy.requestedMessage', { name: child.firstName }),
+      });
+    } catch (err) {
+      showError(t('privacy.deleteErrorTitle'), err, t('privacy.deleteErrorTitle'));
+    }
   };
 
-  const handleCancelDeletion = () => {
+  const handleCancelDeletion = async () => {
+    closeConfirm();
     if (!pendingRequest) return;
-    Alert.alert(
-      t('privacy.cancelConfirmTitle'),
-      t('privacy.cancelConfirmMessage', { name: child.firstName }),
-      [
-        { text: t('privacy.keepRequest'), style: 'cancel' },
-        {
-          text: t('privacy.cancelConfirm'),
-          onPress: async () => {
-            try {
-              await cancelDeletion(pendingRequest.id);
-              Alert.alert(
-                t('privacy.cancelledTitle'),
-                t('privacy.cancelledMessage', { name: child.firstName }),
-              );
-            } catch (err) {
-              showError(t('privacy.cancelErrorTitle'), err, t('privacy.cancelErrorTitle'));
-            }
-          },
-        },
-      ],
-    );
+    try {
+      await cancelDeletion(pendingRequest.id);
+      setNotice({
+        title: t('privacy.cancelledTitle'),
+        message: t('privacy.cancelledMessage', { name: child.firstName }),
+      });
+    } catch (err) {
+      showError(t('privacy.cancelErrorTitle'), err, t('privacy.cancelErrorTitle'));
+    }
   };
 
   const openConsent = () => {
@@ -139,32 +116,24 @@ export function ChildPrivacyPanel({
     });
   };
 
-  const handleRevokeConsent = () => {
-    Alert.alert(
-      t('consentItem.revokeTitle'),
-      t('consentItem.revokeMessage', { name: child.firstName }),
-      [
-        { text: t('common:actions.cancel'), style: 'cancel' },
-        {
-          text: t('consentItem.revokeConfirm'),
-          style: 'destructive',
-          onPress: async () => {
-            setRevokingConsent(true);
-            try {
-              await revokeConsent();
-              Alert.alert(
-                t('consentItem.revokeSuccessTitle'),
-                t('consentItem.revokeSuccessMessage'),
-              );
-            } catch {
-              Alert.alert(t('consentItem.revokeErrorTitle'), t('consentItem.revokeErrorMessage'));
-            } finally {
-              setRevokingConsent(false);
-            }
-          },
-        },
-      ],
-    );
+  const handleRevokeConsent = async () => {
+    closeConfirm();
+    setRevokingConsent(true);
+    try {
+      await revokeConsent();
+      setNotice({
+        title: t('consentItem.revokeSuccessTitle'),
+        message: t('consentItem.revokeSuccessMessage'),
+      });
+    } catch {
+      setNotice({
+        title: t('consentItem.revokeErrorTitle'),
+        message: t('consentItem.revokeErrorMessage'),
+        error: true,
+      });
+    } finally {
+      setRevokingConsent(false);
+    }
   };
 
   const renderConsentSection = () => {
@@ -229,7 +198,7 @@ export function ChildPrivacyPanel({
               <View style={styles.sectionActionCenter}>
                 <SecondaryButton
                   label={t('privacy.revokeConsent')}
-                  onPress={handleRevokeConsent}
+                  onPress={() => setConfirm('revoke')}
                   loading={revokingConsent}
                   disabled={revokingConsent}
                   testID="privacy-revoke-consent"
@@ -316,7 +285,7 @@ export function ChildPrivacyPanel({
             <View style={styles.sectionActionCenter}>
               <SecondaryButton
                 label={t('privacy.cancelButton')}
-                onPress={handleCancelDeletion}
+                onPress={() => setConfirm('cancel')}
                 disabled={busy !== null}
                 accessibilityLabel={t('privacy.cancelButton')}
                 testID="privacy-cancel-button"
@@ -338,7 +307,7 @@ export function ChildPrivacyPanel({
                   busy === 'erasure' && styles.buttonDisabled,
                   pressed && styles.pressed,
                 ]}
-                onPress={handleRequestDeletion}
+                onPress={() => setConfirm('delete')}
                 disabled={busy !== null}
                 accessibilityRole="button"
                 accessibilityLabel={t('privacy.deleteButton')}
@@ -369,6 +338,53 @@ export function ChildPrivacyPanel({
       {renderConsentSection()}
 
       {renderRights()}
+
+      <ConfirmDialog
+        visible={confirm === 'revoke'}
+        tone="danger"
+        icon="shield-outline"
+        title={t('consentItem.revokeTitle')}
+        message={t('consentItem.revokeMessage', { name: child.firstName })}
+        confirmLabel={t('consentItem.revokeConfirm')}
+        cancelLabel={t('common:actions.cancel')}
+        onConfirm={() => void handleRevokeConsent()}
+        onCancel={closeConfirm}
+        testID="privacy-revoke-dialog"
+      />
+      <ConfirmDialog
+        visible={confirm === 'delete'}
+        tone="danger"
+        icon="trash-outline"
+        title={t('privacy.deleteConfirmTitle', { name: child.firstName })}
+        message={t('privacy.deleteConfirmMessage', { days: ERASURE_LEGAL_DEADLINE_DAYS })}
+        confirmLabel={t('privacy.deleteConfirm')}
+        cancelLabel={t('common:actions.cancel')}
+        onConfirm={() => void handleRequestDeletion()}
+        onCancel={closeConfirm}
+        testID="privacy-delete-dialog"
+      />
+      <ConfirmDialog
+        visible={confirm === 'cancel'}
+        tone="warning"
+        title={t('privacy.cancelConfirmTitle')}
+        message={t('privacy.cancelConfirmMessage', { name: child.firstName })}
+        confirmLabel={t('privacy.cancelConfirm')}
+        cancelLabel={t('privacy.keepRequest')}
+        onConfirm={() => void handleCancelDeletion()}
+        onCancel={closeConfirm}
+        testID="privacy-cancel-dialog"
+      />
+      <ConfirmDialog
+        visible={notice !== null}
+        tone={notice?.error ? 'danger' : 'primary'}
+        icon={notice?.error ? 'alert-circle-outline' : 'checkmark-circle-outline'}
+        title={notice?.title ?? ''}
+        message={notice?.message}
+        confirmLabel={t('common:actions.accept')}
+        onConfirm={() => setNotice(null)}
+        onCancel={() => setNotice(null)}
+        testID="privacy-notice-dialog"
+      />
     </View>
   );
 }

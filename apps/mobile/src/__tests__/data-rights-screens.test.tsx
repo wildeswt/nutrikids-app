@@ -1,6 +1,6 @@
 import React from 'react';
 import { renderToString } from 'react-dom/server';
-import { Alert, type AlertButton } from 'react-native';
+import { Alert } from 'react-native';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_ROUTES } from '../constants/routes.js';
 
@@ -210,9 +210,6 @@ beforeEach(() => {
 afterEach(() => {
   alertSpy.mockRestore();
 });
-
-/** Buttons of the last `Alert.alert` call. */
-const lastAlertButtons = () => (alertSpy.mock.calls.at(-1)?.[2] ?? []) as AlertButton[];
 
 describe('MyDataScreen («Mis datos»)', () => {
   it('shows the account section (loaded from the API, editable)', () => {
@@ -441,27 +438,30 @@ describe('ChildPrivacyPanel (consent, export and deletion)', () => {
     expect(mocks.exportHistory).toHaveBeenCalledTimes(1);
   });
 
-  it('asks for confirmation before requesting the deletion, and only then sends it', () => {
-    press(renderTree(MateoPanelTree as () => unknown), 'privacy-delete-button');
+  it('asks for confirmation (ConfirmDialog) before requesting the deletion, and only then sends it', () => {
+    const tree = renderTree(MateoPanelTree as () => unknown);
 
+    // Pressing the button only opens the dialog; it never sends the request.
+    press(tree, 'privacy-delete-button');
     expect(mocks.requestDeletion).not.toHaveBeenCalled();
-    expect(alertSpy).toHaveBeenCalledWith(
-      t('caregiver:privacy.deleteConfirmTitle', { name: 'Mateo' }),
-      expect.stringContaining('15'),
-      expect.any(Array),
-    );
-    const [cancel, confirm] = lastAlertButtons();
-    expect(cancel?.style).toBe('cancel');
-    expect(confirm?.style).toBe('destructive');
 
-    confirm!.onPress!();
+    const dialog = findElementByTestId(tree, 'privacy-delete-dialog');
+    expect(dialog?.props?.['visible']).toBe(false);
+    expect(dialog?.props?.['tone']).toBe('danger');
+    expect(dialog?.props?.['title']).toBe(
+      t('caregiver:privacy.deleteConfirmTitle', { name: 'Mateo' }),
+    );
+    expect(dialog?.props?.['message']).toEqual(expect.stringContaining('15'));
+
+    (dialog!.props!['onConfirm'] as () => void)();
     expect(mocks.requestDeletion).toHaveBeenCalledTimes(1);
   });
 
   it('does nothing when the confirmation is dismissed', () => {
-    press(renderTree(MateoPanelTree as () => unknown), 'privacy-delete-button');
+    const tree = renderTree(MateoPanelTree as () => unknown);
+    press(tree, 'privacy-delete-button');
 
-    lastAlertButtons()[0]!.onPress?.();
+    (findElementByTestId(tree, 'privacy-delete-dialog')!.props!['onCancel'] as () => void)();
 
     expect(mocks.requestDeletion).not.toHaveBeenCalled();
   });
@@ -481,7 +481,7 @@ describe('ChildPrivacyPanel (consent, export and deletion)', () => {
 
     press(tree, 'privacy-cancel-button');
     expect(mocks.cancelDeletion).not.toHaveBeenCalled();
-    lastAlertButtons()[1]!.onPress!();
+    (findElementByTestId(tree, 'privacy-cancel-dialog')!.props!['onConfirm'] as () => void)();
     expect(mocks.cancelDeletion).toHaveBeenCalledWith(PENDING_REQUEST.id);
   });
 
