@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   push:
-    branches: [main]
+    branches: [main, develop]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -35,6 +35,9 @@ jobs:
       PORT: 3000
       DIRECT_URL: postgresql://nutrikids:nutrikids@localhost:5432/nutrikids?schema=public
       DATABASE_URL: postgresql://nutrikids_app:nutrikids_app@localhost:5432/nutrikids?schema=public
+      DATA_ENCRYPTION_KEY: 'AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE='
+      DATA_ENCRYPTION_KEY_ID: 'ci-k1'
+      PSEUDONYMIZATION_KEY: 'AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI='
 
     steps:
       - name: Checkout repository
@@ -68,6 +71,9 @@ jobs:
 
       - name: Set app role password
         run: PGPASSWORD=nutrikids psql -h localhost -U nutrikids -d nutrikids -c "ALTER ROLE nutrikids_app PASSWORD 'nutrikids_app'"
+
+      - name: Seed LMS references
+        run: pnpm db:seed
 
       - name: Run test suite
         run: pnpm test

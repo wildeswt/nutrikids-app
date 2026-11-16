@@ -5,6 +5,7 @@ import {
   LoginInputSchema,
   LogoutInputSchema,
   RefreshInputSchema,
+  RegenerateRecoveryCodesInputSchema,
   RegisterInputSchema,
 } from '../index.js';
 
@@ -22,6 +23,7 @@ const professional = {
   roles: ['PROFESSIONAL'],
   specialty: 'pediatrics',
   licenseNumber: 'MSP-12345',
+  invitationCode: 'NK-PROF-2026',
 };
 
 function firstMessage(result: { success: boolean; error?: { issues: { message: string }[] } }) {
@@ -35,7 +37,7 @@ describe('RegisterInputSchema', () => {
     expect(result.data?.email).toBe('ana@correo.com');
   });
 
-  it('acepta un profesional con especialidad y licencia', () => {
+  it('acepta un profesional con especialidad, licencia y código de invitación', () => {
     expect(RegisterInputSchema.safeParse(professional).success).toBe(true);
   });
 
@@ -46,17 +48,24 @@ describe('RegisterInputSchema', () => {
     ).toBe(true);
   });
 
-  it('exige especialidad y licencia a los profesionales', () => {
+  it('exige especialidad, licencia y código de invitación a los profesionales', () => {
     const result = RegisterInputSchema.safeParse({ ...caregiver, roles: ['PROFESSIONAL'] });
     expect(result.success).toBe(false);
     const paths = result.error?.issues.map((i) => i.path.join('.'));
-    expect(paths).toEqual(expect.arrayContaining(['specialty', 'licenseNumber']));
+    expect(paths).toEqual(expect.arrayContaining(['specialty', 'licenseNumber', 'invitationCode']));
   });
 
-  it('rechaza especialidad o licencia en un cuidador', () => {
+  it('rechaza especialidad, licencia o código de invitación en un cuidador', () => {
     const result = RegisterInputSchema.safeParse({ ...caregiver, specialty: 'nursing' });
     expect(result.success).toBe(false);
     expect(firstMessage(result)).toBe('Solo los profesionales tienen especialidad');
+
+    const withCode = RegisterInputSchema.safeParse({
+      ...caregiver,
+      invitationCode: 'NK-PROF-2026',
+    });
+    expect(withCode.success).toBe(false);
+    expect(firstMessage(withCode)).toBe('Solo los profesionales usan código de invitación');
   });
 
   it('rechaza perfiles vacíos o repetidos', () => {
@@ -135,6 +144,7 @@ describe('AuthUserSchema (lista blanca)', () => {
       'firstName',
       'id',
       'lastName',
+      'licenseNumber',
       'roles',
       'specialty',
     ]);
@@ -182,5 +192,46 @@ describe('AuthResponseSchema', () => {
   it('con segundo factor pendiente no lleva tokens', () => {
     expect(AuthResponseSchema.safeParse({ requiresTwoFactor: true }).success).toBe(true);
     expect(AuthResponseSchema.safeParse({ requiresTwoFactor: false, user }).success).toBe(false);
+  });
+
+  it('acepta los datos de activación con QR y descarta tokens en el desafío', () => {
+    const parsed = AuthResponseSchema.parse({
+      requiresTwoFactor: true,
+      setup: {
+        secret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+        otpauthUri: 'otpauth://totp/NutriKids:luis%40hospital.ec?secret=JBSW',
+        qrCodeDataUrl: 'data:image/png;base64,iVBOR',
+      },
+      accessToken: 'no-debe-pasar',
+    });
+    expect(parsed).not.toHaveProperty('accessToken');
+    expect(
+      AuthResponseSchema.safeParse({
+        requiresTwoFactor: true,
+        setup: { secret: 'corto', otpauthUri: 'http://x', qrCodeDataUrl: 'x' },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('acepta códigos de recuperación al activar el segundo factor', () => {
+    const result = AuthResponseSchema.safeParse({
+      requiresTwoFactor: false,
+      accessToken: 'a',
+      refreshToken: 'r',
+      expiresIn: 900,
+      user,
+      recoveryCodes: ['ABCD-EFGH'],
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('RegenerateRecoveryCodesInputSchema', () => {
+  it('exige un código TOTP de 6 dígitos y nada más', () => {
+    expect(RegenerateRecoveryCodesInputSchema.safeParse({ totpCode: '123456' }).success).toBe(true);
+    expect(RegenerateRecoveryCodesInputSchema.safeParse({ totpCode: '12345' }).success).toBe(false);
+    expect(RegenerateRecoveryCodesInputSchema.safeParse({ totpCode: '123456', x: 1 }).success).toBe(
+      false,
+    );
   });
 });

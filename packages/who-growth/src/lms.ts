@@ -1,51 +1,51 @@
 /**
- * Método LMS (Cole, 1990) para z-scores de crecimiento.
+ * LMS method (Cole, 1990) for growth z-scores.
  *
- *   z = ((x / M)^L - 1) / (L · S)     si L ≠ 0
- *   z = ln(x / M) / S                 si L = 0
+ *   z = ((x / M)^L - 1) / (L * S)     if L != 0
+ *   z = ln(x / M) / S                 if L == 0
  *
- * Es el z "crudo" de Cole; no aplica el ajuste de la OMS para |z| > 3.
- * Código puro: solo usa Math, para correr igual en Node y React Native.
+ * Standard Cole LMS formulation without WHO beyond 3 SD scaling.
+ * Pure math implementation running identically in Node.js and React Native.
  */
 
-/** Curvas de referencia que se dibujan en las gráficas de crecimiento. */
-export const CURVAS_Z = [-3, -2, 0, 2, 3] as const;
-export type CurvaZ = (typeof CURVAS_Z)[number];
+/** Standard reference curves plotted on growth charts. */
+export const Z_CURVES = [-3, -2, 0, 2, 3] as const;
+export type ZCurve = (typeof Z_CURVES)[number];
 
-function validarLMS(M: number, S: number, L: number): void {
-  if (!Number.isFinite(L)) throw new RangeError('L debe ser un número finito');
-  if (!Number.isFinite(M) || M <= 0) throw new RangeError('M debe ser un número positivo');
-  if (!Number.isFinite(S) || S <= 0) throw new RangeError('S debe ser un número positivo');
+function validateLMS(M: number, S: number, L: number): void {
+  if (!Number.isFinite(L)) throw new RangeError('L must be a finite number');
+  if (!Number.isFinite(M) || M <= 0) throw new RangeError('M must be a positive number');
+  if (!Number.isFinite(S) || S <= 0) throw new RangeError('S must be a positive number');
 }
 
-/** z-score de una medida `x` dados los parámetros LMS de la referencia. */
-export function calcularZ(x: number, L: number, M: number, S: number): number {
-  validarLMS(M, S, L);
-  if (!Number.isFinite(x) || x <= 0) throw new RangeError('x debe ser un número positivo');
+/** Calculates z-score for measurement `x` given LMS reference parameters. */
+export function calculateZScore(x: number, L: number, M: number, S: number): number {
+  validateLMS(M, S, L);
+  if (!Number.isFinite(x) || x <= 0) throw new RangeError('x must be a positive number');
   if (L === 0) return Math.log(x / M) / S;
   return (Math.pow(x / M, L) - 1) / (L * S);
 }
 
-/** Inversa de `calcularZ`: la medida que corresponde a un z dado. */
-export function medidaDesdeZ(z: number, L: number, M: number, S: number): number {
-  validarLMS(M, S, L);
-  if (!Number.isFinite(z)) throw new RangeError('z debe ser un número finito');
+/** Inverse of `calculateZScore`: returns the measurement value corresponding to a given z-score. */
+export function measurementFromZScore(z: number, L: number, M: number, S: number): number {
+  validateLMS(M, S, L);
+  if (!Number.isFinite(z)) throw new RangeError('z must be a finite number');
   if (L === 0) return M * Math.exp(S * z);
   const base = 1 + L * S * z;
   if (base <= 0) {
-    throw new RangeError('z fuera del dominio de la curva LMS para estos parámetros');
+    throw new RangeError('z-score is outside the LMS domain for these parameters');
   }
   return M * Math.pow(base, 1 / L);
 }
 
-/** Medidas de las curvas −3, −2, 0, +2 y +3 para dibujar la gráfica. */
-export function curvasZ(L: number, M: number, S: number): Record<CurvaZ, number> {
-  const out = {} as Record<CurvaZ, number>;
-  for (const z of CURVAS_Z) out[z] = medidaDesdeZ(z, L, M, S);
+/** Computes measurements for -3, -2, 0, +2 and +3 SD curves to plot growth charts. */
+export function zScoreCurves(L: number, M: number, S: number): Record<ZCurve, number> {
+  const out = {} as Record<ZCurve, number>;
+  for (const z of Z_CURVES) out[z] = measurementFromZScore(z, L, M, S);
   return out;
 }
 
-/** erf con la aproximación de alta precisión de Numerical Recipes (erfc Chebyshev, error < 1.2e-7). */
+/** High-precision Chebyshev erfc approximation from Numerical Recipes (error < 1.2e-7). */
 function erfc(x: number): number {
   const z = Math.abs(x);
   const t = 1 / (1 + 0.5 * z);
@@ -71,8 +71,8 @@ function erfc(x: number): number {
   return x >= 0 ? r : 2 - r;
 }
 
-/** Percentil (0–100) correspondiente a un z-score, con la CDF normal estándar. */
-export function percentilDesdeZ(z: number): number {
-  if (!Number.isFinite(z)) throw new RangeError('z debe ser un número finito');
+/** Percentile (0-100) corresponding to a z-score using standard normal CDF. */
+export function percentileFromZScore(z: number): number {
+  if (!Number.isFinite(z)) throw new RangeError('z must be a finite number');
   return 50 * erfc(-z / Math.SQRT2);
 }

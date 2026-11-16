@@ -1,0 +1,166 @@
+{
+  "appName": "NutriKids",
+  "brand": {
+    "slogan": "Paykunapak wiñayta, tukuylla kamashun.",
+    "logoLabel": "NutriKids unancha",
+    "copyright": "NutriKids © {{year}}"
+  },
+  "actions": {
+    "back": "Tikray",
+    "goBack": "Ñawpa pankaman tikray",
+    "cancel": "Sakiy",
+    "accept": "Chaskiy",
+    "continue": "Katiy",
+    "understood": "Hamutashkanimi",
+    "send": "Kachay",
+    "seeAll": "Tukuyta rikuy",
+    "logout": "Llukshiy",
+    "login": "Yaykuy",
+    "register": "Killkakatiy"
+  },
+  "password": {
+    "show": "Pakalla shimita rikuchiy",
+    "hide": "Pakalla shimita pakay",
+    "showConfirmation": "Kutin killkashkata rikuchiy",
+    "hideConfirmation": "Kutin killkashkata pakay"
+  },
+  "roles": {
+    "CAREGIVER": "Wawa kamak",
+    "PROFESSIONAL": "Hampik"
+  },
+  "specialties": {
+    "pediatrics": "Wawa hampi",
+    "nutrition": "Mikuy hampi",
+    "nursing": "Unkuk kamay"
+  },
+  "units": {
+    "kg": "kg",
+    "cm": "cm",
+    "weightValue": "{{value}} kg",
+    "heightValue": "{{value}} cm"
+  },
+  "status": {
+    "error": "Pantay"
+  },
+  "age": {
+    "years_one": "{{count}} wata",
+    "years_other": "{{count}} wata",
+    "months_one": "{{count}} killa",
+    "months_other": "{{count}} killa",
+    "yearsAndMonths": "{{years}} {{months}}",
+    "yearsAndMonthsShort": "{{years}} {{months}}k",
+    "newborn": "Mushuk wachashka"
+  },
+  "time": {
+    "yesterday": "Kayna",
+    "daysAgo_one": "{{count}} puncha ñawpa",
+    "daysAgo_other": "{{count}} puncha ñawpa",
+    "dateAtTime": "{{date}}, {{time}} pachapi"
+  },
+  "offline": {
+    "dataNotice": "Datos guardados en este dispositivo · actualizados hace {{time}}",
+    "dataNoticeNoTime": "Datos guardados en este dispositivo",
+    "noDataMessage": "Conéctate a internet una vez para descargar tu información",
+    "localOnlyBadge": "Guardado en este dispositivo",
+    "elapsed": {
+      "lessThanMinute": "menos de 1 minuto",
+      "minutes_one": "{{count}} minuto",
+      "minutes_other": "{{count}} minutos",
+      "hours_one": "{{count}} hora",
+      "hours_other": "{{count}} horas",
+      "days_one": "{{count}} día",
+      "days_other": "{{count}} días"
+    }
+  },
+  "connectionBar": {
+    "offline": "Sin conexión",
+    "offlineWithCount_one": "Sin conexión · {{count}} registro por enviar",
+    "offlineWithCount_other": "Sin conexión · {{count}} registros por enviar",
+    "sending_one": "Enviando {{count}} registro…",
+    "sending_other": "Enviando {{count}} registros…",
+    "error_one": "{{count}} registro no se pudo enviar",
+    "error_other": "{{count}} registros no se pudieron enviar",
+    "errorAction": "Ver",
+    "synced": "Todo sincronizado"
+  },
+  "language": {
+    "title": "Shimi",
+    "description": "Ima shimipi app-ta rikunata munanki, akllay.",
+    "selectA11y": "Shimita {{language}} shimiman tikrachiy",
+    "draftNotice": "Kay tikrachishkaka kunanrak allichikun."
+  },
+  "date": {
+    "long": "{{day}} {{month}} killa {{year}}",
+    "medium": "{{day}} {{month}} {{year}}",
+    "short": "{{day}} {{month}}",
+    "months": {
+      "1": "kulla",
+      "2": "panchi",
+      "3": "pawkar",
+      "4": "ayriwa",
+      "5": "aymuray",
+      "6": "raymi",
+      "7": "sitwa",
+      "8": "karwa",
+      "9": "kuski",
+      "10": "wayru",
+      "11": "sasi",
+      "12": "kapak"
+    },
+    "monthsShort": {
+      "1": "kulla",
+      "2": "panchi",
+      "3": "pawkar",
+      "4": "ayriwa",
+      "5": "aymuray",
+      "6": "raymi",
+      "7": "sitwa",
+      "8": "karwa",
+      "9": "kuski",
+      "10": "wayru",
+      "11": "sasi",
+      "12": "kapak"
+    }
+  },
+  "relationships": {
+    "MOTHER": "Mama",
+    "FATHER": "Yaya",
+    "LEGAL_GUARDIAN": "Kamachik kamak"
+  },
+  "notifications": {
+    "title": "Willaykuna",
+    "empty": "Kunan pachapi mana willaykuna kanchu",
+    "emptyDescription": "Kaypi wiñaymanta willaykunata chaskinki.",
+    "loading": "Willaykunata kargachkan...",
+    "errorLoading": "Manam willaykunata kargayta atikurchu",
+    "unreadBadge": "Mana ñawinchasqa",
+    "retry": "Kutichiy",
+    "types": {
+      "alert_new": "Wiñaymanta musuq willay",
+      "alert_pending_review": "Qawanapaq willay",
+      "alert_overdue": "Pacha yallisqa willay",
+      "reminder_due": "Yuyarinapaq willay",
+      "message_new": "Musuq chaskishka willay",
+      "referral_new": "Musuq kachashka willay"
+    }
+  },
+  "signOutPending": {
+    "title_one": "1 mana kachasqa killkaymi tiyan",
+    "title_other": "{{count}} mana kachasqa killkaykunam tiyan",
+    "body": "Mana kachaspa lluqsikpika kay karurimana ukhumanta pichasqam kanka. Mana chinkachinapaq ñawpaqta kachay.",
+    "syncAndSignOut": "Kachay hinaspa lluqsiy",
+    "syncing": "Kachachkan...",
+    "offlineHint": "Kachanapaq internetmi minishtirin",
+    "syncFailed_one": "Manam 1 killkayta kachayta atikurchu",
+    "syncFailed_other": "Manam {{count}} killkaykunata kachayta atikurchu",
+    "goToPendingSync": "Kachanapaq suyachkaqkunaman riy",
+    "signOutAndDelete": "Lluqsiy hinaspa willaykunata pichay",
+    "signingOut": "Lluqsichkan...",
+    "confirmDeleteTitle": "Lluqsinapaq allichay",
+    "confirmDeleteBody_one": "1 mana kachasqa killkaymi chinkanka. Kay ruraytaqa manam kutichiy atikunchu",
+    "confirmDeleteBody_other": "{{count}} mana kachasqa killkaykunam chinkanka. Kay ruraytaqa manam kutichiy atikunchu",
+    "confirmDeleteAction": "Lluqsiy hinaspa willaykunata pichay",
+    "cancel": "Mana ari",
+    "closeA11y": "Lluqsiyta saqiy"
+  }
+}

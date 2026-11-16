@@ -5,13 +5,15 @@
   "description": "NutriKids monorepo (React Native Expo + Express API + PostgreSQL)",
   "packageManager": "pnpm@10.28.2",
   "engines": {
-    "node": ">=22.0.0",
+    "node": ">=22.12.0",
     "pnpm": ">=10.0.0"
   },
   "scripts": {
     "dev": "pnpm --parallel --filter api --filter mobile dev",
     "dev:api": "pnpm --filter api dev",
     "dev:mobile": "pnpm --filter mobile dev",
+    "dev:phone": "pnpm --filter mobile phone",
+    "dev:phone:tunnel": "pnpm --filter mobile phone:tunnel",
     "build": "pnpm -r --if-present build",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
@@ -25,6 +27,8 @@
     "db:generate": "pnpm --filter api db:generate",
     "db:migrate": "pnpm --filter api db:migrate",
     "db:migrate:deploy": "pnpm --filter api db:migrate:deploy",
+    "db:encrypt-pii": "pnpm --filter api db:encrypt-pii",
+    "db:seed": "pnpm --filter api db:seed",
     "db:studio": "pnpm --filter api db:studio",
     "clean": "pnpm -r --if-present clean",
     "prepare": "husky"

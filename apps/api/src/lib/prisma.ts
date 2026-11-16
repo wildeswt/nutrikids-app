@@ -28,8 +28,14 @@ export async function withUser<T>(
   fn: (tx: Prisma.TransactionClient) => Promise<T>,
 ): Promise<T> {
   const id = z.string().uuid().parse(userId);
-  return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT set_config('app.user_id', ${id}, true)`;
-    return fn(tx);
-  });
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$queryRaw`SELECT set_config('app.user_id', ${id}, true)`;
+      // La conexión usa el rol dueño de las tablas (en Neon `neondb_owner`, con BYPASSRLS), que se salta
+      // las políticas RLS. Se baja al rol restringido solo durante la transacción para que apliquen.
+      await tx.$executeRawUnsafe('SET LOCAL ROLE nutrikids_app');
+      return fn(tx);
+    },
+    { maxWait: 10000, timeout: 15000 },
+  );
 }

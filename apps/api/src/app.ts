@@ -3,20 +3,56 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
+import { createAccountRouter } from './routes/account.routes.js';
+import { createAlertsRouter } from './routes/alerts.routes.js';
+import { createAuditRouter } from './routes/audit.routes.js';
+import { createAuthRouter } from './routes/auth.routes.js';
+import { createCheckupsRouter } from './routes/checkups.routes.js';
+import { createChildrenRouter } from './routes/children.routes.js';
+import { createDataRightsRouter } from './routes/dataRights.routes.js';
+import { createEducationRouter } from './routes/education.routes.js';
+import { createGrowthMessageRouter } from './routes/growthMessage.routes.js';
 import { healthRouter } from './routes/health.routes.js';
+import { createMessagesRouter, createReferralsRouter } from './routes/messages.routes.js';
+import { createNotificationsRouter } from './routes/notifications.routes.js';
+import { createProfessionalsRouter } from './routes/professionals.routes.js';
+import { referenceRouter } from './routes/reference.routes.js';
+import { createRemindersRouter } from './routes/reminders.routes.js';
+import { createSyncRouter } from './routes/sync.routes.js';
 
 export function createApp(): Express {
   const app = express();
+
+  // Behind Railway's reverse proxy: trust one hop so req.ip (rate limiting) is the real client IP.
+  app.set('trust proxy', 1);
 
   app.use(helmet());
   app.use(
     cors({
       origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(','),
+      // The web app reads the file name of downloads (export to Excel).
+      exposedHeaders: ['Content-Disposition'],
     }),
   );
   app.use(express.json());
 
   app.use('/health', healthRouter);
+  app.use('/auth', createAuthRouter());
+  app.use('/account', createAccountRouter());
+  app.use('/children', createChildrenRouter());
+  app.use('/children', createDataRightsRouter());
+  app.use('/children', createGrowthMessageRouter());
+  app.use('/checkups', createCheckupsRouter());
+  app.use('/education', createEducationRouter());
+  app.use('/reference', referenceRouter);
+  app.use('/audit', createAuditRouter());
+  app.use('/alerts', createAlertsRouter());
+  app.use('/sync', createSyncRouter());
+  app.use('/notifications', createNotificationsRouter());
+  app.use('/reminders', createRemindersRouter());
+  app.use('/professionals', createProfessionalsRouter());
+  app.use('/messages', createMessagesRouter());
+  app.use('/referrals', createReferralsRouter());
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -1,0 +1,103 @@
+import type { ConsentResponse } from '@nutrikids/shared';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  CURRENT_CONSENT_VERSION,
+  fetchConsentForChild,
+  grantConsentForChild,
+  revokeConsentForChild,
+} from '../lib/consent-api.js';
+import i18n from '../i18n/index.js';
+
+export type ConsentStatus = 'idle' | 'loading' | 'active' | 'revoked' | 'none' | 'error';
+
+export interface ConsentHookState {
+  status: ConsentStatus;
+  consent: ConsentResponse | null;
+  error: string | null;
+}
+
+export function useConsent(childId: string | null) {
+  const [state, setState] = useState<ConsentHookState>({
+    status: 'idle',
+    consent: null,
+    error: null,
+  });
+
+  const load = useCallback(async () => {
+    if (!childId) {
+      setState({ status: 'idle', consent: null, error: null });
+      return;
+    }
+
+    setState((prev) => ({ ...prev, status: 'loading', error: null }));
+
+    try {
+      const consent = await fetchConsentForChild(childId);
+      if (!consent) {
+        setState({ status: 'none', consent: null, error: null });
+      } else if (consent.revokedAt) {
+        setState({ status: 'revoked', consent, error: null });
+      } else {
+        setState({ status: 'active', consent, error: null });
+      }
+    } catch (err) {
+      setState({
+        status: 'error',
+        consent: null,
+        error: err instanceof Error ? err.message : i18n.t('errors:consent.load'),
+      });
+    }
+  }, [childId]);
+
+  const grant = useCallback(
+    async (textVersion: string = CURRENT_CONSENT_VERSION) => {
+      if (!childId) {
+        throw new Error(i18n.t('errors:consent.missingChildForGrant'));
+      }
+
+      setState((prev) => ({ ...prev, status: 'loading', error: null }));
+
+      try {
+        const consent = await grantConsentForChild(childId, textVersion);
+        setState({ status: 'active', consent, error: null });
+        return consent;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : i18n.t('errors:consent.grant');
+        setState((prev) => ({ ...prev, status: 'error', error: message }));
+        throw err;
+      }
+    },
+    [childId],
+  );
+
+  const revoke = useCallback(async () => {
+    if (!childId) {
+      throw new Error(i18n.t('errors:consent.missingChildForRevoke'));
+    }
+
+    setState((prev) => ({ ...prev, status: 'loading', error: null }));
+
+    try {
+      const consent = await revokeConsentForChild(childId);
+      setState({ status: 'revoked', consent, error: null });
+      return consent;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : i18n.t('errors:consent.revoke');
+      setState((prev) => ({ ...prev, status: 'error', error: message }));
+      throw err;
+    }
+  }, [childId]);
+
+  useEffect(() => {
+    if (childId) {
+      void load();
+    }
+  }, [childId, load]);
+
+  return {
+    ...state,
+    load,
+    grant,
+    revoke,
+  };
+}

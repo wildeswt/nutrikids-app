@@ -12,6 +12,9 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 
+// expo-sqlite en web importa un .wasm: Metro debe tratarlo como asset.
+if (!config.resolver.assetExts.includes('wasm')) config.resolver.assetExts.push('wasm');
+
 // `@nutrikids/shared` usa imports con extensión `.js` (requerido por Node ESM / NodeNext)
 // aunque el archivo real sea `.ts`. Metro no hace ese mapeo por defecto, así que lo resolvemos aquí.
 const defaultResolveRequest = config.resolver.resolveRequest;

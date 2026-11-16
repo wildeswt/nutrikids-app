@@ -1,0 +1,166 @@
+{
+  "appName": "NutriKids",
+  "brand": {
+    "slogan": "Cuidar su crecimiento, juntos.",
+    "logoLabel": "Logo de NutriKids",
+    "copyright": "NutriKids © {{year}}"
+  },
+  "actions": {
+    "back": "Volver",
+    "goBack": "Volver a la pantalla anterior",
+    "cancel": "Cancelar",
+    "accept": "Aceptar",
+    "continue": "Continuar",
+    "understood": "Entendido",
+    "send": "Enviar",
+    "seeAll": "Ver todo",
+    "logout": "Cerrar sesión",
+    "login": "Iniciar Sesión",
+    "register": "Registrarse"
+  },
+  "password": {
+    "show": "Mostrar contraseña",
+    "hide": "Ocultar contraseña",
+    "showConfirmation": "Mostrar confirmación",
+    "hideConfirmation": "Ocultar confirmación"
+  },
+  "roles": {
+    "CAREGIVER": "Cuidador",
+    "PROFESSIONAL": "Profesional de Salud"
+  },
+  "specialties": {
+    "pediatrics": "Pediatría",
+    "nutrition": "Nutrición",
+    "nursing": "Enfermería"
+  },
+  "units": {
+    "kg": "kg",
+    "cm": "cm",
+    "weightValue": "{{value}} kg",
+    "heightValue": "{{value}} cm"
+  },
+  "status": {
+    "error": "Error"
+  },
+  "age": {
+    "years_one": "{{count}} año",
+    "years_other": "{{count}} años",
+    "months_one": "{{count}} mes",
+    "months_other": "{{count}} meses",
+    "yearsAndMonths": "{{years}} y {{months}}",
+    "yearsAndMonthsShort": "{{years}} {{months}}m",
+    "newborn": "Recién nacido"
+  },
+  "time": {
+    "yesterday": "Ayer",
+    "daysAgo_one": "Hace {{count}} día",
+    "daysAgo_other": "Hace {{count}} días",
+    "dateAtTime": "{{date}} a las {{time}}"
+  },
+  "offline": {
+    "dataNotice": "Datos guardados en este dispositivo · actualizados hace {{time}}",
+    "dataNoticeNoTime": "Datos guardados en este dispositivo",
+    "noDataMessage": "Conéctate a internet una vez para descargar tu información",
+    "localOnlyBadge": "Guardado en este dispositivo",
+    "elapsed": {
+      "lessThanMinute": "menos de 1 minuto",
+      "minutes_one": "{{count}} minuto",
+      "minutes_other": "{{count}} minutos",
+      "hours_one": "{{count}} hora",
+      "hours_other": "{{count}} horas",
+      "days_one": "{{count}} día",
+      "days_other": "{{count}} días"
+    }
+  },
+  "connectionBar": {
+    "offline": "Sin conexión",
+    "offlineWithCount_one": "Sin conexión · {{count}} registro por enviar",
+    "offlineWithCount_other": "Sin conexión · {{count}} registros por enviar",
+    "sending_one": "Enviando {{count}} registro…",
+    "sending_other": "Enviando {{count}} registros…",
+    "error_one": "{{count}} registro no se pudo enviar",
+    "error_other": "{{count}} registros no se pudieron enviar",
+    "errorAction": "Ver",
+    "synced": "Todo sincronizado"
+  },
+  "language": {
+    "title": "Idioma",
+    "description": "Elige en qué idioma quieres ver la app.",
+    "selectA11y": "Cambiar el idioma a {{language}}",
+    "draftNotice": "Esta traducción todavía está en revisión."
+  },
+  "date": {
+    "long": "{{day}} de {{month}} de {{year}}",
+    "medium": "{{day}} {{month}} {{year}}",
+    "short": "{{day}} {{month}}",
+    "months": {
+      "1": "enero",
+      "2": "febrero",
+      "3": "marzo",
+      "4": "abril",
+      "5": "mayo",
+      "6": "junio",
+      "7": "julio",
+      "8": "agosto",
+      "9": "septiembre",
+      "10": "octubre",
+      "11": "noviembre",
+      "12": "diciembre"
+    },
+    "monthsShort": {
+      "1": "ene",
+      "2": "feb",
+      "3": "mar",
+      "4": "abr",
+      "5": "may",
+      "6": "jun",
+      "7": "jul",
+      "8": "ago",
+      "9": "sept",
+      "10": "oct",
+      "11": "nov",
+      "12": "dic"
+    }
+  },
+  "relationships": {
+    "MOTHER": "Madre",
+    "FATHER": "Padre",
+    "LEGAL_GUARDIAN": "Tutor legal"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "empty": "No tienes notificaciones por el momento",
+    "emptyDescription": "Aquí recibirás avisos sobre alertas de crecimiento y recordatorios.",
+    "loading": "Cargando notificaciones...",
+    "errorLoading": "No se pudieron cargar las notificaciones",
+    "unreadBadge": "No leída",
+    "retry": "Reintentar",
+    "types": {
+      "alert_new": "Nueva alerta de crecimiento",
+      "alert_pending_review": "Alerta pendiente de revisión",
+      "alert_overdue": "Alerta vencida sin revisar",
+      "reminder_due": "Recordatorio pendiente",
+      "message_new": "Nuevo mensaje recibido",
+      "referral_new": "Nueva derivación recibida"
+    }
+  },
+  "signOutPending": {
+    "title_one": "Tienes 1 registro sin enviar",
+    "title_other": "Tienes {{count}} registros sin enviar",
+    "body": "Si cierras sesión sin enviarlos se borrarán de este teléfono. Sincroniza primero para no perderlos.",
+    "syncAndSignOut": "Sincronizar y salir",
+    "syncing": "Sincronizando...",
+    "offlineHint": "Necesitas conexión para enviarlos",
+    "syncFailed_one": "No se pudo enviar 1 registro",
+    "syncFailed_other": "No se pudieron enviar {{count}} registros",
+    "goToPendingSync": "Ir a Pendientes de envío",
+    "signOutAndDelete": "Salir y borrar datos",
+    "signingOut": "Cerrando sesión...",
+    "confirmDeleteTitle": "Confirmar cierre de sesión",
+    "confirmDeleteBody_one": "Se perderá 1 registro que no se ha enviado. Esta acción no se puede deshacer",
+    "confirmDeleteBody_other": "Se perderán {{count}} registros que no se han enviado. Esta acción no se puede deshacer",
+    "confirmDeleteAction": "Salir y borrar datos",
+    "cancel": "Cancelar",
+    "closeA11y": "Cancelar cierre de sesión"
+  }
+}

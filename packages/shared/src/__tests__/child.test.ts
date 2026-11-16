@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AssignCaregiverInputSchema,
   AssignProfessionalInputSchema,
+  CaregiverAssignmentResponseSchema,
   ChildResponseSchema,
   ConsentResponseSchema,
   CreateChildInputSchema,
   EndProfessionalAssignmentInputSchema,
   GrantConsentInputSchema,
+  ProfessionalAssignmentResponseSchema,
+  UpdateCaregiverLinkInputSchema,
+  completedMonths,
   createChildInputSchema,
+  isAgeInOmsRange,
 } from '../index.js';
 
 const TODAY = '2026-10-18';
@@ -59,6 +65,22 @@ describe('createChildInputSchema (edad 12 a 60 meses)', () => {
     expect(schema.safeParse({ ...child, firstName: ' ' }).success).toBe(false);
     expect(schema.safeParse({ ...child, id: 'x' }).success).toBe(false);
     expect(schema.safeParse({ ...child, address: 'Calle 1' }).success).toBe(false);
+  });
+
+  it('exige que quien da de alta al niño sea su representante legal', () => {
+    const notRep = schema.safeParse({ ...child, isLegalRepresentative: false });
+    expect(notRep.success).toBe(false);
+    expect(notRep.error?.issues[0]?.message).toBe(
+      'El alta del niño debe ser realizada por su representante legal',
+    );
+  });
+
+  it('asigna consentTextVersion por defecto en v1 y permite especificar otra versión', () => {
+    const parsedDefault = schema.parse(child);
+    expect(parsedDefault.consentTextVersion).toBe('v1');
+
+    const parsedCustom = schema.parse({ ...child, consentTextVersion: 'v2.0-octubre' });
+    expect(parsedCustom.consentTextVersion).toBe('v2.0-octubre');
   });
 
   it('CreateChildInputSchema usa la fecha actual como referencia', () => {
@@ -136,5 +158,85 @@ describe('ChildResponseSchema', () => {
       'lastName',
       'sex',
     ]);
+  });
+});
+
+describe('ProfessionalAssignmentResponseSchema & age helpers', () => {
+  it('valida estructura de asignación profesional', () => {
+    const valid = {
+      id: '3f2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c',
+      childId: '4a2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c',
+      professionalId: '5b2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c',
+      specialty: 'pediatrics',
+      startDate: '2026-10-01',
+      endDate: null,
+    };
+    expect(ProfessionalAssignmentResponseSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it('completedMonths e isAgeInOmsRange calculan y validan rango OMS correctamente', () => {
+    expect(completedMonths('2023-05-12', '2026-10-18')).toBe(41);
+    expect(isAgeInOmsRange('2023-05-12', '2026-10-18')).toBe(true);
+    expect(isAgeInOmsRange('2020-01-01', '2026-10-18')).toBe(false); // >60 meses
+    expect(isAgeInOmsRange('2026-05-01', '2026-10-18')).toBe(false); // <12 meses
+  });
+});
+
+describe('AssignCaregiverInputSchema, UpdateCaregiverLinkInputSchema & CaregiverAssignmentResponseSchema', () => {
+  const caregiverId = '3f2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c';
+  const childId = '4a2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c';
+
+  it('AssignCaregiverInputSchema acepta caregiverId o email y asigna isLegalRepresentative: false por defecto', () => {
+    const byId = AssignCaregiverInputSchema.parse({
+      caregiverId,
+      relationship: 'padre',
+    });
+    expect(byId.isLegalRepresentative).toBe(false);
+
+    const byEmail = AssignCaregiverInputSchema.parse({
+      email: '  Abuela@Familia.EC ',
+      relationship: 'abuela',
+      isLegalRepresentative: true,
+    });
+    expect(byEmail.email).toBe('abuela@familia.ec');
+    expect(byEmail.isLegalRepresentative).toBe(true);
+  });
+
+  it('AssignCaregiverInputSchema rechaza cuando no se envía ni caregiverId ni email', () => {
+    const missingTarget = AssignCaregiverInputSchema.safeParse({
+      relationship: 'tío',
+    });
+    expect(missingTarget.success).toBe(false);
+    expect(missingTarget.error?.issues[0]?.message).toBe(
+      'Debes indicar el identificador o el correo del cuidador',
+    );
+  });
+
+  it('UpdateCaregiverLinkInputSchema exige al menos un campo a actualizar', () => {
+    expect(UpdateCaregiverLinkInputSchema.safeParse({ relationship: 'tutor legal' }).success).toBe(
+      true,
+    );
+    expect(UpdateCaregiverLinkInputSchema.safeParse({ isLegalRepresentative: true }).success).toBe(
+      true,
+    );
+    const emptyUpdate = UpdateCaregiverLinkInputSchema.safeParse({});
+    expect(emptyUpdate.success).toBe(false);
+    expect(emptyUpdate.error?.issues[0]?.message).toBe(
+      'Debes indicar al menos un campo para actualizar',
+    );
+  });
+
+  it('CaregiverAssignmentResponseSchema valida la estructura de respuesta de un vínculo cuida', () => {
+    expect(
+      CaregiverAssignmentResponseSchema.safeParse({
+        caregiverId,
+        childId,
+        firstName: 'Carlos',
+        lastName: 'Andrade',
+        email: 'carlos@familia.ec',
+        relationship: 'padre',
+        isLegalRepresentative: false,
+      }).success,
+    ).toBe(true);
   });
 });

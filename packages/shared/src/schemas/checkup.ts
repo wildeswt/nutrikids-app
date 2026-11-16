@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { IsoDateTimeSchema, UuidSchema, requiredText } from './common.js';
-import { IndicatorSchema, OriginSchema, PositionSchema, SexSchema } from './enums.js';
+import { IndicatorSchema, OriginSchema, PositionSchema } from './enums.js';
+import { MessageParticipantSchema, type MessageParticipant } from './message.js';
 
 /**
- * Controles antropométricos, resultados de indicadores OMS y curvas de referencia.
+ * Controles antropométricos y resultados de indicadores OMS.
  */
 
 /** Límites físicos duros (coinciden con los CHECK de la tabla `checkups`). */
@@ -11,6 +12,8 @@ export const WEIGHT_MIN_KG = 2;
 export const WEIGHT_MAX_KG = 40;
 export const LENGTH_HEIGHT_MIN_CM = 40;
 export const LENGTH_HEIGHT_MAX_CM = 140;
+/** Largo máximo de las observaciones del control (coincide con `checkups_notes_check`). */
+export const CHECKUP_NOTES_MAX = 500;
 
 /**
  * Rango plausible esperado para niños de 12 a 60 meses.
@@ -47,7 +50,7 @@ const LengthHeightCmSchema = z
     error: `La longitud o talla debe estar entre ${LENGTH_HEIGHT_MIN_CM} y ${LENGTH_HEIGHT_MAX_CM} cm`,
   });
 
-function validateOutlierConfirmation(
+export function validateOutlierConfirmation(
   value: { weightKg: number; lengthHeightCm: number; confirmOutlier?: boolean | undefined },
   ctx: z.RefinementCtx,
 ) {
@@ -69,19 +72,38 @@ function validateOutlierConfirmation(
 
 // ---------- Entrada ----------
 
-const BaseCheckupInputObject = z.strictObject({
+/**
+ * Resultados que el celular pudo haber calculado sin conexión. Se aceptan para no rechazar
+ * el envío, pero el servidor los **ignora** y siempre recalcula (es la fuente de verdad, RF-07).
+ */
+export const ClientComputedResultsSchema = z
+  .array(
+    z.looseObject({
+      indicator: IndicatorSchema,
+      zScore: z.number().optional(),
+      percentile: z.number().optional(),
+      classification: z.string().optional(),
+    }),
+  )
+  .max(4, { error: 'Se esperan como máximo 4 resultados de indicadores' });
+
+export const BaseCheckupInputObject = z.strictObject({
   /** UUID generado en el cliente para garantizar idempotencia sin conexión. */
   id: UuidSchema,
   measuredAt: IsoDateTimeSchema,
   weightKg: WeightKgSchema,
   lengthHeightCm: LengthHeightCmSchema,
   position: PositionSchema,
+  /** Observaciones opcionales registradas junto al control (máx. 500 caracteres). */
+  notes: requiredText(CHECKUP_NOTES_MAX).optional(),
   /** Bandera de confirmación cuando el peso o la talla están fuera del rango plausible. */
   confirmOutlier: z.boolean().optional(),
+  /** Cálculo local del celular (opcional); el servidor lo descarta y recalcula. */
+  results: ClientComputedResultsSchema.optional(),
 });
 
 /**
- * Creación de un control (`POST /ninos/:id/controles`).
+ * Creación de un control (`POST /children/:childId/checkups`).
  * `origin` y `recordedById` los asigna el servidor a partir de la sesión autenticada.
  */
 export const CreateCheckupInputSchema = BaseCheckupInputObject.superRefine(
@@ -89,20 +111,30 @@ export const CreateCheckupInputSchema = BaseCheckupInputObject.superRefine(
 );
 
 /**
- * Corrección de un control (`POST /controles/:id/correccion`).
+ * Corrección de un control (`POST /checkups/:checkupId/correction`).
  * Un control nunca se edita: crea un control nuevo que referencia al original.
  */
 export const CorrectCheckupInputSchema = BaseCheckupInputObject.superRefine(
   validateOutlierConfirmation,
 );
 
-/** Consulta de curvas OMS (`GET /referencia/curvas?indicador=&sexo=`). */
-export const ReferenceCurvesQuerySchema = z.strictObject({
-  indicator: IndicatorSchema,
-  sex: SexSchema,
-});
-
 // ---------- Salida ----------
+
+export const CLASSIFICATIONS = [
+  'SEVERE_WASTING',
+  'SEVERE_STUNTING',
+  'SEVERE_UNDERWEIGHT',
+  'WASTING',
+  'STUNTING',
+  'UNDERWEIGHT',
+  'OBESITY',
+  'OVERWEIGHT',
+  'OVERWEIGHT_RISK',
+  'NORMAL',
+] as const;
+
+export const ClassificationSchema = z.enum(CLASSIFICATIONS);
+export type Classification = z.infer<typeof ClassificationSchema>;
 
 /** Resultado de un indicador antropométrico (vista profesional). */
 export const IndicatorResultSchema = z.object({
@@ -114,9 +146,27 @@ export const IndicatorResultSchema = z.object({
     .number()
     .min(0, { error: 'El percentil debe estar entre 0 y 100' })
     .max(100, { error: 'El percentil debe estar entre 0 y 100' }),
-  classification: requiredText(100),
+  classification: ClassificationSchema,
   referenceVersion: requiredText(50),
 });
+
+/**
+ * Resultado de un indicador para el perfil cuidador (RF-14, NK-35): sin puntaje z,
+ * percentil ni clasificación técnica.
+ */
+export const CaregiverIndicatorResultSchema = z.object({
+  id: UuidSchema,
+  checkupId: UuidSchema,
+  indicator: IndicatorSchema,
+  referenceVersion: requiredText(50),
+});
+
+/**
+ * Persona que registró un control antropométrico (NK-73).
+ * Mismos datos mínimos que un participante de mensaje: nunca expone email, teléfono ni documento.
+ */
+export const CheckupRecorderSchema = MessageParticipantSchema;
+export type CheckupRecorder = MessageParticipant;
 
 const BaseCheckupResponseShape = {
   id: UuidSchema,
@@ -127,7 +177,13 @@ const BaseCheckupResponseShape = {
   position: PositionSchema,
   origin: OriginSchema,
   recordedById: UuidSchema,
+  recordedBy: CheckupRecorderSchema.nullable(),
+  /** Control original al que este control corrige (null si no es una corrección). */
   correctedCheckupId: UuidSchema.nullable(),
+  /** Derivado: `true` si ningún otro control lo corrige (es el que cuenta para gráficas y alertas). */
+  isCurrent: z.boolean(),
+  /** Observaciones registradas junto al control (`null` si no se ingresaron). */
+  notes: z.string().nullable(),
   createdAt: IsoDateTimeSchema,
 };
 
@@ -146,29 +202,10 @@ export const CheckupResponseSchema = z.object({
  */
 export const CaregiverCheckupResponseSchema = z.object(BaseCheckupResponseShape);
 
-/** Punto de las 5 curvas OMS (−3, −2, 0, +2 y +3) para una edad o longitud/talla `x`. */
-export const CurvePointSchema = z.object({
-  x: z.number(),
-  zNeg3: z.number(),
-  zNeg2: z.number(),
-  z0: z.number(),
-  zPos2: z.number(),
-  zPos3: z.number(),
-});
-
-/** Respuesta con las 5 series de referencia OMS listas para graficar. */
-export const ReferenceCurvesResponseSchema = z.object({
-  indicator: IndicatorSchema,
-  sex: SexSchema,
-  referenceVersion: requiredText(50),
-  points: z.array(CurvePointSchema),
-});
-
+export type ClientComputedResult = z.infer<typeof ClientComputedResultsSchema>[number];
 export type CreateCheckupInput = z.infer<typeof CreateCheckupInputSchema>;
 export type CorrectCheckupInput = z.infer<typeof CorrectCheckupInputSchema>;
 export type IndicatorResult = z.infer<typeof IndicatorResultSchema>;
+export type CaregiverIndicatorResult = z.infer<typeof CaregiverIndicatorResultSchema>;
 export type CheckupResponse = z.infer<typeof CheckupResponseSchema>;
 export type CaregiverCheckupResponse = z.infer<typeof CaregiverCheckupResponseSchema>;
-export type ReferenceCurvesQuery = z.infer<typeof ReferenceCurvesQuerySchema>;
-export type CurvePoint = z.infer<typeof CurvePointSchema>;
-export type ReferenceCurvesResponse = z.infer<typeof ReferenceCurvesResponseSchema>;

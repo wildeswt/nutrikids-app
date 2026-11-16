@@ -1,0 +1,400 @@
+{
+  "drawer": {
+    "specialty": "Hampi yachay: {{specialty}}",
+    "switchToCaregiver": "Wawa kamak rikuchik",
+    "logout": "Llukshiy",
+    "alerts": "Yuyachikkuna",
+    "alertsTitle": "Yuyachikkuna",
+    "children": "Llakipi kak wawakuna",
+    "childrenTitle": "Llakipi kak wawakuna",
+    "evolutionTitle": "Wawapa wiñaynin",
+    "checkupHistoryTitle": "Kamaykuna wiñay",
+    "addCheckup": "Kamayta killkay",
+    "addCheckupTitle": "Kamayta killkay",
+    "messages": "Willaykuna, katinakunapash",
+    "messagesTitle": "Willaykuna, katinakunapash",
+    "profile": "Ñukamanta",
+    "profileTitle": "Hampikmanta",
+    "notifications": "Willaykuna",
+    "notificationsTitle": "Willaykuna",
+    "alertDetailTitle": "Yuyachikkunamanta",
+    "followUpTitle": "Seguimiento clínico",
+    "referralTitle": "Hampikman willay",
+    "chatTitle": "Conversación",
+    "pendingSyncTitle": "Pendientes de envío"
+  },
+  "alerts": {
+    "title": "Yuyachikkuna",
+    "subtitle": "Rikuyta munashka kamaykuna.",
+    "filtersA11y": "Yuyachikkunata ima kashkaman akllay",
+    "filters": {
+      "OPEN": "Mana rikushka",
+      "ATTENDED": "Rikushka"
+    },
+    "status": {
+      "GENERATED": "Rurashka",
+      "PENDING_REVIEW": "Rikuyta shuyan",
+      "REVIEWED": "Rikushka",
+      "FOLLOW_UP_ESTABLISHED": "Katina churashka"
+    },
+    "indicator": {
+      "WEIGHT_FOR_AGE": "Llasay wiñaypi",
+      "LENGTH_HEIGHT_FOR_AGE": "Hatunkay wiñaypi",
+      "WEIGHT_FOR_LENGTH_HEIGHT": "Llasay hatunkaypi",
+      "BMI_FOR_AGE": "IMC wiñaypi"
+    },
+    "risk": {
+      "UNDERWEIGHT": "Pishi llasay",
+      "STUNTING": "Pishi hatunkay",
+      "WASTING": "Ñañu kay",
+      "OVERWEIGHT": "Askha llasay",
+      "OBESITY": "Sinchi llasay"
+    },
+    "severe": "Sinchi",
+    "overdue": "Yallishka",
+    "overdueSummary_one": "{{count}} yuyachikkuna yallishka, mana rikushka",
+    "overdueSummary_other": "{{count}} yuyachikkuna yallishka, mana rikushka",
+    "today": "Kunan",
+    "unknownChild": "Mana riksishka wawa",
+    "loading": "Yuyachikkunata apamunkapak...",
+    "retry": "Kutin yachana",
+    "empty": "Kay kashkapi mana yuyachikkuna kanchu",
+    "emptyDescription": "Kamay llakita rikuchishpaka, kaypi rikuchikunka.",
+    "openA11y": "{{child}} yuyachikkunata kichay: {{indicator}}, {{risk}}"
+  },
+  "children": {
+    "title": "Llakipi kak wawakuna",
+    "description": "Kikinwan tinkishka wawakuna, wiñay tupuypi ima llaki kashkamanta ñankuna.",
+    "patientLabel": "Hampichikuk wawa",
+    "childSubtitle": "{{age}} · {{birthDate}} punchapi wacharirka",
+    "chartSubtitle": "OMS rikuchik ñankuna (−3, −2, 0, +2, +3 DE)",
+    "legendReference": "OMS ñankuna (−3 manta +3 DE kama)",
+    "zoneLabels": {
+      "upper": "Zona +2 a +3 DE",
+      "normal": "Shuyashka tupuy (−2 a +2 DE)",
+      "lower": "Zona −2 a −3 DE"
+    },
+    "nonDiagnosticNotice": "Kay rikuchikka wiñayta rikunkapak yanapanmi, mana kikinllamanta diagnósticochu kan.",
+    "tapPointHint": "Maykan iñuta llapiy chay kamaymanta tukuy tupuyta rikunkapak.",
+    "trendDelta": "z tikray: {{delta}}",
+    "selectedRecordTitle": "Akllashka kamaymanta",
+    "lastRecordTitle": "Kipa kamay",
+    "weight": "Llasay",
+    "height": "Hatunkay",
+    "bmi": "IMC",
+    "position": "Imashina tupushka",
+    "zScore": "Puntaje z",
+    "percentile": "Percentil",
+    "classification": "Clasificación técnica",
+    "recordedBy": "Killkarka",
+    "notes": "Observaciones",
+    "loading": "Wiñay tupuykunata apamukun...",
+    "loadError": "Wawapak tupuykunata mana apamuy usharkanchikchu.",
+    "retry": "Kutin yachana",
+    "emptyTitle": "Mana tinkishka wawakuna kanchu",
+    "emptySubtitle": "Tinkishka wawakunata charishpaka, kaypimi OMS ñankunata rikunki.",
+    "noCheckupsTitle": "Manarakmi {{name}}-pak kamaykuna kanchu",
+    "noCheckupsSubtitle": "Manarakmi tupuykuna rikuchinkapak kanchu.",
+    "classifications": {
+      "SEVERE_UNDERWEIGHT": "Bajo peso grave (< −3 DE)",
+      "UNDERWEIGHT": "Bajo peso (−3 a −2 DE)",
+      "MODERATE_UNDERWEIGHT": "Bajo peso moderado (−3 a −2 DE)",
+      "SEVERE_STUNTING": "Talla baja severa (< −3 DE)",
+      "STUNTING": "Talla baja (−3 a −2 DE)",
+      "MODERATE_STUNTING": "Talla baja moderada (−3 a −2 DE)",
+      "SEVERE_WASTING": "Emaciación grave (< −3 DE)",
+      "WASTING": "Emaciación (−3 a −2 DE)",
+      "MODERATE_WASTING": "Emaciación moderada (−3 a −2 DE)",
+      "NORMAL": "Adecuado (−2 a +2 DE)",
+      "OVERWEIGHT_RISK": "Riesgo de sobrepeso (+1 a +2 DE)",
+      "POSSIBLE_RISK_OVERWEIGHT": "Posible riesgo de sobrepeso (+1 a +2 DE)",
+      "OVERWEIGHT": "Sobrepeso (+2 a +3 DE)",
+      "OBESITY": "Obesidad (> +3 DE)"
+    },
+    "registerCheckup": "Kamayta killkay"
+  },
+  "messages": {
+    "title": "Willaykuna, katinakunapash",
+    "subtitle": "Wawa kamakkunawan, shuk hampikkunawanpash rimanakuy.",
+    "description": "Wawa kamakkunawan rimanakuy, mikuymanta katina yuyaykunatapash killkana.",
+    "banner": "Conversa con cuidadores y otros profesionales vinculados.",
+    "interconsultationTitle": "Interconsulta · {{name}}",
+    "interconsultationFallback": "Interconsulta",
+    "caregiverSubtitle": "Cuidador · {{name}}",
+    "caregiverFallback": "Cuidador",
+    "emergencyNotice": "Este canal no atiende urgencias. Si el niño requiere atención inmediata, acude a un centro de salud.",
+    "emptySubtitle": "Cuando inicies o recibas mensajes sobre un niño vinculado, aparecerán aquí.",
+    "chatTitleFallback": "Conversación",
+    "chatPrivacy": "Solo tú y los participantes vinculados al niño pueden ver esta conversación.",
+    "newMessageModal": {
+      "title": "Mushuk willay",
+      "chooseChild": "Shuk wawata akllay",
+      "chooseRecipient": "Piwan rimanakunata akllay",
+      "caregiversSection": "Wawa kamakkuna",
+      "professionalsSection": "Shuk hampikkuna",
+      "loading": "Tinkishka runakunata mashkakun...",
+      "empty": "Kay wawaqa mana shuk tinkishka runakunata charinchu.",
+      "noChildren": "Manarak tinkishka wawakunata charinkichu."
+    }
+  },
+  "profile": {
+    "title": "Hampikmanta",
+    "screenTitle": "Ñuka perfil",
+    "bannerTitle": "{{name}} · {{role}}",
+    "bannerSubtitle": "{{specialty}} · Registro {{license}}",
+    "name": "Shuti:",
+    "email": "Correo:",
+    "specialty": "Hampi yachay:",
+    "noSpecialty": "Mana churashkachu",
+    "licenseNumber": "Registro profesional:",
+    "activeRole": "Kunan ruray:",
+    "activeRoleLabel": "Kunan ruray",
+    "activeBadge": "Kawsak",
+    "switchToCaregiver": "Wawa kamak rikuchikman tikray",
+    "account": "Ñuka cuenta",
+    "myData": "Ñuka hampik willaykuna",
+    "myDataDescription": "Correo, hampi yachay, registro",
+    "linkedChildren": "Tinkishka wawakuna",
+    "linkedChildrenDescription": "Rikushka wawakuna",
+    "notifications": "Willaykuna",
+    "notificationsDescription": "Mushuk yuyachikkuna, willaykuna",
+    "pendingSync": "Pendientes de envío ({{count}})",
+    "pendingSyncDescription": "Registros guardados en este dispositivo",
+    "logout": "Llukshiy",
+    "twoFactor": {
+      "title": "Ishkay kutin chaninchiy",
+      "statusEnabled": "Kawsanmi",
+      "statusLoading": "Tapuykun...",
+      "remaining": "Tikrachina yupaykuna tiyan: {{count}}",
+      "lowCodes": "Ashalla tikrachina yupaykunami sakirin. Mushukkunata rurapay.",
+      "regenerate": "Mushuk tikrachina yupaykunata ruray",
+      "regenerateDescription": "Autenticadora app-pak kunan yupayta killkay. Ñawpa yupaykunaka manañami sirvinkachu.",
+      "totpLabel": "Chaninchina yupay (6 yupay)",
+      "confirm": "Yupaykunata ruray",
+      "done": "Tukurishka",
+      "invalidCode": "Yupayka pantashkami, mana kashpaka ña hapishkami. Katik yupayta shuyay, kutin rurapay."
+    }
+  },
+  "alertDetail": {
+    "title": "Detalle de alerta",
+    "loading": "Cargando la alerta...",
+    "retry": "Reintentar",
+    "unknownChild": "Mana riksishka wawa",
+    "childSubtitle": "{{age}} · {{birthDate}}",
+    "rows": {
+      "indicator": "Indicador",
+      "checkup": "Control",
+      "result": "Resultado",
+      "reason": "Motivo"
+    },
+    "checkupValue": "{{date}} · {{weight}} · {{height}}",
+    "checkupRecordedBy": "Registrado por {{name}}",
+    "checkupNotes": "Observaciones: {{notes}}",
+    "checkupUnknown": "Control no disponible",
+    "result": {
+      "below": "Puntaje z por debajo de −{{limit}}",
+      "above": "Puntaje z por encima de +{{limit}}",
+      "value": "Puntaje z = {{z}}"
+    },
+    "chart": {
+      "title": "Evolución del indicador",
+      "subtitle": "Puntaje z de {{indicator}} (OMS)",
+      "legendAlert": "Control que originó la alerta",
+      "loadError": "No pudimos cargar los controles para la gráfica.",
+      "empty": "Aún no hay controles para graficar.",
+      "a11y": "Gráfica de {{indicator}} con {{count}} controles. El control de la alerta tiene z = {{z}}."
+    },
+    "history": {
+      "title": "Historial de estados",
+      "entry": "{{date}} · {{time}}",
+      "by": "Por {{name}}"
+    },
+    "actions": {
+      "markReviewed": "Marcar como revisada",
+      "marking": "Wakaychikunmi...",
+      "followUp": "Registrar seguimiento",
+      "referral": "Nueva interconsulta",
+      "reviewedNote": "Ya marcaste esta alerta como revisada.",
+      "establishedNote": "Esta alerta ya tiene seguimiento establecido."
+    },
+    "pending_one": "Tienes {{count}} seguimiento guardado en este teléfono por enviar.",
+    "pending_other": "Tienes {{count}} seguimientos guardados en este teléfono por enviar."
+  },
+  "followUp": {
+    "title": "Seguimiento clínico",
+    "context": "{{date}} · {{name}} · {{specialty}}",
+    "contextNoSpecialty": "{{date}} · {{name}}",
+    "childSubtitle": "{{age}}",
+    "loading": "Cargando el seguimiento...",
+    "retry": "Reintentar",
+    "missingTarget": "Abre el seguimiento desde el detalle de una alerta.",
+    "typeLabel": "Tipo de seguimiento",
+    "typePlaceholder": "Elige el tipo",
+    "types": {
+      "observation": "Observación clínica",
+      "recommendation": "Recomendación",
+      "intervention": "Intervención nutricional",
+      "referral": "Derivación"
+    },
+    "detailsLabel": "Detalle del seguimiento",
+    "detailsPlaceholder": {
+      "observation": "Escribe lo que observaste en el control y en el registro de crecimiento.",
+      "recommendation": "Escribe las recomendaciones para la familia.",
+      "intervention": "Describe la intervención que indicas.",
+      "referral": "Indica a quién se deriva al niño y por qué.",
+      "none": "Elige primero el tipo de seguimiento."
+    },
+    "sections": {
+      "observationsLabel": "Observaciones clínicas",
+      "observationsPlaceholder": "Escribe lo que observaste en el control y en el registro de crecimiento...",
+      "interventionLabel": "Intervención nutricional",
+      "interventionPlaceholder": "Describe la intervención nutricional indicada...",
+      "referralLabel": "Derivación",
+      "referralPlaceholder": "Indica a quién se deriva al niño y por qué..."
+    },
+    "nextCheckupLabel": "Próximo control",
+    "nextCheckupPlaceholder": "DD/MM/AAAA (opcional)",
+    "openDatePicker": "Elegir fecha en el calendario",
+    "closeDatePicker": "Listo",
+    "nextCheckupShortcuts": {
+      "7": "1 semana",
+      "14": "2 semanas",
+      "30": "1 mes",
+      "90": "3 meses"
+    },
+    "nextCheckupClear": "Quitar fecha",
+    "nextCheckupHint": "Se creará un recordatorio para esa fecha.",
+    "establishLabel": "Marcar la alerta como «seguimiento establecido» al guardar",
+    "offline": "Sin conexión · Se guardará en este teléfono y se enviará al recuperar la conexión",
+    "actions": {
+      "save": "Guardar seguimiento",
+      "saving": "Wakaychikunmi...",
+      "saveDraft": "Guardar como borrador"
+    },
+    "draftSaved": "Borrador guardado en este teléfono.",
+    "draftRestored": "Recuperamos tu borrador.",
+    "rejected": "El servidor no aceptó el seguimiento que estaba guardado en este teléfono: {{reason}}",
+    "alertNotMoved": "El seguimiento se guardó, pero no pudimos actualizar la alerta: {{reason}}",
+    "errors": {
+      "atLeastOneRequired": "Completa al menos una sección (observaciones, intervención o derivación).",
+      "typeRequired": "Elige el tipo de seguimiento.",
+      "detailsRequired": "Escribe el detalle del seguimiento.",
+      "detailsTooLong": "El detalle no puede pasar de {{max}} caracteres.",
+      "dateInvalid": "Escribe la fecha como DD/MM/AAAA.",
+      "datePast": "La fecha del próximo control no puede ser anterior a hoy.",
+      "invalid": "Revisa los datos del seguimiento."
+    }
+  },
+  "referral": {
+    "title": "Hampikman willay",
+    "bannerTitle": "Comunicación entre profesionales",
+    "bannerSubtitle": "{{name}} · {{specialty}}",
+    "loadingChildren": "Cargando pacientes...",
+    "loadChildrenError": "Mana wawakunata hapita usharkanchu.",
+    "retry": "Reintentar",
+    "emptyChildrenTitle": "Mana tinkishka wawakuna kanchu",
+    "emptyChildrenSubtitle": "Debes tener al menos un niño vinculado para enviar una interconsulta.",
+    "patientLabel": "Hampichikuk wawa",
+    "patientPlaceholder": "Selecciona un paciente",
+    "recipientLabel": "Dirigida a",
+    "recipientPlaceholder": "Selecciona un profesional",
+    "loadingRecipients": "Cargando profesionales vinculados...",
+    "loadRecipientsError": "No pudimos cargar los profesionales vinculados.",
+    "noRecipients": "Este niño no tiene otros profesionales vinculados",
+    "unknownProfessional": "Profesional",
+    "reasonLabel": "Motivo de la interconsulta",
+    "reasonPlaceholder": "Describe el motivo clínico de la interconsulta...",
+    "charCount": "{{count}} / {{max}}",
+    "priorityLabel": "Prioridad",
+    "priorities": {
+      "ordinary": "Ordinaria",
+      "priority": "Prioritaria"
+    },
+    "actions": {
+      "submit": "Enviar interconsulta",
+      "sending": "Enviando...",
+      "saveDraft": "Guardar borrador"
+    },
+    "draftSaved": "Borrador guardado en este dispositivo.",
+    "draftRestored": "Recuperamos tu borrador.",
+    "sentSuccess": "Interconsulta enviada.",
+    "errors": {
+      "childRequired": "Selecciona un paciente.",
+      "recipientRequired": "Selecciona el profesional destinatario.",
+      "bodyRequired": "Escribe el motivo de la interconsulta.",
+      "bodyTooLong": "El motivo no puede pasar de {{max}} caracteres.",
+      "invalid": "Revisa los datos de la interconsulta."
+    }
+  },
+  "addCheckup": {
+    "title": "Wawapak kamayta killkay",
+    "changePatient": "Shuk wawata akllay",
+    "searchModal": {
+      "titlePatient": "Hampina wawata akllay",
+      "searchPlaceholder": "Shutita mashkay...",
+      "emptySearch": "Mana imapash tarikunchu kay shutiwan.",
+      "current": "Kunan"
+    },
+    "submit": "Wakaychishpa yupay",
+    "saving": "Wakaychikunmi...",
+    "localResultTitle": "Kaypi yupashka (who-growth)",
+    "localSummaryNormal": "Ñawpa yupay: shuyashka ukullapimi kan (OMS).",
+    "localSummaryAlert": "Ñawpa yupay: llakimi rikurin ({{risk}}).",
+    "zScoreValue": "z = {{value}}",
+    "percentileValue": "p{{value}}",
+    "emptyTitle": "Mana tinkishka wawakuna kanchu",
+    "emptySubtitle": "Kamayta killkankapakka shuk tinkishka wawata charinami kanki.",
+    "goBackToPatients": "Wawakunaman riy"
+  },
+  "patients": {
+    "title": "Wawakuna",
+    "subtitle": "Tinkishka wawakuna ima llakipi kashkashina.",
+    "sections": {
+      "severe": "Yapa llakipi",
+      "moderate": "Llakipi",
+      "inOrder": "Allillami"
+    },
+    "status": {
+      "severe": "Yapa sinchi",
+      "inOrder": "Tukuy allillami"
+    },
+    "searchPlaceholder": "Shutiwan maskay...",
+    "searchA11y": "Wawapa shutita maskay",
+    "filterA11y": "Llakipi kashkashina akllay",
+    "filters": {
+      "ALL": "Tukuykuna",
+      "SEVERE": "Yapa llakipi",
+      "RISK": "Llakipi",
+      "NO_ALERTS": "Mana llakipi"
+    },
+    "riskLevels": {
+      "SEVERE": "Yapa llakipi",
+      "RISK": "Llakipi",
+      "NO_ALERTS": "Mana llakipi"
+    },
+    "overdueBadge": "Pachapi yallishka",
+    "openAlertsCount_one": "{{count}} llaki rikuri",
+    "openAlertsCount_other": "{{count}} llaki rikurikuna",
+    "noOpenAlerts": "Mana llaki kanchu",
+    "lastAlertLabel": "Kipa llaki: {{indicator}} · {{time}}",
+    "actions": {
+      "viewAlert": "Llakita rikuy",
+      "newFollowUp": "Mushuk katinakuy",
+      "newReferral": "Hampikman willay",
+      "viewEvolution": "Wiñayta rikuy",
+      "registerCheckup": "Kamayta killkay"
+    },
+    "loading": "Wawakunata apamukun...",
+    "retry": "Kutishpa ruray",
+    "loadError": "Mana wawakunata hapita usharkanchu.",
+    "emptyTitle": "Mana tinkishka wawakuna kanchu",
+    "emptyDescription": "Kampa makipi wawakuna tiyashpaka, kaypimi rikurinka ima llakipi kashkamanta.",
+    "emptySearchTitle": "Mana ima tiyanchu",
+    "emptySearchDescription": "Maskashkashinaka mana wawakunata tarirkanchu.",
+    "clearSearch": "Maskayta pichay",
+    "pagination": {
+      "showing": "{{shown}} wawakunata rikuchikun (tukuyka {{total}} kan)",
+      "loadMore": "Yalli wawakunata rikuy"
+    }
+  }
+}

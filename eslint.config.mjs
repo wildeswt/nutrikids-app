@@ -10,6 +10,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/build/**',
       '**/.expo/**',
+      '**/.claude/**',
       '**/coverage/**',
       '**/generated/**',
     ],
@@ -23,6 +24,9 @@ export default tseslint.config(
       globals: {
         ...globals.node,
         ...globals.es2022,
+      },
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {

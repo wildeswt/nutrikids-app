@@ -1,232 +1,356 @@
 # NutriKids App
 
-Monorepo para **NutriKids**, construido con **React Native (Expo) + TypeScript**, **Node.js (Express) + Prisma** y **PostgreSQL** en Docker.
+Monorepo for **NutriKids**, built with **React Native (Expo) + TypeScript**, **Node.js (Express) + Prisma**, and **PostgreSQL** in Docker.
 
-## Stack tecnológico
+## Tech Stack
 
-- **Mobile (`apps/mobile`):** React Native · Expo · Expo Router · TypeScript
-- **API (`apps/api`):** Node.js · Express 5 · TypeScript · Prisma 7 (`@prisma/adapter-pg`) · Vitest + Supertest
-- **Shared (`packages/shared`):** `@nutrikids/shared` — esquemas Zod y tipos compartidos entre mobile y backend
-- **Base de datos:** PostgreSQL 16 (`docker-compose.yml`, puerto host `5433` por defecto)
-- **Tooling:** pnpm workspaces · ESLint (Flat Config) · Prettier · Husky + lint-staged · GitHub Act ions (CI)
+- **Mobile (`apps/mobile`):** React Native, Expo, Expo Router, TypeScript
+- **API (`apps/api`):** Node.js, Express 5, TypeScript, Prisma 7 (`@prisma/adapter-pg`), Vitest + Supertest
+- **Shared (`packages/shared`):** `@nutrikids/shared` - Zod schemas and shared TypeScript types between mobile and backend
+- **WHO Growth (`packages/who-growth`):** `@nutrikids/who-growth` - Pure TypeScript implementation of WHO LMS z-score calculations and classification
+- **Database:** PostgreSQL 16 (`docker-compose.yml`, default host port `5433`)
+- **Tooling:** pnpm workspaces, ESLint (Flat Config), Prettier, Husky + lint-staged, GitHub Actions (CI)
 
-## Estructura del monorepo
+## Monorepo Structure
 
 ```text
 nutrikids-app/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml           # Pipeline de CI (lint, format, types, tests con Postgres)
+│       └── ci.yml           # CI pipeline (lint, format, types, tests with Postgres)
 ├── apps/
-│   ├── api/                 # Servidor Express + Prisma + tests
-│   └── mobile/              # App React Native (Expo + Expo Router)
+│   ├── api/                 # Express API server + Prisma + tests
+│   └── mobile/              # React Native app (Expo + Expo Router)
 ├── packages/
-│   └── shared/              # Esquemas Zod y tipos TypeScript compartidos
-├── docker-compose.yml       # PostgreSQL 16 con volumen persistente
-├── .env.example             # Plantilla de variables de entorno
-├── eslint.config.mjs        # Configuración global de ESLint
-├── pnpm-workspace.yaml      # Definición de workspaces
-├── tsconfig.base.json       # Configuración base estricta de TypeScript
-└── package.json             # Scripts globales del monorepo
+│   ├── shared/              # Shared Zod schemas and TypeScript types
+│   └── who-growth/          # WHO Child Growth Standards (LMS calculation)
+├── docs/                    # Architecture, API index and per-feature documentation
+├── scripts/
+│   └── backup/              # Encrypted PostgreSQL backup and restore (NK-44)
+├── docker-compose.yml       # PostgreSQL 16 with persistent volume
+├── .env.example             # Environment variable template
+├── eslint.config.mjs        # Global ESLint configuration
+├── pnpm-workspace.yaml      # Workspace definitions
+├── tsconfig.base.json       # Base strict TypeScript configuration
+└── package.json             # Root monorepo scripts
 ```
 
-## Requisitos previos
+## Architecture
 
-- **Node.js** `>= 22.0.0`
+```mermaid
+flowchart LR
+  APP["apps/mobile\nExpo + React Native"] -->|"REST / JSON, bearer token"| API["apps/api\nExpress 5 + Prisma"]
+  API -->|"role nutrikids_app + RLS"| DB[("PostgreSQL 16")]
+  API -->|"push"| PUSH["Expo push service"]
+  PUSH --> APP
+  SH["packages/shared\nZod schemas"] -.-> APP
+  SH -.-> API
+  WG["packages/who-growth\nWHO LMS z-scores"] -.-> API
+```
+
+- The app is a **native mobile app** (React Native with Expo; Android and iOS, plus Expo's web target for development). It only talks to the API.
+- The API validates every request with the Zod schemas of `@nutrikids/shared`, checks role, permission, child link and informed consent, and runs every query inside `withUser(userId, ...)` so PostgreSQL Row Level Security applies as a second barrier.
+- The API computes the WHO indicators with `@nutrikids/who-growth` when a checkup is stored and raises alerts in the same transaction.
+- Three background jobs run inside the API process: overdue alerts, due reminders and execution of erasure requests.
+
+More diagrams (request flow, alert states, data model) and a list of what is not implemented yet: [docs/architecture.md](docs/architecture.md). Every endpoint: [docs/api.md](docs/api.md).
+
+## Prerequisites
+
+- **Node.js** `>= 22.12.0`
 - **pnpm** `>= 10.0.0`
-- **Docker Desktop** (en ejecución para levantar PostgreSQL)
-- **Expo Go** en tu teléfono (opcional, para probar en dispositivo físico)
+- **Docker Desktop** (running, to spin up PostgreSQL)
+- **Expo Go** on your physical device (optional)
 
-## Puesta en marcha desde cero
+## Getting Started
 
-1. **Crear archivo de variables de entorno:**
+1. **Create environment variables file:**
 
    ```bash
    cp .env.example .env
    ```
 
-2. **Instalar dependencias:**
+2. **Install dependencies:**
 
    ```bash
    pnpm install
    ```
 
-3. **Levantar PostgreSQL en Docker:**
+3. **Start PostgreSQL in Docker:**
 
    ```bash
    pnpm db:up
    ```
 
-4. **Aplicar migraciones y generar el cliente de Prisma:**
+4. **Apply migrations and generate Prisma client:**
 
    ```bash
    pnpm db:migrate
    ```
 
-5. **Iniciar el entorno de desarrollo:**
+5. **Start development environment:**
 
-   - **Recomendado (2 terminales, conserva el menú interactivo y QR de Expo):**
+   - **Recommended (2 separate terminals, preserves Expo interactive menu and QR):**
      ```bash
-     # Terminal 1 — Backend (http://localhost:3000)
+     # Terminal 1 - Backend (http://localhost:3000)
      pnpm dev:api
 
-     # Terminal 2 — App Expo
+     # Terminal 2 - Expo Mobile App
      pnpm dev:mobile
      ```
-   - **En una sola terminal (logs combinados):**
+   - **Single terminal (combined logs):**
      ```bash
      pnpm dev
      ```
 
-## Conexión desde la app móvil a la API
+## Connecting Mobile App to API
 
-Ajusta `EXPO_PUBLIC_API_URL` (en `.env` o `apps/mobile/.env`) según dónde abras la app:
+Configure `EXPO_PUBLIC_API_URL` (in `.env` or `apps/mobile/.env`) based on target runtime:
 
-| Destino                   | Valor de `EXPO_PUBLIC_API_URL`                                                        |
-| ------------------------- | ------------------------------------------------------------------------------------- |
-| Web / iOS Simulator       | `http://localhost:3000`                                                               |
-| Android Emulator          | `http://10.0.2.2:3000` _(también se adapta automáticamente desde `localhost`)_        |
-| Teléfono físico (Expo Go) | `http://<TU_IP_LOCAL>:3000` _(ej. `http://192.168.1.50:3000`, en la misma red Wi-Fi)_ |
+| Target                    | `EXPO_PUBLIC_API_URL` Value                                       |
+| ------------------------- | ----------------------------------------------------------------- |
+| Web / iOS Simulator       | `http://localhost:3000`                                           |
+| Android Emulator          | `http://10.0.2.2:3000` _(also auto-rewritten from `localhost`)_   |
+| Physical Device (Expo Go) | `http://<YOUR_LOCAL_IP>:3000` _(e.g. `http://192.168.1.50:3000`)_ |
 
-Al abrir la app verás **`API OK ✅`** junto con **`Base de datos: ok`** consumiendo `GET /health`.
+Opening the app displays **`API OK`** alongside **`Base de datos: ok`** by querying `GET /health`.
 
-## Scripts disponibles en la raíz
+## Running Each Module
 
-| Comando                             | Descripción                                                              |
-| ----------------------------------- | ------------------------------------------------------------------------ |
-| `pnpm dev`                          | Ejecuta `api` y `mobile` en paralelo                                     |
-| `pnpm dev:api`                      | Inicia solo el servidor Express en modo watch (`tsx`)                    |
-| `pnpm dev:mobile`                   | Inicia el servidor de desarrollo de Expo (con QR e interfaz interactiva) |
-| `pnpm build`                        | Compila todos los paquetes del monorepo                                  |
-| `pnpm typecheck`                    | Verifica tipos TypeScript en `shared`, `api` y `mobile`                  |
-| `pnpm test`                         | Ejecuta la suite de tests (Vitest + Supertest)                           |
-| `pnpm lint` / `pnpm lint:fix`       | Ejecuta ESLint en todo el repositorio                                    |
-| `pnpm format` / `pnpm format:check` | Formatea o verifica formato con Prettier                                 |
-| `pnpm db:up` / `pnpm db:down`       | Levanta o detiene el contenedor de PostgreSQL                            |
-| `pnpm db:logs`                      | Muestra logs en vivo de PostgreSQL                                       |
-| `pnpm db:migrate`                   | Crea/aplica migraciones de Prisma en desarrollo                          |
-| `pnpm db:migrate:deploy`            | Aplica migraciones pendientes de forma desatendida (CI / producción)     |
-| `pnpm db:generate`                  | Regenera el cliente tipado de Prisma                                     |
-| `pnpm db:studio`                    | Abre Prisma Studio para explorar la base de datos en el navegador        |
+All commands run from the repository root. `pnpm install` and `pnpm db:up` come first (see Getting Started).
 
-## Integración Continua (CI con GitHub Actions)
+| Module                                   | Run                                                              | Check                                                                              |
+| ---------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| PostgreSQL (Docker)                      | `pnpm db:up` / `pnpm db:down`                                    | `pnpm db:logs`; the container is `nutrikids-postgres` on port `5433`               |
+| Migrations and Prisma client             | `pnpm db:migrate` (dev), `pnpm db:migrate:deploy` (unattended)   | `pnpm db:studio`                                                                   |
+| WHO reference + dev seed                 | `pnpm db:seed`                                                   | See "Development Seed"                                                             |
+| API (`apps/api`)                         | `pnpm dev:api` (http://localhost:3000)                           | `GET /health` answers `{ "status": "ok", "db": "ok" }`                             |
+| Mobile (`apps/mobile`)                   | `pnpm dev:mobile` (Expo; `a` Android, `i` iOS, `w` web)          | Home shows the API status; see "Connecting Mobile App to API"                      |
+| `packages/shared`, `packages/who-growth` | Built automatically by the API scripts (`pnpm build` builds all) | `pnpm --filter @nutrikids/shared test`, `pnpm --filter @nutrikids/who-growth test` |
+| Backups                                  | `scripts/backup/backup.sh`, `scripts/backup/restore.sh`          | [docs/backups.md](docs/backups.md)                                                 |
+| All tests                                | `pnpm test` (API tests need the migrated database)               | `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test` is what CI runs    |
 
-Cada Pull Request hacia la rama `main` ejecuta automáticamente el pipeline de validación en [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+Single API test file: `pnpm --filter api exec vitest run src/__tests__/<file>.test.ts`.
 
-1. **Instalación:** `pnpm install --frozen-lockfile` (asegura integridad del `pnpm-lock.yaml`).
-2. **Formato:** `pnpm format:check` (Prettier).
-3. **Linting:** `pnpm lint` (ESLint en todos los paquetes).
-4. **Tipos:** `pnpm typecheck` (`tsc --noEmit` en `shared`, `api` y `mobile`).
-5. **Servicio PostgreSQL:** Levanta un contenedor de servicio `postgres:16-alpine` y verifica disponibilidad con `pg_isready`.
-6. **Migraciones:** `pnpm db:migrate:deploy` aplica las migraciones de Prisma en la base de datos de CI.
-7. **Pruebas:** `pnpm test` ejecuta los tests con Vitest y Supertest.
+## Environment Variables
 
-## Convención de Ramas
+Copy `.env.example` to `.env` at the repository root (the API also reads `apps/api/.env`). Every variable has a default for local development unless marked required. Invalid values stop the API at startup.
 
-Toda nueva contribución debe realizarse a través de una rama temática derivada de `main`:
+### Database
 
-| Prefijo             | Propósito                                                | Ejemplo                      |
-| ------------------- | -------------------------------------------------------- | ---------------------------- |
-| `feature/<nombre>`  | Nuevas funcionalidades o pantallas                       | `feature/user-auth`          |
-| `fix/<nombre>`      | Corrección de errores o bugs                             | `fix/api-connection-timeout` |
-| `chore/<nombre>`    | Tareas de mantenimiento, dependencias o configuración    | `chore/upgrade-deps`         |
-| `docs/<nombre>`     | Cambios exclusivamente en documentación                  | `docs/update-readme`         |
-| `refactor/<nombre>` | Refactorizaciones de código sin cambio funcional visible | `refactor/api-routes`        |
-| `test/<nombre>`     | Incorporación o ajuste de pruebas automatizadas          | `test/child-endpoints`       |
+| Variable                                                             | Default                      | Meaning                                                                                              |
+| -------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` | `nutrikids` x3, `5433`       | Used by `docker-compose.yml` only.                                                                   |
+| `DATABASE_URL`                                                       | local `nutrikids` database   | API runtime connection. Use the restricted role `nutrikids_app` so RLS applies (pooled URL on Neon). |
+| `DIRECT_URL`                                                         | falls back to `DATABASE_URL` | Owner connection for Prisma migrations, the seed, CI and backups.                                    |
 
-## Convención de Commits (Conventional Commits)
+### API
 
-Los commits deben seguir la especificación [Conventional Commits](https://www.conventionalcommits.org/):
+| Variable                                       | Default              | Meaning                                                                                                               |
+| ---------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                                     | `development`        | `development`, `test` or `production`. Production makes the next two required and blocks the seed.                    |
+| `PORT`                                         | `3000`               | HTTP port.                                                                                                            |
+| `CORS_ORIGIN`                                  | `*`                  | `*` or a comma-separated list of allowed origins.                                                                     |
+| `JWT_ACCESS_SECRET`                            | dev value            | Signing secret, at least 32 characters. **Required in production.**                                                   |
+| `PROFESSIONAL_INVITE_CODES`                    | `NK-PROF-2026` (dev) | Comma-separated invitation codes to register as a professional. **Required in production.**                           |
+| `ACCESS_TOKEN_TTL_SECONDS`                     | `900`                | Access token lifetime.                                                                                                |
+| `REFRESH_TOKEN_TTL_DAYS`                       | `30`                 | Refresh token lifetime.                                                                                               |
+| `LOGIN_MAX_ATTEMPTS`, `LOGIN_WINDOW_MINUTES`   | `5`, `15`            | Failed sign-in attempts allowed per IP + email in the window; then `429`.                                             |
+| `LOOKUP_MAX_ATTEMPTS`, `LOOKUP_WINDOW_MINUTES` | `10`, `15`           | Professional lookups (`GET /professionals/lookup`) allowed per user in the window, hits and misses alike; then `429`. |
+| `ALERT_REVIEW_DEADLINE_HOURS`                  | `72`                 | Hours an alert may stay unreviewed before it is overdue.                                                              |
+| `ALERT_REVIEW_DEADLINE_SEVERE_HOURS`           | `24`                 | Same for severe alerts; must be at most the previous one.                                                             |
+| `OVERDUE_ALERTS_INTERVAL_MINUTES`              | `60`                 | How often the overdue-alerts and reminders jobs run.                                                                  |
+| `OVERDUE_ALERT_RENOTIFY_HOURS`                 | `24`                 | Minimum hours before notifying the same professional again about the same overdue alert.                              |
+| `REMINDER_LEAD_HOURS`                          | `24`                 | Hours before a reminder's date at which caregivers are notified ([docs/reminders.md](docs/reminders.md)).             |
+| `ERASURE_GRACE_DAYS`                           | `7`                  | Days between an erasure request and its execution, 0 to 14 ([docs/data-rights.md](docs/data-rights.md)).              |
+| `CUTOFF_*`, `OVERWEIGHT_CRITERION`             | WHO defaults         | Optional classification cutoffs (z-scores) and overweight criterion (`WFLH`, `BFA`, `both`); see `.env.example`.      |
+
+### Mobile and backups
+
+| Variable                | Default                 | Meaning                                                                                           |
+| ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------- |
+| `EXPO_PUBLIC_API_URL`   | `http://localhost:3000` | API base URL seen from the app (see "Connecting Mobile App to API").                              |
+| `BACKUP_PASSPHRASE`     | none, **required**      | Passphrase that encrypts backups (`scripts/backup`). Keep it outside the backup directory.        |
+| `BACKUP_DIR`            | `./backups`             | Where `backup.sh` writes.                                                                         |
+| `BACKUP_RETENTION_DAYS` | `30`                    | Backups older than this are deleted.                                                              |
+| `DOCKER_CONTAINER`      | none                    | Run `pg_dump`/`psql` inside this container (`nutrikids-postgres` locally) instead of local tools. |
+| `RESTORE_CLEAN`         | unset                   | `1` makes `restore.sh` drop and recreate the target database first.                               |
+
+## Documentation
+
+| Document                                                       | Topic                                                                            |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [docs/architecture.md](docs/architecture.md)                   | Components, request flow, alert states, data model, what is not implemented yet. |
+| [docs/api.md](docs/api.md)                                     | Index of every endpoint with its guards.                                         |
+| [docs/auth.md](docs/auth.md)                                   | Registration, login, tokens, password recovery, rate limit.                      |
+| [docs/permissions.md](docs/permissions.md)                     | Roles, specialties, child link and permission matrix.                            |
+| [docs/alerts.md](docs/alerts.md)                               | Alert generation, state machine and review deadline.                             |
+| [docs/follow-ups.md](docs/follow-ups.md)                       | Clinical follow-ups and the next-checkup reminder.                               |
+| [docs/sync.md](docs/sync.md)                                   | Offline checkup sync endpoint.                                                   |
+| [docs/notifications.md](docs/notifications.md)                 | Internal notifications and push delivery.                                        |
+| [docs/reminders.md](docs/reminders.md)                         | Reminders and their scheduled dispatch.                                          |
+| [docs/feeding-and-education.md](docs/feeding-and-education.md) | Feeding logs and educational content.                                            |
+| [docs/data-rights.md](docs/data-rights.md)                     | Rectify, export and delete the child's data.                                     |
+| [docs/backups.md](docs/backups.md)                             | Encrypted backups, restore and retention policy.                                 |
+| [docs/i18n.md](docs/i18n.md)                                   | Spanish and Kichwa translations in the app.                                      |
+| [docs/informe-cambios.md](docs/informe-cambios.md)             | Changes the analysis report needs (Spanish), checked against this code.          |
+
+## Root Scripts
+
+| Command                             | Description                                                                    |
+| ----------------------------------- | ------------------------------------------------------------------------------ |
+| `pnpm dev`                          | Runs `api` and `mobile` concurrently                                           |
+| `pnpm dev:api`                      | Starts Express API server in watch mode (`tsx`)                                |
+| `pnpm dev:mobile`                   | Starts Expo dev server with interactive terminal and QR code                   |
+| `pnpm dev:phone`                    | Expo Go on a phone in the same Wi-Fi (`expo start --lan --go`)                 |
+| `pnpm dev:phone:tunnel`             | Same over an Expo tunnel, for other networks (slow on low upload bandwidth)    |
+| `pnpm build`                        | Builds all workspace packages                                                  |
+| `pnpm typecheck`                    | Verifies TypeScript types across `shared`, `who-growth`, `api`, and `mobile`   |
+| `pnpm test`                         | Runs test suite across all packages (Vitest + Supertest)                       |
+| `pnpm lint` / `pnpm lint:fix`       | Runs ESLint across all packages                                                |
+| `pnpm format` / `pnpm format:check` | Formats or verifies format with Prettier                                       |
+| `pnpm db:up` / `pnpm db:down`       | Starts or stops PostgreSQL Docker container                                    |
+| `pnpm db:logs`                      | Tails PostgreSQL Docker container logs                                         |
+| `pnpm db:migrate`                   | Creates/applies Prisma migrations in development                               |
+| `pnpm db:migrate:deploy`            | Applies pending migrations unattended (CI / production)                        |
+| `pnpm db:seed`                      | Seeds WHO LMS tables and synthetic development data (disallowed in production) |
+| `pnpm db:generate`                  | Regenerates typed Prisma client                                                |
+| `pnpm db:studio`                    | Opens Prisma Studio web UI                                                     |
+
+## Development Seed (Synthetic Data)
+
+`pnpm db:seed` (requires running and migrated DB) is idempotent and creates **purely synthetic** development data:
+
+- WHO 2006 LMS reference tables (`lms_references`).
+- Specification example child: Mateo Jose Rodriguez (born May 12, 2023), with 4 checkups in 2026 and 16 indicator results calculated using `@nutrikids/who-growth`.
+- Checkup on Oct 18, 2026 (12.2 kg, 97.0 cm): W/LH z-score approx -2.24, triggering a wasting alert in `PENDING_REVIEW` with its audit history (`GENERATED` -> `PENDING_REVIEW`).
+- Synthetic accounts (dev password: `NutriKids-Dev-2026`): `ana.rodriguez@example.test` (caregiver), `enfermera.dev@example.test`, and `pediatra.dev@example.test`.
+
+Uses `DIRECT_URL` (database owner) and **aborts if `NODE_ENV=production`**.
+
+## Continuous Integration (GitHub Actions CI)
+
+Every Pull Request targeting `main` or `develop` (and every push to them) runs the validation pipeline in [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+
+1. **Install:** `pnpm install --frozen-lockfile` (enforces `pnpm-lock.yaml` integrity).
+2. **Format:** `pnpm format:check` (Prettier).
+3. **Lint:** `pnpm lint` (ESLint on all packages).
+4. **Types:** `pnpm typecheck` (`tsc --noEmit` across all workspaces).
+5. **PostgreSQL Service:** Spins up `postgres:16-alpine` service container and tests availability with `pg_isready`.
+6. **Migrations:** `pnpm db:migrate:deploy` applies Prisma migrations on the CI database.
+7. **Tests:** `pnpm test` runs Vitest and Supertest suites.
+
+## Branch Convention
+
+All new contributions must be made on a feature/topic branch derived from `develop` or `main`:
+
+| Prefix            | Purpose                                               | Example                      |
+| ----------------- | ----------------------------------------------------- | ---------------------------- |
+| `feature/<name>`  | New features or screens                               | `feature/user-auth`          |
+| `fix/<name>`      | Bug fixes                                             | `fix/api-connection-timeout` |
+| `chore/<name>`    | Maintenance tasks, dependencies, or configuration     | `chore/english-naming`       |
+| `docs/<name>`     | Documentation changes only                            | `docs/update-readme`         |
+| `refactor/<name>` | Code refactoring without behavioral or visible change | `refactor/api-routes`        |
+| `test/<name>`     | Addition or adjustment of automated tests             | `test/child-endpoints`       |
+
+## Commit Convention (Conventional Commits)
+
+Commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
 
 ```text
-<tipo>(<alcance opcional>): <descripción concisa en imperativo y minúscula>
+<type>(<optional scope>): <concise description in imperative lowercase>
 ```
 
-- **Tipos principales:**
-  - `feat`: Nueva característica (`feat(api): add auth endpoint`).
-  - `fix`: Corrección de bug (`fix(mobile): resolve shared import in metro`).
-  - `chore`: Tareas de build, dependencias o configuración (`chore(db): add migration deploy script`).
-  - `docs`: Documentación (`docs: update setup instructions`).
-  - `test`: Pruebas unitarias o de integración (`test(api): add vitest for health endpoint`).
-  - `refactor`: Cambios en código que no corrigen bugs ni agregan features (`refactor(shared): split health schema`).
-  - `ci`: Cambios en flujos de integración continua (`ci: add postgres service to pr workflow`).
+- **Primary Types:**
+  - `feat`: New feature (`feat(api): add auth endpoint`).
+  - `fix`: Bug fix (`fix(mobile): resolve shared import in metro`).
+  - `chore`: Build tasks, dependencies, or configuration (`chore(who-growth): rename files to english naming`).
+  - `docs`: Documentation updates (`docs: translate documentation and test titles to english`).
+  - `test`: Unit or integration test additions/fixes (`test(api): add tests for checkups`).
+  - `refactor`: Code changes that neither fix a bug nor add a feature (`refactor(shared): split health schema`).
+  - `ci`: CI pipeline updates (`ci: add postgres service to pr workflow`).
 
-## Protección de la Rama `main` en GitHub
+## Language and Code Naming Convention
 
-Para garantizar que ningún cambio roto ingrese a `main`, se debe configurar una regla de protección en GitHub:
+The codebase enforces a clear language separation:
 
-1. Ve a tu repositorio en GitHub y abre **Settings** > **Branches**.
-2. En la sección **Branch protection rules**, haz clic en **Add rule** (o **Add branch ruleset**).
-3. En **Branch name pattern**, escribe `main`.
-4. Activa las siguientes opciones:
-   - **Require a pull request before merging:**
-     - _(Opcional)_ Requerir al menos 1 aprobación de revisión de código.
-   - **Require status checks to pass before merging:**
-     - Marca **Require branches to be up to date before merging**.
-     - En el buscador de checks, selecciona:
-       `Validate PR (Install, Lint, Format, Types, Tests)`
-   - **Do not allow bypassing the above settings:**
-     - Evita que administradores o propietarios fusionen PRs con checks en rojo.
-5. Haz clic en **Create** (o **Save changes**).
+- **In English:**
+  - All code identifiers (variables, functions, types, interfaces, classes, enums).
+  - All filenames and directory names (e.g. `age.ts`, `length-height.ts`, `classification.ts`).
+  - Code comments and JSDoc annotations.
+  - Test suite titles and descriptions (`describe(...)`, `it(...)`).
+  - Documentation files (`docs/`, `README.md`).
+- **In Spanish:**
+  - System logs (`console.log`, `console.error`).
+  - User-facing error strings (API error responses, Zod validation issue messages, mobile client UI copy).
+  - External domain-specific constants (such as `'WHO 2006'` for `referenceVersion`).
+- **Database Values:**
+  - Values stored in PostgreSQL are in English, uppercase with underscore (e.g., `SEVERE_WASTING`, `WASTING`, `NORMAL`, `CAREGIVER`, `PROFESSIONAL`).
+- **Emoji Rule:**
+  - Zero emojis in code, comments, documentation, and commit messages.
 
-> Con esta configuración, el botón **Merge pull request** permanecerá bloqueado hasta que el flujo de CI complete todas las validaciones con éxito (verde).
+## Main Branch Protection in GitHub
 
-## Modelo de Datos y Equivalencia de Nombres
+To ensure stability on the `main` branch:
 
-El modelo de datos relacional de NutriKids parte del informe de especificación (Tabla 4). Para mantener consistencia con los estándares del ecosistema TypeScript y Node.js, se adoptó la siguiente convención de nombres:
+1. Open your GitHub repository and go to **Settings** > **Branches**.
+2. Click **Add branch protection rule** for branch pattern `main`.
+3. Enable:
+   - **Require a pull request before merging**
+   - **Require status checks to pass before merging** (select `Validate PR (Install, Lint, Format, Types, Tests)`)
+   - **Require branches to be up to date before merging**
+   - **Do not allow bypassing the above settings**
+4. Save changes.
 
-- **Código TypeScript / Prisma:** Modelos en `PascalCase` singular (ej. `Checkup`, `Child`) y atributos en `camelCase` (ej. `weightKg`, `measuredAt`).
-- **Base de datos (PostgreSQL):** Tablas en inglés `snake_case` plural (ej. `checkups`, `children`), mapeadas con `@@map("checkups")`. Columnas en inglés `snake_case` (ej. `weight_kg`), mapeadas con `@map("weight_kg")`.
-- **Informe del proyecto:** Mantiene los nombres conceptuales originales en español (Tabla 4).
+## Data Model and Name Equivalence
 
-### Tabla de Equivalencias (19 tablas de informe + 2 de infraestructura = 21 tablas)
+The relational model originates from the project specification (Table 4). To maintain consistency with TypeScript and Node.js standards, the following naming conventions apply:
 
-| Entidad Informe (Tabla 4)        | Modelo Prisma (TS)   | Tabla PostgreSQL        | Propósito / Área                                                       |
-| -------------------------------- | -------------------- | ----------------------- | ---------------------------------------------------------------------- |
-| `usuario`                        | `User`               | `users`                 | Identidad central compartida (supertipo solapado)                      |
-| `cuidador`                       | `Caregiver`          | `caregivers`            | Subtipo de usuario con rol cuidador (1:1 con `User`)                   |
-| `profesional`                    | `Professional`       | `professionals`         | Subtipo de usuario profesional de la salud (1:1 con `User`)            |
-| `nino`                           | `Child`              | `children`              | Entidad central del paciente pediátrico (1 a 5 años)                   |
-| `cuida`                          | `CaregiverChild`     | `caregiver_children`    | Relación N:M entre niño y cuidador (PK compuesta)                      |
-| `atiende`                        | `ProfessionalChild`  | `professional_children` | Asignación clínica N:M entre profesional y niño con vigencia           |
-| `consentimiento`                 | `Consent`            | `consents`              | Autorización legal y tratamiento de datos personales                   |
-| `control`                        | `Checkup`            | `checkups`              | Registro antropométrico inmutable capturado (peso, talla, posición)    |
-| `referencia_lms`                 | `LmsReference`       | `lms_references`        | Tablas de referencia OMS (parámetros L, M, S por sexo/edad/talla)      |
-| `resultado_indicador`            | `IndicatorResult`    | `indicator_results`     | Z-score, percentil y clasificación nutricional persistidos             |
-| `registro_alimentacion`          | `FeedingLog`         | `feeding_logs`          | Bitácora de frecuencia de comidas y alimentación                       |
-| `alerta`                         | `Alert`              | `alerts`                | Detección de riesgo nutricional (emaciación, retraso, sobrepeso, etc.) |
-| `alerta_historial`               | `AlertHistory`       | `alert_history`         | Trazabilidad inmutable de transiciones de estado de alertas            |
-| `seguimiento`                    | `FollowUp`           | `follow_ups`            | Plan de acción clínico (observación, recomendación, derivación)        |
-| `mensaje`                        | `Message`            | `messages`              | Comunicación bidireccional entre usuarios                              |
-| `recordatorio`                   | `Reminder`           | `reminders`             | Agendamiento de próximos controles y actividades                       |
-| `notificacion`                   | `Notification`       | `notifications`         | Notificaciones en la app para eventos y avisos                         |
-| `contenido_educativo`            | `EducationalContent` | `educational_contents`  | Guías y pautas nutricionales filtradas por edad del niño               |
-| `auditoria`                      | `AuditLog`           | `audit_logs`            | Registro inmutable de acciones críticas del sistema                    |
-| _(Infraestructura NK-13, NK-14)_ | `RefreshToken`       | `refresh_tokens`        | Sesiones activas, rotación y revocación segura de JWTs                 |
-| _(Infraestructura NK-36)_        | `PushDevice`         | `push_devices`          | Registro de tokens push por dispositivo para alertas y avisos          |
+- **TypeScript / Prisma Code:** Singular `PascalCase` models (e.g. `Checkup`, `Child`) and `camelCase` attributes (e.g. `weightKg`, `measuredAt`).
+- **PostgreSQL Database:** Plural `snake_case` tables (e.g. `checkups`, `children`), mapped with `@@map("checkups")`. Column names in `snake_case` (e.g. `weight_kg`), mapped with `@map("weight_kg")`.
+- **Specification Report:** Retains the original conceptual domain names in Spanish.
 
-> **Nota sobre infraestructura:** Las tablas `refresh_tokens` y `push_devices` no provienen de la lógica clínica de la Tabla 4, sino de los requerimientos técnicos de autenticación multidispositivo (NK-13, NK-14) y notificaciones push móviles (NK-36). Junto a las 19 tablas del informe, totalizan **21 tablas de negocio e infraestructura**.
+### Equivalence Table (19 Specification Tables + 3 Infrastructure Tables = 22 Tables)
 
-### Autenticación y Seguridad Profesional (NK-13, NK-14)
+| Report Entity (Table 4)         | Prisma Model (TS)    | PostgreSQL Table        | Purpose / Area                                                        |
+| ------------------------------- | -------------------- | ----------------------- | --------------------------------------------------------------------- |
+| `usuario`                       | `User`               | `users`                 | Shared identity supertype                                             |
+| `cuidador`                      | `Caregiver`          | `caregivers`            | User subtype with caregiver role (1:1 with `User`)                    |
+| `profesional`                   | `Professional`       | `professionals`         | User subtype with health professional role (1:1 with `User`)          |
+| `nino`                          | `Child`              | `children`              | Central pediatric patient entity (1 to 5 years old)                   |
+| `cuida`                         | `CaregiverChild`     | `caregiver_children`    | N:M link between child and caregiver (composite PK)                   |
+| `atiende`                       | `ProfessionalChild`  | `professional_children` | N:M clinical assignment between professional and child with validity  |
+| `consentimiento`                | `Consent`            | `consents`              | Legal authorization and personal data processing consent              |
+| `control`                       | `Checkup`            | `checkups`              | Immutable anthropometric record (weight, height, position)            |
+| `referencia_lms`                | `LmsReference`       | `lms_references`        | WHO reference tables (L, M, S parameters by sex, age, length/height)  |
+| `resultado_indicador`           | `IndicatorResult`    | `indicator_results`     | Persisted z-score, percentile, and nutritional classification         |
+| `registro_alimentacion`         | `FeedingLog`         | `feeding_logs`          | Feeding and meal frequency logs                                       |
+| `alerta`                        | `Alert`              | `alerts`                | Nutritional risk detection (wasting, stunting, overweight, etc.)      |
+| `alerta_historial`              | `AlertHistory`       | `alert_history`         | Immutable audit trail of alert state transitions                      |
+| `seguimiento`                   | `FollowUp`           | `follow_ups`            | Clinical action plans (observation, recommendation, referral)         |
+| `mensaje`                       | `Message`            | `messages`              | Bidirectional user communication                                      |
+| `recordatorio`                  | `Reminder`           | `reminders`             | Scheduling of upcoming checkups and activities                        |
+| `notificacion`                  | `Notification`       | `notifications`         | In-app notifications for alerts and events                            |
+| `contenido_educativo`           | `EducationalContent` | `educational_contents`  | Nutritional guidelines filtered by child age                          |
+| `auditoria`                     | `AuditLog`           | `audit_logs`            | Immutable system audit trail                                          |
+| _(Infrastructure NK-13, NK-14)_ | `RefreshToken`       | `refresh_tokens`        | Active sessions, rotation, and revocation of JWTs                     |
+| _(Infrastructure NK-36)_        | `PushDevice`         | `push_devices`          | Device push notification tokens                                       |
+| _(Infrastructure NK-41)_        | `ErasureRequest`     | `erasure_requests`      | Legal representative deletion requests with grace period and due date |
 
-- **Refresh Tokens:** Se almacenan exclusivamente con su hash SHA-256 en `refresh_tokens` (`token_hash`), admitiendo múltiples sesiones concurrentes por usuario con expiración y revocación individual.
-- **2FA TOTP:** Solo los profesionales de la salud utilizan doble factor de autenticación. El secreto se almacena cifrado bidireccionalmente con AES-256-GCM en `professionals.totp_secret_enc` junto a su fecha de activación en `professionals.totp_enabled_at`.
-- **Códigos de recuperación:** Se almacenan como hashes en `professionals.recovery_code_hashes` y se consumen uno a uno al ser utilizados.
+## Database Configuration and Neon
 
-## Configuración de Base de Datos y Neon
+The project supports local PostgreSQL (via Docker) and serverless databases on **Neon**:
 
-El proyecto soporta PostgreSQL local (vía Docker) y bases de datos serverless en **Neon**:
+### Connection URLs (Pooled vs Direct)
 
-### URLs de Conexión (Pooled vs Direct)
+Neon provides two distinct connection strings:
 
-Neon proporciona dos cadenas de conexión distintas:
+- **Pooled (`DATABASE_URL`, host with `-pooler`):** Uses PgBouncer in transaction mode to pool API runtime connections under high concurrency.
+- **Direct (`DIRECT_URL`, host without `-pooler`):** Direct connection to PostgreSQL without connection pooling, required by Prisma CLI for migrations (`prisma migrate dev`, `prisma migrate deploy`) to avoid DDL locking conflicts.
 
-- **Pooled (`DATABASE_URL`, host con `-pooler`):** Utiliza PgBouncer en modo transacción para reutilizar conexiones de la API en runtime bajo alta concurrencia.
-- **Direct (`DIRECT_URL`, host sin `-pooler`):** Conexión directa a PostgreSQL sin pooling intermedio, requerida por el CLI de Prisma para ejecutar migraciones (`prisma migrate dev`, `prisma migrate deploy`) y evitar bloqueos de locks DDL.
+Both URLs require `?sslmode=require`.
 
-Ambas URLs deben incluir el parámetro `?sslmode=require`.
-
-En `apps/api/prisma.config.ts`, Prisma CLI prioriza la conexión directa automáticamente:
+In `apps/api/prisma.config.ts`, Prisma CLI prioritizes direct connections automatically:
 
 ```ts
 datasource: {
@@ -237,72 +361,151 @@ datasource: {
 }
 ```
 
-### Recomendaciones de Entorno
+## Immutability and Row-Level Security (RLS)
 
-1. **Desarrollo Local:** Se recomienda utilizar el contenedor Docker (`pnpm db:up` y `pnpm db:migrate`). Es más rápido y no genera ruido en ramas remotas de Neon.
-2. **Neon (Integración y Staging):** Utiliza una rama dedicada de Neon (ej. `dev`) y aplica migraciones de forma desatendida mediante `pnpm db:migrate:deploy`.
-3. **Migrate dev contra Neon:** Requiere permisos para crear una shadow database. Si Neon limita la creación de bases secundarias, configura `shadowDatabaseUrl` en la configuración apuntando a otra base o rama auxiliar.
-4. **Reseteo en ramas remotas:** Si una migración previa obsoleta ya fue aplicada en una rama de Neon, utiliza `pnpm --filter api exec prisma migrate reset` confirmándolo previamente con el equipo de desarrollo.
+### 1. Database Immutability
 
-## Inmutabilidad y Seguridad por Filas (RLS)
+Clinical fact and audit tables are immutable at database level to guarantee historical integrity (RF-09 and RF-21):
 
-### 1. Inmutabilidad en Base de Datos
+- `checkups`: Disallows `UPDATE` and `DELETE`. Corrections are recorded as new checkups referencing original via `corrected_checkup_id`.
+- `alert_history`: Disallows `UPDATE` and `DELETE`. Append-only state transition history.
+- `audit_logs`: Disallows `UPDATE` and `DELETE`. Append-only audit trail.
 
-Las tablas de hechos clínicos y auditoría son inmutables a nivel de base de datos para garantizar la integridad histórica (RF-09 y RF-21):
+Any mutation or deletion attempt is aborted by the `forbid_mutation()` trigger with SQLSTATE `integrity_constraint_violation`.
 
-- `checkups`: No admite `UPDATE` ni `DELETE`. Correcciones clínicas se registran como nuevos controles vinculados mediante `corrected_checkup_id`.
-- `alert_history`: No admite `UPDATE` ni `DELETE`. Solo admite inserciones secuenciales de transiciones de estado.
-- `audit_logs`: No admite `UPDATE` ni `DELETE`. Bitácora de solo adición.
+### 2. Application Role (`nutrikids_app`) and Connection Separation
 
-Cualquier intento de modificación o eliminación es rechazado por el trigger `forbid_mutation()` con código SQLSTATE `integrity_constraint_violation` (incluso para el owner de la base de datos).
+- **`DIRECT_URL` (DB Owner):** Full DDL privileges, used by Prisma CLI (`prisma migrate`), test fixtures, seeds, and CI pipelines.
+- **`DATABASE_URL` (`nutrikids_app` Role):** Restricted connection used by Express API runtime:
+  - Grants only `SELECT`, `INSERT`, `UPDATE`, `DELETE` on business tables.
+  - Explicitly `REVOKED` `UPDATE` and `DELETE` on immutable tables (`checkups`, `alert_history`, `audit_logs`).
+  - Enforces Row Level Security (RLS) policies.
 
-### 2. Rol de la Aplicación (`nutrikids_app`) y Separación de Cadenas
+### 3. Request-Scoped User Context (`withUser`)
 
-Se implementa el principio de mínimo privilegio separando dos roles y cadenas de conexión:
-
-- **`DIRECT_URL` (Owner de la BD):** Conexión con privilegios DDL completos, utilizada por el CLI de Prisma (`prisma migrate`), fixtures, seeds y pipelines de CI.
-- **`DATABASE_URL` (Rol `nutrikids_app`):** Conexión restringida utilizada por la API Express en runtime:
-  - Solo tiene permisos `SELECT`, `INSERT`, `UPDATE`, `DELETE` en tablas de negocio.
-  - Tiene `REVOKED` explícitamente `UPDATE` y `DELETE` en las tablas inmutables (`checkups`, `alert_history`, `audit_logs`).
-  - No tiene acceso a `_prisma_migrations`.
-  - Está sujeta a las políticas de Row Level Security (RLS).
-
-#### Fijar contraseña del rol `nutrikids_app` en local
-
-Tras levantar el contenedor de Docker por primera vez y aplicar las migraciones, fija la contraseña del rol con:
-
-```bash
-docker exec nutrikids-postgres psql -U nutrikids -c "ALTER ROLE nutrikids_app PASSWORD 'nutrikids_app'"
-```
-
-### 3. Contexto de Usuario por Solicitud (`withUser`)
-
-Para que las políticas de RLS identifiquen al usuario autenticado sin romper la compatibilidad con poolers de conexiones como PgBouncer, se utiliza el helper `withUser` (`apps/api/src/lib/prisma.ts`):
+To enable RLS identification compatible with transaction poolers like PgBouncer, the `withUser` helper (`apps/api/src/lib/prisma.ts`) is used:
 
 ```ts
 import { withUser } from './lib/prisma.js';
 
-// En controladores o servicios:
-const checkups = await withUser(req.user.id, async (tx) => {
+const checkups = await withUser(req.auth.userId, async (tx) => {
   return tx.checkup.findMany({ where: { childId } });
 });
 ```
 
-`withUser` ejecuta una transacción aislada invocando `set_config('app.user_id', <id>, true)`. El tercer parámetro (`true`) delimita la variable localmente a la transacción actual (`SET LOCAL`). Si la consulta se ejecuta fuera de `withUser` o sin `app.user_id`, las políticas de RLS fallan en modo cerrado devolviendo cero filas.
+`withUser` executes an isolated transaction running `set_config('app.user_id', <id>, true)`. The third parameter (`true`) scopes the configuration locally to the active transaction (`SET LOCAL`). Queries executed outside `withUser` fail-closed by returning zero rows under RLS.
 
-### 4. Tablas con RLS y Exclusiones Justificadas
+## Session and Role-based Navigation (Mobile)
 
-| Tabla                                                             | Estado RLS               | Política / Justificación                                                                                                                                                       |
-| ----------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `children`                                                        | **Activado**             | Acceso permitido solo a cuidadores o profesionales con asignación vigente.                                                                                                     |
-| `consents`, `checkups`, `feeding_logs`, `follow_ups`, `reminders` | **Activado**             | Valida acceso al niño asociado mediante `app_has_child_access(child_id)`.                                                                                                      |
-| `caregiver_children`                                              | **Activado**             | Visible si el usuario es el cuidador vinculado o tiene acceso al niño.                                                                                                         |
-| `professional_children`                                           | **Activado**             | Visible si el usuario es el profesional asignado o tiene acceso al niño.                                                                                                       |
-| `notifications`                                                   | **Activado**             | Filtro estricto por `user_id = app_user_id()`.                                                                                                                                 |
-| `messages`                                                        | **Activado**             | Filtro estricto: `sender_id = app_user_id() OR recipient_id = app_user_id()`.                                                                                                  |
-| `indicator_results`                                               | **Activado**             | Acceso encadenado vía `checkups` (`EXISTS`).                                                                                                                                   |
-| `alerts`                                                          | **Activado**             | Acceso encadenado vía `indicator_results` (`EXISTS`).                                                                                                                          |
-| `alert_history`                                                   | **Activado**             | Acceso encadenado vía `alerts` (`EXISTS`).                                                                                                                                     |
-| `users`, `refresh_tokens`, `push_devices`                         | **Excluido**             | El flujo de autenticación e inicio de sesión ocurre antes de determinar la identidad del usuario en sesión; RLS bloquearía el login.                                           |
-| `lms_references`, `educational_contents`                          | **Excluido**             | Catálogos y tablas de referencia pública accesibles por todos los usuarios del sistema.                                                                                        |
-| `audit_logs`                                                      | **Excluido (por ahora)** | Protegida por trigger inmutable y `REVOKE` en `nutrikids_app`. Las consultas `INSERT ... RETURNING` de Prisma requerirían una política de `SELECT` que será definida en NK-42. |
+### 1. Secure Session Storage
+
+Credentials and tokens are stored encrypted via `expo-secure-store` (`apps/mobile/src/lib/session-storage.ts`):
+
+- Access and refresh tokens are never stored in unencrypted storage (`AsyncStorage` / `localStorage`).
+- Uses `keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY` on iOS and Android.
+- Data is strictly validated upon reading and writing using `StoredSessionSchema`.
+
+### 2. Automatic Token Refresh and Single-Flight Mutex
+
+HTTP client (`apps/mobile/src/lib/api.ts`) implements:
+
+- **Proactive Refresh:** If the access token expires in less than 30 seconds, it is refreshed prior to dispatching the request.
+- **Single-Flight Mutex:** A single in-flight refresh promise (`refreshInFlight`) shared across concurrent requests prevents duplicate refresh requests.
+- **Transparent Retry:** `401 Unauthorized` triggers token refresh and automatically retries the initial request.
+- **Automatic Logout:** If refresh fails (expired or revoked token), session storage is purged and the app redirects to login.
+
+### 3. Role-Protected Navigation (Expo Router)
+
+The navigation guard in `apps/mobile/src/app/_layout.tsx` inspects auth status and `activeRole`:
+
+- **Caregiver (`CAREGIVER`):** Bottom tab navigation with 5 actions (`apps/mobile/src/app/(caregiver)/_layout.tsx`):
+  1. `index`: Home ("Mis niños").
+  2. `evolution`: Evolution (WHO curves and anthropometric history).
+  3. `add-checkup`: Central elevated button for recording checkups.
+  4. `messages`: Messages and reminders.
+  5. `profile`: Profile and role switcher.
+     Linking a professional (`link-professional`): from the child card in «Mis niños» and Inicio (button «+ Vincular profesional», or the linked professional row that opens `child-professionals` to list and unlink), from the «¡Niño registrado!» screen (`child-registered`) shown after registering a child.
+- **Professional (`PROFESSIONAL`):** Drawer navigation with alerts inbox as home (`apps/mobile/src/app/(professional)/_layout.tsx`):
+  1. `index`: Nutritional alerts inbox.
+  2. `children`: Children categorized by risk.
+  3. `messages`: Messages and care follow-ups.
+  4. `profile`: Professional profile.
+- **Dual-Role Accounts:** Users holding both roles can toggle between Caregiver and Professional interfaces seamlessly.
+
+## Registration and Login (Mobile NK-19)
+
+### 1. Authentication Screens
+
+- **Login (`apps/mobile/src/app/(auth)/login.tsx`):**
+  - Email and password fields with toggleable visibility.
+  - Password recovery and account creation links.
+  - Mandatory two-factor for professionals (NK-10): on the first login the screen shows the QR code, the key to type by hand and a link to open the authenticator app, then asks for the first 6-digit code and shows the 10 one-time recovery codes before signing in. Later logins ask for the TOTP code or a recovery code. The professional profile shows the codes left and can generate new ones.
+- **Registration (`apps/mobile/src/app/(auth)/register.tsx`):**
+  - Profile selector chips (`Cuidador` and `Profesional de Salud`, supporting dual registration).
+  - Demographics: first name, last name, email, optional phone.
+  - Conditional fields for professionals: specialty (`pediatrics`, `nutrition`, `nursing`), license number, and invitation code.
+  - Password confirmation validated on client with visibility toggles.
+- **Password Recovery (`apps/mobile/src/app/(auth)/forgot-password.tsx` and `reset-password.tsx`):**
+  - Request form taking email (`POST /auth/forgot-password`).
+  - Reset form taking reset token and new password (`POST /auth/reset-password`).
+
+## Database Backups (NK-44)
+
+`scripts/backup/backup.sh` creates a PostgreSQL backup encrypted with AES-256 and deletes the ones older than `BACKUP_RETENTION_DAYS` (30 by default); `scripts/backup/restore.sh` restores one into a new database. Usage, the tested restore procedure, key management and the retention policy are in [docs/backups.md](docs/backups.md).
+
+## Push Notifications (Android / FCM / EAS — NK-36)
+
+The application supports real-time push alerts and in-app notifications for health professionals upon risk detection or overdue reviews (RF-13, RT-09). Detailed architecture is available in [docs/notifications.md](docs/notifications.md).
+
+### 1. Requirements for Real Android Push (Expo Go Limitations)
+
+Starting with Expo SDK 53+, remote push notifications on Android via Firebase Cloud Messaging (FCM) are **not supported in standard Expo Go**. To test and receive remote push notifications on physical devices:
+
+- A **Development Build** (`expo-dev-client`) or production APK/AAB is required.
+- Emulators and simulators cannot receive native remote push notifications (`Device.isDevice === false`).
+- Web runtime safely bypasses push registration (`Platform.OS === 'web'`).
+
+### 2. Generating Android Development Build
+
+```bash
+# 1. Install EAS CLI globally
+pnpm add -g eas-cli
+
+# 2. Log in with your Expo account
+eas login
+
+# 3. Ensure dependencies are installed (expo-dev-client is included in apps/mobile/package.json)
+pnpm install
+
+# 4. Initialize EAS project (sets expo.extra.eas.projectId in app.json)
+cd apps/mobile
+eas init
+
+# 5. Configure build profiles (generates eas.json)
+eas build:configure
+
+# 6. Verify that eas.json contains "developmentClient": true and "distribution": "internal"
+#    under the "development" build profile:
+#    "development": {
+#      "developmentClient": true,
+#      "distribution": "internal"
+#    }
+
+# 7. Create development build
+eas build --profile development --platform android
+```
+
+### 3. Firebase Cloud Messaging (FCM v1) Setup
+
+1. **Firebase Console:** Create a Firebase project and add an Android application with package name `com.nutrikids.app`.
+2. **Configuration File:** Download `google-services.json` and place it in `apps/mobile/google-services.json`.
+3. **App Manifest:** In `apps/mobile/app.json`, enable the Google Services configuration under `"android"`:
+   ```json
+   "android": {
+     "package": "com.nutrikids.app",
+     "googleServicesFile": "./google-services.json"
+   }
+   ```
+   > Note: Do not add `googleServicesFile` to `app.json` before placing the physical file in `apps/mobile/`, otherwise builds will fail.
+4. **Service Account Credentials:** In Google Cloud Console, generate a service account private key (JSON) with the **Firebase Cloud Messaging API (V1)** role.
+5. **Upload to EAS:** Run `eas credentials` and configure the Google Service Account Key for FCM v1 under Android build credentials.

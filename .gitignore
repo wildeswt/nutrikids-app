@@ -39,7 +39,15 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 .idea/
+.claude/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
 
+
+# Encrypted database backups (NK-44)
+backups/
+
+# Firebase / FCM (credenciales locales, no subir)
+google-services.json
+*firebase-adminsdk*.json

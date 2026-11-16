@@ -1,0 +1,258 @@
+import { USER_ROLES, type AuthResponse, type AuthUser, type UserRole } from '@nutrikids/shared';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { AUTH_STATUS, type AuthStatus } from '../constants/routes.js';
+import i18n from '../i18n/index.js';
+import {
+  logoutSessionRequest,
+  onSessionExpired,
+  onSessionRefreshError,
+  onSessionUpdated,
+} from '../lib/api.js';
+import {
+  cleanupOnSessionExpired,
+  retryPendingLocalWipeIfNeeded,
+  wipeUserLocalStorage,
+} from '../lib/local-wipe.js';
+import {
+  initPushNotifications,
+  registerPushNotifications,
+  unregisterPushNotifications,
+} from '../lib/push-notifications.js';
+import {
+  clearStoredSession,
+  getStoredSession,
+  saveStoredSession,
+  updateStoredActiveRole,
+  type StoredSession,
+} from '../lib/session-storage.js';
+
+export type AuthenticatedAuthResponse = Extract<AuthResponse, { requiresTwoFactor: false }>;
+
+export interface AuthContextValue {
+  status: AuthStatus;
+  session: StoredSession | null;
+  user: AuthUser | null;
+  activeRole: UserRole | null;
+  refreshError: string | null;
+  clearRefreshError: () => void;
+  signIn: (response: AuthenticatedAuthResponse, preferredRole?: UserRole) => Promise<void>;
+  signOut: () => Promise<void>;
+  switchRole: (role: UserRole) => Promise<void>;
+  /** Updates the name and email of the stored session user after editing the account (NK-55). */
+  updateUser: (changes: Pick<AuthUser, 'email' | 'firstName' | 'lastName'>) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [status, setStatus] = useState<AuthStatus>(AUTH_STATUS.LOADING);
+  const [session, setSession] = useState<StoredSession | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const sessionRef = useRef<StoredSession | null>(null);
+  sessionRef.current = session;
+
+  // Load session from secure storage on startup.
+  useEffect(() => {
+    let isMounted = true;
+
+    initPushNotifications();
+
+    async function initializeSession() {
+      await retryPendingLocalWipeIfNeeded().catch(() => {});
+
+      try {
+        const stored = await getStoredSession();
+        if (!isMounted) return;
+
+        if (stored) {
+          sessionRef.current = stored;
+          setSession(stored);
+          setStatus(AUTH_STATUS.AUTHENTICATED);
+          // Every role gets push: professionals for alerts, caregivers for messages and reminders.
+          void registerPushNotifications().catch((err) => {
+            console.warn('Could not register push notifications on session restore:', err);
+          });
+        } else {
+          sessionRef.current = null;
+          setSession(null);
+          setStatus(AUTH_STATUS.UNAUTHENTICATED);
+        }
+      } catch {
+        if (!isMounted) return;
+        sessionRef.current = null;
+        setSession(null);
+        setStatus(AUTH_STATUS.UNAUTHENTICATED);
+      }
+    }
+
+    void initializeSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Listen to api client session expiration, renewal, and refresh error events.
+  useEffect(() => {
+    const unsubExpired = onSessionExpired(() => {
+      const expiredUserId = sessionRef.current?.user.id ?? null;
+      sessionRef.current = null;
+      setSession(null);
+      setStatus(AUTH_STATUS.UNAUTHENTICATED);
+      void cleanupOnSessionExpired(expiredUserId);
+    });
+
+    const unsubUpdated = onSessionUpdated((updatedSession) => {
+      sessionRef.current = updatedSession;
+      setSession(updatedSession);
+      setRefreshError(null);
+      setStatus(AUTH_STATUS.AUTHENTICATED);
+    });
+
+    const unsubRefreshError = onSessionRefreshError((err) => {
+      const message = err instanceof Error ? err.message : i18n.t('errors:sessionRefreshNetwork');
+      setRefreshError(message);
+    });
+
+    return () => {
+      unsubExpired();
+      unsubUpdated();
+      unsubRefreshError();
+    };
+  }, []);
+
+  const clearRefreshError = useCallback(() => {
+    setRefreshError(null);
+  }, []);
+
+  const signIn = useCallback(
+    async (authResponse: AuthenticatedAuthResponse, preferredRole?: UserRole): Promise<void> => {
+      await retryPendingLocalWipeIfNeeded().catch(() => {});
+
+      const userRoles = authResponse.user.roles;
+      let targetRole: UserRole;
+
+      if (preferredRole && userRoles.includes(preferredRole)) {
+        targetRole = preferredRole;
+      } else if (userRoles.includes(USER_ROLES.CAREGIVER)) {
+        targetRole = USER_ROLES.CAREGIVER;
+      } else {
+        targetRole = USER_ROLES.PROFESSIONAL;
+      }
+
+      const newSession: StoredSession = {
+        accessToken: authResponse.accessToken,
+        refreshToken: authResponse.refreshToken,
+        expiresAt: Date.now() + authResponse.expiresIn * 1000,
+        user: authResponse.user,
+        activeRole: targetRole,
+      };
+
+      await saveStoredSession(newSession);
+      sessionRef.current = newSession;
+      setSession(newSession);
+      setRefreshError(null);
+      setStatus(AUTH_STATUS.AUTHENTICATED);
+
+      void registerPushNotifications().catch((err) => {
+        console.warn('Could not register push notifications on signIn:', err);
+      });
+    },
+    [],
+  );
+
+  const signOut = useCallback(async (): Promise<void> => {
+    // 1. Unregister push device token before clearing the session, while authFetch is still authenticated.
+    try {
+      await unregisterPushNotifications();
+    } catch (pushErr) {
+      console.warn('Could not unregister push device during signOut:', pushErr);
+    }
+
+    // 2. Revoke refresh token, wait for sync engine stop, and wipe local storage cleanly.
+    let targetUserId = sessionRef.current?.user.id ?? session?.user.id ?? null;
+    try {
+      // Read latest persisted session directly to guarantee using the most recent rotated token.
+      const latestSession = await getStoredSession();
+      if (latestSession?.user.id) {
+        targetUserId = latestSession.user.id;
+      }
+      const tokenToRevoke = latestSession?.refreshToken ?? session?.refreshToken;
+      if (tokenToRevoke) {
+        await logoutSessionRequest(tokenToRevoke);
+      }
+    } finally {
+      await wipeUserLocalStorage({ userId: targetUserId });
+      await clearStoredSession();
+      sessionRef.current = null;
+      setSession(null);
+      setRefreshError(null);
+      setStatus(AUTH_STATUS.UNAUTHENTICATED);
+    }
+  }, [session?.refreshToken, session?.user.id]);
+
+  const switchRole = useCallback(
+    async (newRole: UserRole): Promise<void> => {
+      if (!session) {
+        throw new Error('Cannot switch role without an active session');
+      }
+      const updated = await updateStoredActiveRole(newRole);
+      if (updated) {
+        setSession(updated);
+      }
+    },
+    [session],
+  );
+
+  const updateUser = useCallback(
+    async (changes: Pick<AuthUser, 'email' | 'firstName' | 'lastName'>): Promise<void> => {
+      if (!session) return;
+      const updated = { ...session, user: { ...session.user, ...changes } };
+      await saveStoredSession(updated);
+      setSession(updated);
+    },
+    [session],
+  );
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      status,
+      session,
+      user: session?.user ?? null,
+      activeRole: session?.activeRole ?? null,
+      refreshError,
+      clearRefreshError,
+      signIn,
+      signOut,
+      switchRole,
+      updateUser,
+    }),
+    [status, session, refreshError, clearRefreshError, signIn, signOut, switchRole, updateUser],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useOptionalAuth(): AuthContextValue | null {
+  return useContext(AuthContext);
+}
+
+export function useAuth(): AuthContextValue {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

@@ -1,0 +1,123 @@
+{
+  "generic": "Mañaytaka mana rurayta usharkanchikchu. Kutin rurapay.",
+  "requestFailed": "Mañaytaka mana rurayta usharkanchikchu.",
+  "network": "Servidorwanka mana tinkiy usharkanchu. Kikinpak internetta rikuy.",
+  "timeout": "{{url}}-wan tinkinkapak pachaka tukurirkami",
+  "invalidResponse": "Servidorpak kutichikka mana shuyashka shinachu kan.",
+  "sessionRefreshNetwork": "Yaykushkata mushukyachinkapak internet pantarirkami. Kikinpak internetta rikuy.",
+  "offlineNoData": "Conéctate a internet una vez para descargar tu información",
+  "http": {
+    "401": "Correopash pakalla shimipash pantashkami. Kutin rikuy.",
+    "403": "Mana yaykuy ushanichu, mana kashpaka hampikpak kayana yupay pantashkami.",
+    "404": "Mañashkataka mana tarirkanchikchu.",
+    "409": "Kay correo, mana kashpaka hampik killka yupayka ñami killkakatishka kan.",
+    "429": "Achka kutinmi pantarirkanki. Ashallata shuyapay, kipaka kutin rurapay.",
+    "5xx": "Servidorka kunanka mana kanchu. Kipaka kutin rurapay."
+  },
+  "auth": {
+    "login": "Yaykunapika imapash pantarirkami.",
+    "register": "Kuentata rurakpika imapash pantarirkami.",
+    "forgotPassword": "Pakalla shimita mushukyachinata mañakpika imapash pantarirkami.",
+    "resetPassword": "Pakalla shimita mushukyachikpika imapash pantarirkami."
+  },
+  "consent": {
+    "fetch": "Kay wawapak ari ninata mana rikuy usharkanchikchu. Kutin rurapay.",
+    "grant": "Kikinpak ari ninata mana wakaychiy usharkanchikchu. Kutin rurapay.",
+    "revoke": "Ari ninata mana kichuy usharkanchikchu. Kutin rurapay.",
+    "load": "Ari ninata mana rikuchiy usharkanchikchu. Kutin rurapay.",
+    "childList": "Kikinpak wawakunapak shutikunata mana rikuchiy usharkanchikchu.",
+    "missingChildForGrant": "Ari ninkapakka wawata akllanami kan.",
+    "missingChildForRevoke": "Ari ninata kichunkapakka wawata akllanami kan."
+  },
+  "children": {
+    "create": "Wawata mana killkakatiy usharkanchikchu. Kutin rurapay.",
+    "fetch": "No pudimos cargar los datos del niño. Intenta de nuevo."
+  },
+  "notifications": {
+    "registerDevice": "Manam willaykunapaq antañikikuta willayta atikurchu.",
+    "unregisterDevice": "Manam antañikikuta anchuchiyta atikurchu.",
+    "markRead": "Manam willayta ñawinchasqa nispa churayta atikurchu."
+  },
+  "checkups": {
+    "fetch": "Kamaykunata mana rikuchiy usharkanchikchu. Kutin rurapay.",
+    "create": "Kamayta mana wakaychiy usharkanchikchu. Kutin rurapay.",
+    "missingChild": "Kamayta killkankapakka wawata akllana kanmi.",
+    "offlineNoLocalDb": "Necesitas conexión para guardar el control en este dispositivo",
+    "delete": "No pudimos eliminar el control. Intenta de nuevo."
+  },
+  "growthTrend": {
+    "fetch": "No pudimos cargar la tendencia de crecimiento. Intenta de nuevo."
+  },
+  "feeding": {
+    "create": "No pudimos guardar la alimentación. Intenta de nuevo.",
+    "missingChild": "Falta elegir el niño para registrar su alimentación.",
+    "network": "Necesitas conexión para guardar la alimentación. Inténtalo de nuevo cuando vuelvas a tener internet.",
+    "update": "No pudimos guardar los cambios. Intenta de nuevo.",
+    "delete": "No pudimos eliminar el registro. Intenta de nuevo."
+  },
+  "reference": {
+    "fetch": "OMS-pak shuyashka shuyuta mana rikuchiy usharkanchikchu. Kutin rurapay.",
+    "offlineNoData": "Conéctate una vez para descargar las curvas"
+  },
+  "alerts": {
+    "list": "Mana yuyachikkunata apamunkapak ushashkanchu. Kutin yachay.",
+    "detail": "No pudimos cargar la alerta. Intenta de nuevo.",
+    "review": "No pudimos marcar la alerta como revisada. Intenta de nuevo."
+  },
+  "followUps": {
+    "create": "No pudimos guardar el seguimiento. Intenta de nuevo."
+  },
+  "growth": {
+    "fetch": "No pudimos cargar el estado de crecimiento. Intenta de nuevo."
+  },
+  "reminders": {
+    "fetch": "No pudimos cargar los recordatorios. Intenta de nuevo.",
+    "create": "No pudimos guardar el recordatorio. Intenta de nuevo.",
+    "complete": "No pudimos marcar el recordatorio como realizado. Intenta de nuevo."
+  },
+  "education": {
+    "fetch": "No pudimos descargar los artículos. Intenta de nuevo."
+  },
+  "dataRights": {
+    "rectify": "No pudimos guardar los cambios. Intenta de nuevo.",
+    "export": "No pudimos preparar el historial. Intenta de nuevo.",
+    "erasureRequest": "No pudimos enviar la solicitud de eliminación. Intenta de nuevo.",
+    "erasureList": "No pudimos ver tus solicitudes de eliminación. Intenta de nuevo.",
+    "erasureCancel": "No pudimos cancelar la solicitud. Intenta de nuevo.",
+    "missingChild": "Falta elegir el niño.",
+    "removeChild": "No pudimos eliminar al niño. Intenta de nuevo."
+  },
+  "account": {
+    "fetch": "No pudimos cargar tu cuenta. Intenta de nuevo.",
+    "update": "No pudimos guardar tus datos. Intenta de nuevo."
+  },
+  "referrals": {
+    "professionals": "No pudimos cargar los profesionales vinculados al niño. Intenta de nuevo.",
+    "create": "No pudimos enviar la interconsulta. Intenta de nuevo.",
+    "forbidden": "No tienes permiso para enviar esta interconsulta. Verifica tu vínculo profesional y el consentimiento activo del niño.",
+    "network": "No hay conexión con el servidor. Revisa tu internet e intenta de nuevo; lo escrito se conserva."
+  },
+  "messages": {
+    "conversations": "No pudimos cargar tus conversaciones. Intenta de nuevo.",
+    "thread": "No pudimos cargar los mensajes. Intenta de nuevo.",
+    "send": "No pudimos enviar el mensaje. Intenta de nuevo.",
+    "markRead": "No pudimos marcar los mensajes como leídos.",
+    "professionals": "No pudimos cargar el equipo de salud de este niño. Intenta de nuevo.",
+    "forbidden": "No tienes permiso para acceder o escribir en esta conversación.",
+    "noConsent": "No puedes enviar mensajes porque este niño no tiene un consentimiento informado vigente.",
+    "network": "No hay conexión. Verifica tu internet e intenta de nuevo.",
+    "conflict": "Este mensaje ya fue enviado con otro contenido."
+  },
+  "twoFactor": {
+    "status": "Ishkay kutin chaninchiyta mana tapuy ushanchikchu.",
+    "regenerate": "Mushuk yupaykunata mana ruray ushanchikchu. Kutin rurapay."
+  },
+  "professionals": {
+    "lookup": "No pudimos buscar al profesional. Intenta de nuevo.",
+    "notFound": "No encontramos un profesional con ese registro. Revisa el número e intenta de nuevo.",
+    "tooManyLookups": "Hiciste demasiadas búsquedas. Espera unos minutos e intenta de nuevo.",
+    "link": "No pudimos vincular al profesional. Intenta de nuevo.",
+    "list": "No pudimos cargar los profesionales.",
+    "unlink": "No pudimos desvincular al profesional."
+  }
+}

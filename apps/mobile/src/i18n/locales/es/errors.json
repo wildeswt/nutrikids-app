@@ -1,0 +1,123 @@
+{
+  "generic": "Error al procesar la solicitud. Intenta nuevamente.",
+  "requestFailed": "Error al procesar la solicitud.",
+  "network": "No se pudo conectar con el servidor. Verifica tu conexión a internet.",
+  "timeout": "Tiempo agotado conectando a {{url}}",
+  "invalidResponse": "La respuesta del servidor no tiene el formato esperado.",
+  "sessionRefreshNetwork": "Error de red al renovar la sesión. Verifica tu conexión.",
+  "offlineNoData": "Conéctate a internet una vez para descargar tu información",
+  "http": {
+    "401": "Correo o contraseña incorrectos. Verifica tus credenciales.",
+    "403": "Acceso denegado o código de invitación profesional inválido.",
+    "404": "El recurso solicitado no fue encontrado.",
+    "409": "El correo electrónico o número de licencia ya se encuentra registrado.",
+    "429": "Demasiados intentos fallidos. Por seguridad, espera unos minutos antes de volver a intentar.",
+    "5xx": "El servidor no se encuentra disponible. Por favor, intenta de nuevo más tarde."
+  },
+  "auth": {
+    "login": "Error inesperado al iniciar sesión.",
+    "register": "Error inesperado al registrar la cuenta.",
+    "forgotPassword": "Error inesperado al solicitar restablecimiento de contraseña.",
+    "resetPassword": "Error inesperado al restablecer la contraseña."
+  },
+  "consent": {
+    "fetch": "No pudimos ver el permiso de este niño. Intenta de nuevo.",
+    "grant": "No pudimos guardar tu permiso. Intenta de nuevo.",
+    "revoke": "No pudimos retirar el permiso. Intenta de nuevo.",
+    "load": "No pudimos cargar el permiso. Intenta de nuevo.",
+    "childList": "No pudimos cargar la lista de tus niños.",
+    "missingChildForGrant": "Falta elegir el niño para dar el permiso.",
+    "missingChildForRevoke": "Falta elegir el niño para retirar el permiso."
+  },
+  "children": {
+    "create": "No pudimos registrar al niño. Intenta de nuevo.",
+    "fetch": "No pudimos cargar los datos del niño. Intenta de nuevo."
+  },
+  "notifications": {
+    "registerDevice": "No se pudo registrar el dispositivo para notificaciones.",
+    "unregisterDevice": "No se pudo desregistrar el dispositivo.",
+    "markRead": "No se pudo marcar la notificación como leída."
+  },
+  "checkups": {
+    "fetch": "No pudimos cargar los controles. Intenta de nuevo.",
+    "create": "No pudimos guardar el control. Intenta de nuevo.",
+    "delete": "No pudimos eliminar el control. Intenta de nuevo.",
+    "missingChild": "Falta elegir el niño para anotar el control.",
+    "offlineNoLocalDb": "Necesitas conexión para guardar el control en este dispositivo"
+  },
+  "growthTrend": {
+    "fetch": "No pudimos cargar la tendencia de crecimiento. Intenta de nuevo."
+  },
+  "feeding": {
+    "create": "No pudimos guardar la alimentación. Intenta de nuevo.",
+    "missingChild": "Falta elegir el niño para registrar su alimentación.",
+    "network": "Necesitas conexión para guardar la alimentación. Inténtalo de nuevo cuando vuelvas a tener internet.",
+    "update": "No pudimos guardar los cambios. Intenta de nuevo.",
+    "delete": "No pudimos eliminar el registro. Intenta de nuevo."
+  },
+  "reference": {
+    "fetch": "No pudimos cargar las curvas de referencia. Intenta de nuevo.",
+    "offlineNoData": "Conéctate una vez para descargar las curvas"
+  },
+  "alerts": {
+    "list": "No pudimos cargar las alertas. Intenta de nuevo.",
+    "detail": "No pudimos cargar la alerta. Intenta de nuevo.",
+    "review": "No pudimos marcar la alerta como revisada. Intenta de nuevo."
+  },
+  "followUps": {
+    "create": "No pudimos guardar el seguimiento. Intenta de nuevo."
+  },
+  "growth": {
+    "fetch": "No pudimos cargar el estado de crecimiento. Intenta de nuevo."
+  },
+  "reminders": {
+    "fetch": "No pudimos cargar los recordatorios. Intenta de nuevo.",
+    "create": "No pudimos guardar el recordatorio. Intenta de nuevo.",
+    "complete": "No pudimos marcar el recordatorio como realizado. Intenta de nuevo."
+  },
+  "education": {
+    "fetch": "No pudimos descargar los artículos. Intenta de nuevo."
+  },
+  "dataRights": {
+    "rectify": "No pudimos guardar los cambios. Intenta de nuevo.",
+    "export": "No pudimos preparar el historial. Intenta de nuevo.",
+    "erasureRequest": "No pudimos enviar la solicitud de eliminación. Intenta de nuevo.",
+    "erasureList": "No pudimos ver tus solicitudes de eliminación. Intenta de nuevo.",
+    "erasureCancel": "No pudimos cancelar la solicitud. Intenta de nuevo.",
+    "removeChild": "No pudimos eliminar al niño. Intenta de nuevo.",
+    "missingChild": "Falta elegir el niño."
+  },
+  "account": {
+    "fetch": "No pudimos cargar tu cuenta. Intenta de nuevo.",
+    "update": "No pudimos guardar tus datos. Intenta de nuevo."
+  },
+  "referrals": {
+    "professionals": "No pudimos cargar los profesionales vinculados al niño. Intenta de nuevo.",
+    "create": "No pudimos enviar la interconsulta. Intenta de nuevo.",
+    "forbidden": "No tienes permiso para enviar esta interconsulta. Verifica tu vínculo profesional y el consentimiento activo del niño.",
+    "network": "No hay conexión con el servidor. Revisa tu internet e intenta de nuevo; lo escrito se conserva."
+  },
+  "messages": {
+    "conversations": "No pudimos cargar tus conversaciones. Intenta de nuevo.",
+    "thread": "No pudimos cargar los mensajes. Intenta de nuevo.",
+    "send": "No pudimos enviar el mensaje. Intenta de nuevo.",
+    "markRead": "No pudimos marcar los mensajes como leídos.",
+    "professionals": "No pudimos cargar el equipo de salud de este niño. Intenta de nuevo.",
+    "forbidden": "No tienes permiso para acceder o escribir en esta conversación.",
+    "noConsent": "No puedes enviar mensajes porque este niño no tiene un consentimiento informado vigente.",
+    "network": "No hay conexión. Verifica tu internet e intenta de nuevo.",
+    "conflict": "Este mensaje ya fue enviado con otro contenido."
+  },
+  "twoFactor": {
+    "status": "No pudimos consultar la verificación en dos pasos.",
+    "regenerate": "No pudimos generar nuevos códigos. Intenta de nuevo."
+  },
+  "professionals": {
+    "lookup": "No pudimos buscar al profesional. Intenta de nuevo.",
+    "notFound": "No encontramos un profesional con ese registro. Revisa el número e intenta de nuevo.",
+    "tooManyLookups": "Hiciste demasiadas búsquedas. Espera unos minutos e intenta de nuevo.",
+    "link": "No pudimos vincular al profesional. Intenta de nuevo.",
+    "list": "No pudimos cargar los profesionales.",
+    "unlink": "No pudimos desvincular al profesional."
+  }
+}

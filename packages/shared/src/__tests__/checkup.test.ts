@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CHECKUP_NOTES_MAX,
   CaregiverCheckupResponseSchema,
+  CaregiverIndicatorResultSchema,
   CheckupResponseSchema,
   CorrectCheckupInputSchema,
   CreateCheckupInputSchema,
@@ -105,6 +107,28 @@ describe('CreateCheckupInputSchema y CorrectCheckupInputSchema', () => {
     ).toBe(false);
   });
 
+  it('acepta resultados calculados por el celular (el servidor los ignora y recalcula)', () => {
+    const withClientResults = {
+      ...mateoCheckup,
+      results: [
+        { indicator: 'WEIGHT_FOR_LENGTH_HEIGHT', zScore: -2.2, classification: 'WASTING' },
+        { indicator: 'WEIGHT_FOR_AGE' },
+      ],
+    };
+    expect(CreateCheckupInputSchema.safeParse(withClientResults).success).toBe(true);
+    expect(CorrectCheckupInputSchema.safeParse(withClientResults).success).toBe(true);
+    expect(
+      CreateCheckupInputSchema.safeParse({
+        ...mateoCheckup,
+        results: Array.from({ length: 5 }, () => ({ indicator: 'WEIGHT_FOR_AGE' })),
+      }).success,
+    ).toBe(false);
+    expect(
+      CreateCheckupInputSchema.safeParse({ ...mateoCheckup, results: [{ indicator: 'X' }] })
+        .success,
+    ).toBe(false);
+  });
+
   it('exige fecha ISO 8601 con zona horaria y UUID válido', () => {
     expect(
       CreateCheckupInputSchema.safeParse({
@@ -113,6 +137,37 @@ describe('CreateCheckupInputSchema y CorrectCheckupInputSchema', () => {
       }).success,
     ).toBe(false);
     expect(CreateCheckupInputSchema.safeParse({ ...mateoCheckup, id: 'abc' }).success).toBe(false);
+  });
+
+  it('acepta notas opcionales, recorta espacios y rechaza vacías o > 500 caracteres', () => {
+    const parsed = CreateCheckupInputSchema.parse({
+      ...mateoCheckup,
+      notes: '  Desayunó bien hoy  ',
+    });
+    expect(parsed.notes).toBe('Desayunó bien hoy');
+
+    const correction = CorrectCheckupInputSchema.parse({
+      ...mateoCheckup,
+      notes: '  Corrección de peso  ',
+    });
+    expect(correction.notes).toBe('Corrección de peso');
+
+    expect(CreateCheckupInputSchema.safeParse({ ...mateoCheckup, notes: '' }).success).toBe(false);
+    expect(CreateCheckupInputSchema.safeParse({ ...mateoCheckup, notes: '   ' }).success).toBe(
+      false,
+    );
+    expect(
+      CreateCheckupInputSchema.safeParse({
+        ...mateoCheckup,
+        notes: 'a'.repeat(CHECKUP_NOTES_MAX + 1),
+      }).success,
+    ).toBe(false);
+    expect(
+      CreateCheckupInputSchema.safeParse({
+        ...mateoCheckup,
+        notes: 'a'.repeat(CHECKUP_NOTES_MAX),
+      }).success,
+    ).toBe(true);
   });
 });
 
@@ -123,7 +178,7 @@ describe('IndicatorResultSchema y respuestas de control (profesional vs cuidador
     indicator: 'WEIGHT_FOR_LENGTH_HEIGHT',
     zScore: -2.21,
     percentile: 1.36,
-    classification: 'emaciacion',
+    classification: 'WASTING',
     referenceVersion: 'WHO-2006',
   };
 
@@ -132,7 +187,10 @@ describe('IndicatorResultSchema y respuestas de control (profesional vs cuidador
     childId: '4a2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c',
     origin: 'CAREGIVER',
     recordedById: '6c2b8c1e-7a4d-4e0b-9c55-1d2e3f4a5b6c',
+    recordedBy: null,
     correctedCheckupId: null,
+    isCurrent: true,
+    notes: null,
     createdAt: '2026-10-18T14:31:00Z',
     results: [resultRow],
   };
@@ -155,6 +213,23 @@ describe('IndicatorResultSchema y respuestas de control (profesional vs cuidador
     expect(Object.keys(CaregiverCheckupResponseSchema.shape)).not.toContain('results');
     const parsed = CaregiverCheckupResponseSchema.parse(fullCheckup);
     expect(parsed).not.toHaveProperty('results');
+    expect(parsed.notes).toBeNull();
+  });
+
+  it('ambas respuestas conservan notes cuando tiene texto', () => {
+    const withNotes = { ...fullCheckup, notes: 'Tomó sopa en el almuerzo' };
+    expect(CheckupResponseSchema.parse(withNotes).notes).toBe('Tomó sopa en el almuerzo');
+    expect(CaregiverCheckupResponseSchema.parse(withNotes).notes).toBe('Tomó sopa en el almuerzo');
+  });
+
+  it('CaregiverIndicatorResultSchema (cuidador) no expone z, percentil ni clasificación', () => {
+    const parsed = CaregiverIndicatorResultSchema.parse(resultRow);
+    expect(parsed).toEqual({
+      id: resultRow.id,
+      checkupId: resultRow.checkupId,
+      indicator: resultRow.indicator,
+      referenceVersion: resultRow.referenceVersion,
+    });
   });
 });
 
@@ -170,25 +245,30 @@ describe('ReferenceCurvesQuerySchema y ReferenceCurvesResponseSchema', () => {
       ReferenceCurvesQuerySchema.safeParse({
         indicator: 'WEIGHT_FOR_LENGTH_HEIGHT',
         sex: 'MALE',
+        position: 'STANDING',
+      }).success,
+    ).toBe(true);
+    expect(
+      ReferenceCurvesQuerySchema.safeParse({
+        indicator: 'WEIGHT_FOR_LENGTH_HEIGHT',
+        sex: 'MALE',
         extra: 'no',
       }).success,
     ).toBe(false);
 
     expect(
       ReferenceCurvesResponseSchema.safeParse({
+        version: 'WHO 2006',
         indicator: 'WEIGHT_FOR_LENGTH_HEIGHT',
         sex: 'MALE',
-        referenceVersion: 'WHO-2006',
-        points: [
-          {
-            x: 97,
-            zNeg3: 11.4,
-            zNeg2: 12.4,
-            z0: 14.6,
-            zPos2: 17.3,
-            zPos3: 18.9,
-          },
-        ],
+        xAxis: 'height_cm',
+        curves: {
+          '-3': [{ x: 97, y: 11.4 }],
+          '-2': [{ x: 97, y: 12.4 }],
+          '0': [{ x: 97, y: 14.6 }],
+          '+2': [{ x: 97, y: 17.3 }],
+          '+3': [{ x: 97, y: 18.9 }],
+        },
       }).success,
     ).toBe(true);
   });
