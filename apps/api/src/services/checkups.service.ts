@@ -232,8 +232,11 @@ function mapCheckupDbError(err: unknown): never {
   throw err;
 }
 
+/** Tolerance for phones whose clock runs ahead of the server's. */
+const CLOCK_SKEW_TOLERANCE_MS = 10 * 60 * 1000;
+
 function assertMeasuredAtNotFuture(measuredAt: Date): void {
-  if (measuredAt.getTime() > Date.now()) {
+  if (measuredAt.getTime() > Date.now() + CLOCK_SKEW_TOLERANCE_MS) {
     throw HttpError.badRequest('La fecha del control no puede estar en el futuro');
   }
 }
