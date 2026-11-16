@@ -2,6 +2,8 @@
 
 Traceability between the high-priority requirements of the analysis report (Tables 2 and 3) and the automated tests that verify them, plus the security and privacy checks asked for by the test plan (Table 8). All test data is synthetic: users use `@nutrikids.local` emails, children are generated with random UUIDs and fixed dummy names, and no test reads or loads real data (`apps/api/src/__tests__/helpers/world.ts`).
 
+Execution results of the plan (2026-11-15, 1 735 tests passing): see [`informe-pruebas.md`](informe-pruebas.md). Note: the API now has `auth.two-factor` and `totp` tests, so the "2FA not done" status of RT-06 below is out of date and should be reviewed.
+
 How to run: `pnpm test` at the root runs every package. The API tests need the local database (`pnpm db:up`) and run with the restricted role `nutrikids_app` (`DATABASE_URL`), reading the database state with the owner connection (`DIRECT_URL`), the same as CI.
 
 ## Functional requirements (Table 2)
