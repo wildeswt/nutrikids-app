@@ -1,8 +1,75 @@
 import type { CaregiverCheckupResponse, ChildResponse } from '@nutrikids/shared';
 import React from 'react';
+import type * as ReactTypes from 'react';
 import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { APP_ROUTES } from '../constants/routes.js';
+
+const hookStore = vi.hoisted(() => ({
+  enabled: false,
+  states: [] as unknown[],
+  cursor: 0,
+  reset() {
+    this.enabled = false;
+    this.states = [];
+    this.cursor = 0;
+  },
+  rewind() {
+    this.cursor = 0;
+  },
+}));
+
+vi.mock('react', async (importOriginal) => {
+  const actual = await importOriginal<typeof ReactTypes>();
+  return {
+    ...actual,
+    useState<T>(initial: T | (() => T)) {
+      if (!hookStore.enabled) {
+        return actual.useState(initial);
+      }
+      const idx = hookStore.cursor++;
+      if (!(idx in hookStore.states)) {
+        hookStore.states[idx] = typeof initial === 'function' ? (initial as () => T)() : initial;
+      }
+      const setState = (updater: T | ((prev: T) => T)) => {
+        const prev = hookStore.states[idx] as T;
+        hookStore.states[idx] =
+          typeof updater === 'function' ? (updater as (prev: T) => T)(prev) : updater;
+      };
+      return [hookStore.states[idx] as T, setState] as const;
+    },
+  };
+});
+
+function renderTree(Component: () => unknown): { tree: React.ReactNode; html: string } {
+  hookStore.rewind();
+  let tree: React.ReactNode = null;
+  function Capture() {
+    tree = Component() as React.ReactNode;
+    return tree as React.ReactElement;
+  }
+  const html = renderToString(React.createElement(Capture));
+  return { tree, html };
+}
+
+function findElementByTestId(
+  node: unknown,
+  testID: string,
+): React.ReactElement<Record<string, unknown>> | null {
+  if (!node || typeof node !== 'object') return null;
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const found = findElementByTestId(item, testID);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (React.isValidElement<Record<string, unknown>>(node)) {
+    if (node.props?.['testID'] === testID) return node;
+    return findElementByTestId(node.props?.['children'], testID);
+  }
+  return null;
+}
 
 const mocks = vi.hoisted(() => ({
   routerPush: vi.fn(),
@@ -93,6 +160,7 @@ const mockCheckup1: CaregiverCheckupResponse = {
 describe('CheckupHistoryScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    hookStore.reset();
     mocks.searchParams = { childId: 'child-1' };
     mocks.childrenHook = {
       children: [mockChild],
@@ -156,5 +224,47 @@ describe('CheckupHistoryScreen', () => {
     expect(APP_ROUTES.CAREGIVER.CHECKUP_HISTORY).toBe('/(caregiver)/checkup-history');
     expect(APP_ROUTES.PROFESSIONAL.CHECKUP_HISTORY).toBe('/(professional)/checkup-history');
     expect(APP_ROUTES.CAREGIVER.ADD_CHECKUP).toBe('/(caregiver)/add-checkup');
+  });
+
+  it('filters checkups by origin tab, shows CheckupMenuButton, and handles empty filter state', () => {
+    hookStore.enabled = true;
+    const caregiverCheckup: CaregiverCheckupResponse = {
+      ...mockCheckup1,
+      id: 'chk-2',
+      weightKg: 13.4,
+      lengthHeightCm: 90.0,
+      origin: 'CAREGIVER',
+      recordedById: 'caregiver-1',
+      recordedBy: null,
+      notes: 'Control registrado en casa.',
+    };
+    mocks.checkupsHook.checkups = [mockCheckup1, caregiverCheckup];
+
+    const { tree: initialTree, html: initialHtml } = renderTree(() =>
+      CheckupHistoryScreen({ roleMode: 'CAREGIVER' }),
+    );
+    expect(initialHtml).toContain('checkup-history-menu-chk-1');
+    expect(initialHtml).toContain('checkup-history-menu-chk-2');
+
+    const proTab = findElementByTestId(initialTree, 'checkup-filter-PROFESSIONAL');
+    expect(proTab).not.toBeNull();
+    (proTab?.props?.['onPress'] as () => void)();
+
+    const { tree: proTree, html: proHtml } = renderTree(() =>
+      CheckupHistoryScreen({ roleMode: 'CAREGIVER' }),
+    );
+    expect(proHtml).toContain('12.5 kg · 88.0 cm');
+    expect(proHtml).not.toContain('13.4 kg · 90.0 cm');
+
+    // Switch to CAREGIVER tab with only PROFESSIONAL checkup to verify empty filter state
+    mocks.checkupsHook.checkups = [mockCheckup1];
+    const cgTab = findElementByTestId(proTree, 'checkup-filter-CAREGIVER');
+    expect(cgTab).not.toBeNull();
+    (cgTab?.props?.['onPress'] as () => void)();
+
+    const { html: emptyFilterHtml } = renderTree(() =>
+      CheckupHistoryScreen({ roleMode: 'PROFESSIONAL' }),
+    );
+    expect(emptyFilterHtml).toContain('checkup-history-empty-filter');
   });
 });
