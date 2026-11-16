@@ -18,6 +18,8 @@ export interface CheckupMenuTarget {
   notes: string | null;
   /** Saved only on this phone (not synced yet): there is nothing on the server to correct. */
   localOnly?: boolean;
+  /** Who recorded it: a professional cannot correct or delete caregiver checkups. */
+  origin?: 'CAREGIVER' | 'PROFESSIONAL';
 }
 
 /**
@@ -46,6 +48,7 @@ export function CheckupMenuButton({
   const [error, setError] = useState<string | null>(null);
 
   if (checkup.localOnly) return null;
+  if (roleMode === 'PROFESSIONAL' && checkup.origin === 'CAREGIVER') return null;
 
   const handleCorrect = () => {
     router.push({

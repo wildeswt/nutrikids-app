@@ -37,19 +37,19 @@ export default function CaregiverProfileScreen() {
   const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
   const roleLabel = t('common:roles.CAREGIVER');
 
-  // Mismas filas que el diseño de Figma. Los permisos de los niños se gestionan en «Privacidad».
+  // Mismas filas que el diseño de Figma. «Permisos» y «Privacidad» abren la misma pantalla con secciones distintas.
   const accountLinks = [
     ['myData', 'profile.myData', 'profile.myDataDescription', APP_ROUTES.CAREGIVER.MY_DATA],
     [
       'consents',
       'profile.consentsTitle',
       'profile.consentsRowDescription',
-      APP_ROUTES.CAREGIVER.PRIVACY,
+      { pathname: APP_ROUTES.CAREGIVER.PRIVACY, params: { section: 'consents' } },
     ],
     ['privacy', 'profile.privacy', 'profile.privacyDescription', APP_ROUTES.CAREGIVER.PRIVACY],
   ] as const;
 
-  const renderLink = (key: string, title: string, subtitle: string, route: string) => (
+  const renderLink = (key: string, title: string, subtitle: string, route: unknown) => (
     <Pressable
       key={key}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}

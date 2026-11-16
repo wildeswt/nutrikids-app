@@ -33,6 +33,9 @@ export function NotificationsScreen({
   const { notifications, loading, refreshing, error, refresh, reload, markAsRead } =
     useNotifications();
 
+  // Las ya leídas (o abiertas) desaparecen de la lista.
+  const unreadNotifications = notifications.filter((item) => !item.readAt);
+
   // Recarga notificaciones al enfocar o volver a la pantalla (NK-36)
   useFocusEffect(
     useCallback(() => {
@@ -175,11 +178,11 @@ export function NotificationsScreen({
         </View>
       ) : (
         <FlatList
-          data={notifications}
+          data={unreadNotifications}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={
-            notifications.length === 0 ? styles.emptyListContainer : styles.listContent
+            unreadNotifications.length === 0 ? styles.emptyListContainer : styles.listContent
           }
           refreshControl={
             <RefreshControl

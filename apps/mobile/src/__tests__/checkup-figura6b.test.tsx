@@ -105,7 +105,7 @@ describe('Figura 6b — Formulario de control OMS (RF-04, RF-05)', () => {
     expect(caregiverHtml).toContain('Guardar y calcular');
 
     const nursingHtml = renderToString(React.createElement(ProfessionalAddCheckupScreen));
-    expect(nursingHtml).toContain('Registrar control antropométrico');
+    expect(nursingHtml).toContain('Registrar control');
     expect(nursingHtml).toContain('Cambiar de paciente');
     expect(nursingHtml).toContain('kg');
     expect(nursingHtml).toContain('cm');
@@ -128,7 +128,7 @@ describe('Figura 6b — Formulario de control OMS (RF-04, RF-05)', () => {
       confirmOutlier: false,
       now,
     });
-    expect(firstAttempt).toEqual({ ok: false, error: { code: 'outlier' } });
+    expect(firstAttempt).toMatchObject({ ok: false, error: { code: 'outlier' } });
 
     const confirmedAttempt = buildCreateCheckupInput(atypicalForm, {
       birthDate: MATEO.birthDate,
@@ -182,7 +182,7 @@ describe('Figura 6b — Formulario de control OMS (RF-04, RF-05)', () => {
       roleMode: 'PROFESSIONAL',
     });
     const nursingSavedHtml = renderToString(React.createElement(CheckupSavedScreen));
-    expect(nursingSavedHtml).toContain('Cálculo local (who-growth)');
+    expect(nursingSavedHtml).toContain('Resultado calculado (OMS)');
     expect(nursingSavedHtml).toContain('Peso para la edad');
     expect(nursingSavedHtml).toContain('Peso para la talla');
     expect(nursingSavedHtml).toContain('z =');

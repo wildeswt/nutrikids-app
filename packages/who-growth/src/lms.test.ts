@@ -6,6 +6,21 @@ import {
   percentileFromZScore,
   zScoreCurves,
 } from './lms.js';
+import {
+  BFA_FEMALE,
+  BFA_MALE,
+  LHFA_FEMALE,
+  LHFA_MALE,
+  WFA_FEMALE,
+  WFA_MALE,
+  WFH_FEMALE,
+  WFH_MALE,
+  WFLH_FEMALE,
+  WFLH_MALE,
+  WFL_FEMALE,
+  WFL_MALE,
+  type LmsRow,
+} from './tables/index.js';
 
 describe('calculateZScore', () => {
   it('computes z-score when L != 0: ((x/M)^L - 1) / (L * S)', () => {
@@ -107,4 +122,33 @@ describe('Mateo benchmark case (12.2 kg at 97.0 cm)', () => {
     const z = calculateZScore(12.2, L, M, S);
     expect(Math.abs(z - -2.2)).toBeLessThanOrEqual(0.1);
   });
+});
+
+describe('PU-02: round-trip consistency across all WHO LMS table rows', () => {
+  const tables: Array<[string, LmsRow[]]> = [
+    ['WFA_FEMALE', WFA_FEMALE],
+    ['WFA_MALE', WFA_MALE],
+    ['LHFA_FEMALE', LHFA_FEMALE],
+    ['LHFA_MALE', LHFA_MALE],
+    ['BFA_FEMALE', BFA_FEMALE],
+    ['BFA_MALE', BFA_MALE],
+    ['WFL_FEMALE', WFL_FEMALE],
+    ['WFL_MALE', WFL_MALE],
+    ['WFH_FEMALE', WFH_FEMALE],
+    ['WFH_MALE', WFH_MALE],
+    ['WFLH_FEMALE', WFLH_FEMALE],
+    ['WFLH_MALE', WFLH_MALE],
+  ];
+
+  for (const [tableName, rows] of tables) {
+    it(`recovers z = -3, -2, 0, +2, +3 across all ${rows.length} rows of ${tableName}`, () => {
+      for (const row of rows) {
+        expect(measurementFromZScore(0, row.l, row.m, row.s)).toBeCloseTo(row.m, 10);
+        for (const z of Z_CURVES) {
+          const x = measurementFromZScore(z, row.l, row.m, row.s);
+          expect(calculateZScore(x, row.l, row.m, row.s)).toBeCloseTo(z, 9);
+        }
+      }
+    });
+  }
 });

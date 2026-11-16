@@ -264,17 +264,6 @@ export default function CaregiverTabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="checkup-history"
-          options={{
-            title: t('tabs.checkupHistory'),
-            headerTitle: t('tabs.checkupHistory'),
-            headerShown: false,
-            tabBarStyle: { display: 'none' },
-            tabBarItemStyle: { display: 'none' },
-            tabBarButton: () => null,
-          }}
-        />
-        <Tabs.Screen
           name="feeding-history"
           options={{
             title: t('tabs.feedingHistory'),

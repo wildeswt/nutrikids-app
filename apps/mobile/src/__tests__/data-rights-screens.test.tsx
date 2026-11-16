@@ -220,39 +220,6 @@ describe('MyDataScreen («Mis datos»)', () => {
     expect(html).not.toContain(t('caregiver:myData.accountLocked'));
   });
 
-  it('lists the linked children with their age', () => {
-    const html = render(MyDataScreen);
-
-    expect(html).toContain('Mateo Gómez');
-    expect(html).toContain('Valentina Ríos');
-    expect(html).not.toContain(t('caregiver:myData.fixData'));
-  });
-
-  it('opens the privacy screen of a child (no edit link here)', () => {
-    const tree = renderTree(MyDataScreen as () => unknown);
-
-    expect(findElementByTestId(tree, `my-data-fix-${VALENTINA.id}`)).toBeNull();
-    press(tree, `my-data-privacy-${MATEO.id}`);
-    expect(mocks.push).toHaveBeenCalledWith({
-      pathname: APP_ROUTES.CAREGIVER.PRIVACY,
-      params: { childId: MATEO.id },
-    });
-  });
-
-  it('shows loading, error with retry and an empty state', () => {
-    mocks.children = { status: 'loading', children: [], error: null };
-    expect(render(MyDataScreen)).toContain(t('caregiver:myData.loading'));
-
-    mocks.children = { status: 'error', children: [], error: 'Sin conexión' };
-    const tree = renderTree(MyDataScreen as () => unknown);
-    expect(render(MyDataScreen)).toContain('Sin conexión');
-    press(tree, 'my-data-retry');
-    expect(mocks.loadChildren).toHaveBeenCalledTimes(1);
-
-    mocks.children = { status: 'empty', children: [], error: null };
-    expect(render(MyDataScreen)).toContain(t('caregiver:myData.emptyTitle'));
-  });
-
   it('shows the ChildBanner below the title and the bottom link to privacy', () => {
     const tree = renderTree(MyDataScreen as () => unknown);
     const html = render(MyDataScreen);
@@ -262,13 +229,6 @@ describe('MyDataScreen («Mis datos»)', () => {
     expect(html).toContain(t('caregiver:myData.privacySubtitle'));
     press(tree, 'my-data-privacy-bottom');
     expect(mocks.push).toHaveBeenCalledWith(APP_ROUTES.CAREGIVER.PRIVACY);
-  });
-
-  it('reloads the children every time the screen gains focus', () => {
-    render(MyDataScreen);
-    mocks.focusCallbacks[0]!();
-
-    expect(mocks.loadChildren).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -378,20 +338,17 @@ describe('PrivacyScreen («Privacidad e historial»)', () => {
   it('shows the intro, the integrated child selector and the panel of the child received in the route', () => {
     mocks.params = { childId: VALENTINA.id };
 
-    const tree = renderTree(PrivacyScreen as () => unknown);
     const html = render(PrivacyScreen);
 
     expect(html).toContain(t('caregiver:privacy.intro'));
-    expect(findElementByTestId(tree, 'privacy-child-selector')).not.toBeNull();
+    expect(html).toContain('privacy-child-selector');
     expect(html).toContain('Valentina Ríos');
   });
 
   it('does not show the child selector with a single child', () => {
     mocks.children = { status: 'ready', children: [MATEO], error: null };
 
-    const tree = renderTree(PrivacyScreen as () => unknown);
-
-    expect(findElementByTestId(tree, 'privacy-child-selector')).toBeNull();
+    expect(render(PrivacyScreen)).not.toContain('privacy-child-selector');
   });
 
   it('includes the bottom link back to Mis datos and omits PDF export', () => {

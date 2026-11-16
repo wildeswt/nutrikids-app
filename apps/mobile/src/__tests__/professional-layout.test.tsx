@@ -120,6 +120,7 @@ describe('ProfessionalTabsLayout', () => {
       'messages',
       'profile',
       'notifications',
+      'checkup-saved',
       'alert-detail',
       'follow-up',
       'referral',

@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { OfflineDataNotice } from '../../components/OfflineDataNotice.js';
 import { ZScoreChart } from '../../components/ZScoreChart.js';
+import { AlertBadge } from '../../components/AlertBadge.js';
 import { Card } from '../../components/ui/Card.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
@@ -71,18 +72,20 @@ function AlertCard({
         <Text style={styles.sectionTitle}>{indicator}</Text>
         <View style={styles.tags}>
           {alert.isSevere && (
-            <View style={[styles.pill, styles.pillSevere]} testID="alert-detail-severe">
-              <Text style={[styles.pillText, styles.pillSevereText]}>{t('alerts.severe')}</Text>
-            </View>
+            <AlertBadge variant="severe" label={t('alerts.severe')} testID="alert-detail-severe" />
           )}
           {alert.isOverdue && (
-            <View style={[styles.pill, styles.pillSevere]} testID="alert-detail-overdue">
-              <Text style={[styles.pillText, styles.pillSevereText]}>{t('alerts.overdue')}</Text>
-            </View>
+            <AlertBadge
+              variant="severe"
+              label={t('alerts.overdue')}
+              testID="alert-detail-overdue"
+            />
           )}
-          <View style={styles.pill} testID="alert-detail-status">
-            <Text style={styles.pillText}>{t(`alerts.status.${alert.status}`)}</Text>
-          </View>
+          <AlertBadge
+            variant="status"
+            label={t(`alerts.status.${alert.status}`)}
+            testID="alert-detail-status"
+          />
         </View>
       </View>
 
@@ -200,57 +203,34 @@ function HistoryCard({ history }: { history: AlertDetailResponse['history'] }) {
     <View style={styles.section} testID="alert-detail-history">
       <Text style={styles.sectionTitle}>{t('alertDetail.history.title')}</Text>
       <View style={styles.timeline}>
-        <View style={styles.timelineRailRow}>
-          {history.map((entry, index) => {
-            const isLast = index === history.length - 1;
-            return (
-              <React.Fragment key={`rail-${entry.status}-${entry.changedAt}`}>
-                {index > 0 ? <View style={styles.timelineLine} /> : null}
+        {history.map((entry, index) => {
+          const isLast = index === history.length - 1;
+          const when = new Date(entry.changedAt);
+          return (
+            <View
+              key={`${entry.status}-${entry.changedAt}`}
+              style={styles.timelineEntry}
+              testID={`alert-detail-history-entry-${index}`}
+            >
+              <View style={styles.timelineRail}>
                 <View style={[styles.timelineDot, isLast && styles.timelineDotCurrent]} />
-              </React.Fragment>
-            );
-          })}
-        </View>
-
-        <View style={styles.timelineLabelsRow}>
-          {history.map((entry, index) => {
-            const isFirst = index === 0;
-            const isLast = index === history.length - 1;
-            const alignStyle =
-              history.length === 1 || isFirst
-                ? styles.timelineEntryStart
-                : isLast
-                  ? styles.timelineEntryEnd
-                  : styles.timelineEntryCenter;
-            const textAlignStyle =
-              history.length === 1 || isFirst
-                ? styles.textLeft
-                : isLast
-                  ? styles.textRight
-                  : styles.textCenter;
-            const when = new Date(entry.changedAt);
-            return (
-              <View
-                key={`${entry.status}-${entry.changedAt}`}
-                style={[styles.timelineEntry, alignStyle]}
-                testID={`alert-detail-history-entry-${index}`}
-              >
-                <Text style={[styles.timelineStatus, textAlignStyle]}>
-                  {t(`alerts.status.${entry.status}`)}
-                </Text>
-                <Text style={[styles.timelineMeta, textAlignStyle]}>
+                {!isLast ? <View style={styles.timelineLine} /> : null}
+              </View>
+              <View style={styles.timelineBody}>
+                <Text style={styles.timelineStatus}>{t(`alerts.status.${entry.status}`)}</Text>
+                <Text style={styles.timelineMeta}>
                   {t('alertDetail.history.entry', {
                     date: formatLongDate(when),
                     time: formatTime(when),
                   })}
                 </Text>
-                <Text style={[styles.timelineMeta, textAlignStyle]}>
+                <Text style={styles.timelineMeta}>
                   {t('alertDetail.history.by', { name: entry.changedByName })}
                 </Text>
               </View>
-            );
-          })}
-        </View>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -573,35 +553,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: PALETTE.text.body,
   },
-  timeline: { gap: 8, paddingTop: 4 },
-  timelineRailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  timeline: { paddingTop: 4 },
+  timelineEntry: { flexDirection: 'row', gap: 12 },
+  timelineRail: { alignItems: 'center', width: 14 },
   timelineDot: {
     width: 14,
     height: 14,
     borderRadius: 7,
     backgroundColor: PALETTE.primary,
+    marginTop: 3,
   },
   timelineDotCurrent: { backgroundColor: PALETTE.secondary },
-  timelineLine: {
-    flex: 1,
-    height: 3,
-    backgroundColor: PALETTE.primary,
-  },
-  timelineLabelsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  timelineEntry: { flex: 1, gap: 2 },
-  timelineEntryStart: { alignItems: 'flex-start' },
-  timelineEntryCenter: { alignItems: 'center' },
-  timelineEntryEnd: { alignItems: 'flex-end' },
-  textLeft: { textAlign: 'left' },
-  textCenter: { textAlign: 'center' },
-  textRight: { textAlign: 'right' },
+  timelineLine: { flex: 1, width: 3, backgroundColor: PALETTE.primary },
+  timelineBody: { flex: 1, gap: 2, paddingBottom: 16 },
   timelineStatus: {
     fontFamily: font('medium'),
     fontSize: 14,

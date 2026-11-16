@@ -3,14 +3,24 @@ import type { CheckupResponse } from '@nutrikids/shared';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckupMenuButton } from '../../components/CheckupMenuButton.js';
 import { ChildBanner } from '../../components/ChildBanner.js';
 import { GrowthChart } from '../../components/GrowthChart.js';
+import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { Card } from '../../components/ui/Card.js';
+import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { PALETTE } from '../../constants/colors.js';
-import { RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
+import { CARD_SHADOW, RADIUS_PILL, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useOptionalAuth } from '../../context/auth-context.js';
@@ -22,7 +32,6 @@ import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
 import { formatChildAge } from '../../lib/children-api.js';
 import {
   INDICATORS,
-  bodyMassIndex,
   checkupsToPoints,
   curvesPositionFor,
   type IndicatorKey,
@@ -47,6 +56,8 @@ export default function ProfessionalChildrenScreen() {
   const [selectedChildId, setSelectedChildId] = useState<string | null>(params.childId ?? null);
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PE');
   const [selectedCheckupId, setSelectedCheckupId] = useState<string | null>(null);
+  const [showChartInfo, setShowChartInfo] = useState(false);
+  const [showSelectedModal, setShowSelectedModal] = useState(false);
 
   const {
     status: childrenStatus,
@@ -81,6 +92,11 @@ export default function ProfessionalChildrenScreen() {
   const latest = latestProfessionalCheckup(checkups);
   const position = curvesPositionFor(activeIndicator, latest);
 
+  const handleBack = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace(APP_ROUTES.PROFESSIONAL.CHILDREN as never);
+  };
+
   const reloadAfterDelete = () => {
     setSelectedCheckupId(null);
     void loadCheckups();
@@ -97,10 +113,15 @@ export default function ProfessionalChildrenScreen() {
   );
 
   const renderState = (content: ReactNode, testID: string) => (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.scrollContent}>
-        <Text style={styles.screenTitle}>{t('children.title')}</Text>
-        <Text style={styles.screenDescription}>{t('children.description')}</Text>
+        <ScreenHeader
+          title={t('drawer.evolutionTitle')}
+          backLabel={t('common:actions.back')}
+          onBack={handleBack}
+          style={styles.screenHeader}
+          testID="professional-evolution-header"
+        />
         <View style={styles.stateBox} testID={testID}>
           {content}
         </View>
@@ -211,16 +232,22 @@ export default function ProfessionalChildrenScreen() {
   );
 
   const chartZoneLabels = {
-    upper: t('children.zoneLabels.upper'),
-    normal: t('children.zoneLabels.normal'),
-    lower: t('children.zoneLabels.lower'),
+    upper: t('caregiver:evolution.zoneLabels.upper'),
+    normal: t('caregiver:evolution.zoneLabels.normal'),
+    lower: t('caregiver:evolution.zoneLabels.lower'),
+    outer: t('caregiver:evolution.zoneLabels.outer'),
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.screenTitle}>{t('children.title')}</Text>
-        <Text style={styles.screenDescription}>{t('children.description')}</Text>
+        <ScreenHeader
+          title={t('drawer.evolutionTitle')}
+          backLabel={t('common:actions.back')}
+          onBack={handleBack}
+          style={styles.screenHeader}
+          testID="professional-evolution-header"
+        />
 
         {/* Selector de paciente si hay varios niños vinculados */}
         {children.length > 1 ? (
@@ -300,10 +327,21 @@ export default function ProfessionalChildrenScreen() {
         {/* Gráfica completa para el profesional: 5 curvas OMS (-3, -2, 0, +2, +3) */}
         <Card style={styles.chartCard} testID="professional-evolution-chart-card">
           <View style={styles.chartHeader}>
-            <Text style={styles.chartTitleText}>
-              {t(`alerts.indicator.${activeIndicator.indicator}`)}
-            </Text>
-            <Text style={styles.chartSubtitleText}>{t('children.chartSubtitle')}</Text>
+            <View style={styles.chartTitleWrapper}>
+              <Text style={styles.chartTitleText}>
+                {t(`alerts.indicator.${activeIndicator.indicator}`)}
+              </Text>
+              <Text style={styles.chartSubtitleText}>{t('children.chartSubtitle')}</Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.infoIconWrapper, pressed && styles.pressed]}
+              onPress={() => setShowChartInfo(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t('children.infoModal.title')}
+              testID="professional-chart-info-button"
+            >
+              <Ionicons name="information-circle-outline" size={26} color={PALETTE.primary} />
+            </Pressable>
           </View>
 
           {curves.status === 'ready' && curves.curves ? (
@@ -313,9 +351,13 @@ export default function ProfessionalChildrenScreen() {
               xAxis={activeIndicator.xAxis}
               formatTick={formatTick}
               variant="professional"
+              showZoneLabelsInside={false}
               zoneLabels={chartZoneLabels}
               selectedCheckupId={selectedCheckup.id}
-              onSelectPoint={(point) => setSelectedCheckupId(point.checkupId ?? null)}
+              onSelectPoint={(point) => {
+                setSelectedCheckupId(point.checkupId ?? null);
+                if (point.checkupId) setShowSelectedModal(true);
+              }}
               testID="professional-growth-chart"
             />
           ) : curves.status === 'error' ? (
@@ -330,118 +372,29 @@ export default function ProfessionalChildrenScreen() {
             </View>
           )}
 
-          <View style={styles.legendRow}>
-            <View style={styles.legendGroup}>
+          <View style={styles.legendGrid} testID="professional-chart-legend">
+            <View style={styles.legendRow}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, styles.legendDotChild]} />
                 <Text style={styles.legendText}>{child.firstName}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, styles.legendDotOms]} />
-                <Text style={styles.legendText}>{t('children.legendReference')}</Text>
+                <Text style={styles.legendText}>{chartZoneLabels.normal}</Text>
+              </View>
+            </View>
+            <View style={styles.legendRow}>
+              <View style={styles.legendItem}>
+                <View style={styles.legendDashRow}>
+                  <View style={styles.legendDash} />
+                  <View style={styles.legendDash} />
+                </View>
+                <Text style={styles.legendTextSecondary}>{chartZoneLabels.outer}</Text>
               </View>
             </View>
           </View>
 
           <Text style={styles.tapPointHint}>{t('children.tapPointHint')}</Text>
-        </Card>
-
-        {/* Aviso permanente en pantalla de que la gráfica apoya la valoración y no es un diagnóstico */}
-        <View
-          style={styles.nonDiagnosticNotice}
-          testID="professional-evolution-non-diagnostic-notice"
-        >
-          <Ionicons name="shield-checkmark-outline" size={20} color={PALETTE.primary} />
-          <Text style={styles.nonDiagnosticNoticeText}>{t('children.nonDiagnosticNotice')}</Text>
-        </View>
-
-        {/* Detalle técnico completo del control seleccionado al tocar un punto */}
-        <Card
-          style={styles.selectedRecordCard}
-          testID="professional-evolution-selected-checkup-card"
-        >
-          <View style={styles.recordHeader}>
-            <View style={styles.recordHeaderText}>
-              <Text style={styles.recordTitle}>{t('children.selectedRecordTitle')}</Text>
-              <Text style={styles.recordDate}>{formatLongDate(selectedCheckup.measuredAt)}</Text>
-            </View>
-            <CheckupMenuButton
-              checkup={selectedCheckup}
-              roleMode="PROFESSIONAL"
-              onDeleted={reloadAfterDelete}
-              testID="professional-selected-checkup-menu"
-            />
-          </View>
-
-          <View style={styles.metricsRow}>
-            <View style={styles.metricCell}>
-              <Text style={styles.metricLabel}>{t('children.weight')}</Text>
-              <Text style={styles.metricValue}>
-                {t('common:units.weightValue', {
-                  value: formatDecimal(selectedCheckup.weightKg),
-                })}
-              </Text>
-            </View>
-            <View style={styles.metricCell}>
-              <Text style={styles.metricLabel}>{t('children.height')}</Text>
-              <Text style={styles.metricValue}>
-                {t('common:units.heightValue', {
-                  value: formatDecimal(selectedCheckup.lengthHeightCm),
-                })}
-              </Text>
-            </View>
-            <View style={styles.metricCell}>
-              <Text style={styles.metricLabel}>{t('children.bmi')}</Text>
-              <Text style={styles.metricValue}>
-                {`${formatDecimal(bodyMassIndex(selectedCheckup.weightKg, selectedCheckup.lengthHeightCm))} ${t('caregiver:evolution.unitKgM2')}`}
-              </Text>
-            </View>
-          </View>
-
-          {selectedIndicatorResult ? (
-            <View style={styles.technicalBox} testID="professional-selected-technical-results">
-              <View style={styles.technicalRow}>
-                <Text style={styles.technicalLabel}>{t('children.zScore')}</Text>
-                <Text style={styles.technicalValue} testID="professional-selected-zscore">
-                  {`z = ${formatDecimal(selectedIndicatorResult.zScore, 2)}`}
-                </Text>
-              </View>
-              <View style={styles.technicalRow}>
-                <Text style={styles.technicalLabel}>{t('children.percentile')}</Text>
-                <Text style={styles.technicalValue} testID="professional-selected-percentile">
-                  {`P${formatDecimal(selectedIndicatorResult.percentile)}`}
-                </Text>
-              </View>
-              <View style={styles.technicalRow}>
-                <Text style={styles.technicalLabel}>{t('children.classification')}</Text>
-                <Text style={styles.technicalBadge} testID="professional-selected-classification">
-                  {t(`children.classifications.${selectedIndicatorResult.classification}`)}
-                </Text>
-              </View>
-            </View>
-          ) : null}
-
-          <View style={styles.divider} />
-
-          <View style={styles.recordedByRow}>
-            <Ionicons name="person" size={18} color={PALETTE.secondary} />
-            <Text style={styles.recordedByLabel}>{t('children.recordedBy')}</Text>
-            <Text style={styles.recordedByValue} testID="professional-selected-recorded-by">
-              {formatCheckupRecorder({
-                recorder: selectedCheckup.recordedBy,
-                origin: selectedCheckup.origin,
-                currentUserId: user?.id,
-                t,
-              })}
-            </Text>
-          </View>
-
-          {selectedCheckup.notes ? (
-            <View style={styles.notesRow}>
-              <Text style={styles.recordedByLabel}>{t('children.notes')}: </Text>
-              <Text style={styles.notesValue}>{selectedCheckup.notes}</Text>
-            </View>
-          ) : null}
         </Card>
 
         {/* Último registro con la persona que lo hizo */}
@@ -486,18 +439,164 @@ export default function ProfessionalChildrenScreen() {
 
           <View style={styles.recordedByRow}>
             <Ionicons name="person" size={18} color={PALETTE.secondary} />
-            <Text style={styles.recordedByLabel}>{t('children.recordedBy')}</Text>
-            <Text style={styles.recordedByValue}>
-              {formatCheckupRecorder({
-                recorder: latest.recordedBy,
-                origin: latest.origin,
-                currentUserId: user?.id,
-                t,
-              })}
+            <Text style={styles.recordedByText}>
+              <Text style={styles.recordedByLabel}>{t('children.recordedBy')}</Text>{' '}
+              <Text style={styles.recordedByValue}>
+                {formatCheckupRecorder({
+                  recorder: latest.recordedBy,
+                  origin: latest.origin,
+                  currentUserId: user?.id,
+                  t,
+                })}
+              </Text>
             </Text>
           </View>
         </Card>
       </ScrollView>
+
+      {/* Modal explicativo de la gráfica */}
+      <Modal
+        visible={showChartInfo}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowChartInfo(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{t('children.infoModal.title')}</Text>
+            <View style={styles.modalItem}>
+              <View style={[styles.modalDot, styles.legendDotOms]} />
+              <View style={styles.modalItemText}>
+                <Text style={styles.modalItemTitle}>{t('children.infoModal.whoBandTitle')}</Text>
+                <Text style={styles.modalItemBody}>{t('children.infoModal.whoBand')}</Text>
+              </View>
+            </View>
+            <View style={styles.modalItem}>
+              <View style={[styles.modalDot, styles.legendDotChild]} />
+              <View style={styles.modalItemText}>
+                <Text style={styles.modalItemTitle}>{t('children.infoModal.childLineTitle')}</Text>
+                <Text style={styles.modalItemBody}>{t('children.infoModal.childLine')}</Text>
+              </View>
+            </View>
+            <PrimaryButton
+              label={t('children.infoModal.close')}
+              onPress={() => setShowChartInfo(false)}
+              testID="professional-chart-info-close"
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Detalle técnico del control seleccionado */}
+      <Modal
+        visible={showSelectedModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSelectedModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setShowSelectedModal(false)}
+            accessibilityRole="button"
+            accessibilityLabel={t('children.infoModal.close')}
+          />
+          <ScrollView
+            style={styles.checkupModalScroll}
+            contentContainerStyle={styles.checkupModalScrollContent}
+          >
+            <View
+              style={styles.checkupModalCard}
+              testID="professional-evolution-selected-checkup-card"
+            >
+              <View style={styles.recordHeader}>
+                <View style={styles.recordHeaderText}>
+                  <Text style={styles.recordTitle}>{t('children.selectedRecordTitle')}</Text>
+                  <Text style={styles.recordDate}>
+                    {formatLongDate(selectedCheckup.measuredAt)}
+                  </Text>
+                </View>
+                <CheckupMenuButton
+                  checkup={selectedCheckup}
+                  roleMode="PROFESSIONAL"
+                  onDeleted={() => {
+                    setShowSelectedModal(false);
+                    reloadAfterDelete();
+                  }}
+                  testID="professional-selected-checkup-menu"
+                />
+                <Pressable
+                  onPress={() => setShowSelectedModal(false)}
+                  style={({ pressed }) => [styles.closeIconButton, pressed && styles.pressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('children.infoModal.close')}
+                  testID="professional-checkup-modal-close"
+                >
+                  <Ionicons name="close" size={24} color={PALETTE.text.title} />
+                </Pressable>
+              </View>
+
+              <View style={styles.metricsRow}>
+                <View style={styles.metricCell}>
+                  <Text style={styles.metricLabel}>{t('children.weight')}</Text>
+                  <Text style={styles.metricValue}>
+                    {t('common:units.weightValue', {
+                      value: formatDecimal(selectedCheckup.weightKg),
+                    })}
+                  </Text>
+                </View>
+                <View style={styles.metricCell}>
+                  <Text style={styles.metricLabel}>{t('children.height')}</Text>
+                  <Text style={styles.metricValue}>
+                    {t('common:units.heightValue', {
+                      value: formatDecimal(selectedCheckup.lengthHeightCm),
+                    })}
+                  </Text>
+                </View>
+              </View>
+
+              {selectedIndicatorResult ? (
+                <View style={styles.technicalBox} testID="professional-selected-technical-results">
+                  <View style={styles.technicalPair}>
+                    <View style={styles.metricCell}>
+                      <Text style={styles.technicalLabel}>{t('children.zScore')}</Text>
+                      <Text style={styles.technicalValue} testID="professional-selected-zscore">
+                        {`z = ${formatDecimal(selectedIndicatorResult.zScore, 2)}`}
+                      </Text>
+                    </View>
+                    <View style={styles.metricCell}>
+                      <Text style={styles.technicalLabel}>{t('children.percentile')}</Text>
+                      <Text style={styles.technicalValue} testID="professional-selected-percentile">
+                        {`P${formatDecimal(selectedIndicatorResult.percentile)}`}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.technicalBadge} testID="professional-selected-classification">
+                    {t(`children.classifications.${selectedIndicatorResult.classification}`)}
+                  </Text>
+                </View>
+              ) : null}
+
+              <View style={styles.recordedBlock}>
+                <Text style={styles.metricLabel}>{t('children.recordedBy')}</Text>
+                <Text style={styles.recordedByValue} testID="professional-selected-recorded-by">
+                  {formatCheckupRecorder({
+                    recorder: selectedCheckup.recordedBy,
+                    origin: selectedCheckup.origin,
+                    currentUserId: user?.id,
+                    t,
+                  })}
+                </Text>
+                {selectedCheckup.notes ? (
+                  <Text style={styles.notesValue}>
+                    {`${t('children.notes')}: ${selectedCheckup.notes}`}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -512,19 +611,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 28,
   },
-  screenTitle: {
-    fontFamily: font('semibold'),
-    fontSize: 22,
-    fontWeight: '600',
-    color: PALETTE.text.title,
-    marginBottom: 4,
-  },
-  screenDescription: {
-    fontFamily: font('regular'),
-    fontSize: 13,
-    color: PALETTE.text.body,
-    marginBottom: 16,
-  },
+  screenHeader: { paddingHorizontal: 0, paddingTop: 0, marginBottom: 16 },
   patientPillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -606,9 +693,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   chartHeader: {
-    alignItems: 'center',
-    marginBottom: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
+  chartTitleWrapper: { flex: 1, alignItems: 'center', marginLeft: 26 },
+  infoIconWrapper: { padding: 2 },
   chartTitleText: {
     fontFamily: font('semibold'),
     fontSize: 17,
@@ -630,34 +721,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 14,
   },
+  legendGrid: {
+    borderTopWidth: 1,
+    borderTopColor: PALETTE.border.subtle,
+    paddingTop: 12,
+    gap: 8,
+  },
   legendRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: PALETTE.border.subtle,
-    paddingTop: 14,
+    gap: 12,
   },
-  legendGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  legendDotChild: {
-    backgroundColor: PALETTE.secondary,
-  },
-  legendDotOms: {
-    backgroundColor: '#7FA89E',
+  legendItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendDotChild: { backgroundColor: PALETTE.secondary },
+  legendDotOms: { backgroundColor: '#7FA89E' },
+  legendDashRow: { flexDirection: 'row', alignItems: 'center', gap: 2, width: 10 },
+  legendDash: { width: 4, height: 2, backgroundColor: '#D9825B', borderRadius: 1 },
+  legendTextSecondary: {
+    fontFamily: font('regular'),
+    fontSize: 11,
+    color: PALETTE.text.muted,
   },
   legendText: {
     fontFamily: font('medium'),
@@ -671,24 +756,6 @@ const styles = StyleSheet.create({
     color: PALETTE.text.muted,
     marginTop: 10,
     textAlign: 'center',
-  },
-  nonDiagnosticNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: PALETTE.primaryLight,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  nonDiagnosticNoticeText: {
-    flex: 1,
-    fontFamily: font('medium'),
-    fontSize: 13,
-    fontWeight: '500',
-    lineHeight: 18,
-    color: PALETTE.primary,
   },
   selectedRecordCard: {
     paddingHorizontal: 20,
@@ -744,6 +811,14 @@ const styles = StyleSheet.create({
     color: PALETTE.primary,
     marginTop: 2,
   },
+  technicalPair: { flexDirection: 'row', gap: 10 },
+  closeIconButton: { padding: 4, marginRight: -4, marginTop: -4 },
+  recordedBlock: {
+    gap: 2,
+    borderTopWidth: 1,
+    borderTopColor: PALETTE.border.subtle,
+    paddingTop: 12,
+  },
   technicalBox: {
     marginTop: 14,
     backgroundColor: PALETTE.primaryLight,
@@ -790,11 +865,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: PALETTE.text.title,
   },
+  recordedByText: { flex: 1 },
   recordedByValue: {
     fontFamily: font('regular'),
     fontSize: 14,
     color: PALETTE.text.muted,
-    flex: 1,
   },
   notesRow: {
     flexDirection: 'row',
@@ -840,5 +915,52 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SCREEN_MARGIN,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: PALETTE.surface,
+    borderRadius: RADIUS_PILL,
+    padding: 24,
+    gap: 16,
+    ...CARD_SHADOW,
+  },
+  modalTitle: {
+    fontFamily: font('semibold'),
+    fontSize: 20,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+  },
+  modalItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  modalDot: { width: 14, height: 14, borderRadius: 7, marginTop: 3 },
+  modalItemText: { flex: 1, gap: 2 },
+  modalItemTitle: {
+    fontFamily: font('semibold'),
+    fontSize: 15,
+    fontWeight: '600',
+    color: PALETTE.text.title,
+  },
+  modalItemBody: {
+    fontFamily: font('regular'),
+    fontSize: 14,
+    lineHeight: 20,
+    color: PALETTE.text.body,
+  },
+  checkupModalScroll: { width: '100%', maxWidth: 360, maxHeight: '85%', flexGrow: 0 },
+  checkupModalScrollContent: { flexGrow: 1, justifyContent: 'center' },
+  checkupModalCard: {
+    width: '100%',
+    backgroundColor: PALETTE.surface,
+    borderRadius: RADIUS_PILL,
+    padding: 22,
+    gap: 12,
+    ...CARD_SHADOW,
   },
 });
