@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
   "buildCommand": "pnpm --filter @nutrikids/shared build && pnpm --filter @nutrikids/who-growth build && pnpm --filter mobile build:web",
   "outputDirectory": "dist",
   "rewrites": [
