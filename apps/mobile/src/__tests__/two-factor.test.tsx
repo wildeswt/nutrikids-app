@@ -110,7 +110,7 @@ describe('two-factor screens', () => {
     expect(html).toContain('Verificación en dos pasos');
     expect(html).toContain('Activa');
     expect(html).toContain('Códigos de recuperación disponibles: 8');
-    expect(html).toContain('Generar nuevos códigos de recuperación');
+    expect(html).toContain('Generar códigos nuevos');
     expect(html).not.toContain('Te quedan pocos códigos');
   });
 

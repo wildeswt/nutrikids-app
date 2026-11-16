@@ -106,6 +106,15 @@ export default function ProfessionalTabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="checkup-saved"
+          options={{
+            title: t('drawer.addCheckupTitle'),
+            tabBarStyle: { display: 'none' },
+            tabBarItemStyle: { display: 'none' },
+            tabBarButton: () => null,
+          }}
+        />
+        <Tabs.Screen
           name="alert-detail"
           options={{
             title: t('drawer.alertDetailTitle'),

@@ -94,10 +94,6 @@ export default function ReferralScreen() {
   const specialtyLabel = user?.specialty
     ? t(`common:specialties.${user.specialty}`, { defaultValue: user.specialty })
     : null;
-  const bannerSubtitle = specialtyLabel
-    ? t('referral.bannerSubtitle', { name: doctorName, specialty: specialtyLabel })
-    : doctorName;
-
   const header = (
     <View style={styles.header}>
       <Pressable
@@ -165,7 +161,9 @@ export default function ReferralScreen() {
         <View style={styles.content} testID="referral-screen">
           {header}
 
-          <ChildBanner name={t('referral.bannerTitle')} subtitle={bannerSubtitle} />
+          <Text style={styles.screenSubtitle}>{t('referral.bannerTitle')}</Text>
+
+          <ChildBanner name={doctorName} subtitle={specialtyLabel || undefined} />
 
           {referral.notice === 'draftRestored' ? (
             <Text style={styles.noticeText} testID="referral-draft-restored">
@@ -649,6 +647,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: PALETTE.feedback.success,
     textAlign: 'center',
+  },
+  screenSubtitle: {
+    fontFamily: font('regular'),
+    fontSize: 15,
+    color: PALETTE.text.muted,
   },
   noticeText: {
     fontFamily: font('regular'),

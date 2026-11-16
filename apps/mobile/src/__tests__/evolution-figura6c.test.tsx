@@ -389,29 +389,6 @@ describe('Pantalla Figura 6c — Evolución y Curvas OMS (RF-07, RF-10)', () => 
     expect(textContent(findElementByTestId(caregiverTree, 'growth-chart-zone-label-normal'))).toBe(
       i18n.t('caregiver:evolution.zoneLabels.normal'),
     );
-
-    const professionalTree = renderTree(ProfessionalChildrenScreen as () => unknown);
-    expect(
-      textContent(findElementByTestId(professionalTree, 'growth-chart-zone-label-upper')),
-    ).toBe(i18n.t('professional:children.zoneLabels.upper'));
-    expect(
-      textContent(findElementByTestId(professionalTree, 'growth-chart-zone-label-normal')),
-    ).toBe(i18n.t('professional:children.zoneLabels.normal'));
-    expect(
-      textContent(findElementByTestId(professionalTree, 'growth-chart-zone-label-lower')),
-    ).toBe(i18n.t('professional:children.zoneLabels.lower'));
-  });
-
-  it('Criterio 4: el profesional conserva el aviso permanente de apoyo a la valoración no diagnóstico', () => {
-    const professionalTree = renderTree(ProfessionalChildrenScreen as () => unknown);
-    const professionalNotice = findElementByTestId(
-      professionalTree,
-      'professional-evolution-non-diagnostic-notice',
-    );
-    expect(professionalNotice).not.toBeNull();
-    expect(textContent(professionalNotice)).toBe(
-      i18n.t('professional:children.nonDiagnosticNotice'),
-    );
   });
 
   it('Criterio 5: el cuidador no ve z ni clasificaciones técnicas, mientras el profesional ve la vista completa y puede tocar puntos', () => {

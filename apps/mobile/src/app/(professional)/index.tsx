@@ -12,8 +12,10 @@ import {
   Text,
   View,
 } from 'react-native';
+import { AlertBadge } from '../../components/AlertBadge.js';
 import { PALETTE } from '../../constants/colors.js';
 import { APP_ROUTES } from '../../constants/routes.js';
+import { useNotifications } from '../../hooks/useNotifications.js';
 import { useAlerts } from '../../hooks/useAlerts.js';
 import { formatAlertAge } from '../../lib/alert-format.js';
 import { ALERT_STATUS_FILTERS, type AlertStatusFilter } from '../../lib/alerts-api.js';
@@ -27,6 +29,7 @@ const SEVERE_COLOR = '#E14100';
 export default function AlertsInboxScreen() {
   const { t } = useTranslation('professional');
   const router = useRouter();
+  const { unreadCount, reload: reloadNotifications } = useNotifications();
   const [filter, setFilter] = useState<AlertStatusFilter>('OPEN');
   const { alerts, childNames, loading, refreshing, error, reload, refresh } = useAlerts(
     ALERT_STATUS_FILTERS[filter],
@@ -36,7 +39,8 @@ export default function AlertsInboxScreen() {
   useFocusEffect(
     useCallback(() => {
       void reload();
-    }, [reload]),
+      void reloadNotifications();
+    }, [reload, reloadNotifications]),
   );
 
   const overdueCount = alerts.filter((a) => a.isOverdue).length;
@@ -65,23 +69,18 @@ export default function AlertsInboxScreen() {
         </View>
         <Text style={styles.indicator}>{indicator}</Text>
         <View style={styles.tags}>
-          <View style={[styles.tag, item.isSevere ? styles.tagSevere : styles.tagRisk]}>
-            <Text
-              style={[styles.tagText, item.isSevere ? styles.tagSevereText : styles.tagRiskText]}
-            >
-              {item.isSevere ? `${risk} · ${t('alerts.severe')}` : risk}
-            </Text>
-          </View>
-          <View style={[styles.tag, styles.tagStatus]}>
-            <Text style={[styles.tagText, styles.tagStatusText]}>
-              {t(`alerts.status.${item.status}`)}
-            </Text>
-          </View>
+          <AlertBadge
+            variant={item.isSevere ? 'severe' : 'risk'}
+            label={item.isSevere ? `${risk} · ${t('alerts.severe')}` : risk}
+          />
+          <AlertBadge variant="status" label={t(`alerts.status.${item.status}`)} />
           {item.isOverdue && (
-            <View style={[styles.tag, styles.tagSevere]} testID={`alert-overdue-${item.id}`}>
-              <Ionicons name="time" size={12} color={SEVERE_COLOR} />
-              <Text style={[styles.tagText, styles.tagSevereText]}>{t('alerts.overdue')}</Text>
-            </View>
+            <AlertBadge
+              variant="severe"
+              icon="time"
+              label={t('alerts.overdue')}
+              testID={`alert-overdue-${item.id}`}
+            />
           )}
         </View>
       </Pressable>
@@ -91,7 +90,19 @@ export default function AlertsInboxScreen() {
   return (
     <View style={styles.container} testID="alerts-inbox-screen">
       <View style={styles.header}>
-        <Text style={styles.title}>{t('alerts.title')}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{t('alerts.title')}</Text>
+          <Pressable
+            style={({ pressed }) => [styles.bellButton, pressed && styles.pressed]}
+            onPress={() => router.push(APP_ROUTES.PROFESSIONAL.NOTIFICATIONS as never)}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.notifications')}
+            testID="professional-notifications-bell"
+          >
+            <Ionicons name="notifications" size={22} color={PALETTE.secondary} />
+            {unreadCount > 0 ? <View style={styles.bellDot} /> : null}
+          </Pressable>
+        </View>
         <Text style={styles.subtitle}>{t('alerts.subtitle')}</Text>
       </View>
 
@@ -178,6 +189,31 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     gap: 4,
   },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bellButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: SCREEN_SURFACE,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  bellDot: {
+    position: 'absolute',
+    top: 10,
+    right: 11,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: PALETTE.secondary,
+    borderWidth: 1.5,
+    borderColor: SCREEN_SURFACE,
+  },
   title: {
     fontSize: 32,
     fontWeight: '600',
@@ -191,7 +227,6 @@ const styles = StyleSheet.create({
   filterBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     minHeight: 46,
     marginHorizontal: 30,
     marginTop: 22,
@@ -201,6 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.primary,
   },
   filterSegment: {
+    flex: 1,
     minHeight: 36,
     paddingHorizontal: 12,
     borderRadius: 25,
@@ -286,21 +322,6 @@ const styles = StyleSheet.create({
     color: PALETTE.text.body,
   },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 25,
-  },
-  tagText: { fontSize: 11, fontWeight: '600' },
-  tagRisk: { backgroundColor: PALETTE.secondaryLight },
-  tagRiskText: { color: PALETTE.secondaryPressed },
-  tagSevere: { backgroundColor: PALETTE.feedback.errorBg },
-  tagSevereText: { color: SEVERE_COLOR },
-  tagStatus: { backgroundColor: PALETTE.border.subtle },
-  tagStatusText: { color: PALETTE.text.body },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 12 },
   empty: { alignItems: 'center', gap: 8 },
   emptyIconCircle: {
