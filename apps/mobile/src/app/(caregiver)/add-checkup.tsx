@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { type DateTimePickerEvent } from '../../components/ui/DatePicker.js';
 import {
   CHECKUP_NOTES_MAX,
   PLAUSIBLE_LENGTH_HEIGHT_MAX_CM,

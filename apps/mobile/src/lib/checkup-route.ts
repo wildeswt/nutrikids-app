@@ -1,6 +1,8 @@
 import type { CaregiverCheckupResponse, ChildResponse, Position } from '@nutrikids/shared';
 import { PositionSchema } from '@nutrikids/shared';
+import { Platform } from 'react-native';
 import type { LocalWhoEvaluation } from './checkup-form.js';
+import { generateUuid } from './uuid.js';
 
 export type CheckupRoleMode = 'CAREGIVER' | 'PROFESSIONAL';
 
@@ -32,6 +34,25 @@ export interface SavedCheckupView {
   roleMode?: CheckupRoleMode;
 }
 
+const MAX_IN_MEMORY_EVALUATIONS = 20;
+const inMemoryEvaluations = new Map<string, LocalWhoEvaluation>();
+
+function storeInMemoryEvaluation(evaluation: LocalWhoEvaluation): string {
+  const key = generateUuid();
+  inMemoryEvaluations.set(key, evaluation);
+  while (inMemoryEvaluations.size > MAX_IN_MEMORY_EVALUATIONS) {
+    const oldestKey = inMemoryEvaluations.keys().next().value;
+    if (oldestKey === undefined) break;
+    inMemoryEvaluations.delete(oldestKey);
+  }
+  return key;
+}
+
+/** Clears the ephemeral in-memory evaluation cache (used on sign-out / tests). */
+export function clearInMemoryCheckupEvaluations(): void {
+  inMemoryEvaluations.clear();
+}
+
 export function toCheckupSavedParams(
   child: Pick<ChildResponse, 'id' | 'firstName' | 'birthDate'>,
   checkup: Pick<
@@ -57,7 +78,12 @@ export function toCheckupSavedParams(
     params.pendingSync = '1';
   }
   if (extra?.localEvaluation) {
-    params.localEvaluation = JSON.stringify(extra.localEvaluation);
+    // On web, keep clinical z-scores and classifications out of the URL query string.
+    if (Platform.OS === 'web' && !Platform.isTesting) {
+      params.evalKey = storeInMemoryEvaluation(extra.localEvaluation);
+    } else {
+      params.localEvaluation = JSON.stringify(extra.localEvaluation);
+    }
   }
   if (extra?.roleMode) {
     params.roleMode = extra.roleMode;
@@ -65,7 +91,9 @@ export function toCheckupSavedParams(
   return params;
 }
 
-type RawParams = Partial<Record<keyof CheckupSavedParams, string | string[] | undefined>>;
+type RawParams = Partial<
+  Record<keyof CheckupSavedParams | 'evalKey', string | string[] | undefined>
+>;
 
 function single(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -92,9 +120,12 @@ export function parseCheckupSavedParams(params: RawParams): SavedCheckupView | n
   }
 
   const pendingSync = single(params.pendingSync) === '1';
+  const evalKey = single(params.evalKey);
   const rawEval = single(params.localEvaluation);
-  let localEvaluation: LocalWhoEvaluation | null = null;
-  if (rawEval) {
+  let localEvaluation: LocalWhoEvaluation | null = evalKey
+    ? (inMemoryEvaluations.get(evalKey) ?? null)
+    : null;
+  if (!localEvaluation && rawEval) {
     try {
       const parsed = JSON.parse(rawEval) as LocalWhoEvaluation;
       if (parsed && Array.isArray(parsed.results)) {

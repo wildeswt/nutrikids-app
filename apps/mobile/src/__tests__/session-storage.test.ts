@@ -119,4 +119,37 @@ describe('session-storage', () => {
     await clearStoredSession();
     expect(await getStoredSession()).toBeNull();
   });
+
+  it('uses sessionStorage instead of localStorage when SecureStore is unavailable (web)', async () => {
+    const secureStore = await import('expo-secure-store');
+    vi.mocked(secureStore.isAvailableAsync).mockResolvedValue(false);
+
+    const sessionMap = new Map<string, string>();
+    const localMap = new Map<string, string>([['nutrikids.auth.session', 'legacy-value']]);
+    const makeStorage = (map: Map<string, string>) => ({
+      get length() {
+        return map.size;
+      },
+      key: (index: number) => [...map.keys()][index] ?? null,
+      getItem: (key: string) => map.get(key) ?? null,
+      setItem: (key: string, value: string) => void map.set(key, value),
+      removeItem: (key: string) => void map.delete(key),
+      clear: () => map.clear(),
+    });
+    vi.stubGlobal('sessionStorage', makeStorage(sessionMap));
+    vi.stubGlobal('localStorage', makeStorage(localMap));
+
+    try {
+      await saveStoredSession(sampleSession);
+      expect(sessionMap.has('nutrikids.auth.session')).toBe(true);
+      expect(localMap.has('nutrikids.auth.session')).toBe(false);
+      expect(await getStoredSession()).toEqual(sampleSession);
+
+      await clearStoredSession();
+      expect(sessionMap.has('nutrikids.auth.session')).toBe(false);
+    } finally {
+      vi.mocked(secureStore.isAvailableAsync).mockResolvedValue(true);
+      vi.unstubAllGlobals();
+    }
+  });
 });

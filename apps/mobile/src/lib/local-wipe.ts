@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { clearInMemoryCheckupEvaluations } from './checkup-route.js';
 import {
   clearAllLegacyFollowUpData,
   clearLegacyUserFollowUpData,
@@ -9,6 +10,12 @@ import { wipeLocalData } from './local-db/wipe.js';
 import { tryGetLocalDatabase } from './offline-read.js';
 import { clearReferralDraft } from './referral-form.js';
 import { readSyncStateFromDb, syncEngine } from './sync/sync-engine.js';
+import {
+  purgeSensitiveWebStorage,
+  readSensitiveWebItem,
+  removeSensitiveWebItem,
+  writeSensitiveWebItem,
+} from './web-storage.js';
 
 /** Clave en almacenamiento seguro para reintentar un borrado fallido al próximo inicio. */
 export const PENDING_WIPE_STORAGE_KEY = 'nutrikids.localDb.pendingWipe';
@@ -71,10 +78,10 @@ async function readPendingWipeMarker(): Promise<boolean> {
       const value = await SecureStore.getItemAsync(PENDING_WIPE_STORAGE_KEY, SECURE_STORE_OPTIONS);
       return value !== null;
     }
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return window.localStorage.getItem(PENDING_WIPE_STORAGE_KEY) !== null;
-    }
-    return memoryMarkerStorage.has(PENDING_WIPE_STORAGE_KEY);
+    return (
+      readSensitiveWebItem(PENDING_WIPE_STORAGE_KEY) !== null ||
+      memoryMarkerStorage.has(PENDING_WIPE_STORAGE_KEY)
+    );
   } catch {
     return memoryMarkerStorage.has(PENDING_WIPE_STORAGE_KEY);
   }
@@ -86,8 +93,7 @@ async function writePendingWipeMarker(): Promise<void> {
       await SecureStore.setItemAsync(PENDING_WIPE_STORAGE_KEY, '1', SECURE_STORE_OPTIONS);
       return;
     }
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.setItem(PENDING_WIPE_STORAGE_KEY, '1');
+    if (writeSensitiveWebItem(PENDING_WIPE_STORAGE_KEY, '1')) {
       return;
     }
   } catch {
@@ -103,9 +109,7 @@ async function removePendingWipeMarker(): Promise<void> {
       await SecureStore.deleteItemAsync(PENDING_WIPE_STORAGE_KEY, SECURE_STORE_OPTIONS);
       return;
     }
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.removeItem(PENDING_WIPE_STORAGE_KEY);
-    }
+    removeSensitiveWebItem(PENDING_WIPE_STORAGE_KEY);
   } catch {
     // Se tolera un fallo al limpiar la marca residual si el almacén seguro no está disponible.
   }
@@ -193,6 +197,11 @@ export function wipeUserLocalStorage(
     if (userId) {
       await runStep('clearReferralDraft', () => clearUserReferralDraft(userId));
     }
+
+    await runStep('purgeSensitiveWebStorage', async () => {
+      clearInMemoryCheckupEvaluations();
+      purgeSensitiveWebStorage();
+    });
 
     if (failedOperations.length > 0) {
       try {

@@ -66,6 +66,9 @@ jobs:
       - name: Check TypeScript types
         run: pnpm typecheck
 
+      - name: Build web export
+        run: pnpm build:web
+
       - name: Run database migrations
         run: pnpm db:migrate:deploy
 
