@@ -182,7 +182,7 @@ describe('CheckupHistoryScreen', () => {
     expect(html).toContain('1 control registrado');
     expect(html).toContain('Samuel Guzmán');
     expect(html).toContain('checkup-history-filters');
-    expect(html).toContain('12.5 kg · 88.0 cm');
+    expect(html).toContain('12,5 kg · 88,0 cm');
     expect(html).toContain('Profesional');
     expect(html).toContain('De pie');
     expect(html).toContain('Carlos Méndez');
@@ -253,8 +253,8 @@ describe('CheckupHistoryScreen', () => {
     const { tree: proTree, html: proHtml } = renderTree(() =>
       CheckupHistoryScreen({ roleMode: 'CAREGIVER' }),
     );
-    expect(proHtml).toContain('12.5 kg · 88.0 cm');
-    expect(proHtml).not.toContain('13.4 kg · 90.0 cm');
+    expect(proHtml).toContain('12,5 kg · 88,0 cm');
+    expect(proHtml).not.toContain('13,4 kg · 90,0 cm');
 
     // Switch to CAREGIVER tab with only PROFESSIONAL checkup to verify empty filter state
     mocks.checkupsHook.checkups = [mockCheckup1];

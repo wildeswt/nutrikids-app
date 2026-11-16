@@ -1,6 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { CHECKUP_NOTES_MAX, type Position } from '@nutrikids/shared';
+import {
+  CHECKUP_NOTES_MAX,
+  PLAUSIBLE_LENGTH_HEIGHT_MAX_CM,
+  PLAUSIBLE_LENGTH_HEIGHT_MIN_CM,
+  PLAUSIBLE_WEIGHT_MAX_KG,
+  PLAUSIBLE_WEIGHT_MIN_KG,
+  type Position,
+} from '@nutrikids/shared';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -173,7 +180,13 @@ export default function AddCheckupScreen({
       case 'dateInvalid':
         return t('addCheckup.errors.dateInvalid', { example: formatDateInput(new Date()) });
       case 'outlier':
-        return t('addCheckup.errors.outlier');
+        return t(`addCheckup.errors.outlier_${error.field}`, {
+          value: error.value,
+          weightMin: PLAUSIBLE_WEIGHT_MIN_KG,
+          weightMax: PLAUSIBLE_WEIGHT_MAX_KG,
+          heightMin: PLAUSIBLE_LENGTH_HEIGHT_MIN_CM,
+          heightMax: PLAUSIBLE_LENGTH_HEIGHT_MAX_CM,
+        });
       default:
         return t(`addCheckup.errors.${error.code}`);
     }
@@ -183,7 +196,9 @@ export default function AddCheckupScreen({
     // Correcting a checkup always returns to the history it was opened from.
     if (correctsCheckupId && params.returnTo === 'checkup-history') {
       router.navigate({
-        pathname: APP_ROUTES.CAREGIVER.CHECKUP_HISTORY as never,
+        pathname: (isProfessional
+          ? APP_ROUTES.PROFESSIONAL.CHECKUP_HISTORY
+          : APP_ROUTES.CAREGIVER.CHECKUP_HISTORY) as never,
         params: activeChild ? { childId: activeChild.id } : {},
       });
       return;
@@ -275,7 +290,9 @@ export default function AddCheckupScreen({
       setOutlierWarning(null);
       setConfirmedOutlier(false);
       router.push({
-        pathname: APP_ROUTES.CAREGIVER.CHECKUP_SAVED as never,
+        pathname: (isProfessional
+          ? APP_ROUTES.PROFESSIONAL.CHECKUP_SAVED
+          : APP_ROUTES.CAREGIVER.CHECKUP_SAVED) as never,
         params: toCheckupSavedParams(activeChild, checkup, {
           localEvaluation: result.localEvaluation,
           roleMode,

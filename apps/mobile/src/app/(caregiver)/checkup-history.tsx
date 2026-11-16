@@ -25,7 +25,7 @@ import { useOptionalAuth } from '../../context/auth-context.js';
 import { useActiveChildId } from '../../hooks/useActiveChild.js';
 import { useCheckups, useProfessionalCheckups } from '../../hooks/useCheckups.js';
 import { useChildren } from '../../hooks/useChildren.js';
-import { formatLongDate } from '../../i18n/format.js';
+import { formatDecimal, formatLongDate } from '../../i18n/format.js';
 import { formatCheckupRecorder } from '../../lib/checkup-recorder.js';
 import { formatChildAge } from '../../lib/children-api.js';
 
@@ -119,10 +119,9 @@ export default function CheckupHistoryScreen({
     return (
       <View style={styles.card} testID={`checkup-item-${item.id}`}>
         <View style={styles.cardTopRow}>
-          <Text style={styles.cardMeasurements} numberOfLines={1}>
-            {`${item.weightKg.toFixed(1)} kg · ${item.lengthHeightCm.toFixed(1)} cm`}
+          <Text style={styles.cardMeasurements}>
+            {`${formatDecimal(item.weightKg)} kg · ${formatDecimal(item.lengthHeightCm)} cm`}
           </Text>
-          <Text style={styles.cardDate}>{formatLongDate(item.measuredAt)}</Text>
           <CheckupMenuButton
             checkup={item}
             roleMode={isProfessional ? 'PROFESSIONAL' : 'CAREGIVER'}
@@ -132,8 +131,10 @@ export default function CheckupHistoryScreen({
           />
         </View>
 
-        <Text style={styles.recorderText} numberOfLines={1}>
-          {recordedByText}
+        <Text style={styles.cardDate}>{formatLongDate(item.measuredAt)}</Text>
+
+        <Text style={styles.recorderText}>
+          {t('checkupHistory.recordedBy', { name: recordedByText })}
         </Text>
 
         <View style={styles.tagsRow}>

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CheckupMenuButton } from '../../components/CheckupMenuButton.js';
-import { ChildBanner } from '../../components/ChildBanner.js';
+import { ChildBannerSelector } from '../../components/ChildBannerSelector.js';
 import { GrowthChart } from '../../components/GrowthChart.js';
 import { OfflineDataNotice } from '../../components/OfflineDataNotice.js';
 import { Card } from '../../components/ui/Card.js';
@@ -46,6 +46,7 @@ export default function EvolutionScreen() {
   const params = useLocalSearchParams<{ childId?: string }>();
   const [selectedIndicator, setSelectedIndicator] = useState<IndicatorKey>('PE');
   const [showChartInfo, setShowChartInfo] = useState(false);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [selectedCheckupId, setSelectedCheckupId] = useState<string | null>(null);
   const [modalCheckup, setModalCheckup] = useState<CaregiverCheckupListItem | null>(null);
 
@@ -63,7 +64,13 @@ export default function EvolutionScreen() {
     void loadChildren();
   }, [loadChildren]);
 
-  const child = children.find((item) => item.id === params.childId) ?? children[0] ?? null;
+  // A child sent through the route params (e.g. from the home) replaces the manual choice.
+  useEffect(() => {
+    setSelectedChildId(null);
+  }, [params.childId]);
+
+  const child =
+    children.find((item) => item.id === (selectedChildId ?? params.childId)) ?? children[0] ?? null;
 
   const {
     status: checkupsStatus,
@@ -268,13 +275,20 @@ export default function EvolutionScreen() {
         />
 
         {/* Banner naranja: datos del niño */}
-        <ChildBanner
+        <ChildBannerSelector
           style={styles.childBanner}
-          name={`${child.firstName} ${child.lastName}`}
+          children={children}
+          activeId={child.id}
+          onSelect={(id) => {
+            setSelectedChildId(id);
+            setSelectedCheckupId(null);
+          }}
           subtitle={t('evolution.childSubtitle', {
             age: formatChildAge(child.birthDate),
             birthDate: formatLongDate(child.birthDate),
           })}
+          accessibilityLabel={t('privacy.selectChildA11y')}
+          testIDPrefix="evolution"
         />
 
         <OfflineDataNotice
@@ -453,14 +467,16 @@ export default function EvolutionScreen() {
           {/* Registró */}
           <View style={styles.recordedByRow}>
             <Ionicons name="person" size={18} color={PALETTE.secondary} />
-            <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>
-            <Text style={styles.recordedByValue} numberOfLines={1}>
-              {formatCheckupRecorder({
-                recorder: latest.recordedBy,
-                origin: latest.origin,
-                currentUserId: user?.id,
-                t,
-              })}
+            <Text style={styles.recordedByText}>
+              <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>{' '}
+              <Text style={styles.recordedByValue}>
+                {formatCheckupRecorder({
+                  recorder: latest.recordedBy,
+                  origin: latest.origin,
+                  currentUserId: user?.id,
+                  t,
+                })}
+              </Text>
             </Text>
           </View>
 
@@ -608,14 +624,16 @@ export default function EvolutionScreen() {
 
               <View style={styles.recordedByRow}>
                 <Ionicons name="person" size={18} color={PALETTE.secondary} />
-                <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>
-                <Text style={styles.recordedByValue} numberOfLines={1}>
-                  {formatCheckupRecorder({
-                    recorder: modalCheckup.recordedBy,
-                    origin: modalCheckup.origin,
-                    currentUserId: user?.id,
-                    t,
-                  })}
+                <Text style={styles.recordedByText}>
+                  <Text style={styles.recordedByLabel}>{t('evolution.recordedBy')}</Text>{' '}
+                  <Text style={styles.recordedByValue}>
+                    {formatCheckupRecorder({
+                      recorder: modalCheckup.recordedBy,
+                      origin: modalCheckup.origin,
+                      currentUserId: user?.id,
+                      t,
+                    })}
+                  </Text>
                 </Text>
               </View>
 
@@ -925,6 +943,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: PALETTE.text.title,
   },
+  recordedByText: { flex: 1 },
   recordedByValue: {
     fontFamily: font('regular'),
     fontSize: 14,
