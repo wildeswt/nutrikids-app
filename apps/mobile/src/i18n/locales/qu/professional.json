@@ -66,7 +66,7 @@
     "title": "Llakipi kak wawakuna",
     "description": "Kikinwan tinkishka wawakuna, wiñay tupuypi ima llaki kashkamanta ñankuna.",
     "patientLabel": "Hampichikuk wawa",
-    "childSubtitle": "{{age}} · {{birthDate}} punchapi wacharirka",
+    "childSubtitle": "{{age}}",
     "chartSubtitle": "OMS rikuchik ñankuna (−3, −2, 0, +2, +3 DE)",
     "legendReference": "OMS ñankuna (−3 manta +3 DE kama)",
     "zoneLabels": {
@@ -111,7 +111,15 @@
       "OVERWEIGHT": "Sobrepeso (+2 a +3 DE)",
       "OBESITY": "Obesidad (> +3 DE)"
     },
-    "registerCheckup": "Kamayta killkay"
+    "registerCheckup": "Kamayta killkay",
+    "infoModal": {
+      "title": "¿Qué muestra esta gráfica?",
+      "whoBandTitle": "Banda verde: lo esperado (OMS)",
+      "whoBand": "Rango esperado por la OMS según la edad o la talla (−2 a +2 DE). Las líneas punteadas marcan los límites de −3 y +3 DE.",
+      "childLineTitle": "Línea naranja: el paciente",
+      "childLine": "Cada punto es un control registrado. Tócalo para ver el detalle técnico: puntaje z, percentil y clasificación.",
+      "close": "Hamutashkanimi"
+    }
   },
   "messages": {
     "title": "Willaykuna, katinakunapash",
@@ -337,11 +345,11 @@
     },
     "submit": "Wakaychishpa yupay",
     "saving": "Wakaychikunmi...",
-    "localResultTitle": "Kaypi yupashka (who-growth)",
+    "localResultTitle": "Kaypi yupashka (OMS)",
     "localSummaryNormal": "Ñawpa yupay: shuyashka ukullapimi kan (OMS).",
     "localSummaryAlert": "Ñawpa yupay: llakimi rikurin ({{risk}}).",
     "zScoreValue": "z = {{value}}",
-    "percentileValue": "p{{value}}",
+    "percentileValue": "P{{value}}",
     "emptyTitle": "Mana tinkishka wawakuna kanchu",
     "emptySubtitle": "Kamayta killkankapakka shuk tinkishka wawata charinami kanki.",
     "goBackToPatients": "Wawakunaman riy"
@@ -396,5 +404,9 @@
       "showing": "{{shown}} wawakunata rikuchikun (tukuyka {{total}} kan)",
       "loadMore": "Yalli wawakunata rikuy"
     }
+  },
+  "checkupSaved": {
+    "teamNote": "El control quedó registrado en el historial del paciente.",
+    "seeEvolution": "Ver evolución del paciente"
   }
 }
