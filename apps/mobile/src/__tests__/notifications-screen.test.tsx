@@ -167,7 +167,8 @@ describe('NotificationsScreen Component (NK-36)', () => {
     // Rendered list
     const html = renderToString(React.createElement(NotificationsScreen));
     expect(html).toContain(i18n.t('common:notifications.types.alert_new'));
-    expect(html).toContain(i18n.t('common:notifications.types.alert_overdue'));
+    // Read notifications disappear from the list.
+    expect(html).not.toContain(i18n.t('common:notifications.types.alert_overdue'));
   });
 
   describe('opening an alert from a notification (NK-33)', () => {
