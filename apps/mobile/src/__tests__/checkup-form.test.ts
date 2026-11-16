@@ -133,7 +133,7 @@ describe('buildCreateCheckupInput', () => {
       confirmOutlier: false,
       now: NOW,
     });
-    expect(first).toEqual({ ok: false, error: { code: 'outlier' } });
+    expect(first).toMatchObject({ ok: false, error: { code: 'outlier' } });
 
     const confirmed = buildCreateCheckupInput(atypical, {
       ...CHILD_ID_FIELDS,

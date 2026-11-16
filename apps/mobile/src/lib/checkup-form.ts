@@ -44,7 +44,7 @@ export type CheckupFormError =
   | { code: 'heightRange'; min: number; max: number }
   | { code: 'notesTooLong'; max: number }
   /** Valid but atypical values: the caregiver must confirm them (`confirmOutlier`). */
-  | { code: 'outlier' }
+  | { code: 'outlier'; field: 'weight' | 'height' | 'both'; value: string }
   | { code: 'invalid' };
 
 export interface LocalWhoResult {
@@ -210,8 +210,14 @@ export function buildCreateCheckupInput(
     return { ok: false, error: { code: 'notesTooLong', max: CHECKUP_NOTES_MAX } };
   }
 
-  const isOutlier = !isPlausibleWeight(weightKg) || !isPlausibleLengthHeight(lengthHeightCm);
-  if (isOutlier && !options.confirmOutlier) return { ok: false, error: { code: 'outlier' } };
+  const weightOutlier = !isPlausibleWeight(weightKg);
+  const heightOutlier = !isPlausibleLengthHeight(lengthHeightCm);
+  const isOutlier = weightOutlier || heightOutlier;
+  if (isOutlier && !options.confirmOutlier) {
+    const field = weightOutlier && heightOutlier ? 'both' : weightOutlier ? 'weight' : 'height';
+    const value = weightOutlier ? String(weightKg) : String(lengthHeightCm);
+    return { ok: false, error: { code: 'outlier', field, value } };
+  }
 
   const measuredAt = measuredAtFromIsoDate(isoDate, now);
   const localEvaluation = options.sex
