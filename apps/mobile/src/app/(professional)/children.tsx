@@ -32,11 +32,14 @@ export default function ProfessionalPatientsScreen() {
 
   const { patients, loading, refreshing, error, reload, refresh } = usePatients();
   const [selectedChild, setSelectedChild] = useState<PatientListItem | null>(null);
+  /** Patient whose screen is opening: its card shows a spinner until the tab loses focus. */
+  const [openingId, setOpeningId] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       void reload();
       void reloadNotifications();
+      return () => setOpeningId(null);
     }, [reload, reloadNotifications]),
   );
 
@@ -50,6 +53,12 @@ export default function ProfessionalPatientsScreen() {
     setSelectedChild(null);
   };
 
+  /** Closes the menu after choosing an action and marks the card while the next screen loads. */
+  const startOpening = () => {
+    if (selectedChild) setOpeningId(selectedChild.child.id);
+    setSelectedChild(null);
+  };
+
   const modalActions = useMemo<ActionModalItem[]>(() => {
     if (!selectedChild) return [];
     const { child, primaryAlert } = selectedChild;
@@ -59,7 +68,7 @@ export default function ProfessionalPatientsScreen() {
         label: t('patients.actions.viewEvolution'),
         icon: 'trending-up-outline',
         onPress: () => {
-          closePatientActions();
+          startOpening();
           router.push({
             pathname: APP_ROUTES.PROFESSIONAL.EVOLUTION as never,
             params: { childId: child.id },
@@ -71,7 +80,7 @@ export default function ProfessionalPatientsScreen() {
         label: t('drawer.checkupHistoryTitle'),
         icon: 'time-outline',
         onPress: () => {
-          closePatientActions();
+          startOpening();
           router.push({
             pathname: APP_ROUTES.PROFESSIONAL.CHECKUP_HISTORY as never,
             params: { childId: child.id },
@@ -83,7 +92,7 @@ export default function ProfessionalPatientsScreen() {
         label: t('patients.actions.registerCheckup'),
         icon: 'add-circle-outline',
         onPress: () => {
-          closePatientActions();
+          startOpening();
           router.push({
             pathname: APP_ROUTES.PROFESSIONAL.ADD_CHECKUP as never,
             params: { childId: child.id },
@@ -95,7 +104,7 @@ export default function ProfessionalPatientsScreen() {
         label: t('patients.actions.newReferral'),
         icon: 'share-outline',
         onPress: () => {
-          closePatientActions();
+          startOpening();
           router.push({
             pathname: APP_ROUTES.PROFESSIONAL.REFERRAL as never,
             params: { childId: child.id },
@@ -111,7 +120,7 @@ export default function ProfessionalPatientsScreen() {
           label: t('patients.actions.viewAlert'),
           icon: 'eye-outline',
           onPress: () => {
-            closePatientActions();
+            startOpening();
             router.push({
               pathname: APP_ROUTES.PROFESSIONAL.ALERT_DETAIL as never,
               params: { alertId: primaryAlert.id },
@@ -123,7 +132,7 @@ export default function ProfessionalPatientsScreen() {
           label: t('patients.actions.newFollowUp'),
           icon: 'clipboard-outline',
           onPress: () => {
-            closePatientActions();
+            startOpening();
             router.push({
               pathname: APP_ROUTES.PROFESSIONAL.FOLLOW_UP as never,
               params: { childId: child.id, alertId: primaryAlert.id },
@@ -170,12 +179,22 @@ export default function ProfessionalPatientsScreen() {
 
         <View style={styles.cardRight}>
           {renderBadge(item)}
-          <Ionicons
-            name="chevron-forward"
-            size={18}
-            color={PALETTE.primary}
-            style={styles.chevron}
-          />
+          {openingId === child.id ? (
+            <ActivityIndicator
+              size="small"
+              color={PALETTE.primary}
+              style={styles.chevron}
+              accessibilityLabel={t('patients.loading')}
+              testID={`patient-card-loading-${child.id}`}
+            />
+          ) : (
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={PALETTE.primary}
+              style={styles.chevron}
+            />
+          )}
         </View>
       </Pressable>
     );
@@ -220,6 +239,12 @@ export default function ProfessionalPatientsScreen() {
 
     return (
       <View style={styles.sectionsContainer}>
+        {loading && !refreshing ? (
+          <View style={styles.refreshingRow} testID="patients-refreshing">
+            <ActivityIndicator size="small" color={PALETTE.primary} />
+            <Text style={styles.loadingText}>{t('patients.refreshing')}</Text>
+          </View>
+        ) : null}
         {sections.map((section) => {
           return (
             <View key={section.key} style={styles.sectionBlock}>
@@ -522,6 +547,11 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  refreshingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   loadingText: {
     marginTop: 12,
