@@ -1,5 +1,6 @@
 import NetInfo, { NetInfoStateType, type NetInfoState } from '@react-native-community/netinfo';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Platform } from 'react-native';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getConnectivity,
   resolveConnectivityStatus,
@@ -20,8 +21,23 @@ function makeNetInfoState(
 }
 
 describe('connectivity', () => {
+  const originalOs = Platform.OS;
   beforeEach(() => {
     vi.clearAllMocks();
+    Platform.OS = 'android';
+  });
+  afterEach(() => {
+    Platform.OS = originalOs;
+  });
+
+  it('on web ignores a failed internet-reachability ping (only isConnected counts)', () => {
+    Platform.OS = 'web';
+    expect(resolveConnectivityStatus({ isConnected: true, isInternetReachable: false })).toBe(
+      'online',
+    );
+    expect(resolveConnectivityStatus({ isConnected: false, isInternetReachable: true })).toBe(
+      'offline',
+    );
   });
 
   describe('resolveConnectivityStatus', () => {

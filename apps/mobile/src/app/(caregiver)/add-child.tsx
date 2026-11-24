@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { CreateChildInputSchema, type Sex } from '@nutrikids/shared';
-import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -49,6 +49,24 @@ export default function AddChildScreen() {
   const [loading, setLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // The tabs keep their screens mounted: clear the form when leaving, so registering another
+  // child never starts with the previous child's data.
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setFirstName('');
+        setLastName('');
+        setBirthDateText('');
+        setSex('MALE');
+        setRelationship('MOTHER');
+        setIsLegalRepresentative(true);
+        setLoading(false);
+        setGeneralError(null);
+        setFieldErrors({});
+      };
+    }, []),
+  );
 
   const birthDateStatus = evaluateChildBirthDate(birthDateText);
   const caregiverName = user ? `${user.firstName} ${user.lastName}`.trim() : '';

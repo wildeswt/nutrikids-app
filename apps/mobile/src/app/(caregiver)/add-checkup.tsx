@@ -158,6 +158,26 @@ export default function AddCheckupScreen({
     ]),
   );
 
+  // Leaving the screen discards the form (tabs stay mounted), so the next visit, maybe for
+  // another child, starts empty instead of with the previous child's weight and height.
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        lastParamsKey.current = null;
+        setMeasuredDateText(formatDateInput(new Date()));
+        setPosition('STANDING');
+        setWeightText('');
+        setHeightText('');
+        setObservations('');
+        attemptId.current = null;
+        setErrorMessage(null);
+        setOutlierWarning(null);
+        setConfirmedOutlier(false);
+        setConsentRequired(false);
+      };
+    }, []),
+  );
+
   const selectedPositionLabel = t(`addCheckup.positions.${position}`);
 
   /** Any change to the data starts a new attempt and clears the previous messages. */
