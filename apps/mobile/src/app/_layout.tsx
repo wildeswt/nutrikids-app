@@ -36,7 +36,7 @@ export function NavigationGuard() {
     status,
     activeRole,
     currentGroup,
-    leaf: segments[1],
+    leaf: (segments as string[])[1],
     query: query ? `?${query}` : '',
   });
 
