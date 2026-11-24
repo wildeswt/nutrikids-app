@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
 
 /** Estado simplificado de conectividad de red para la app móvil. */
@@ -13,7 +14,12 @@ export type ConnectivityListener = (status: ConnectivityStatus) => void;
 export function resolveConnectivityStatus(
   state: Pick<NetInfoState, 'isConnected' | 'isInternetReachable'>,
 ): ConnectivityStatus {
-  if (state.isConnected === true && state.isInternetReachable !== false) {
+  // On web NetInfo's reachability ping (a cross-origin request) often fails behind blockers or
+  // slow networks and would wrongly report «offline»; the browser's own flag is enough there.
+  if (
+    state.isConnected === true &&
+    (Platform.OS === 'web' || state.isInternetReachable !== false)
+  ) {
     return 'online';
   }
   return 'offline';

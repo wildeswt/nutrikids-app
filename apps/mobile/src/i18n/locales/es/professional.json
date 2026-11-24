@@ -64,9 +64,9 @@
   },
   "children": {
     "title": "Pacientes Clasificados por Riesgo",
-    "description": "Lista de niños vinculados categorizados según el nivel de riesgo antropométrico.",
+    "description": "Lista de niños vinculados categorizados según su nivel de riesgo.",
     "patientLabel": "Paciente",
-    "childSubtitle": "{{age}} · Nació el {{birthDate}}",
+    "childSubtitle": "{{age}}",
     "chartSubtitle": "Curvas de referencia OMS (−3, −2, 0, +2 y +3 DE)",
     "legendReference": "Curvas OMS (−3 a +3 DE)",
     "zoneLabels": {
@@ -94,7 +94,7 @@
     "emptyTitle": "Sin pacientes vinculados",
     "emptySubtitle": "Cuando tengas niños vinculados, podrás analizar sus curvas OMS aquí.",
     "noCheckupsTitle": "Sin controles registrados para {{name}}",
-    "noCheckupsSubtitle": "Aún no existen mediciones antropométricas para graficar.",
+    "noCheckupsSubtitle": "Aún no existen mediciones para graficar.",
     "classifications": {
       "SEVERE_UNDERWEIGHT": "Bajo peso grave (< −3 DE)",
       "UNDERWEIGHT": "Bajo peso (−3 a −2 DE)",
@@ -111,7 +111,15 @@
       "OVERWEIGHT": "Sobrepeso (+2 a +3 DE)",
       "OBESITY": "Obesidad (> +3 DE)"
     },
-    "registerCheckup": "Registrar control"
+    "registerCheckup": "Registrar control",
+    "infoModal": {
+      "title": "¿Qué muestra esta gráfica?",
+      "whoBandTitle": "Banda verde: lo esperado (OMS)",
+      "whoBand": "Rango esperado por la OMS según la edad o la talla (−2 a +2 DE). Las líneas punteadas marcan los límites de −3 y +3 DE.",
+      "childLineTitle": "Línea naranja: el paciente",
+      "childLine": "Cada punto es un control registrado. Tócalo para ver el detalle técnico: puntaje z, percentil y clasificación.",
+      "close": "Entendido"
+    }
   },
   "messages": {
     "title": "Mensajes y Seguimientos",
@@ -167,7 +175,7 @@
       "statusLoading": "Consultando estado...",
       "remaining": "Códigos de recuperación disponibles: {{count}}",
       "lowCodes": "Te quedan pocos códigos de recuperación. Genera nuevos.",
-      "regenerate": "Generar nuevos códigos de recuperación",
+      "regenerate": "Generar códigos nuevos",
       "regenerateDescription": "Ingresa el código actual de tu aplicación autenticadora. Los códigos anteriores dejarán de funcionar.",
       "totpLabel": "Código de autenticación (6 dígitos)",
       "confirm": "Generar códigos",
@@ -327,7 +335,7 @@
     }
   },
   "addCheckup": {
-    "title": "Registrar control antropométrico",
+    "title": "Registrar control",
     "changePatient": "Cambiar de paciente",
     "searchModal": {
       "titlePatient": "Seleccionar paciente",
@@ -337,11 +345,11 @@
     },
     "submit": "Guardar y calcular",
     "saving": "Guardando...",
-    "localResultTitle": "Cálculo local (who-growth)",
-    "localSummaryNormal": "Estado preliminar: dentro del rango esperado (OMS).",
-    "localSummaryAlert": "Estado preliminar: alerta detectada ({{risk}}).",
+    "localResultTitle": "Resultado calculado (OMS)",
+    "localSummaryNormal": "Todos los indicadores están dentro del rango esperado.",
+    "localSummaryAlert": "Se detectó una alerta: {{risk}}.",
     "zScoreValue": "z = {{value}}",
-    "percentileValue": "p{{value}}",
+    "percentileValue": "P{{value}}",
     "emptyTitle": "Sin pacientes vinculados",
     "emptySubtitle": "Debes tener al menos un paciente vinculado para registrar su control.",
     "goBackToPatients": "Ir a pacientes"
@@ -396,5 +404,9 @@
       "showing": "Mostrando {{shown}} de {{total}} pacientes",
       "loadMore": "Ver más pacientes"
     }
+  },
+  "checkupSaved": {
+    "teamNote": "El control quedó registrado en el historial del paciente.",
+    "seeEvolution": "Ver evolución del paciente"
   }
 }

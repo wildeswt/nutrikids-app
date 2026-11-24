@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChildBanner } from '../../components/ChildBanner.js';
+import { ChildBannerSelector } from '../../components/ChildBannerSelector.js';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog.js';
 import { ScreenHeader } from '../../components/ui/ScreenHeader.js';
 import { SecondaryButton } from '../../components/ui/SecondaryButton.js';
@@ -24,9 +25,12 @@ import { isNotLegalRepresentativeError } from '../../lib/data-rights-api.js';
 export function ChildPrivacyPanel({
   child,
   hideBanner = false,
+  section = 'all',
 }: {
   child: ChildResponse;
   hideBanner?: boolean;
+  /** 'consent' = only the data permission, 'rights' = only export/deletion. */
+  section?: 'all' | 'consent' | 'rights';
 }) {
   const { t } = useTranslation(['caregiver', 'common']);
   const router = useRouter();
@@ -249,7 +253,7 @@ export function ChildPrivacyPanel({
 
     return (
       <>
-        <View style={styles.divider} />
+        {section === 'all' ? <View style={styles.divider} /> : null}
 
         {/* Exportar el historial */}
         <View style={styles.section} testID="privacy-export">
@@ -335,9 +339,9 @@ export function ChildPrivacyPanel({
         />
       ) : null}
 
-      {renderConsentSection()}
+      {section !== 'rights' ? renderConsentSection() : null}
 
-      {renderRights()}
+      {section !== 'consent' ? renderRights() : null}
 
       <ConfirmDialog
         visible={confirm === 'revoke'}
@@ -392,10 +396,10 @@ export function ChildPrivacyPanel({
 export default function PrivacyScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
   const router = useRouter();
-  const params = useLocalSearchParams<{ childId?: string }>();
+  const params = useLocalSearchParams<{ childId?: string; section?: string }>();
+  const consentsOnly = params.section === 'consents';
   const { status, children, error, load } = useChildren();
   const [selectedId, setSelectedId] = useState<string | null>(params.childId ?? null);
-  const [selectorOpen, setSelectorOpen] = useState(false);
   const child = children.find((item) => item.id === selectedId) ?? children[0] ?? null;
 
   // The tabs keep their screens mounted, so the children are read again each time this one is shown.
@@ -413,71 +417,20 @@ export default function PrivacyScreen() {
     }
   };
 
-  const renderBannerSelector = (activeChild: ChildResponse) => {
-    const fullName = `${activeChild.firstName} ${activeChild.lastName}`;
-    const subtitle = t('privacy.childSubtitle', {
-      age: formatChildAge(activeChild.birthDate),
-      birthDate: formatLongDate(activeChild.birthDate),
-    });
-
-    if (children.length <= 1) {
-      return <ChildBanner style={styles.banner} name={fullName} subtitle={subtitle} />;
-    }
-
-    return (
-      <View style={styles.bannerWrapper}>
-        <Pressable
-          onPress={() => setSelectorOpen((prev) => !prev)}
-          accessibilityRole="button"
-          accessibilityLabel={t('privacy.selectChildA11y')}
-          accessibilityState={{ expanded: selectorOpen }}
-          testID="privacy-child-selector"
-        >
-          <ChildBanner name={fullName} subtitle={subtitle} style={styles.bannerInner} />
-          <View style={styles.bannerChevron} pointerEvents="none">
-            <Ionicons
-              name={selectorOpen ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color={PALETTE.text.light}
-            />
-          </View>
-        </Pressable>
-
-        {selectorOpen ? (
-          <View style={styles.selectorList} testID="privacy-child-options">
-            {children.map((item) => {
-              const selected = item.id === activeChild.id;
-              return (
-                <Pressable
-                  key={item.id}
-                  style={[styles.selectorOption, selected && styles.selectorOptionSelected]}
-                  onPress={() => {
-                    setSelectedId(item.id);
-                    setSelectorOpen(false);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  testID={`privacy-child-${item.id}`}
-                >
-                  <Text
-                    style={[
-                      styles.selectorOptionText,
-                      selected && styles.selectorOptionTextSelected,
-                    ]}
-                  >
-                    {`${item.firstName} ${item.lastName}`}
-                  </Text>
-                  {selected ? (
-                    <Ionicons name="checkmark" size={16} color={PALETTE.primary} />
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-      </View>
-    );
-  };
+  const renderBannerSelector = (activeChild: ChildResponse) => (
+    <ChildBannerSelector
+      style={styles.banner}
+      children={children}
+      activeId={activeChild.id}
+      onSelect={setSelectedId}
+      subtitle={t('privacy.childSubtitle', {
+        age: formatChildAge(activeChild.birthDate),
+        birthDate: formatLongDate(activeChild.birthDate),
+      })}
+      accessibilityLabel={t('privacy.selectChildA11y')}
+      testIDPrefix="privacy"
+    />
+  );
 
   const renderBody = () => {
     if (status === 'idle' || (status === 'loading' && children.length === 0)) {
@@ -519,7 +472,12 @@ export default function PrivacyScreen() {
       <>
         {renderBannerSelector(child)}
         {/* One panel per child: switching child starts its own requests and consent. */}
-        <ChildPrivacyPanel key={child.id} child={child} hideBanner />
+        <ChildPrivacyPanel
+          key={child.id}
+          child={child}
+          hideBanner
+          section={consentsOnly ? 'consent' : 'rights'}
+        />
       </>
     );
   };
@@ -532,13 +490,15 @@ export default function PrivacyScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <ScreenHeader
-          title={t('privacy.title')}
+          title={consentsOnly ? t('profile.consentsTitle') : t('privacy.title')}
           backLabel={t('privacy.back')}
           onBack={handleBack}
           style={styles.header}
           testID="privacy-header"
         />
-        <Text style={styles.intro}>{t('privacy.intro')}</Text>
+        <Text style={styles.intro}>
+          {consentsOnly ? t('profile.consentsDescription') : t('privacy.intro')}
+        </Text>
         {renderBody()}
 
         <Pressable
@@ -578,50 +538,6 @@ const styles = StyleSheet.create({
   },
   banner: {
     marginBottom: 20,
-  },
-  bannerWrapper: {
-    marginBottom: 20,
-  },
-  bannerInner: {
-    paddingRight: 44,
-  },
-  bannerChevron: {
-    position: 'absolute',
-    right: 18,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-  },
-  selectorList: {
-    marginTop: 8,
-    backgroundColor: PALETTE.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: PALETTE.border.subtle,
-    padding: 6,
-    gap: 4,
-  },
-  selectorOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  selectorOptionSelected: {
-    backgroundColor: PALETTE.primaryLight,
-  },
-  selectorOptionText: {
-    fontFamily: font('medium'),
-    fontWeight: '500',
-    fontSize: 14,
-    color: PALETTE.text.body,
-  },
-  selectorOptionTextSelected: {
-    fontFamily: font('semibold'),
-    fontWeight: '600',
-    color: PALETTE.primary,
   },
   section: {
     paddingVertical: 6,

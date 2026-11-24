@@ -257,7 +257,8 @@ describe('ReferralScreen (NK-51)', () => {
     const out = renderScreenHtml();
     expect(out).toContain('Interconsulta');
     expect(out).toContain('Comunicación entre profesionales');
-    expect(out).toContain('Laura Pérez · Nutrición');
+    expect(out).toContain('Laura Pérez');
+    expect(out).toContain('Nutrición');
     expect(out).toContain('Paciente');
     expect(out).toContain('Mateo Rodríguez');
     expect(out).toContain('Dirigida a');

@@ -52,6 +52,7 @@ export const APP_ROUTES = {
     EVOLUTION: '/(professional)/evolution' as const,
     CHECKUP_HISTORY: '/(professional)/checkup-history' as const,
     ADD_CHECKUP: '/(professional)/add-checkup' as const,
+    CHECKUP_SAVED: '/(professional)/checkup-saved' as const,
     MESSAGES: '/(professional)/messages' as const,
     CHAT_DETAIL: '/(professional)/chat-detail' as const,
     PROFILE: '/(professional)/profile' as const,

@@ -24,6 +24,7 @@ import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
 import { useChildren } from '../../hooks/useChildren.js';
+import { relationshipLabel } from '../../lib/child-form.js';
 import { fetchChildCaregivers } from '../../lib/children-api.js';
 import {
   fetchChildProfessionals,
@@ -248,7 +249,9 @@ export default function ProfessionalMessagesScreen() {
                   <View style={styles.pickerContent}>
                     <Text style={styles.pickerTitle}>{name}</Text>
                     <Text style={styles.pickerSubtitle}>
-                      {t('professional:messages.caregiverSubtitle', { name: cg.relationship })}
+                      {t('professional:messages.caregiverSubtitle', {
+                        name: relationshipLabel(cg.relationship),
+                      })}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={PALETTE.text.muted} />

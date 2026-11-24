@@ -179,7 +179,9 @@ export default function CheckupSavedScreen() {
               color={PALETTE.secondary}
               style={styles.noteIcon}
             />
-            <Text style={styles.noteText}>{t('checkupSaved.teamNote')}</Text>
+            <Text style={styles.noteText}>
+              {t(isProfessional ? 'professional:checkupSaved.teamNote' : 'checkupSaved.teamNote')}
+            </Text>
           </View>
 
           {saved.pendingSync ? (
@@ -211,7 +213,11 @@ export default function CheckupSavedScreen() {
         <View style={styles.buttonsContainer}>
           {/* Botón primario: Ver evolución */}
           <PrimaryButton
-            label={t('checkupSaved.seeEvolution')}
+            label={t(
+              isProfessional
+                ? 'professional:checkupSaved.seeEvolution'
+                : 'checkupSaved.seeEvolution',
+            )}
             onPress={handleGoToEvolution}
             testID="checkup-saved-see-evolution"
           />

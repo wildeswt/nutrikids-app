@@ -126,4 +126,29 @@ describe('resolveGuardRedirect (NavigationGuard routing logic)', () => {
       expect(result).toBe(APP_ROUTES.PROFESSIONAL.ROOT);
     });
   });
+
+  describe('shared screens on reload (web URLs have no group)', () => {
+    it('keeps a professional on /messages instead of sending them home', () => {
+      expect(
+        resolveGuardRedirect({
+          status: AUTH_STATUS.AUTHENTICATED,
+          activeRole: USER_ROLES.PROFESSIONAL,
+          currentGroup: APP_ROUTES.CAREGIVER.GROUP,
+          leaf: 'messages',
+          query: '?childId=abc',
+        }),
+      ).toBe('/(professional)/messages?childId=abc');
+    });
+
+    it('sends to the role home when the screen is not shared', () => {
+      expect(
+        resolveGuardRedirect({
+          status: AUTH_STATUS.AUTHENTICATED,
+          activeRole: USER_ROLES.CAREGIVER,
+          currentGroup: APP_ROUTES.PROFESSIONAL.GROUP,
+          leaf: 'children',
+        }),
+      ).toBe(APP_ROUTES.CAREGIVER.ROOT);
+    });
+  });
 });

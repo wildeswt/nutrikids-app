@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
-import { parseCheckupSavedParams, toCheckupSavedParams } from '../lib/checkup-route.js';
+import { Platform } from 'react-native';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  clearInMemoryCheckupEvaluations,
+  parseCheckupSavedParams,
+  toCheckupSavedParams,
+} from '../lib/checkup-route.js';
+import type { LocalWhoEvaluation } from '../lib/checkup-form.js';
 
 const child = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -46,5 +52,45 @@ describe('checkup-saved route params', () => {
 
     expect(parseCheckupSavedParams({ ...params, weightKg: 'pesado' })).toBeNull();
     expect(parseCheckupSavedParams({ ...params, position: 'SITTING' })).toBeNull();
+  });
+
+  describe('web privacy (no WHO z-scores in URL params)', () => {
+    const originalOS = Platform.OS;
+
+    afterEach(() => {
+      Platform.OS = originalOS;
+      clearInMemoryCheckupEvaluations();
+      vi.unstubAllEnvs();
+    });
+
+    it('keeps localEvaluation in memory behind evalKey on web runtime and clears on sign-out', () => {
+      Platform.OS = 'web';
+      vi.stubEnv('NODE_ENV', 'production');
+
+      const evaluation: LocalWhoEvaluation = {
+        primary: 'NORMAL',
+        hasAlert: false,
+        results: [
+          {
+            indicator: 'WEIGHT_FOR_AGE',
+            zScore: 0.25,
+            percentile: 59.87,
+            classification: 'NORMAL',
+          },
+        ],
+      };
+
+      const params = toCheckupSavedParams(child, checkup, {
+        localEvaluation: evaluation,
+        roleMode: 'PROFESSIONAL',
+      });
+
+      expect(params['localEvaluation']).toBeUndefined();
+      expect(params['evalKey']).toBeTypeOf('string');
+      expect(parseCheckupSavedParams(params)?.localEvaluation).toEqual(evaluation);
+
+      clearInMemoryCheckupEvaluations();
+      expect(parseCheckupSavedParams(params)?.localEvaluation).toBeUndefined();
+    });
   });
 });

@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionModal, type ActionModalItem } from '../../components/ActionModal.js';
 import { APP_ASSETS } from '../../constants/assets.js';
+import { AlertBadge } from '../../components/AlertBadge.js';
 import { PALETTE } from '../../constants/colors.js';
 import { CARD_SHADOW, SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
@@ -137,33 +138,13 @@ export default function ProfessionalPatientsScreen() {
 
   const renderBadge = (item: PatientListItem) => {
     const { riskLevel, primaryAlert } = item;
-
     if (riskLevel === 'SEVERE') {
-      return (
-        <View style={[styles.badgePill, styles.badgePillSevere]}>
-          <Text style={[styles.badgePillText, styles.badgePillTextSevere]}>
-            {t('patients.status.severe')}
-          </Text>
-        </View>
-      );
+      return <AlertBadge variant="severe" label={t('patients.status.severe')} />;
     }
-
     if (riskLevel === 'RISK' && primaryAlert) {
-      const riskLabel = t(`alerts.risk.${primaryAlert.riskType}`);
-      return (
-        <View style={[styles.badgePill, styles.badgePillModerate]}>
-          <Text style={[styles.badgePillText, styles.badgePillTextModerate]}>{riskLabel}</Text>
-        </View>
-      );
+      return <AlertBadge variant="risk" label={t(`alerts.risk.${primaryAlert.riskType}`)} />;
     }
-
-    return (
-      <View style={[styles.badgePill, styles.badgePillInOrder]}>
-        <Text style={[styles.badgePillText, styles.badgePillTextInOrder]}>
-          {t('patients.status.inOrder')}
-        </Text>
-      </View>
-    );
+    return <AlertBadge variant="ok" label={t('patients.status.inOrder')} />;
   };
 
   const renderPatientCard = (item: PatientListItem) => {
@@ -389,7 +370,9 @@ const styles = StyleSheet.create({
     width: 9,
     height: 9,
     borderRadius: 4.5,
-    backgroundColor: PALETTE.feedback.error,
+    backgroundColor: PALETTE.secondary,
+    borderWidth: 1.5,
+    borderColor: PALETTE.surface,
   },
   titlesBlock: {
     marginBottom: 24,

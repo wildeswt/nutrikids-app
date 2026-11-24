@@ -271,4 +271,40 @@ describe('follow-up storage (NK-34, NK-75)', () => {
     secure.values.set(FOLLOW_UP_STORAGE_KEY, JSON.stringify({ drafts: 'x', pending: 3 }));
     expect(await listPending(USER)).toEqual([]);
   });
+
+  it('uses sessionStorage instead of localStorage when SecureStore is unavailable (web)', async () => {
+    const secureStore = await import('expo-secure-store');
+    vi.mocked(secureStore.isAvailableAsync).mockResolvedValue(false);
+
+    const sessionMap = new Map<string, string>();
+    const localMap = new Map<string, string>();
+    const makeStorage = (map: Map<string, string>) => ({
+      get length() {
+        return map.size;
+      },
+      key: (index: number) => [...map.keys()][index] ?? null,
+      getItem: (key: string) => map.get(key) ?? null,
+      setItem: (key: string, value: string) => void map.set(key, value),
+      removeItem: (key: string) => void map.delete(key),
+      clear: () => map.clear(),
+    });
+    vi.stubGlobal('sessionStorage', makeStorage(sessionMap));
+    vi.stubGlobal('localStorage', makeStorage(localMap));
+
+    try {
+      const key = draftKey(USER, { childId: CHILD });
+      await saveDraft(key, {
+        userId: USER,
+        childId: CHILD,
+        form: multiSectionForm,
+      });
+
+      expect(sessionMap.has(FOLLOW_UP_STORAGE_KEY)).toBe(true);
+      expect(localMap.has(FOLLOW_UP_STORAGE_KEY)).toBe(false);
+      expect((await getDraft(key))?.form.observations).toBe(multiSectionForm.observations);
+    } finally {
+      vi.mocked(secureStore.isAvailableAsync).mockResolvedValue(true);
+      vi.unstubAllGlobals();
+    }
+  });
 });

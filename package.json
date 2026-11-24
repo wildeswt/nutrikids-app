@@ -15,6 +15,7 @@
     "dev:phone": "pnpm --filter mobile phone",
     "dev:phone:tunnel": "pnpm --filter mobile phone:tunnel",
     "build": "pnpm -r --if-present build",
+    "build:web": "pnpm --filter @nutrikids/shared build && pnpm --filter @nutrikids/who-growth build && pnpm --filter mobile build:web",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
     "lint": "eslint .",
