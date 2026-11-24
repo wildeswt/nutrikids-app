@@ -96,8 +96,8 @@ describe('ConsentScreen («Consentimiento»)', () => {
     expect(html).toContain(i18n.t('consent:screen.registerSubtitle'));
     expect(html).not.toContain('consent-child-banner');
     expect(html).not.toContain('consent-metadata');
-    expect(html).toContain('consent-version-line');
-    expect(html).toContain('Versión 1.0 del texto');
+    expect(html).not.toContain('consent-version-line');
+    expect(html).not.toContain('Versión 1.0');
     expect(html).toContain('accept-consent-button');
     expect(html).toContain('decline-consent-button');
   });
@@ -153,7 +153,7 @@ describe('ConsentScreen («Consentimiento»)', () => {
     expect(html).toContain('consent-child-banner');
     expect(html).toContain('consent-metadata');
     expect(html).toContain(i18n.t('consent:screen.statusRevoked'));
-    expect(html).toContain('consent-version-line');
+    expect(html).not.toContain('consent-version-line');
     expect(html).toContain('renew-consent-button');
     expect(html).toContain('decline-consent-button');
   });

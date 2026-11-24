@@ -224,7 +224,17 @@ export async function executeOfflineWriteFallback<T>(options: {
   const isNetworkError = options.isNetworkError ?? isNetworkUnavailableError;
 
   if (!options.isOnline) {
-    const localResult = await options.persistLocally();
+    let localResult: T;
+    try {
+      localResult = await options.persistLocally();
+    } catch (persistError) {
+      // No local queue (web): the «offline» flag can be wrong, so try the server before failing.
+      try {
+        return await options.sendRemote();
+      } catch {
+        throw persistError;
+      }
+    }
     if (options.refreshSyncState) {
       void options.refreshSyncState().catch(() => {});
     }

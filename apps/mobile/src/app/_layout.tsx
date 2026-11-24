@@ -1,6 +1,8 @@
-import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
+import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
+import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
 import { useFonts } from 'expo-font';
-import { Redirect, Stack, useRouter, useSegments } from 'expo-router';
+import { Redirect, Stack, useGlobalSearchParams, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
@@ -22,8 +24,21 @@ export function NavigationGuard() {
   const segments = useSegments();
   const router = useRouter();
 
+  const searchParams = useGlobalSearchParams<Record<string, string>>();
+
   const currentGroup = segments[0];
-  const redirectTarget = resolveGuardRedirect({ status, activeRole, currentGroup });
+  const query = new URLSearchParams(
+    Object.entries(searchParams).flatMap(([key, value]) =>
+      typeof value === 'string' ? [[key, value] as [string, string]] : [],
+    ),
+  ).toString();
+  const redirectTarget = resolveGuardRedirect({
+    status,
+    activeRole,
+    currentGroup,
+    leaf: segments[1],
+    query: query ? `?${query}` : '',
+  });
 
   useEffect(() => {
     if (redirectTarget) {

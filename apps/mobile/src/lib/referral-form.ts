@@ -6,7 +6,15 @@ import {
   type ProfessionalAssignmentResponse,
 } from '@nutrikids/shared';
 import { File, Paths } from 'expo-file-system';
+import { Platform } from 'react-native';
 import { z } from 'zod';
+import {
+  getWebLocalStorage,
+  getWebSessionStorage,
+  readSensitiveWebItem,
+  removeSensitiveWebItem,
+  writeSensitiveWebItem,
+} from './web-storage.js';
 
 export const REFERRAL_PRIORITIES = ['ordinary', 'priority'] as const;
 
@@ -116,7 +124,7 @@ export function filterEligibleRecipients(
   return eligible;
 }
 
-// ---------- Borrador local (archivo JSON con expo-file-system, uno por usuario) ----------
+// ---------- Borrador local (archivo JSON con expo-file-system en móvil; sessionStorage en web) ----------
 
 export const ReferralDraftSchema = z.object({
   childId: z.string().nullable(),
@@ -127,6 +135,8 @@ export const ReferralDraftSchema = z.object({
 });
 
 export type ReferralDraft = z.infer<typeof ReferralDraftSchema>;
+
+const memoryDrafts = new Map<string, string>();
 
 function safeUserSlug(userId: string): string {
   return userId.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -140,21 +150,30 @@ function draftFile(userId: string): File {
   return new File(Paths.document, `referral-draft-${safeUserSlug(userId)}.json`);
 }
 
-function readWebFallback(userId: string): string | null {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    return window.localStorage.getItem(draftStorageKey(userId));
-  }
-  return null;
+function shouldUseWebDraftStorage(): boolean {
+  if (Platform.OS !== 'web') return false;
+  if (!Platform.isTesting) return true;
+  return getWebSessionStorage() !== null || getWebLocalStorage() !== null;
 }
 
-function writeWebFallback(userId: string, content: string | null): void {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    if (content === null) window.localStorage.removeItem(draftStorageKey(userId));
-    else window.localStorage.setItem(draftStorageKey(userId), content);
+function readWebDraft(userId: string): string | null {
+  const key = draftStorageKey(userId);
+  return readSensitiveWebItem(key) ?? memoryDrafts.get(key) ?? null;
+}
+
+function writeWebDraft(userId: string, content: string | null): void {
+  const key = draftStorageKey(userId);
+  if (content === null) {
+    removeSensitiveWebItem(key);
+    memoryDrafts.delete(key);
+    return;
+  }
+  if (!writeSensitiveWebItem(key, content)) {
+    memoryDrafts.set(key, content);
   }
 }
 
-/** Guarda un borrador de interconsulta en un archivo JSON local por usuario. */
+/** Guarda un borrador de interconsulta en almacenamiento local por usuario. */
 export async function saveReferralDraft(
   userId: string,
   form: ReferralFormData,
@@ -169,6 +188,11 @@ export async function saveReferralDraft(
   };
   const serialized = JSON.stringify(payload);
 
+  if (shouldUseWebDraftStorage()) {
+    writeWebDraft(userId, serialized);
+    return;
+  }
+
   try {
     const file = draftFile(userId);
     if (!file.exists) {
@@ -176,20 +200,24 @@ export async function saveReferralDraft(
     }
     await file.write(serialized);
   } catch {
-    writeWebFallback(userId, serialized);
+    writeWebDraft(userId, serialized);
   }
 }
 
 /** Lee el borrador guardado del usuario o devuelve `null` si no existe o es ilegible. */
 export async function loadReferralDraft(userId: string): Promise<ReferralDraft | null> {
   let raw: string | null = null;
-  try {
-    const file = draftFile(userId);
-    if (file.exists) {
-      raw = await file.text();
+  if (shouldUseWebDraftStorage()) {
+    raw = readWebDraft(userId);
+  } else {
+    try {
+      const file = draftFile(userId);
+      if (file.exists) {
+        raw = await file.text();
+      }
+    } catch {
+      raw = readWebDraft(userId);
     }
-  } catch {
-    raw = readWebFallback(userId);
   }
 
   if (!raw || !raw.trim()) return null;
@@ -203,6 +231,11 @@ export async function loadReferralDraft(userId: string): Promise<ReferralDraft |
 
 /** Elimina el borrador local del usuario (por ejemplo al enviar la interconsulta). */
 export async function clearReferralDraft(userId: string): Promise<void> {
+  if (shouldUseWebDraftStorage()) {
+    writeWebDraft(userId, null);
+    return;
+  }
+
   try {
     const file = draftFile(userId);
     if (!file.exists) return;
@@ -216,6 +249,6 @@ export async function clearReferralDraft(userId: string): Promise<void> {
     }
     await file.write('');
   } catch {
-    writeWebFallback(userId, null);
+    writeWebDraft(userId, null);
   }
 }

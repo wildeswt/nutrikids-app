@@ -32,6 +32,29 @@ const MAX_SAMPLES = 40;
 
 type Curves = ReferenceCurvesResponse['curves'];
 
+/** Local calendar day (`YYYY-MM-DD`) of an ISO instant, so a late-evening checkup keeps its day. */
+function localIsoDay(instant: string): string {
+  const date = new Date(instant);
+  if (Number.isNaN(date.getTime())) return instant.slice(0, 10);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/**
+ * Age in months with the fraction of the current month, so checkups of the same month land on
+ * different X positions (whole months stacked them on one vertical line).
+ */
+export function fractionalAgeMonths(birthDate: string, measuredAt: string): number {
+  const day = localIsoDay(measuredAt);
+  const whole = completedMonths(birthDate, day);
+  const [by, bm, bd] = birthDate.split('-').map(Number) as [number, number, number];
+  const anchor = new Date(by, bm - 1 + whole, bd);
+  const [y, m, d] = day.split('-').map(Number) as [number, number, number];
+  const days = Math.round((new Date(y, m - 1, d).getTime() - anchor.getTime()) / 86_400_000);
+  return whole + Math.min(Math.max(days, 0) / 30.4375, 0.99);
+}
+
 export function bodyMassIndex(weightKg: number, lengthHeightCm: number): number {
   const meters = lengthHeightCm / 100;
   return weightKg / (meters * meters);
@@ -51,7 +74,7 @@ export function checkupToPoint(
   checkup: Pick<CaregiverCheckupResponse, 'measuredAt' | 'weightKg' | 'lengthHeightCm'>,
   birthDate: string,
 ): CurvePoint {
-  const ageMonths = completedMonths(birthDate, checkup.measuredAt.slice(0, 10));
+  const ageMonths = fractionalAgeMonths(birthDate, checkup.measuredAt);
   switch (indicator.key) {
     case 'PE':
       return { x: ageMonths, y: checkup.weightKg };

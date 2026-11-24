@@ -55,13 +55,32 @@ describe('growth-chart points', () => {
     // 12 months and 25 days after the birth date → 28 months.
     const checkup = makeCheckup('2025-10-20T15:00:00.000Z', 12, 90);
 
-    expect(checkupToPoint(indicator('PE'), checkup, BIRTH_DATE)).toEqual({ x: 28, y: 12 });
-    expect(checkupToPoint(indicator('TE'), checkup, BIRTH_DATE)).toEqual({ x: 28, y: 90 });
+    const pe = checkupToPoint(indicator('PE'), checkup, BIRTH_DATE);
+    expect(pe.x).toBeGreaterThan(28);
+    expect(pe.x).toBeLessThan(29);
+    expect(Math.floor(pe.x)).toBe(28);
+    expect(pe.y).toBe(12);
+    expect(checkupToPoint(indicator('TE'), checkup, BIRTH_DATE).y).toBe(90);
     expect(checkupToPoint(indicator('PT'), checkup, BIRTH_DATE)).toEqual({ x: 90, y: 12 });
     const imc = checkupToPoint(indicator('IMCE'), checkup, BIRTH_DATE);
-    expect(imc.x).toBe(28);
+    expect(Math.floor(imc.x)).toBe(28);
     expect(imc.y).toBeCloseTo(bodyMassIndex(12, 90), 6);
     expect(bodyMassIndex(12, 90)).toBeCloseTo(14.81, 2);
+  });
+
+  it('separates checkups of the same month on the X axis', () => {
+    const early = checkupToPoint(
+      indicator('PE'),
+      makeCheckup('2026-11-03T12:00:00.000Z', 11, 80),
+      '2025-09-02',
+    );
+    const late = checkupToPoint(
+      indicator('PE'),
+      makeCheckup('2026-11-20T12:00:00.000Z', 11.4, 81),
+      '2025-09-02',
+    );
+    expect(Math.floor(early.x)).toBe(Math.floor(late.x));
+    expect(late.x).toBeGreaterThan(early.x);
   });
 
   it('orders the points along the X axis and preserves the source checkup metadata', () => {

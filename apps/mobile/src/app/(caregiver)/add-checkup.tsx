@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { type DateTimePickerEvent } from '../../components/ui/DatePicker.js';
 import {
   CHECKUP_NOTES_MAX,
   PLAUSIBLE_LENGTH_HEIGHT_MAX_CM,
@@ -156,6 +156,26 @@ export default function AddCheckupScreen({
       params.heightCm,
       params.notes,
     ]),
+  );
+
+  // Leaving the screen discards the form (tabs stay mounted), so the next visit, maybe for
+  // another child, starts empty instead of with the previous child's weight and height.
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        lastParamsKey.current = null;
+        setMeasuredDateText(formatDateInput(new Date()));
+        setPosition('STANDING');
+        setWeightText('');
+        setHeightText('');
+        setObservations('');
+        attemptId.current = null;
+        setErrorMessage(null);
+        setOutlierWarning(null);
+        setConfirmedOutlier(false);
+        setConsentRequired(false);
+      };
+    }, []),
   );
 
   const selectedPositionLabel = t(`addCheckup.positions.${position}`);

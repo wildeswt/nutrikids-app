@@ -5,6 +5,11 @@ import {
 } from '@nutrikids/shared';
 import * as SecureStore from 'expo-secure-store';
 import { z } from 'zod';
+import {
+  readSensitiveWebItem,
+  removeSensitiveWebItem,
+  writeSensitiveWebItem,
+} from './web-storage.js';
 import { isoDateToInput, type FollowUpFormData } from './follow-up-form.js';
 import { getMetaValue, removeMetaValue, setMetaValue } from './local-db/meta-repository.js';
 import { nowUtcIso, parseStoredPayload } from './local-db/payload-codec.js';
@@ -140,18 +145,15 @@ async function readRaw(): Promise<string | null> {
   if (await hasSecureStore()) {
     return SecureStore.getItemAsync(FOLLOW_UP_STORAGE_KEY, SECURE_STORE_OPTIONS);
   }
-  if (typeof window !== 'undefined' && window.localStorage) {
-    return window.localStorage.getItem(FOLLOW_UP_STORAGE_KEY);
-  }
-  return memoryStorage.get(FOLLOW_UP_STORAGE_KEY) ?? null;
+  return (
+    readSensitiveWebItem(FOLLOW_UP_STORAGE_KEY) ?? memoryStorage.get(FOLLOW_UP_STORAGE_KEY) ?? null
+  );
 }
 
 async function writeRaw(value: string): Promise<void> {
   if (await hasSecureStore()) {
     await SecureStore.setItemAsync(FOLLOW_UP_STORAGE_KEY, value, SECURE_STORE_OPTIONS);
-  } else if (typeof window !== 'undefined' && window.localStorage) {
-    window.localStorage.setItem(FOLLOW_UP_STORAGE_KEY, value);
-  } else {
+  } else if (!writeSensitiveWebItem(FOLLOW_UP_STORAGE_KEY, value)) {
     memoryStorage.set(FOLLOW_UP_STORAGE_KEY, value);
   }
 }
@@ -159,9 +161,8 @@ async function writeRaw(value: string): Promise<void> {
 async function deleteRaw(): Promise<void> {
   if (await hasSecureStore()) {
     await SecureStore.deleteItemAsync(FOLLOW_UP_STORAGE_KEY, SECURE_STORE_OPTIONS);
-  } else if (typeof window !== 'undefined' && window.localStorage) {
-    window.localStorage.removeItem(FOLLOW_UP_STORAGE_KEY);
   } else {
+    removeSensitiveWebItem(FOLLOW_UP_STORAGE_KEY);
     memoryStorage.delete(FOLLOW_UP_STORAGE_KEY);
   }
 }

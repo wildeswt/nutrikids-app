@@ -1,6 +1,11 @@
 import { AuthUserSchema, UserRoleSchema, type UserRole } from '@nutrikids/shared';
 import * as SecureStore from 'expo-secure-store';
 import { z } from 'zod';
+import {
+  readSensitiveWebItem,
+  removeSensitiveWebItem,
+  writeSensitiveWebItem,
+} from './web-storage.js';
 
 export const SESSION_STORAGE_KEY = 'nutrikids.auth.session';
 
@@ -44,10 +49,9 @@ export async function getStoredSession(): Promise<StoredSession | null> {
     let raw: string | null = null;
     if (await hasSecureStore()) {
       raw = await SecureStore.getItemAsync(SESSION_STORAGE_KEY, SECURE_STORE_OPTIONS);
-    } else if (typeof window !== 'undefined' && window.localStorage) {
-      raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
     } else {
-      raw = memoryStorage.get(SESSION_STORAGE_KEY) ?? null;
+      raw =
+        readSensitiveWebItem(SESSION_STORAGE_KEY) ?? memoryStorage.get(SESSION_STORAGE_KEY) ?? null;
     }
 
     if (!raw) {
@@ -79,15 +83,13 @@ export async function saveStoredSession(session: StoredSession): Promise<void> {
 
   if (await hasSecureStore()) {
     await SecureStore.setItemAsync(SESSION_STORAGE_KEY, serialized, SECURE_STORE_OPTIONS);
-  } else if (typeof window !== 'undefined' && window.localStorage) {
-    window.localStorage.setItem(SESSION_STORAGE_KEY, serialized);
-  } else {
+  } else if (!writeSensitiveWebItem(SESSION_STORAGE_KEY, serialized)) {
     memoryStorage.set(SESSION_STORAGE_KEY, serialized);
   }
 }
 
 /**
- * Remove active session from SecureStore.
+ * Remove active session from SecureStore and web storage.
  */
 export async function clearStoredSession(): Promise<void> {
   try {
@@ -95,9 +97,7 @@ export async function clearStoredSession(): Promise<void> {
       await SecureStore.deleteItemAsync(SESSION_STORAGE_KEY, SECURE_STORE_OPTIONS);
     }
   } finally {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.removeItem(SESSION_STORAGE_KEY);
-    }
+    removeSensitiveWebItem(SESSION_STORAGE_KEY);
     memoryStorage.delete(SESSION_STORAGE_KEY);
   }
 }
