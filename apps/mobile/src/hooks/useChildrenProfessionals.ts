@@ -13,10 +13,23 @@ export type ChildrenProfessionals = Record<string, ProfessionalAssignmentRespons
  */
 export function useChildrenProfessionals() {
   const [professionals, setProfessionals] = useState<ChildrenProfessionals>({});
+  /** Niños cuya consulta ya terminó (con éxito o con error). Los demás aún se están leyendo. */
+  const [settled, setSettled] = useState<Record<string, true>>({});
+  const professionalsRef = useRef(professionals);
+  professionalsRef.current = professionals;
   const latestRequest = useRef(0);
 
   const load = useCallback(async (children: readonly Pick<ChildResponse, 'id'>[]) => {
     const requestId = ++latestRequest.current;
+    // Un niño con profesional ya conocido conserva su fila mientras se actualiza; los demás
+    // vuelven a «cargando» para no ofrecer «Vincular profesional» antes de saber la respuesta.
+    setSettled(
+      Object.fromEntries(
+        children
+          .filter((child) => (professionalsRef.current[child.id]?.length ?? 0) > 0)
+          .map((child) => [child.id, true as const]),
+      ),
+    );
     const results = await Promise.allSettled(
       children.map((child) => listLinkedProfessionals(child.id)),
     );
@@ -30,7 +43,11 @@ export function useChildrenProfessionals() {
       }
     });
     setProfessionals(next);
+    setSettled(Object.fromEntries(children.map((child) => [child.id, true as const])));
   }, []);
 
-  return { professionals, load };
+  /** `true` mientras aún no se sabe si el niño tiene profesional vinculado. */
+  const isLoading = useCallback((childId: string) => !settled[childId], [settled]);
+
+  return { professionals, load, isLoading };
 }

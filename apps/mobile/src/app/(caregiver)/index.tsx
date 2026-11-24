@@ -40,7 +40,11 @@ export default function CaregiverHomeScreen() {
   const activeChildId = useActiveChildId();
   const { status, children, error, fromCache, stale, lastSyncedAt, loadError, load } =
     useChildren();
-  const { professionals, load: loadProfessionals } = useChildrenProfessionals();
+  const {
+    professionals,
+    load: loadProfessionals,
+    isLoading: isLoadingProfessionals,
+  } = useChildrenProfessionals();
   const education = useEducation();
   const loadEducation = education.load;
   const { unreadCount, reload: reloadNotifications } = useNotifications();
@@ -368,6 +372,7 @@ export default function CaregiverHomeScreen() {
                 })
               }
               professionals={professionals[activeChild.id]}
+              professionalsLoading={isLoadingProfessionals(activeChild.id)}
               onLinkProfessional={() =>
                 router.push({
                   pathname: APP_ROUTES.CAREGIVER.LINK_PROFESSIONAL as never,

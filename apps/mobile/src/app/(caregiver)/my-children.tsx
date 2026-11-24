@@ -29,7 +29,11 @@ export default function MyChildrenScreen() {
   const { t } = useTranslation(['caregiver', 'common']);
   const { status, children, error, fromCache, stale, lastSyncedAt, loadError, load } =
     useChildren();
-  const { professionals, load: loadProfessionals } = useChildrenProfessionals();
+  const {
+    professionals,
+    load: loadProfessionals,
+    isLoading: isLoadingProfessionals,
+  } = useChildrenProfessionals();
   const [removeTarget, setRemoveTarget] = useState<ChildResponse | null>(null);
   const [removing, setRemoving] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
@@ -154,6 +158,7 @@ export default function MyChildrenScreen() {
                 accessibilityLabel={t('myChildren.selectChildA11y', { name: child.firstName })}
                 testID={`my-children-card-${child.id}`}
                 professionals={professionals[child.id]}
+                professionalsLoading={isLoadingProfessionals(child.id)}
                 onLinkProfessional={() =>
                   router.push({
                     pathname: APP_ROUTES.CAREGIVER.LINK_PROFESSIONAL as never,

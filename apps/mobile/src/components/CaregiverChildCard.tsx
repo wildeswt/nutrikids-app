@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ChildResponse, ProfessionalAssignmentResponse } from '@nutrikids/shared';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { PALETTE } from '../constants/colors.js';
 import { CARD_SHADOW, RADIUS_PILL } from '../constants/layout.js';
 import { font } from '../constants/typography.js';
@@ -21,6 +21,8 @@ export interface CaregiverChildCardProps {
    * «+ Vincular profesional» (sin profesional) o al profesional vinculado (con `onOpenProfessionals`).
    */
   professionals?: readonly ProfessionalAssignmentResponse[];
+  /** Aún se está leyendo si el niño tiene profesional: se muestra «Buscando profesional...». */
+  professionalsLoading?: boolean;
   onLinkProfessional?: () => void;
   onOpenProfessionals?: () => void;
   /** Con `onEdit` y/o `onRemove` la tarjeta muestra el menú de tres puntos con esas operaciones. */
@@ -38,6 +40,7 @@ export function CaregiverChildCard({
   accessibilityLabel,
   testID,
   professionals,
+  professionalsLoading = false,
   onLinkProfessional,
   onOpenProfessionals,
   onEdit,
@@ -126,7 +129,17 @@ export function CaregiverChildCard({
         />
       ) : null}
 
-      {onLinkProfessional ? (
+      {onLinkProfessional && professionalsLoading && !firstProfessional ? (
+        <View
+          style={styles.linkButton}
+          accessibilityRole="progressbar"
+          accessibilityLabel={t('myChildren.professionalLoading')}
+          testID={`${baseTestID}-professional-loading`}
+        >
+          <ActivityIndicator size="small" color={PALETTE.primary} />
+          <Text style={styles.linkButtonText}>{t('myChildren.professionalLoading')}</Text>
+        </View>
+      ) : onLinkProfessional ? (
         firstProfessional ? (
           <Pressable
             style={({ pressed }) => [styles.professionalRow, pressed && styles.cardPressed]}

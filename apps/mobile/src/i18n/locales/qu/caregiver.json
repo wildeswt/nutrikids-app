@@ -119,6 +119,7 @@
     "title": "Ñuka wawakuna",
     "selectChildA11y": "Elegir a {{name}} como niño activo",
     "linkProfessional": "Vincular profesional",
+    "professionalLoading": "Yachachikta mashkashpa...",
     "linkProfessionalA11y": "Vincular un profesional a {{name}}",
     "openProfessionalsA11y": "Ver los profesionales de {{name}}",
     "professionalLinked": "{{specialty}} · Profesional vinculado",
