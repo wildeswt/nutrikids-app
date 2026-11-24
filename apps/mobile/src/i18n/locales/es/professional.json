@@ -393,6 +393,7 @@
       "registerCheckup": "Registrar control"
     },
     "loading": "Cargando lista de pacientes...",
+    "refreshing": "Actualizando pacientes...",
     "retry": "Reintentar",
     "loadError": "No pudimos cargar tus pacientes.",
     "emptyTitle": "Sin pacientes vinculados",
