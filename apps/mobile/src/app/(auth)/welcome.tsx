@@ -1,16 +1,14 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthBrandHeader, authStyles } from '../../components/auth/AuthBrandHeader.js';
 import { LanguageSelector } from '../../components/LanguageSelector.js';
 import { PrimaryButton } from '../../components/ui/PrimaryButton.js';
 import { SecondaryButton } from '../../components/ui/SecondaryButton.js';
-import { PALETTE } from '../../constants/colors.js';
 import { SCREEN_MARGIN } from '../../constants/layout.js';
 import { APP_ROUTES } from '../../constants/routes.js';
-import { font } from '../../constants/typography.js';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -49,13 +47,6 @@ export default function WelcomeScreen() {
               <LanguageSelector showHeader={false} />
             </View>
           </View>
-
-          {/* Footer discreto */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              {t('common:brand.copyright', { year: new Date().getFullYear() })}
-            </Text>
-          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -92,14 +83,5 @@ const styles = StyleSheet.create({
   languageContainer: {
     width: '100%',
     marginTop: 24,
-  },
-  footer: {
-    marginTop: 40,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontFamily: font('regular'),
-    fontSize: 12,
-    color: PALETTE.text.muted,
   },
 });

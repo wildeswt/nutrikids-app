@@ -15,7 +15,7 @@ import { APP_ROUTES } from '../../constants/routes.js';
 import { font } from '../../constants/typography.js';
 import { useAuth } from '../../context/auth-context.js';
 import { useConsent } from '../../hooks/useConsent.js';
-import { formatLongDate, formatNumericDate, formatTime } from '../../i18n/format.js';
+import { formatNumericDate, formatTime } from '../../i18n/format.js';
 import { CURRENT_CONSENT_VERSION, getConsentText } from '../../lib/consent-api.js';
 
 export default function ConsentScreen() {
@@ -130,10 +130,6 @@ export default function ConsentScreen() {
   const isGranting = mode === 'register' || (mode === 'view' && Boolean(consent?.revokedAt));
   const canGrant = isLegalRepresentative && understandsRevocation;
   const caregiverName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
-  const versionNumber = displayedVersion === 'v1' ? '1.0' : displayedVersion;
-  const versionDate = consent?.grantedAt
-    ? formatLongDate(new Date(consent.grantedAt))
-    : formatLongDate(new Date());
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']} testID="consent-screen">
@@ -301,10 +297,6 @@ export default function ConsentScreen() {
               </View>
               <Text style={styles.checkboxLabel}>{t('screen.checkRevocation')}</Text>
             </Pressable>
-
-            <Text style={styles.versionLine} testID="consent-version-line">
-              {t('screen.versionLine', { version: versionNumber, date: versionDate })}
-            </Text>
           </View>
         )}
 
@@ -618,12 +610,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: PALETTE.text.body,
-  },
-  versionLine: {
-    fontFamily: font('regular'),
-    fontSize: 12,
-    color: PALETTE.text.muted,
-    marginTop: 2,
   },
   actionsContainer: {
     alignItems: 'center',
